@@ -1,0 +1,20 @@
+# ใช้ Node.js Alpine image ที่เบา
+FROM node:20-alpine
+
+# ตั้ง working directory ภายใน container
+WORKDIR /app
+
+# คัดลอกไฟล์ package.json และ package-lock.json (หรือ yarn.lock) เพื่อ install dependencies
+COPY package*.json ./
+
+# ติดตั้ง dependencies ทั้งหมด
+RUN npm install
+
+# คัดลอกซอร์สทั้งหมดจากเครื่อง host ไปที่ container
+COPY . .
+
+# เปิดพอร์ตที่ Vite ใช้
+EXPOSE 5173
+
+# ตั้งค่า Vite ให้ฟังที่ IP 0.0.0.0 เพื่อให้สามารถเข้าถึงจากเครื่องอื่น
+CMD ["npm", "run", "dev", "--", "--host"]

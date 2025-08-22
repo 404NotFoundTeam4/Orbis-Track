@@ -11,7 +11,7 @@
     margin: 0;
     max-height: 0; /* ซ่อน dropdown */
     overflow: hidden; /* ซ่อนเนื้อหาที่เกิน */
-    transition: max-height 0.s ease-out, opacity 0.5s ease-out;
+    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
     opacity: 0; /* ทำให้ dropdown หาย */
 }
 

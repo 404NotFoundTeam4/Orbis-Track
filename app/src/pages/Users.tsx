@@ -1,6 +1,6 @@
 export const Users = () => {
   return (
-   <table className="border-separate border border-gray-400 ...">
+   <table className="0 ...">
   <thead>
     <tr>
       <th className="border border-gray-300 ...">State</th>

@@ -1,7 +1,7 @@
 // ถ้า Login.tsx อยู่ใน pages/
 
 import "../common/styles/css/Login.css"
-function Login() {
+export const Login = () => {
     return (
         <>
             <div className="flex items-center justify-center min-h-screen">

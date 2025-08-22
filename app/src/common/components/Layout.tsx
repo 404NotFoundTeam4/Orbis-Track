@@ -5,12 +5,16 @@ export const Layout = () => {
   return (
     <div className="flex">
       {/* Navbar จะปรากฏในทุกหน้า */}
+      <div className="w-[250px] ml-[120px]  text-white h-full fixed top-0 left-0 p-4">
+        {/* เพิ่มเนื้อหาของ Sidebar ที่นี่ */}
       <Navbar />
+        </div>
 
       {/* Main Content */}
-      <main className=" ml-[85px] p-4 w-full mt-[65px] ">
-        <Outlet /> {/* แสดง route child ที่ถูกกำหนด */}
-      </main>
+       <div className="flex-1 ml-[215px]  mt-[75px]">
+        {/* ให้เนื้อหาหลักขยายเต็มขอบขวา */}
+        <Outlet />
+      </div>
     </div>
   );
 };

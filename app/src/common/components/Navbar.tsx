@@ -11,14 +11,14 @@ function Navbar() {
   };
 
   return (
-    <div className="flex background">
+    <div className="flex background ">
       {/* Navbar */}
       <div className="w-full bg-[#343434] text-white px-4 py-2 h-[65px] flex justify-between items-center fixed top-0 left-0 z-50">
         <span className="font-bold text-lg">Orbis Track</span>
         <span>Profile / Menu</span>
       </div>
       {/* Sidebar */}
-      <div className="w-[207px] bg-white text-black p-2 shadow-xl fixed left-0 top-[65px] h-[calc(100%-65px)] z-40">
+      <div className="w-[207px] bg-white text-black p-2 shadow-xl fixed left-0 top-[65px]  h-[calc(100%-65px)] z-40">
         <h2 className="text-xl font-bold text-left mb-4">Sidebar</h2>
         <ul className="text-left ">
           <li className="flex items-center">

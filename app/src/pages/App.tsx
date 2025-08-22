@@ -5,7 +5,7 @@ import { Users } from "./Users";
 import { Layout } from "../common/components/Layout";
 import Home from "./Home";
 import Dashboard from "./Dashboard";
-
+import '../common/styles/css/index.css'
 function App() {
   return (
     <BrowserRouter>

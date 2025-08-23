@@ -11,7 +11,7 @@
     margin: 0;
     max-height: 0; /* ซ่อน dropdown */
     overflow: hidden; /* ซ่อนเนื้อหาที่เกิน */
-    transition: max-height 0.s ease-out, opacity 0.5s ease-out;
+    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
     opacity: 0; /* ทำให้ dropdown หาย */
 }
 
@@ -21,7 +21,7 @@
     opacity: 1;
 }
 .arrow {
-  border: solid black;
+  border: solid rgb(0, 0, 0);
   border-width: 0 3px 3px 0;
   display: inline-block;
   padding: 3px;
@@ -29,4 +29,8 @@
 .down {
   transform: rotate(45deg);
   -webkit-transform: rotate(45deg);
+}
+.menu-item:hover .icon,
+.menu-item:hover a {
+  color: #008CFF;
 }

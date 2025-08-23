@@ -1,6 +1,6 @@
 // ถ้า Login.tsx อยู่ใน pages/
 
-import "../common/styles/css/Login.css"
+import "../styles/css/Login.css"
 export const Login = () => {
     return (
         <>

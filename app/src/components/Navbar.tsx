@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import "../styles/css/icon.css";
 import "../styles/css/Navbar.css";
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHome } from '@fortawesome/free-solid-svg-icons';
 function Navbar() {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
 
@@ -11,19 +12,23 @@ function Navbar() {
   };
 
   return (
-    <div className="flex background">
+    <div className="flex background ">
       {/* Navbar */}
       <div className="w-full bg-[#343434] text-white px-4 py-2 h-[65px] flex justify-between items-center fixed top-0 left-0 z-50">
+        <div>
+          <img src="" alt="" className=" rounded-4xl bg-amber-200"/>
         <span className="font-bold text-lg">Orbis Track</span>
+        </div>
+        <div>
         <span>Profile / Menu</span>
+        </div>
       </div>
       {/* Sidebar */}
-      <div className="w-[207px] bg-white text-black p-2 shadow-xl fixed left-0 top-[65px] h-[calc(100%-65px)] z-40">
-        <h2 className="text-xl font-bold text-left mb-4">Sidebar</h2>
-        <ul className="text-left ">
-          <li className="flex items-center">
-            <div className="flex items-center w-full cursor-pointer hover:bg-gray-200">
-              <span className="fa7-solid--home mr-2 "></span>
+      <div className="w-[207px] bg-white text-black p-2 shadow-xl fixed left-0 top-[65px]  h-[calc(100%-65px)] z-40">
+        <ul className="px-4 text-left ">
+          <li className="">
+            <div className="flex items-center w-full cursor-pointer menu-item ">
+            <FontAwesomeIcon icon={faHome} className="px-2 icon" />
               <Link to="/home" className="block py-2  "> หน้าหลัก </Link>
             </div>
           </li>

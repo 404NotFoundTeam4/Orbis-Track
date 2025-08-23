@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Login } from "./Login";   // ✅ import ได้ปกติ
-import "../common/styles/css/App.css";
+import "../styles/css/App.css";
 import { Users } from "./Users";
-import { Layout } from "../common/components/Layout";
+import { Layout } from "../layout/Layout";
 import Home from "./Home";
 import Dashboard from "./Dashboard";
-import '../common/styles/css/index.css'
+import '../styles/css/index.css'
 function App() {
   return (
     <BrowserRouter>

@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import Navbar from "./Navbar";  // นำเข้า Navbar ที่ต้องการใช้
+import Navbar from "../components/Navbar";  // นำเข้า Navbar ที่ต้องการใช้
 
 export const Layout = () => {
   return (

@@ -31,6 +31,7 @@
   -webkit-transform: rotate(45deg);
 }
 .menu-item:hover .icon,
-.menu-item:hover a {
+.menu-item:hover  ,
+.dropdown-item:hover{
   color: #008CFF;
 }

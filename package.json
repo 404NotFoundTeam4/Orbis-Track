@@ -1,0 +1,38 @@
+{
+  "name": "orbis-track",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "app",
+    "server"
+  ],
+  "prisma": {
+    "schema": "./server/src/infrastructure/database/prisma/schema.prisma"
+  },
+  "scripts": {
+    "build": "npm run build -ws",
+    "dev:app": "npm run dev -w app",
+    "dev:server": "npm run dev -w server",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev --name init",
+    "generate": "prisma generate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/404NotFoundTeam4/Orbis-Track.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/404NotFoundTeam4/Orbis-Track/issues"
+  },
+  "homepage": "https://github.com/404NotFoundTeam4/Orbis-Track#readme",
+  "dependencies": {
+    "@types/ioredis": "^4.28.10",
+    "ioredis": "^5.7.0"
+  }
+}

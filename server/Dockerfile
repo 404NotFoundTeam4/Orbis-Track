@@ -43,8 +43,9 @@ ENV NODE_ENV=development
 ARG PRISMA_SCHEMA_PATH
 ENV PRISMA_SCHEMA_PATH=$PRISMA_SCHEMA_PATH
 
-COPY server/package*.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+COPY server/package.json ./server/package.json
+RUN npm ci --workspaces --include-workspace-root
 
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma
 RUN npx prisma generate --schema $PRISMA_SCHEMA_PATH
@@ -52,4 +53,5 @@ RUN npx prisma generate --schema $PRISMA_SCHEMA_PATH
 COPY server/. .
 RUN chmod +x docker-entrypoint.sh
 EXPOSE 4044
-CMD ["sh", "./docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh","-lc"]
+CMD ["./docker-entrypoint.sh"]

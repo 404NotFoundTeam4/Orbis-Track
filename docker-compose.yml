@@ -73,6 +73,23 @@ services:
       - "4041:4044"
     restart: unless-stopped
 
+
+  app:
+    build:
+      context: .
+      dockerfile: app/dockerfile
+      target: run                 # ← ใช้ stage run จาก app/dockerfile (serve dist)
+      # ถ้าต้องการ bake ค่า API ตอน build (แนะนำ):
+      # args:
+      #   - VITE_API_BASE=https://api.yourdomain.com   # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy
+    # ถ้า serve ที่พอร์ต 4173 ตาม Dockerfile
+    ports:
+      - "4040:4173"
+    depends_on:
+      - server
+    restart: unless-stopped
+    # โปรดักชันไม่ต้อง mount volumes
+
 volumes:
   pgdata:
   redis_data:

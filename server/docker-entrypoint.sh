@@ -11,6 +11,9 @@ set -e
 : "${PGPASSWORD:=postgres}"
 export PGPASSWORD
 
+PRISMA_DEV_APPLY=migrate
+PRISMA_MIGRATION_NAME=init
+
 psql_admin() { psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -v ON_ERROR_STOP=1 "$@"; }
 
 SCHEMA_DIR="$(dirname "$PRISMA_SCHEMA_PATH")"
@@ -29,17 +32,20 @@ if [ ! -f "$PRISMA_SCHEMA_PATH" ]; then
   exit 1
 fi
 
-# ---- helpers ----
-template1_url() {
-  # แปลง URL ให้ชี้ไป template1 (รองรับ postgres:// หรือ postgresql://)
-  # พยายามใช้ -E ก่อน ถ้า sed ไม่รองรับจะลอง -r แทน แล้ว fallback คืนค่าเดิม
-  if out="$(echo "$1" | sed -E 's#(postgres(ql)?://[^/]+/)[^?]+#\1template1#' 2>/dev/null)"; then
-    echo "$out"
-  elif out="$(echo "$1" | sed -r 's#(postgres(ql)?://[^/]+/)[^?]+#\1template1#' 2>/dev/null)"; then
-    echo "$out"
+# ติดตั้ง dev deps ถ้ายังไม่มี (กรณีถูกทับด้วย volume)
+ensure_dev_deps() {
+if ! command -v nodemon >/dev/null 2>&1; then
+  if [ -f ../package-lock.json ]; then
+    echo "📦 npm ci (workspaces at repo root)..."
+    (cd .. && npm ci --workspaces --include-workspace-root)
+  elif [ -f package-lock.json ]; then
+    echo "📦 npm ci (local)..."
+    npm ci
   else
-    echo "$1"
+    echo "📦 package-lock.json ไม่เจอ → ใช้ npm i แทน"
+    npm i
   fi
+fi
 }
 
 # ---- wait for DB (ลองเชื่อมต่อด้วย prisma; ลูปจนกว่าจะได้) ----
@@ -59,6 +65,12 @@ wait_for_db() {
         return 0
       fi
     fi
+    # if command -v pg_isready >/dev/null 2>&1; then
+    #   if pg_isready --host="${PGHOST}" --port="${PGPORT}" --username="${PGUSER}" >/dev/null 2>&1; then
+    #     echo "✅ Postgres is ready."
+    #     return 0
+    #   fi
+    # fi
     i=$((i+1))
     sleep 2
   done
@@ -154,11 +166,14 @@ psql_admin() {
 }
 
 # ---- run ----
+ensure_dev_deps
 wait_for_db
 ensure_shadow_db
 ensure_pgvector
 ensure_prisma_client
 verify_pgvector
+
+# echo "log_statement = 'ddl'" >> "$PGDATA/postgresql.conf" && pg_ctl -D "$PGDATA" reload
 
 if [ "${DEBUG_PSQL:-0}" = "1" ]; then
   main_db="${DATABASE_URL##*/}";  main_db="${main_db%%\?*}"

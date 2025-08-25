@@ -8,7 +8,7 @@ const { closeRedis } = redisPkg;                   // ค่อย destructure �
 const app = App();
 
 const server = app.listen(env.PORT, () => {
-    logger.info(`API running on http://localhost:${env.PORT}/api/v1`);
+    logger.info(`API running on http://localhost:4044/api/v1`);
 });
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {

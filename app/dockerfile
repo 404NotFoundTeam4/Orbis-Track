@@ -1,20 +1,46 @@
+# ===== build (prod) =====
+FROM node:22-alpine AS build
+WORKDIR /repo
+RUN apk add --no-cache libc6-compat
+
+# ใช้ lockfile จาก root + แจ้ง package.json ของแต่ละ workspace ล่วงหน้าเพื่อ cache
+COPY package.json package-lock.json ./
+COPY app/package.json app/package.json
+
+# ติดตั้งเฉพาะ workspace app
+RUN npm ci -w app --include-workspace-root=false
+
+# คัดลอกโค้ดทั้ง repo แล้ว build ที่โฟลเดอร์ app
+COPY . .
+WORKDIR /repo/app
+RUN npm run build
+
+# ===== run (prod) =====
+FROM node:22-alpine AS run
+WORKDIR /app
+RUN npm i -g serve
+# คัดลอกผล build เท่านั้น
+COPY --from=build /repo/app/dist ./dist
+USER node
+EXPOSE 5173
+CMD ["serve", "-s", "dist", "-l", "5173"]
+
 # ใช้ Node.js Alpine image ที่เบา
-FROM node:20-alpine
+FROM node:22-alpine AS dev
 
 # ตั้ง working directory ภายใน container
 WORKDIR /app
 
+RUN apk add --no-cache libc6-compat
 # คัดลอกไฟล์ package.json และ package-lock.json (หรือ yarn.lock) เพื่อ install dependencies
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY app/package.json app/package.json
 
+RUN npm ci -w app --include-workspace-root=false
 # ติดตั้ง dependencies ทั้งหมด
-RUN npm install
-
-# คัดลอกซอร์สทั้งหมดจากเครื่อง host ไปที่ container
 COPY . .
-
-# เปิดพอร์ตที่ Vite ใช้
+WORKDIR /app/app
 EXPOSE 5173
 
 # ตั้งค่า Vite ให้ฟังที่ IP 0.0.0.0 เพื่อให้สามารถเข้าถึงจากเครื่องอื่น
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["npm", "run", "dev", "--", "--host", "--port", "5173", "--strictPort"]

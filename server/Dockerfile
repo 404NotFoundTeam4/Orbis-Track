@@ -32,6 +32,7 @@ COPY --from=builder /app/dist ./dist
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma
 COPY server/docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
+RUN apk add --no-cache bash
 EXPOSE 4044
 CMD ["./docker-entrypoint.sh"]
 
@@ -49,7 +50,7 @@ RUN npm ci --workspaces --include-workspace-root
 
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma
 RUN npx prisma generate --schema $PRISMA_SCHEMA_PATH
-
+RUN apk add --no-cache bash
 COPY server/. .
 RUN chmod +x docker-entrypoint.sh
 EXPOSE 4044

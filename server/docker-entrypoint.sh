@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -euo pipefail
 
 # ---- config ----
 : "${PRISMA_SCHEMA_PATH:=./src/infrastructure/database/prisma/schema.prisma}"

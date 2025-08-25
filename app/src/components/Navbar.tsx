@@ -44,7 +44,7 @@ export const Navbar = () => {
             items={[
               { label: "TH - ไทย", value: "TH" },
               { label: "EN - English", value: "EN" },
-              { label: "JP - Japan", value: "JP" },
+            
             ]}
           />
         </div>

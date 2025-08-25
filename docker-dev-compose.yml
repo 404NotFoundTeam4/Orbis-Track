@@ -82,7 +82,7 @@ services:
       dockerfile: server/Dockerfile
       target: dev
     working_dir: /app/server
-    entrypoint: ["./docker-entrypoint.sh"]
+    entrypoint: ["/bin/sh","-lc","/bin/sh ./docker-entrypoint.sh"]
     environment:
       PORT: 4044
       NODE_ENV: development

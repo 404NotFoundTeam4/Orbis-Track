@@ -62,7 +62,7 @@ export const Navbar = () => {
             <div className="flex items-center w-full cursor-pointer menu-item gap-2 " onClick={toggleDropdown}>
               <FontAwesomeIcon icon={faServer} className="" />
               <span>การจัดการ</span>
-              <FontAwesomeIcon icon={faChevronUp} className={`ml-1 mt-1 transform transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`} />
+              <FontAwesomeIcon icon={faChevronUp} className={`ml-1 mt-1 transform transition-transform duration-300  rotate-180 ${isDropdownOpen ? "rotate-360" : ""}`} />
              
             </div>
             <ul className={`pl-4 overflow-hidden dropdown-menu ${isDropdownOpen ? "open" : ""}`}>

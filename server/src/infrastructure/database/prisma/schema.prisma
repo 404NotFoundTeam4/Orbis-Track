@@ -1,0 +1,571 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ---------- Enums ----------
+enum DEVICE_CHILD_STATUS {
+  AVAILABLE
+  BORROWED
+  LOST
+  UNDER_MAINTENANCE
+  BROKEN
+}
+
+enum TICKET_STATUS {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_USE
+  RETURNED_SUCCESS
+  DAMAGED
+  LOST
+}
+
+enum STAGE_STATUS {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ISSUE_STATUS {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  DAMAGED
+  CANCELLED
+}
+
+enum BASE_EVENT {
+  DEVICE_CREATED
+  TICKET_CREATED
+  TICKET_APPROVED
+  TICKET_REJECTED
+  TICKET_STAGE_PASSED
+  TICKET_RETURNED
+  TICKET_DUE_SOON
+  TICKET_OVERDUE
+  ISSUE_REPORTED
+  ISSUE_ASSIGNED
+  ISSUE_RESOLVED
+  ISSUE_MARK_DAMAGED
+}
+
+enum AUDIENCE_EVENT {
+  APPROVAL_REQUESTED
+  YOUR_TICKET_APPROVED
+  YOUR_TICKET_REJECTED
+  YOUR_TICKET_IN_USE
+  YOUR_TICKET_RETURNED
+  DUE_SOON_REMINDER
+  OVERDUE_ALERT
+  ISSUE_NEW_FOR_TECH
+  ISSUE_ASSIGNED_TO_YOU
+  ISSUE_RESOLVED_FOR_REPORTER
+}
+
+enum NOTIF_STATUS {
+  UNREAD
+  READ
+  DISMISSED
+}
+
+enum LBR_ACTION {
+  CREATED
+  UPDATED
+  APPROVED
+  REJECTED
+  RETURNED
+  MARK_DAMAGED
+  MARK_LOST
+}
+
+enum LAP_ACTION {
+  APPROVED
+  REJECTED
+}
+
+enum LI_ACTION {
+  REPORTED
+  ASSIGNED
+  UPDATED
+  RESOLVED
+  MARK_DAMAGED
+  CANCELLED
+}
+
+// ---------- Models ----------
+model departments {
+  dept_id    Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(100)
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
+
+  sections                    sections[]
+  users                       users[]
+  approval_flow_steps         approval_flow_steps[]
+  borrow_return_tickets_stage borrow_return_tickets_stage[]
+}
+
+model roles {
+  role_id    Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(50)
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
+
+  users                     users[]
+  chat                      chat[]
+  role_category_permissions role_category_permissions[]
+}
+
+model sections {
+  section_id Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(50)
+  dept_id    Int
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
+
+  department                  departments                   @relation(fields: [dept_id], references: [dept_id])
+  users                       users[]
+  devices                     devices[]
+  approval_flow_steps         approval_flow_steps[]
+  borrow_return_tickets_stage borrow_return_tickets_stage[]
+
+  @@index([dept_id], map: "idx_sections_dept")
+}
+
+model users {
+  user_id    Int       @id @default(autoincrement())
+  emp_code   String?   @db.VarChar(50)
+  firstname  String    @db.VarChar(120)
+  lastname   String    @db.VarChar(120)
+  username   String    @db.VarChar(120)
+  password   String    @db.VarChar(255)
+  email      String?   @db.VarChar(120)
+  phone      String?   @db.VarChar(20)
+  images     String? // text
+  role_id    Int
+  dept_id    Int?
+  sec_id     Int?
+  is_active  Boolean   @default(true)
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
+
+  role       roles        @relation(fields: [role_id], references: [role_id])
+  department departments? @relation(fields: [dept_id], references: [dept_id])
+  section    sections?    @relation(fields: [sec_id], references: [section_id])
+
+  devices_added          devices[]
+  tickets                borrow_return_tickets[]
+  ticket_stages          borrow_return_tickets_stage[]
+  issues_reported        ticket_issues[]               @relation("reported_by")
+  issues_assigned        ticket_issues[]               @relation("assigned_to")
+  notifications_received notification_recipients[]
+  logs_brt               log_borrow_return[]
+  logs_lap               log_approval[]
+  logs_issue             log_issue[]
+  ticket_chats           ticket_chats[]
+  chats                  chat[]
+  issue_attachments      issue_attachments[]
+  approval_flow          approval_flow[]
+
+  @@index([role_id], map: "idx_users_role")
+  @@index([dept_id, sec_id], map: "idx_users_dept_sec")
+  @@index([is_active], map: "idx_users_active")
+}
+
+model devices {
+  device_id       Int       @id @default(autoincrement())
+  serial_number   String    @unique @db.VarChar(150)
+  name            String    @db.VarChar(120)
+  location        String?   @db.VarChar(200)
+  max_borrow_days Int?
+  images          String?
+  categories_id   Int
+  device_type_id  Int?
+  user_id         Int?
+  sec_id          Int?
+  acc_id          Int? // FK -> accessories (one)
+  deleted_at      DateTime? @db.Timestamptz(6)
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+
+  category    categories   @relation(fields: [categories_id], references: [category_id])
+  device_type device_type? @relation(fields: [device_type_id], references: [device_type_id])
+  added_by    users?       @relation(fields: [user_id], references: [user_id])
+  section     sections?    @relation(fields: [sec_id], references: [section_id])
+  accessory   accessories? @relation(fields: [acc_id], references: [accessory_id])
+
+  children device_child[]
+  issues   ticket_issues[]
+
+  @@index([categories_id], map: "idx_devices_category")
+  @@index([device_type_id], map: "idx_devices_type")
+}
+
+model device_child {
+  device_child_id Int                 @id @default(autoincrement())
+  serial_number   String              @unique @db.VarChar(150)
+  device_id       Int
+  status          DEVICE_CHILD_STATUS
+  deleted_at      DateTime?           @db.Timestamptz(6)
+  created_at      DateTime?           @db.Timestamptz(6)
+  updated_at      DateTime?           @db.Timestamptz(6)
+
+  device         devices         @relation(fields: [device_id], references: [device_id])
+  ticket_devices ticket_device[]
+
+  @@index([device_id], map: "idx_child_device")
+  @@index([status], map: "idx_child_status")
+}
+
+model accessories {
+  accessory_id Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  amount       Int?
+  deleted_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime? @db.Timestamptz(6)
+  updated_at   DateTime? @db.Timestamptz(6)
+
+  devices devices[]
+}
+
+model device_type {
+  device_type_id Int       @id @default(autoincrement())
+  name           String    @db.VarChar(100)
+  deleted_at     DateTime? @db.Timestamptz(6)
+  created_at     DateTime? @db.Timestamptz(6)
+  updated_at     DateTime? @db.Timestamptz(6)
+
+  devices devices[]
+}
+
+model categories {
+  category_id Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  deleted_at  DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+
+  devices                   devices[]
+  role_category_permissions role_category_permissions[]
+}
+
+model approval_flow {
+  approval_flow_id Int       @id @default(autoincrement())
+  name             String    @db.VarChar(100)
+  user_id          Int?
+  deleted_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @db.Timestamptz(6)
+  updated_at       DateTime? @db.Timestamptz(6)
+
+  creator users?                  @relation(fields: [user_id], references: [user_id])
+  steps   approval_flow_steps[]
+  tickets borrow_return_tickets[]
+}
+
+model approval_flow_steps {
+  approval_flow_steps_id Int       @id @default(autoincrement())
+  name                   String    @db.VarChar(191)
+  step_approve           Int
+  approval_flow_id       Int
+  dept_id                Int?
+  sec_id                 Int?
+  deleted_at             DateTime? @db.Timestamptz(6)
+  created_at             DateTime? @db.Timestamptz(6)
+  updated_at             DateTime? @db.Timestamptz(6)
+
+  flow approval_flow @relation(fields: [approval_flow_id], references: [approval_flow_id])
+  dept departments?  @relation(fields: [dept_id], references: [dept_id])
+  sec  sections?     @relation(fields: [sec_id], references: [section_id])
+
+  @@index([approval_flow_id, step_approve], map: "idx_steps_flow_step")
+}
+
+model borrow_return_tickets {
+  brt_id           Int           @id @default(autoincrement())
+  status           TICKET_STATUS
+  usage_location   String        @db.VarChar(191)
+  borrow_purpose   String        @db.VarChar(191)
+  start_date       DateTime      @db.Timestamptz(6)
+  end_date         DateTime      @db.Timestamptz(6)
+  quantity         Int           @default(1)
+  reject_reason    String?       @db.VarChar(255)
+  pickup_location  String?       @db.VarChar(255)
+  pickup_datetime  DateTime      @db.Timestamptz(6)
+  return_location  String?       @db.VarChar(255)
+  return_datetime  DateTime      @db.Timestamptz(6)
+  approval_flow_id Int?
+  user_id          Int?
+  deleted_at       DateTime?     @db.Timestamptz(6)
+  created_at       DateTime?     @db.Timestamptz(6)
+  updated_at       DateTime?     @db.Timestamptz(6)
+
+  flow approval_flow? @relation(fields: [approval_flow_id], references: [approval_flow_id])
+  user users?         @relation(fields: [user_id], references: [user_id])
+
+  stages         borrow_return_tickets_stage[]
+  ticket_devices ticket_device[]
+  notifications  notifications[]
+  logs           log_borrow_return[]
+  ticket_issues  ticket_issues[]
+
+  @@index([user_id, status, created_at], map: "idx_brt_user_status_created")
+  @@index([approval_flow_id], map: "idx_brt_flow")
+  @@index([start_date, end_date], map: "idx_brt_start_end")
+}
+
+model borrow_return_tickets_stage {
+  brts_id      Int          @id @default(autoincrement())
+  status       STAGE_STATUS
+  name         String       @db.VarChar(191)
+  step_approve Int
+  dept_id      Int?
+  sec_id       Int?
+  brt_id       Int
+  user_id      Int?
+  deleted_at   DateTime?    @db.Timestamptz(6)
+  created_at   DateTime?    @db.Timestamptz(6)
+  updated_at   DateTime?    @db.Timestamptz(6)
+
+  brt      borrow_return_tickets @relation(fields: [brt_id], references: [brt_id])
+  dept     departments?          @relation(fields: [dept_id], references: [dept_id])
+  sec      sections?             @relation(fields: [sec_id], references: [section_id])
+  approver users?                @relation(fields: [user_id], references: [user_id])
+
+  notifications notifications[]
+  logs          log_approval[]
+
+  @@index([brt_id, step_approve], map: "idx_brts_brt_step")
+  @@index([status], map: "idx_brts_status")
+}
+
+model ticket_device {
+  ticket_device_id Int       @id @default(autoincrement())
+  brt_id           Int
+  device_child_id  Int
+  deleted_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @db.Timestamptz(6)
+  updated_at       DateTime? @db.Timestamptz(6)
+
+  brt   borrow_return_tickets @relation(fields: [brt_id], references: [brt_id])
+  child device_child          @relation(fields: [device_child_id], references: [device_child_id])
+
+  @@unique([brt_id, device_child_id], map: "uq_ticket_device")
+  @@index([brt_id], map: "idx_ticket_device_brt")
+  @@index([device_child_id], map: "idx_ticket_device_child")
+}
+
+model ticket_issues {
+  issue_id       Int          @id
+  device_id      Int
+  brt_id         Int?
+  title          String       @db.VarChar(200)
+  description    String?
+  contact_phone  String?      @db.VarChar(32)
+  reported_by    Int?
+  assigned_to    Int?
+  status         ISSUE_STATUS
+  damaged_reason String?      @db.VarChar(255)
+  resolved_note  String?
+  deleted_at     DateTime?    @db.Timestamptz(6)
+  created_at     DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime     @default(now()) @db.Timestamptz(6)
+
+  device   devices                @relation(fields: [device_id], references: [device_id])
+  brt      borrow_return_tickets? @relation(fields: [brt_id], references: [brt_id])
+  reporter users?                 @relation("reported_by", fields: [reported_by], references: [user_id])
+  assignee users?                 @relation("assigned_to", fields: [assigned_to], references: [user_id])
+
+  attachments   issue_attachments[]
+  notifications notifications[]
+  logs          log_issue[]
+
+  @@index([device_id, status, created_at], map: "idx_issue_device_status")
+  @@index([assigned_to, status], map: "idx_issue_assignee")
+}
+
+model issue_attachments {
+  attachment_id Int       @id
+  issue_id      Int
+  file_name     String    @db.VarChar(255)
+  file_url      String
+  file_type     String?   @db.VarChar(100)
+  uploaded_by   Int?
+  deleted_at    DateTime? @db.Timestamptz(6)
+  uploaded_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  issue ticket_issues @relation(fields: [issue_id], references: [issue_id])
+  user  users?        @relation(fields: [uploaded_by], references: [user_id])
+
+  @@index([issue_id], map: "idx_issue_attachments_issue")
+}
+
+model notifications {
+  notification_id Int        @id
+  title           String     @db.VarChar(200)
+  message         String
+  data            Json?      @db.JsonB
+  target_route    String?    @db.VarChar(255)
+  base_event      BASE_EVENT
+  created_at      DateTime   @default(now()) @db.Timestamptz(6)
+  send_at         DateTime?  @db.Timestamptz(6)
+  brt_id          Int?
+  brts_id         Int?
+  issue_id        Int?
+
+  brt   borrow_return_tickets?       @relation(fields: [brt_id], references: [brt_id])
+  brts  borrow_return_tickets_stage? @relation(fields: [brts_id], references: [brts_id])
+  issue ticket_issues?               @relation(fields: [issue_id], references: [issue_id])
+
+  recipients notification_recipients[]
+
+  @@index([created_at], map: "idx_notif_created")
+  @@index([brt_id], map: "idx_notif_brt")
+  @@index([brts_id], map: "idx_notif_brts")
+  @@index([issue_id], map: "idx_notif_issue")
+}
+
+model notification_recipients {
+  nt_id           Int            @id @default(autoincrement())
+  notification_id Int
+  user_id         Int
+  status          NOTIF_STATUS
+  event           AUDIENCE_EVENT
+  read_at         DateTime?      @db.Timestamptz(6)
+  dismissed_at    DateTime?      @db.Timestamptz(6)
+
+  notification notifications @relation(fields: [notification_id], references: [notification_id])
+  user         users         @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id, status, nt_id], map: "idx_notifrec_user_status")
+}
+
+model log_borrow_return {
+  lbr_id     Int        @id
+  brt_id     Int
+  action     LBR_ACTION
+  old_status String?    @db.VarChar(50)
+  new_status String?    @db.VarChar(50)
+  note       String?
+  actor_id   Int?
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+
+  brt   borrow_return_tickets @relation(fields: [brt_id], references: [brt_id])
+  actor users?                @relation(fields: [actor_id], references: [user_id])
+
+  @@index([brt_id, created_at], map: "idx_log_brt")
+}
+
+model log_approval {
+  lap_id     Int        @id
+  brts_id    Int
+  action     LAP_ACTION
+  note       String?
+  actor_id   Int?
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+
+  stage borrow_return_tickets_stage @relation(fields: [brts_id], references: [brts_id])
+  actor users?                      @relation(fields: [actor_id], references: [user_id])
+
+  @@index([brts_id, created_at], map: "idx_log_approval")
+}
+
+model log_issue {
+  li_id      Int       @id
+  issue_id   Int
+  action     LI_ACTION
+  old_status String?   @db.VarChar(50)
+  new_status String?   @db.VarChar(50)
+  note       String?
+  actor_id   Int?
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+
+  issue ticket_issues @relation(fields: [issue_id], references: [issue_id])
+  actor users?        @relation(fields: [actor_id], references: [user_id])
+
+  @@index([issue_id, created_at], map: "idx_log_issue")
+}
+
+model role_category_permissions {
+  // ไม่มี PK ที่ชัด ให้ทำ composite PK จะดีที่สุด
+  role_id     Int
+  category_id Int
+  can_ask     Boolean?
+
+  role     roles      @relation(fields: [role_id], references: [role_id])
+  category categories @relation(fields: [category_id], references: [category_id])
+
+  @@id([role_id, category_id])
+}
+
+model ticket_chats {
+  tc_id   Int @id @default(autoincrement())
+  user_id Int
+
+  user users @relation(fields: [user_id], references: [user_id])
+
+  chats chat[]
+}
+
+model chat {
+  chat_id    Int       @id @default(autoincrement())
+  user_id    Int?
+  tc_id      Int
+  started_at DateTime? @db.Timestamptz(6)
+  ended_at   DateTime? @db.Timestamptz(6)
+  role_id    Int?
+
+  user users?       @relation(fields: [user_id], references: [user_id])
+  tc   ticket_chats @relation(fields: [tc_id], references: [tc_id])
+  role roles?       @relation(fields: [role_id], references: [role_id])
+
+  data_chats   data_chat[]
+  ragResponses rag_responses[]
+
+  @@index([user_id, started_at], map: "idx_chat_user")
+}
+
+model data_chat {
+  data_id Int  @id @default(autoincrement())
+  chat_id Int
+  data    Json @db.JsonB
+
+  chat chat @relation(fields: [chat_id], references: [chat_id])
+
+  @@index([chat_id], map: "idx_data_chat_chat_id")
+}
+
+model rag_responses {
+  response_id        Int                   @id @default(autoincrement())
+  chat_id            Int
+  question_text      String?
+  response_text      String?
+  question_vector    Unsupported("vector") // vector(768) pgvector
+  response_vector    Unsupported("vector") // vector(768)
+  model_used         String?               @db.VarChar(100)
+  response_timestamp DateTime              @default(now()) @db.Timestamptz(6)
+  confidence_score   Float?
+
+  chat chat @relation(fields: [chat_id], references: [chat_id])
+  // หมายเหตุ: ดัชนีเวกเตอร์ให้สร้างด้วย SQL:
+  //   CREATE INDEX idx_rag_qvec_ivf ON rag_responses USING ivfflat (question_vector vector_l2_ops) WITH (lists = 100);
+  //   CREATE INDEX idx_rag_rvec_ivf ON rag_responses USING ivfflat (response_vector vector_l2_ops) WITH (lists = 100);
+
+  @@index([chat_id, response_timestamp], map: "idx_rag_chat_time")
+}

@@ -89,7 +89,17 @@
 npm i
 ```
 
-### 2) รันด้วย Docker (ไฟล์ dev compose)
+### 2) ติดตั้ง dependency (เพื่อให้มี lockfile และ workspace พร้อม)
+```bash
+สร้าง .env ใน root directory
+```
+
+### 3) ติดตั้ง dependency (เพื่อให้มี lockfile และ workspace พร้อม)
+```bash
+สร้าง .env ใน folder server
+```
+
+### 4) รันด้วย Docker (ไฟล์ dev compose)
 ```bash
 docker compose -f docker-dev-compose.yml up --build
 ```
@@ -99,7 +109,7 @@ docker compose -f docker-dev-compose.yml up --build
 - Database Port: 4045
 - SonarQube: http://localhost:9000  (ครั้งแรก login `admin` / `admin` แล้วระบบจะบังคับให้เปลี่ยนรหัสผ่าน)
 
-### 3) หยุดระบบ
+### 5) หยุดระบบ
 ```bash
 docker compose -f docker-dev-compose.yml down
 ```

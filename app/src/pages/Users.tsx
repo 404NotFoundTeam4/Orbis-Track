@@ -1,6 +1,10 @@
+import AvatarLogin from "../components/AvatarLogin";
+
+
 export const Users = () => {
   return (
     <>
+      <AvatarLogin/>
       <div>
         <span>การจัดการ &gt;</span>
         <span>บัญชีผู้ใช้</span>

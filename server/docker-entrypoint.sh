@@ -1,6 +1,5 @@
 #!/bin/sh
-set -euo pipefail
-
+(set -o pipefail) 2>/dev/null && set -euo pipefail || set -e
 # ---- config ----
 : "${PRISMA_SCHEMA_PATH:=./src/infrastructure/database/prisma/schema.prisma}"
 : "${NODE_ENV:=development}"

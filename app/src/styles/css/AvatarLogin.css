@@ -1,0 +1,48 @@
+    .denso {
+      position: relative;
+      display: inline-block;
+    }
+
+    .character {
+      width: 146px;
+      height: 142px;
+      background: linear-gradient(to bottom, #ffffff, #b3e6fa);
+      clip-path: path("M 98 14 C 102 11, 148 -40, 145.5 82.1 M 0.5 71, C -7 165, 145 162, 145.5 82, M 0.5 71 ,C 11 -7, 150 -15 ,145.6 82 Z");
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .eye {
+      position: absolute;
+      width: 47.5px;
+      height: 56.8px;
+      background: white;
+      border-radius: 50%;
+      border: 1px solid #b3e6fa;
+      display: flex;
+      justify-content: left;
+      align-items: center;
+    }
+
+    .eye.left { margin-right: 40px; }
+    .eye.right { margin-left: 40px; }
+
+    .pupil {
+      margin-top: 10px;
+      width: 27px;
+      height: 27px;
+      background: gray;
+      border-radius: 50%;
+    }
+    .pupil.left { margin-left: 0.8px; }
+    .pupil.right { margin-left: 4px; }
+
+    /* ปาก */
+    .smile {
+      position: absolute;
+  bottom: -25px;        /* ขยับขึ้นลง */
+  left: 65%;           /* กึ่งกลางแนวนอน */
+  transform: translateX(-50%); /* ดึงให้ปากอยู่ตรงกลางจริง ๆ */
+    }

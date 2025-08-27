@@ -17,15 +17,8 @@ export function Login() {
 
   return (
     <div className="relative w-screen h-screen bg-white overflow-hidden">
- <AvatarLogin/>
- <AvatarLogin/>
- <AvatarLogin/>
-  <AvatarLogin/>
- <AvatarLogin/>
- <AvatarLogin/>
-  <AvatarLogin/>
- <AvatarLogin/>
- <AvatarLogin/>
+ <AvatarLogin count={5} />
+
 <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-400/40 rounded-full blur-[100px]"></div>
   <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-blue-400/40 rounded-full blur-[100px]"></div>
   

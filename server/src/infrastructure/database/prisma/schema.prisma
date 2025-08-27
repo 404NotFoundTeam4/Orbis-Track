@@ -133,7 +133,7 @@ model roles {
 
 model sections {
   section_id Int       @id @default(autoincrement())
-  name       String    @unique @db.VarChar(50)
+  name       String
   dept_id    Int
   deleted_at DateTime? @db.Timestamptz(6)
   created_at DateTime? @db.Timestamptz(6)

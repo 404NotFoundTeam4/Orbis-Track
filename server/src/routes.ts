@@ -6,6 +6,8 @@ import userRouter from "./modules/user/index.js";
 export function routes(app: Express) {
     const api = Router();
 
+    api.get("/", (_req, res) => res.json({ status: 'ok', message: 'Hello World' }));
+
     api.get("/health", (_req, res) => res.json({ ok: true }));
 
     api.use("/users", userRouter);

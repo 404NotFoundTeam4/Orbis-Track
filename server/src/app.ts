@@ -10,6 +10,7 @@ import { routes } from "./routes.js";
 import { swagger } from "./docs/swagger.js";
 import { env } from "./config/env.js";
 import { logger } from "./infrastructure/logger.js";
+import { globalErrorHanlder } from "./middlewares/global-error-handler.js";
 
 export function App(): Express {
     const app = express();
@@ -24,7 +25,7 @@ export function App(): Express {
     app.use(cookieParser());
 
     app.use(
-        "/api",
+        "/api/v1",
         rateLimit({
             windowMs: 60_000, // 1 นาที
             max: 300,
@@ -32,7 +33,7 @@ export function App(): Express {
             legacyHeaders: false,
         })
     );
-
+    app.use(globalErrorHanlder);
     routes(app);
     swagger(app, baseUrl);
 

@@ -15,9 +15,10 @@
     "build": "npm run build -ws",
     "dev:app": "npm run dev -w app",
     "dev:server": "npm run dev -w server",
-    "migrate:deploy": "prisma migrate deploy",
-    "migrate:dev": "prisma migrate dev --name init",
-    "generate": "prisma generate"
+    "migrate:deploy": "prisma migrate deploy --schema ./server/src/infrastructure/database/prisma/schema.prisma",
+    "migrate:dev": "prisma migrate dev --schema ./server/src/infrastructure/database/prisma/schema.prisma",
+    "generate": "prisma generate --schema ./server/src/infrastructure/database/prisma/schema.prisma",
+    "db:seed": "tsx ./server/src/infrastructure/database/prisma/seed.ts"
   },
   "repository": {
     "type": "git",

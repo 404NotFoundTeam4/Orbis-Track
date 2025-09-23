@@ -27,6 +27,8 @@ const Env = z.object({
             return s || DEFAULT_REDIS_URL;
         })
         .refine(v => v.startsWith("redis://"), { message: "Must start with redis://" }),
+    JWT_SECRET: z.string().min(8),
+    JWT_EXPIRES_IN: z.string().default("24h"),
 });
 
 export type EnvType = z.infer<typeof Env>;

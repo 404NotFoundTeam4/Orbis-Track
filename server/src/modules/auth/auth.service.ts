@@ -24,7 +24,7 @@ async function checkLogin(payload: LoginPayload) {
         },
     });
 
-    if (!result) {
+    if (!result || !result.is_active) {
         throw new ValidationError("Invalid username or password");
     }
 

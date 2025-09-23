@@ -12,6 +12,6 @@ export class AuthController extends BaseController {
     async login(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<TokenDto>> {
         const payload = loginPayload.parse(req.body);
         const result = await authService.checkLogin(payload);
-        return { data: { token: result } };
+        return { message: "Login successful", data: { token: result } };
     }
 }

@@ -1,8 +1,9 @@
 import { ValidationError } from '../../errors/errors.js';
 import { prisma } from '../../infrastructure/database/client.js';
-import { signToken } from '../../utils/jwt.js';
+import { signToken, verifyToken } from '../../utils/jwt.js';
 import { verifyPassword } from '../../utils/password.js';
-import type { LoginPayload } from './auth.schema.js';
+import type { AccessTokenPayload, LoginPayload } from './auth.schema.js';
+import { blacklistToken } from './token-blacklist.service.js';
 
 async function checkLogin(payload: LoginPayload) {
     // login logic here
@@ -46,5 +47,19 @@ async function checkLogin(payload: LoginPayload) {
     return token;
 }
 
+async function logout(token: string) {
+    try {
+        const decoded = verifyToken(token) as AccessTokenPayload;
+        const exp = decoded.exp as number;
 
-export const authService = { checkLogin };
+        const ttl = exp - Math.floor(Date.now() / 1000);
+        if (ttl > 0) {
+            await blacklistToken(token, ttl);
+        }
+    } catch {
+        // ถ้า token invalid ก็ไม่ต้องทำอะไร
+    }
+}
+
+
+export const authService = { checkLogin, logout };

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Request } from "express";
 
 export const loginPayload = z.object({
     username: z.string().min(1),
@@ -12,11 +13,17 @@ export const accessTokenPayload = z.object({
     dept_id: z.coerce.number().int().positive().nullable().optional(),
     sec_id: z.coerce.number().int().positive().nullable().optional(),
     is_active: z.boolean().default(true),
+    iat: z.number().optional(),
+    exp: z.number().optional(),
 }).strict();
 
 export const tokenDto = z.object({
-    token: z.string().min(1),
+    accessToken: z.string().min(1),
 }).strict();
+
+export interface AuthRequest extends Request {
+    user?: AccessTokenPayload;
+}
 
 export type TokenDto = z.infer<typeof tokenDto>;
 export type LoginPayload = z.infer<typeof loginPayload>;

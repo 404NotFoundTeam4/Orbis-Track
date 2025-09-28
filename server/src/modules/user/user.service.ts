@@ -20,7 +20,7 @@ async function getUserById(id: number) {
         },
     });
 }
-
+// await argon2.hash(data.password);
 async function createUser(data: {
     emp_code?: string;
     firstname: string;
@@ -58,4 +58,3 @@ async function createUser(data: {
 }
 
 export const userService = { getUserById, createUser };
-export { getUserById, createUser };

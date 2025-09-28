@@ -33,20 +33,20 @@ if [ ! -f "$PRISMA_SCHEMA_PATH" ]; then
 fi
 
 # ติดตั้ง dev deps ถ้ายังไม่มี (กรณีถูกทับด้วย volume)
-ensure_dev_deps() {
-if ! command -v nodemon >/dev/null 2>&1; then
-  if [ -f ../package-lock.json ]; then
-    echo "📦 npm ci (workspaces at repo root)..."
-    (cd .. && npm ci --workspaces --include-workspace-root)
-  elif [ -f package-lock.json ]; then
-    echo "📦 npm ci (local)..."
-    npm ci
-  else
-    echo "📦 package-lock.json ไม่เจอ → ใช้ npm i แทน"
-    npm i
-  fi
-fi
-}
+# ensure_dev_deps() {
+# if ! command -v nodemon >/dev/null 2>&1; then
+#   if [ -f ../package-lock.json ]; then
+#     echo "📦 npm ci (workspaces at repo root)..."
+#     (cd .. && npm ci --workspaces --include-workspace-root)
+#   elif [ -f package-lock.json ]; then
+#     echo "📦 npm ci (local)..."
+#     npm ci
+#   else
+#     echo "📦 package-lock.json ไม่เจอ → ใช้ npm i แทน"
+#     npm i
+#   fi
+# fi
+# }
 
 # ---- wait for DB (ลองเชื่อมต่อด้วย prisma; ลูปจนกว่าจะได้) ----
 wait_for_db() {
@@ -166,7 +166,7 @@ psql_admin() {
 }
 
 # ---- run ----
-ensure_dev_deps
+# ensure_dev_deps
 wait_for_db
 ensure_shadow_db
 ensure_pgvector

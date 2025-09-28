@@ -153,7 +153,7 @@ model users {
   emp_code   String?   @db.VarChar(50)
   firstname  String    @db.VarChar(120)
   lastname   String    @db.VarChar(120)
-  username   String    @db.VarChar(120)
+  username   String    @db.VarChar(120) @unique
   password   String    @db.VarChar(255)
   email      String?   @db.VarChar(120)
   phone      String?   @db.VarChar(20)

@@ -8,10 +8,10 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Asia/Bangkok
     ports:
-      - "4042:5432"   # เปิดถ้าต้องเข้า psql จากข้างนอก, ไม่จำเป็นก็เอาออกได้
+      - "4042:5432" # เปิดถ้าต้องเข้า psql จากข้างนอก, ไม่จำเป็นก็เอาออกได้
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./docker/db-init:/docker-entrypoint-initdb.d:ro   # มีสคริปต์ init/extension อยู่แล้ว
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro # มีสคริปต์ init/extension อยู่แล้ว
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -27,6 +27,8 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-404Redis}
       REDIS_URL: ${REDIS_URL:-redis://default:${REDIS_PASSWORD:-404Redis}@redis:6379}
+    ports:
+      - "4046:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -44,12 +46,13 @@ services:
       target: prod
     environment:
       NODE_ENV: production
-      PORT: ${PORT}
-            # DB (อย่าใช้ localhost ใช้ชื่อ service)
+      PORT:
+        ${PORT}
+        # DB (อย่าใช้ localhost ใช้ชื่อ service)
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
-      DB_HOST: ${DB_HOST}  
+      DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DATABASE_URL: ${DATABASE_URL}
 
@@ -60,10 +63,10 @@ services:
       REDIS_URL: redis://default:${REDIS_PASSWORD:-404Redis}@${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
 
       PRISMA_SCHEMA_PATH: ./src/infrastructure/database/prisma/schema.prisma
-      PRISMA_GENERATE: "false"           # generate ตอน build แล้ว
-      RUN_MIGRATIONS: "true"             # ให้ entrypoint รัน Prisma
-      PRISMA_STRATEGY: migrate-deploy     # ใช้ migrations แบบ production
-      START_CMD: "node dist/main.js"      # รันไฟล์ build แล้ว
+      PRISMA_GENERATE: "false" # generate ตอน build แล้ว
+      RUN_MIGRATIONS: "true" # ให้ entrypoint รัน Prisma
+      PRISMA_STRATEGY: migrate-deploy # ใช้ migrations แบบ production
+      START_CMD: "node dist/main.js" # รันไฟล์ build แล้ว
     depends_on:
       db:
         condition: service_healthy
@@ -73,12 +76,11 @@ services:
       - "4041:4044"
     restart: unless-stopped
 
-
   app:
     build:
       context: .
       dockerfile: app/dockerfile
-      target: run                 # ← ใช้ stage run จาก app/dockerfile (serve dist)
+      target: run # ← ใช้ stage run จาก app/dockerfile (serve dist)
       # ถ้าต้องการ bake ค่า API ตอน build (แนะนำ):
       # args:
       #   - VITE_API_BASE=https://api.yourdomain.com   # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy

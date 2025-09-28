@@ -9,109 +9,54 @@ const prisma = new PrismaClient();
 
 async function main() {
     console.log("🌱 Seeding start");
-    // ใช้ upsert เพราะอยากให้รันซ้ำได้ ถ้ามีก็ข้าม/อัปเดต ถ้าไม่มีค่อยสร้าง
-    // ---- SEED ROLES ----
-    await prisma.roles.upsert({
-        where: { role_id: 1 },
+
+    // ---- DEPARTMENTS ----
+    const media = await prisma.departments.upsert({
+        where: { dept_name: "แผนก Media" },
         update: {},
-        create: { name: "Admin" },
+        create: { dept_name: "แผนก Media" },
+    });
+    const marketing = await prisma.departments.upsert({
+        where: { dept_name: "แผนกการตลาด" },
+        update: {},
+        create: { dept_name: "แผนกการตลาด" },
+    });
+    const it = await prisma.departments.upsert({
+        where: { dept_name: "แผนกไอที" },
+        update: {},
+        create: { dept_name: "แผนกไอที" },
+    });
+    const finance = await prisma.departments.upsert({
+        where: { dept_name: "แผนกการเงิน" },
+        update: {},
+        create: { dept_name: "แผนกการเงิน" },
     });
 
-    await prisma.roles.upsert({
-        where: { role_id: 2 },
-        update: {},
-        create: { name: "Head Dept" },
-    });
+    // ---- SECTIONS: "แผนกการเงินฝ่ายย่อย A" เป็นต้น (sec_name ต้อง unique) ----
+    const makeSec = async (deptId: number, deptName: string) => {
+        for (const letter of ["A", "B", "C", "D"]) {
+            const secName = `${deptName}ฝ่ายย่อย ${letter}`;
+            await prisma.sections.upsert({
+                where: { sec_name: secName },
+                update: { sec_dept_id: deptId },
+                create: { sec_name: secName, sec_dept_id: deptId },
+            });
+        }
+    };
 
-    await prisma.roles.upsert({
-        where: { role_id: 3 },
-        update: {},
-        create: { name: "Head Sec" },
-    });
-
-    await prisma.roles.upsert({
-        where: { role_id: 4 },
-        update: {},
-        create: { name: "Staff" },
-    });
-
-    await prisma.roles.upsert({
-        where: { role_id: 5 },
-        update: {},
-        create: { name: "Technical" },
-    });
-
-    await prisma.roles.upsert({
-        where: { role_id: 6 },
-        update: {},
-        create: { name: "User" },
-    });
-
-    // ---- SEED DEPARTMENTS ----
-    await prisma.departments.upsert({
-        where: { dept_id: 1 },
-        update: {},
-        create: { name: "แผนก Media" },
-    });
-
-    await prisma.departments.upsert({
-        where: { dept_id: 2 },
-        update: {},
-        create: { name: "แผนกการตลาด" },
-    });
-
-    await prisma.departments.upsert({
-        where: { dept_id: 3 },
-        update: {},
-        create: { name: "แผนกไอที" },
-    });
-
-    await prisma.departments.upsert({
-        where: { dept_id: 4 },
-        update: {},
-        create: { name: "แผนกการเงิน" },
-    });
-
-    // ---- SEED SECTIONS (A–D) ----
-    const sections = [
-        { section_id: 1, name: "A", dept_id: 1 },
-        { section_id: 2, name: "B", dept_id: 1 },
-        { section_id: 3, name: "C", dept_id: 1 },
-        { section_id: 4, name: "D", dept_id: 1 },
-
-        { section_id: 5, name: "A", dept_id: 2 },
-        { section_id: 6, name: "B", dept_id: 2 },
-        { section_id: 7, name: "C", dept_id: 2 },
-        { section_id: 8, name: "D", dept_id: 2 },
-
-        { section_id: 9, name: "A", dept_id: 3 },
-        { section_id: 10, name: "B", dept_id: 3 },
-        { section_id: 11, name: "C", dept_id: 3 },
-        { section_id: 12, name: "D", dept_id: 3 },
-
-        { section_id: 13, name: "A", dept_id: 4 },
-        { section_id: 14, name: "B", dept_id: 4 },
-        { section_id: 15, name: "C", dept_id: 4 },
-        { section_id: 16, name: "D", dept_id: 4 },
-    ];
-
-    for (const sec of sections) {
-        await prisma.sections.upsert({
-            where: { section_id: sec.section_id },
-            update: { name: sec.name, dept_id: sec.dept_id },
-            create: sec,
-        });
-    }
+    await makeSec(media.dept_id, media.dept_name);
+    await makeSec(marketing.dept_id, marketing.dept_name);
+    await makeSec(it.dept_id, it.dept_name);
+    await makeSec(finance.dept_id, finance.dept_name);
 
     console.log("✅ Seed completed");
 }
 
-// สั่งรัน main() พร้อมจับ error/ปิด connection
 main()
     .catch((e) => {
         console.error("❌ Seed failed:", e);
-        process.exit(1); // แจ้ง exit code 1 เผื่อ CI/CD จะได้รู้ว่าพัง
+        process.exit(1);
     })
     .finally(async () => {
-        await prisma.$disconnect(); // ปิด connection กันค้าง
+        await prisma.$disconnect();
     });

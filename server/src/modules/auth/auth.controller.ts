@@ -6,23 +6,44 @@ import { BaseResponse } from "../../core/base.response.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
 
+/**
+ * Description: คอนโทรลเลอร์ Auth ดูแล login/logout ให้ตอบแบบ BaseResponse ตามมาตรฐานโปรเจกต์
+ * Input : req/res/next ของ Express
+ * Output : login -> BaseResponse<TokenDto>, logout -> BaseResponse<void>
+ * Author : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export class AuthController extends BaseController {
     constructor() {
         super()
     }
 
+    /**
+     * Description: รับ body ตาม schema แล้วเช็กล็อกอิน ถ้าถูกก็ส่ง accessToken กลับ
+     * Input : req.body ที่ผ่าน zod (loginPayload)
+     * Output : { message: "Login successful", data: { accessToken } }
+     * Author : Pakkapon Chomchoey (Tonnam) 66160080
+     */
     async login(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<TokenDto>> {
+        // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = loginPayload.parse(req.body);
         const result = await authService.checkLogin(payload);
         return { message: "Login successful", data: { accessToken: result } };
     }
 
+    /**
+     * Description: เอา Bearer token มา logout (ใส่ blacklist) แล้วตอบสำเร็จ
+     * Input : Authorization: Bearer <token>
+     * Output : { message: "Logout successful" }
+     * Author : Pakkapon Chomchoey (Tonnam) 66160080
+     */
     async logout(req: Request, res: Response, next: NextFunction) {
+        // ต้องมี Authorization: Bearer <token> มา ไม่งั้นไม่รับ
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith("Bearer ")) {
             throw new HttpError(HttpStatus.BAD_REQUEST, 'Missing token')
         }
 
+        // แกะเอา token แล้วไปทำ blacklist/revoke ใน service
         const token = authHeader.slice(7).trim();
         await authService.logout(token);
 

@@ -5,13 +5,20 @@ import { verifyPassword } from '../../utils/password.js';
 import type { AccessTokenPayload, LoginPayload } from './auth.schema.js';
 import { blacklistToken } from './token-blacklist.service.js';
 
+/**
+ * Description: ตรวจ login จาก DB แล้วออก JWT
+ * Input : LoginPayload { username, passwords }
+ * Output : string (access token)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function checkLogin(payload: LoginPayload) {
-    // login logic here
+    // quick guard: ช่องว่าง/ไม่กรอกมา
     const { username, passwords } = payload;
     if (!username || !passwords) {
         throw new ValidationError("Missing required fields");
     }
 
+    // หา user แบบเลือกเฉพาะฟิลด์ที่ต้องใช้
     const result = await prisma.users.findUnique({
         where: { username: username },
         select: {
@@ -29,12 +36,13 @@ async function checkLogin(payload: LoginPayload) {
         throw new ValidationError("Invalid username or password");
     }
 
+    // verify รหัสผ่านกับ hash ใน DB
     const isPasswordCorrect = await verifyPassword(result.password, passwords)
-
     if (!isPasswordCorrect) {
         throw new ValidationError("Invalid password");
     }
 
+    // ออก token พร้อม payload ที่ต้องใช้ต่อฝั่ง server
     const token = signToken({
         sub: result.user_id,
         username: result.username,
@@ -47,8 +55,15 @@ async function checkLogin(payload: LoginPayload) {
     return token;
 }
 
+/**
+ * Description: logout แบบใส่ token ลง blacklist ตามเวลาเหลือ (TTL)
+ * Input : token: string
+ * Output : void
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function logout(token: string) {
     try {
+        // แกะ exp จาก token เพื่อคำนวณ TTL
         const decoded = verifyToken(token) as AccessTokenPayload;
         const exp = decoded.exp as number;
 
@@ -60,6 +75,5 @@ async function logout(token: string) {
         // ถ้า token invalid ก็ไม่ต้องทำอะไร
     }
 }
-
 
 export const authService = { checkLogin, logout };

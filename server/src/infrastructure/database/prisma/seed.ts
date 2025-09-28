@@ -1,9 +1,15 @@
-// prisma/seed.ts
+/**
+ * Description: สคริปต์ seed ข้อมูลตั้งต้นให้ DB ด้วย Prisma
+ * Input : ใช้ DATABASE_URL จาก .env / environment
+ * Output : ข้อมูลพื้นฐานถูกอัปเซิร์ต (upsert) แบบรันซ้ำได้ไม่พัง
+ * Author : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
     console.log("🌱 Seeding start");
+    // ใช้ upsert เพราะอยากให้รันซ้ำได้ ถ้ามีก็ข้าม/อัปเดต ถ้าไม่มีค่อยสร้าง
     // ---- SEED ROLES ----
     await prisma.roles.upsert({
         where: { role_id: 1 },
@@ -14,19 +20,31 @@ async function main() {
     await prisma.roles.upsert({
         where: { role_id: 2 },
         update: {},
-        create: { name: "User" },
+        create: { name: "Head Dept" },
     });
 
     await prisma.roles.upsert({
         where: { role_id: 3 },
         update: {},
-        create: { name: "Staff" },
+        create: { name: "Head Sec" },
     });
 
     await prisma.roles.upsert({
         where: { role_id: 4 },
         update: {},
-        create: { name: "Manager" },
+        create: { name: "Staff" },
+    });
+
+    await prisma.roles.upsert({
+        where: { role_id: 5 },
+        update: {},
+        create: { name: "Technical" },
+    });
+
+    await prisma.roles.upsert({
+        where: { role_id: 6 },
+        update: {},
+        create: { name: "User" },
     });
 
     // ---- SEED DEPARTMENTS ----
@@ -88,11 +106,12 @@ async function main() {
     console.log("✅ Seed completed");
 }
 
+// สั่งรัน main() พร้อมจับ error/ปิด connection
 main()
     .catch((e) => {
         console.error("❌ Seed failed:", e);
-        process.exit(1);
+        process.exit(1); // แจ้ง exit code 1 เผื่อ CI/CD จะได้รู้ว่าพัง
     })
     .finally(async () => {
-        await prisma.$disconnect();
+        await prisma.$disconnect(); // ปิด connection กันค้าง
     });

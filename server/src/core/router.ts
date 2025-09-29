@@ -10,6 +10,7 @@ import { BaseResponse } from './base.response.js';
 import { MaybePromise } from '../types/types.js';
 import { z, type ZodTypeAny } from "zod";
 import { registry } from "../docs/swagger.js";
+import { PaginatedResult } from './paginated-result.interface.js';
 
 export type RequestHandler = (req: Request, res: Response, next: NextFunction) => MaybePromise<BaseResponse>;
 type Doc = {
@@ -68,9 +69,22 @@ export class Router {
     private preRequest(handler: RequestHandler) {
         const invokeHandler = async (req: Request, res: Response, next: NextFunction) => {
             const result = await handler(req, res, next);
+            if (result && (result as PaginatedResult<any>).paginated) {
+                const { data, total, page, limit, message } = result as PaginatedResult<any>;
+                return res.json({
+                    status: 200,
+                    message: message ?? "Request successful",
+                    totalNum: total,
+                    maxPage: Math.ceil(total / limit),
+                    currentPage: page,
+                    data,
+                });
+            }
+
             return res.send({
                 success: true,
-                message: 'Request successful',
+                // message: 'Request successful',
+                message: result?.message ?? "Request successful",
                 ...result,
             } satisfies BaseResponse);
         }

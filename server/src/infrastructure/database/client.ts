@@ -27,10 +27,6 @@ export const prisma =
 // ใน dev ให้เก็บอินสแตนซ์ไว้บน global + ติด event ฟัง query เพื่อดีบักสบาย ๆ
 if (process.env.NODE_ENV !== "production") {
     globalThis.__prisma__ = prisma;
-
-    prisma.$on("query", (e: any) => {
-        logger.debug({ ms: e.duration, target: e.target }, e.query);
-    });
 }
 
 // ปิด connection ให้เรียบร้อยตอนโปรเซสถูก kill (กัน connection ค้างใน pool)

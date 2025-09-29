@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Request } from "express";
+import { UserRole } from "../../core/roles.enum.js";
 
 // Author: Pakkapon Chomchoey (Tonnam) 66160080
 
@@ -13,7 +14,7 @@ export const loginPayload = z.object({
 export const accessTokenPayload = z.object({
     sub: z.coerce.number().int().positive(), // user_id
     username: z.string().min(1),
-    role_id: z.coerce.number().int().positive(),
+    role: z.enum(Object.values(UserRole) as [string, ...string[]]),
     dept_id: z.coerce.number().int().positive().nullable().optional(),
     sec_id: z.coerce.number().int().positive().nullable().optional(),
     is_active: z.boolean().default(true),

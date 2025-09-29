@@ -18,7 +18,7 @@ export function requireRole(roles: UserRole[]) {
         }
 
         // มี user แล้ว แต่ role ไม่อยู่ในรายการที่อนุญาต ก็ห้ามเข้า
-        if (!roles.includes(req.user.role_id)) {
+        if (!roles.includes(req.user.role as UserRole)) {
             throw new HttpError(HttpStatus.FORBIDDEN, "Forbidden");
         }
 

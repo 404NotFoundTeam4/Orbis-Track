@@ -20,36 +20,36 @@ async function checkLogin(payload: LoginPayload) {
 
     // หา user แบบเลือกเฉพาะฟิลด์ที่ต้องใช้
     const result = await prisma.users.findUnique({
-        where: { username: username },
+        where: { us_username: username },
         select: {
-            user_id: true,
-            username: true,
-            password: true,
-            role_id: true,
-            dept_id: true,
-            sec_id: true,
-            is_active: true,
+            us_id: true,
+            us_username: true,
+            us_password: true,
+            us_role: true,
+            us_dept_id: true,
+            us_sec_id: true,
+            us_is_active: true,
         },
     });
 
-    if (!result || !result.is_active) {
+    if (!result || !result.us_is_active) {
         throw new ValidationError("Invalid username or password");
     }
 
     // verify รหัสผ่านกับ hash ใน DB
-    const isPasswordCorrect = await verifyPassword(result.password, passwords)
+    const isPasswordCorrect = await verifyPassword(result.us_password, passwords)
     if (!isPasswordCorrect) {
         throw new ValidationError("Invalid password");
     }
 
     // ออก token พร้อม payload ที่ต้องใช้ต่อฝั่ง server
     const token = signToken({
-        sub: result.user_id,
-        username: result.username,
-        role_id: result.role_id,
-        dept_id: result.dept_id,
-        sec_id: result.sec_id,
-        is_active: result.is_active,
+        sub: result.us_id,
+        username: result.us_username,
+        role: result.us_role,
+        dept_id: result.us_dept_id,
+        sec_id: result.us_sec_id,
+        is_active: result.us_is_active,
     });
 
     return token;

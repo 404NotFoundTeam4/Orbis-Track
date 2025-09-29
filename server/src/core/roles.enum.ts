@@ -5,10 +5,10 @@
  * Author : Pakkapon Chomchoey (Tonnam) 66160080
  */
 export enum UserRole {
-    ADMIN = 1,
-    HEADDEPT = 2,
-    HEADSEC = 3,
-    STAFF = 4,
-    TECHNICAL = 5,
-    USER = 6,
+    ADMIN = 'ADMIN',
+    HEADDEPT = 'HOD',
+    HEADSEC = 'HOS',
+    STAFF = 'STAFF',
+    TECHNICAL = 'TECHNICAL',
+    USER = 'EMPLOYEE',
 }

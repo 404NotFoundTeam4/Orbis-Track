@@ -34,8 +34,6 @@ export function swagger(app: Express, baseUrl: string) {
         servers: [{ url: baseUrl }],
     });
 
-    // doc.security = [{ BearerAuth: [] }];
-
     app.get("/docs.json", (_req, res) => res.json(doc));
 
     // หน้า Swagger UI พร้อมจำ token ไว้หลังรีเฟรช

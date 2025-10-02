@@ -17,7 +17,18 @@ const DEFAULT_REDIS_URL =
 const Env = z.object({
     // service
     PORT: z.coerce.number().default(4044),
-    API_URL: z.string().url().default("http://localhost:4044").optional(),
+    API_URL: z
+        .string()
+        .refine(v => {
+            try {
+                new URL(v);
+                return true;
+            } catch {
+                return false;
+            }
+        }, { message: "Invalid URL" })
+        .default("http://localhost:4044")
+        .optional(),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
     // database

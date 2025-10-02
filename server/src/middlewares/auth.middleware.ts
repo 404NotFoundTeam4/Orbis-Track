@@ -27,7 +27,7 @@ export async function authMiddleware(req: authSchema.AuthRequest, res: Response,
 
     try {
         // ถอดรหัส + ตรวจความถูกต้องของ JWT แล้วโยน payload ใส่ req.user ไว้ให้ route ใช้ต่อ
-        const payload = verifyToken(token) as authSchema.AccessTokenPayload;
+        const payload = verifyToken(token);
         req.user = payload;
         return next();
     } catch (err: any) {

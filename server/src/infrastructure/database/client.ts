@@ -6,7 +6,6 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { env } from "../../config/env.js";
-import { logger } from "../logger.js";
 
 // กันสร้าง PrismaClient หลาย ๆ ตัวเวลา dev ที่มี hot-reload (ไม่งั้น connection บวม)
 // ใช้ตัวแปร global เก็บอินสแตนซ์ไว้

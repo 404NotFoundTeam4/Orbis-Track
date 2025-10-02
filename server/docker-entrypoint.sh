@@ -168,10 +168,16 @@ psql_admin() {
 # ---- run ----
 # ensure_dev_deps
 wait_for_db
-ensure_shadow_db
-ensure_pgvector
-ensure_prisma_client
-verify_pgvector
+# ใน production ตัดขั้นตอน dev-only ออกเพื่อไม่พึ่งพา psql/เครื่องมือที่ไม่จำเป็น
+if [ "$NODE_ENV" = "production" ]; then
+  ensure_pgvector
+  ensure_prisma_client
+else
+  ensure_shadow_db
+  ensure_pgvector
+  ensure_prisma_client
+  verify_pgvector
+fi
 
 # echo "log_statement = 'ddl'" >> "$PGDATA/postgresql.conf" && pg_ctl -D "$PGDATA" reload
 

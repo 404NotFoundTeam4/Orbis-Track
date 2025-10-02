@@ -1,3 +1,12 @@
+<!-- markdownlint-disable MD033 -->
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD012 -->
+<!-- markdownlint-disable MD022 -->
+<!-- markdownlint-disable MD032 -->
+<!-- markdownlint-disable MD034 -->
+<!-- markdownlint-disable MD031 -->
+<!-- markdownlint-disable MD040 -->
+<!-- markdownlint-disable MD058 -->
 <p align="center">
   <a href="#">
     <picture>
@@ -5,13 +14,13 @@
       <img src=".github/assets/Team4.svg" width="720" alt="Orbis-Track" />
     </picture>
   </a>
-</p>
+ </p>
 
 <h1 align="center">Orbis-Track</h1>
 
 <p align="center">
   A modern Node.js stack for building reliable web apps — Express API + Vite frontend + PostgreSQL (pgvector) + Redis + SonarQube.
-</p>
+ </p>
 
 <p align="center">
   <!-- CI: แทนที่ org/repo และไฟล์ workflow ตามจริง -->

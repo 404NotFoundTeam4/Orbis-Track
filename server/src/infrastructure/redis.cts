@@ -47,7 +47,7 @@ export async function getRedis(): Promise<RedisClient> {
 // ปิดคอนเนกชัน (พยายาม quit ก่อน ไม่ได้ค่อย disconnect)
 export async function closeRedis(): Promise<void> {
     if (client) {
-        try { await client.quit(); } catch { await client.disconnect(); }
+        try { await client.quit(); } catch { client.disconnect(); }
         client = null;
     }
 }

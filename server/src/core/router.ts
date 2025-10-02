@@ -8,7 +8,7 @@ import type { Request, Response, NextFunction } from 'express';
 import express from 'express';
 import { BaseResponse } from './base.response.js';
 import { MaybePromise } from '../types/types.js';
-import { z, type ZodTypeAny } from "zod";
+import { z, type ZodType } from "zod";
 import { registry } from "../docs/swagger.js";
 import { PaginatedResult } from './paginated-result.interface.js';
 
@@ -16,11 +16,11 @@ export type RequestHandler = (req: Request, res: Response, next: NextFunction) =
 type Doc = {
     tag?: string;          // ชื่อแท็ก เช่น "Auth"
     auth?: boolean;        // ต้อง Bearer ไหม
-    body?: ZodTypeAny;     // zod ของ request body
-    res?: ZodTypeAny;      // zod ของ data (จะถูกห่อ BaseResponse ให้)
-    params?: ZodTypeAny;   // zod ของ path params
-    query?: ZodTypeAny;    // zod ของ query
-    headers?: ZodTypeAny;
+    body?: ZodType;        // zod ของ request body
+    res?: ZodType;         // zod ของ data (จะถูกห่อ BaseResponse ให้)
+    params?: ZodType;      // zod ของ path params
+    query?: ZodType;       // zod ของ query
+    headers?: ZodType;
 };
 
 export const catchAsync =
@@ -31,8 +31,8 @@ export const catchAsync =
 
 function registerDoc(method: "get" | "post" | "put" | "patch" | "delete", path: string, d?: Doc) {
     if (!d) return;
-    const content = (s?: ZodTypeAny) => s ? { "application/json": { schema: s } } : undefined;
-    const base = (s?: ZodTypeAny) =>
+    const content = (s?: ZodType) => s ? { "application/json": { schema: s } } : undefined;
+    const base = (s?: ZodType) =>
     ({
         "application/json": {
             schema: s
@@ -41,7 +41,7 @@ function registerDoc(method: "get" | "post" | "put" | "patch" | "delete", path: 
         }
     });
 
-    const req: any = {};
+    const req: Record<string, unknown> = {};
     if (d.params) req.params = d.params;
     if (d.query) req.query = d.query;
     if (d.headers) req.headers = d.headers;
@@ -51,7 +51,7 @@ function registerDoc(method: "get" | "post" | "put" | "patch" | "delete", path: 
         method, path,
         tags: d.tag ? [d.tag] : undefined,
         security: d.auth ? [{ BearerAuth: [] }] : undefined,
-        request: req as any,
+        request: req,
         responses: { 200: { description: "OK", content: base(d.res) } },
     });
 }

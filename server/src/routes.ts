@@ -1,9 +1,7 @@
 import { Router, type Express } from "express";
 
-import { registry } from "./docs/swagger.js";
 import userRouter from "./modules/user/index.js";
 import authRouter from "./modules/auth/auth.routes.js";
-import { authMiddleware } from "./middlewares/auth.middleware.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1

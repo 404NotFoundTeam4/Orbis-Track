@@ -2,7 +2,7 @@ import { ValidationError } from '../../errors/errors.js';
 import { prisma } from '../../infrastructure/database/client.js';
 import { signToken, verifyToken } from '../../utils/jwt.js';
 import { verifyPassword } from '../../utils/password.js';
-import type { AccessTokenPayload, LoginPayload } from './auth.schema.js';
+import type { LoginPayload } from './auth.schema.js';
 import { blacklistToken } from './token-blacklist.service.js';
 
 /**
@@ -32,7 +32,7 @@ async function checkLogin(payload: LoginPayload) {
         },
     });
 
-    if (!result || !result.us_is_active) {
+    if (!result?.us_is_active) {
         throw new ValidationError("Invalid username or password");
     }
 
@@ -64,8 +64,8 @@ async function checkLogin(payload: LoginPayload) {
 async function logout(token: string) {
     try {
         // แกะ exp จาก token เพื่อคำนวณ TTL
-        const decoded = verifyToken(token) as AccessTokenPayload;
-        const exp = decoded.exp as number;
+        const { exp } = verifyToken(token);
+        if (typeof exp !== "number") return;
 
         const ttl = exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {

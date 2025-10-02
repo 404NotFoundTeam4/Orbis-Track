@@ -1,3 +1,5 @@
+import { SignOptions } from 'jsonwebtoken';
+import { env } from '../../config/env.js';
 import { ValidationError } from '../../errors/errors.js';
 import { prisma } from '../../infrastructure/database/client.js';
 import { signToken, verifyToken } from '../../utils/jwt.js';
@@ -43,6 +45,7 @@ async function checkLogin(payload: LoginPayload) {
     }
 
     // ออก token พร้อม payload ที่ต้องใช้ต่อฝั่ง server
+    const exp = payload.isRemember ? "30d" : env.JWT_EXPIRES_IN as SignOptions["expiresIn"];
     const token = signToken({
         sub: result.us_id,
         username: result.us_username,
@@ -50,7 +53,7 @@ async function checkLogin(payload: LoginPayload) {
         dept_id: result.us_dept_id,
         sec_id: result.us_sec_id,
         is_active: result.us_is_active,
-    });
+    }, exp);
 
     return token;
 }

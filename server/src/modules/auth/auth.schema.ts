@@ -8,6 +8,7 @@ import { UserRole } from "../../core/roles.enum.js";
 export const loginPayload = z.object({
     username: z.string().min(1),
     passwords: z.string().min(1),
+    isRemember: z.boolean().default(false),
 }).strict();
 
 // JWT payload schema ข้อมูลผู้ใช้ + iat/exp (Unix seconds)

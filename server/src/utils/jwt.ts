@@ -4,7 +4,7 @@ import { env } from "../config/env.js";
 import { ValidationError } from "../errors/errors.js";
 
 const JWT_SECRET = env.JWT_SECRET || "changeme";
-const JWT_EXPIRES_IN = (env.JWT_EXPIRES_IN || "24h") as SignOptions["expiresIn"];
+const JWT_EXPIRES_IN = (env.JWT_EXPIRES_IN || "2h") as SignOptions["expiresIn"];
 
 /**
  * Description: สร้าง (sign) JWT token จาก payload ที่กำหนด
@@ -12,8 +12,8 @@ const JWT_EXPIRES_IN = (env.JWT_EXPIRES_IN || "24h") as SignOptions["expiresIn"]
  * Output : string (access token)
  * Author: Pakkapon Chomchoey (Tonnam) 66160080
  */
-export function signToken(payload: Omit<authSchema.AccessTokenPayload, "iat" | "exp">) {
-    return jwt.sign(payload, JWT_SECRET, { algorithm: "HS256", expiresIn: JWT_EXPIRES_IN });
+export function signToken(payload: Omit<authSchema.AccessTokenPayload, "iat" | "exp">, exp: SignOptions["expiresIn"] = JWT_EXPIRES_IN) {
+    return jwt.sign(payload, JWT_SECRET, { algorithm: "HS256", expiresIn: exp });
 }
 
 /**

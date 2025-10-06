@@ -1,38 +1,3 @@
-// export const Users = () => {
-//   return (
-//     <>
-//       <div>
-//         <span>การจัดการ &gt;</span>
-//         <span>บัญชีผู้ใช้</span>
-//       </div>
-//       <h1>จัดการบัญชีผู้ใช้</h1>
-//       <table className="border-separate border border-gray-400 ...">
-//         <thead>
-//           <tr>
-//             <th>ชื่อผู้ใช้</th>
-//             <th>ตำแหน่ง</th>
-//             <th>แผนก</th>
-//             <th>ฝ่ายย่อย</th>
-//             <th>เบอร์ติดต่อ</th>
-//             <th>วันที่เพิ่ม</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           <tr>
-//             <td>John Doe</td>
-//             <td>Developer</td>
-//             <td>IT</td>
-//             <td>Software</td>
-//             <td>095-123-4567</td>
-//             <td>2025-08-22</td>
-//           </tr>
-//         </tbody>
-//       </table>
-//     </>
-//   );
-// };
-// export default Users;
-
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
 import UserFilter from "../components/UserFilter";
@@ -463,260 +428,259 @@ export const Users = () => {
   return (
     <div className="w-full min-h-screen flex flex-col p-4">
       <div className="flex-1">
-        <div className="mb-4">
-          <span className="text-gray-700">การจัดการ &gt;</span>
-          <span className="text-blue-600">บัญชีผู้ใช้</span>
+        <div className="mb-[8px] space-x-[9px]">
+          <span className="text-[#858585]">การจัดการ</span>
+          <span className="text-[#858585]">&gt;</span>
+          <span className="text-[#000000]">บัญชีผู้ใช้</span>
         </div>
-        <h1 className="text-2xl font-semibold mb-4">จัดการบัญชีผู้ใช้</h1>
-        <div>
+        <div className="flex items-center gap-[14px] mb-[21px]">
+          <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
+          <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
+            ผู้ใช้งานทั้งหมด {users.length}
+          </div>
+        </div>
+        <div className="mb-[23px]">
           <UserFilter
-            total={users.length}
             onChange={setFilters}
             positions={positionOptions}
             departments={departmentOptions}
             subDepartments={subDeptOptions}
           />
         </div>
-        <table className="min-w-full table-auto border-collapse">
-          <thead className="h-20 relative after:block after:h-5 after:w-full">
-            <tr className="border rounded-t-[16px]">
-              <th className="py-2 px-4 text-left">
-                <span>ชื่อผู้ใช้ </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                <span>ตำแหน่ง </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                แผนก
-                <span>แผนก </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                <span>ฝ่ายย่อย </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">เบอร์ติดต่อ</th>
-              <th className="py-2 px-4 text-left">
-                <span>วันที่เพิ่ม </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                <span>สถานะ </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody className="border rounded-t-[16px]">
+
+        <div className="w-[1655px]">
+          {/* หัวตาราง */}
+          <div
+            className="grid [grid-template-columns:351px_220px_203px_183px_188px_179px_166px_81px]
+              bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center"
+          >
+            <div className="py-2 px-4 text-left flex items-center">
+              ชื่อผู้ใช้
+              <button type="button" onClick={toggleSortDate}>
+                <Icon
+                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              ตำแหน่ง
+              <button type="button" onClick={toggleSortDate}>
+                <Icon
+                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              แผนก
+              <button type="button" onClick={toggleSortDate}>
+                <Icon
+                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              ฝ่ายย่อย
+              <button type="button" onClick={toggleSortDate}>
+                <Icon
+                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left">เบอร์ติดต่อ</div>
+            <div className="py-2 px-4 text-left">
+              วันที่เพิ่ม
+              <button type="button" onClick={toggleSortDate}>
+                <Icon
+                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left">
+              สถานะ
+              <button type="button" onClick={toggleSortDate}>
+                <Icon
+                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left">จัดการ</div>
+          </div>
+
+          <div className="border border-[#D9D9D9] rounded-[16px]">
+            {/* แถวข้อมูล */}
             {pageRows.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="py-2 px-4">
-                  <div className="flex items-center">
-                    <img
-                      src={user.imageUrl} // ลิงก์รูปภาพ
-                      alt={user.name} // ข้อความสำรอง
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div className="ml-3">
-                      <div>{user.name}</div>
-                      <div>
-                        <span className="text-blue-600">{user.email} : </span>
-                        <span>{user.employeeId}</span>
-                      </div>
+              <div
+                key={user.id}
+                className="grid [grid-template-columns:351px_220px_203px_183px_188px_179px_166px_81px]
+                 items-center hover:bg-gray-50"
+              >
+                {/* ชื่อผู้ใช้ */}
+                <div className="py-2 px-4 flex items-center">
+                  <img
+                    src={user.imageUrl}
+                    alt={user.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div className="ml-3">
+                    <div>{user.name}</div>
+                    <div>
+                      <span className="text-blue-600">{user.email} : </span>
+                      <span>{user.employeeId}</span>
                     </div>
                   </div>
-                </td>
-                <td className="py-2 px-4">{user.position}</td>
-                <td className="py-2 px-4">{user.department}</td>
-                <td className="py-2 px-4">{user.subDepartment}</td>
-                <td className="py-2 px-4">{user.phone}</td>
-                <td className="py-2 px-4">{formatThaiDate(user.dateAdded)}</td>
-                <td className="py-2 px-4">
+                </div>
+
+                <div className="py-2 px-4">{user.position}</div>
+                <div className="py-2 px-4">{user.department}</div>
+                <div className="py-2 px-4">{user.subDepartment}</div>
+                <div className="py-2 px-4">{user.phone}</div>
+                <div className="py-2 px-4">
+                  {formatThaiDate(user.dateAdded)}
+                </div>
+
+                <div className="py-2 px-4">
                   {user.status ? (
-                    <span className="px-4 py-1 items-center justify-center w-[120px] h-[34px] border border-green-400 text-green-500 rounded-full text-base">
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-green-400 text-green-500 rounded-full text-base">
                       ใช้งานได้ปกติ
                     </span>
                   ) : (
-                    <span className="px-4 py-1 items-center justify-center w-[120px] h-[34px] border border-red-400 text-red-500 rounded-full text-base">
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-red-400 text-red-500 rounded-full text-base">
                       ถูกปิดการใช้งาน
                     </span>
                   )}
-                </td>
-                <td className="py-2 px-4">
-                  <div className="flex items-center justify-start gap-3">
-                    {/* ปุ่มแก้ไข */}
-                    <button
-                      className="flex items-center justify-center text-blue-500 hover:text-blue-700"
-                      title="แก้ไข"
-                    >
-                      <Icon icon="prime:pen-to-square" width="22" height="22" />
-                    </button>
+                </div>
 
-                    {/* ปุ่มลบ */}
-                    <button
-                      className="flex items-center justify-center text-red-500 hover:text-red-700"
-                      title="ลบ"
-                    >
-                      <Icon
-                        icon="solar:trash-bin-trash-outline"
-                        width="22"
-                        height="22"
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                <div>
+                  {user.status ? (
+                    <div className="py-2 px-4 flex items-center gap-3">
+                      <button
+                        className="text-blue-500 hover:text-blue-700"
+                        title="แก้ไข"
+                      >
+                        <Icon
+                          icon="prime:pen-to-square"
+                          width="22"
+                          height="22"
+                        />
+                      </button>
+                      <button
+                        className="text-red-500 hover:text-red-700"
+                        title="ลบ"
+                      >
+                        <Icon
+                          icon="solar:trash-bin-trash-outline"
+                          width="22"
+                          height="22"
+                        />
+                      </button>
+                    </div>
+                  ) : (
+                    <div></div>
+                  )}
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
 
-        <div className="mt-3 pt-3 flex items-center justify-end">
-          {/* ขวา: ตัวแบ่งหน้า */}
-          <div className="flex items-center gap-2">
-            {/* ปุ่มก่อนหน้า */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-gray-400 disabled:bg-gray-50"
-            >
-              {"<"}
-            </button>
+            {/* ปุ่มหน้า */}
+            <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+              {/* ขวา: ตัวแบ่งหน้า */}
+              <div className="flex items-center gap-2">
+                {/* ปุ่มก่อนหน้า */}
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
+                >
+                  {"<"}
+                </button>
 
-            {/* หน้า 1 */}
-            <button
-              type="button"
-              onClick={() => setPage(1)}
-              className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-blue-500 text-blue-600" : ""}`}
-            >
-              1
-            </button>
+                {/* หน้า 1 */}
+                <button
+                  type="button"
+                  onClick={() => setPage(1)}
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                >
+                  1
+                </button>
 
-            {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบน้ำเงิน */}
-            {page > 2 && <span className="px-1 text-gray-400">…</span>}
-            {page > 1 && page < totalPages && (
-              <button
-                type="button"
-                className="h-8 min-w-8 px-2 rounded border text-sm border-blue-500 text-blue-600"
-              >
-                {page}
-              </button>
-            )}
-            {page < totalPages - 1 && (
-              <span className="px-1 text-gray-400">…</span>
-            )}
+                {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
+                {page > 2 && <span className="px-1 text-gray-400">…</span>}
+                {page > 1 && page < totalPages && (
+                  <button
+                    type="button"
+                    className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                  >
+                    {page}
+                  </button>
+                )}
+                {page < totalPages - 1 && (
+                  <span className="px-1 text-gray-400">…</span>
+                )}
 
-            {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
-            {totalPages > 1 && (
-              <button
-                type="button"
-                onClick={() => setPage(totalPages)}
-                className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-blue-500 text-blue-600" : ""}`}
-              >
-                {totalPages}
-              </button>
-            )}
+                {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
+                {totalPages > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setPage(totalPages)}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                  >
+                    {totalPages}
+                  </button>
+                )}
 
-            {/* ถัดไป */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-gray-400 disabled:bg-gray-50"
-            >
-              {">"}
-            </button>
+                {/* ถัดไป */}
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+                >
+                  {">"}
+                </button>
 
-            {/* ไปหน้าที่ */}
-            <form
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const fd = new FormData(e.currentTarget);
-                  const v = Number(fd.get("goto"));
-                  if (!Number.isNaN(v))
-                    setPage(Math.min(totalPages, Math.max(1, v)));
-                }
-              }}
-              className="flex items-center gap-1"
-            >
-              <span>ไปที่หน้า</span>
-              <input
-                name="goto"
-                type="number"
-                min={1}
-                max={totalPages}
-                className="h-8 w-14 rounded border px-2 text-sm"
-              />
-            </form>
+                {/* ไปหน้าที่ */}
+                <form
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const fd = new FormData(e.currentTarget);
+                      const v = Number(fd.get("goto"));
+                      if (!Number.isNaN(v))
+                        setPage(Math.min(totalPages, Math.max(1, v)));
+                    }
+                  }}
+                  className="flex items-center gap-1"
+                >
+                  <span>ไปที่หน้า</span>
+                  <input
+                    name="goto"
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
+                  />
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>

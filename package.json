@@ -34,7 +34,12 @@
   },
   "homepage": "https://github.com/404NotFoundTeam4/Orbis-Track#readme",
   "dependencies": {
+    "@iconify/react": "^6.0.2",
     "@types/ioredis": "^4.28.10",
     "ioredis": "^5.7.0"
+  },
+  "devDependencies": {
+    "@iconify/tailwind": "^1.2.0",
+    "@iconify/tailwind4": "^1.0.6"
   }
 }

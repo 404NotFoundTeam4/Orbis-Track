@@ -1,6 +1,7 @@
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
 import UserFilter from "../components/UserFilter";
+import Filter from "../components/Filter";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowDownShortWide,
@@ -355,8 +356,13 @@ export const Users = () => {
     },
   ]);
 
-  // helper: แปลง ISO -> "21 / ส.ค. / 2568"
-  const formatThaiDate = (iso: string) => {
+  /**
+   * Description: แปลงวันที่
+   * Input : iso: string 
+   * Output : `${day} / ${month} / ${year}`
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
+  const FormatThaiDate = (iso: string) => {
     const d = new Date(iso);
     const day = d.toLocaleDateString("th-TH", { day: "2-digit" }); // 21
     const month = d.toLocaleDateString("th-TH", { month: "short" }); // ส.ค.
@@ -364,10 +370,27 @@ export const Users = () => {
     return `${day} / ${month} / ${year}`;
   };
 
+  // state เก็บฟิลด์ที่ใช้เรียง เช่น name
+  const [sortField, setSortField] = useState<keyof User | "statusText">(
+    "dateAdded"
+  );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const toggleSortDate = () => {
-    setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+  /**
+   * Description: เปลี่ยน field ที่ต้องการจะเรีบง หรือ เปลี่ยนลักษณะการเรียง
+   * Input : field: keyof User | "statusText" 
+   * Output : 
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
+  const HandleSort = (field: keyof User | "statusText") => {
+    if (sortField === field) {
+      // ถ้ากด field เดิม → สลับ asc/desc
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      // ถ้ากด field ใหม่ → ตั้ง field ใหม่ และเริ่มจาก asc
+      setSortField(field);
+      setSortDirection("asc");
+    }
   };
 
   // filterข้อมูล
@@ -376,6 +399,11 @@ export const Users = () => {
     position: "",
     department: "",
     subDepartment: "",
+  });
+
+  //test
+  const [filters2, setFilters2] = useState({
+    option: "",
   });
 
   const filtered = useMemo(() => {
@@ -399,17 +427,41 @@ export const Users = () => {
       const byDep = !filters.department || u.department === filters.department;
       const bySub =
         !filters.subDepartment || u.subDepartment === filters.subDepartment;
-      return bySearch && byPos && byDep && bySub;
+
+      //test
+      const byTest = !filters2.option || u.position === filters2.option;
+      return bySearch && byPos && byDep && bySub && byTest;
     });
 
+    //เริ่มทำการ sort
     result = [...result].sort((a, b) => {
-      const dateA = new Date(a.dateAdded).getTime();
-      const dateB = new Date(b.dateAdded).getTime();
-      return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
-    });
+      let valA: any = a[sortField as keyof User];
+      let valB: any = b[sortField as keyof User];
 
+      // พิเศษ: ถ้าเป็นวันที่
+      if (sortField === "dateAdded") {
+        valA = new Date(valA).getTime();
+        valB = new Date(valB).getTime();
+      }
+
+      // พิเศษ: ถ้าเป็น boolean ให้แปลงเป็นตัวเลข
+      if (sortField === "status") {
+        valA = a.status ? 1 : 0;
+        valB = b.status ? 1 : 0;
+      }
+
+      // แปลงเป็น string สำหรับ compare ถ้าเป็น text
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortDirection === "asc"
+          ? valA.localeCompare(valB, "th")
+          : valB.localeCompare(valA, "th");
+      }
+
+      // ถ้าเป็นตัวเลข
+      return sortDirection === "asc" ? valA - valB : valB - valA;
+    });
     return result;
-  }, [users, filters, sortDirection]);
+  }, [users, filters, filters2, sortDirection]);
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
@@ -446,6 +498,10 @@ export const Users = () => {
             departments={departmentOptions}
             subDepartments={subDeptOptions}
           />
+          <Filter 
+            onChange={setFilters2}
+            option={positionOptions}
+          />
         </div>
 
         <div className="w-[1655px]">
@@ -456,9 +512,15 @@ export const Users = () => {
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
-              <button type="button" onClick={toggleSortDate}>
+              <button type="button" onClick={() => HandleSort("name")}>
                 <Icon
-                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  icon={
+                    sortField === "name"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
                   width="24"
                   height="24"
                   className="ml-1"
@@ -467,9 +529,15 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ตำแหน่ง
-              <button type="button" onClick={toggleSortDate}>
+              <button type="button" onClick={() => HandleSort("position")}>
                 <Icon
-                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  icon={
+                    sortField === "position"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
                   width="24"
                   height="24"
                   className="ml-1"
@@ -478,9 +546,15 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               แผนก
-              <button type="button" onClick={toggleSortDate}>
+              <button type="button" onClick={() => HandleSort("department")}>
                 <Icon
-                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  icon={
+                    sortField === "department"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
                   width="24"
                   height="24"
                   className="ml-1"
@@ -489,39 +563,59 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ฝ่ายย่อย
-              <button type="button" onClick={toggleSortDate}>
+              <button type="button" onClick={() => HandleSort("subDepartment")}>
                 <Icon
-                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  icon={
+                    sortField === "subDepartment"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
                   width="24"
                   height="24"
                   className="ml-1"
                 />
               </button>
             </div>
-            <div className="py-2 px-4 text-left">เบอร์ติดต่อ</div>
-            <div className="py-2 px-4 text-left">
+            <div className="py-2 px-4 text-left flex items-center">
+              เบอร์ติดต่อ
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
               วันที่เพิ่ม
-              <button type="button" onClick={toggleSortDate}>
+              <button type="button" onClick={() => HandleSort("dateAdded")}>
                 <Icon
-                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  icon={
+                    sortField === "dateAdded"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
                   width="24"
                   height="24"
                   className="ml-1"
                 />
               </button>
             </div>
-            <div className="py-2 px-4 text-left">
+            <div className="py-2 px-4 text-left flex items-center">
               สถานะ
-              <button type="button" onClick={toggleSortDate}>
+              <button type="button" onClick={() => HandleSort("status")}>
                 <Icon
-                  icon={sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up"}
+                  icon={
+                    sortField === "status"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
                   width="24"
                   height="24"
                   className="ml-1"
                 />
               </button>
             </div>
-            <div className="py-2 px-4 text-left">จัดการ</div>
+            <div className="py-2 px-4 text-left flex items-center">จัดการ</div>
           </div>
 
           <div className="border border-[#D9D9D9] rounded-[16px]">
@@ -553,16 +647,16 @@ export const Users = () => {
                 <div className="py-2 px-4">{user.subDepartment}</div>
                 <div className="py-2 px-4">{user.phone}</div>
                 <div className="py-2 px-4">
-                  {formatThaiDate(user.dateAdded)}
+                  {FormatThaiDate(user.dateAdded)}
                 </div>
 
                 <div className="py-2 px-4">
                   {user.status ? (
-                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-green-400 text-green-500 rounded-full text-base">
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
                       ใช้งานได้ปกติ
                     </span>
                   ) : (
-                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-red-400 text-red-500 rounded-full text-base">
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#FF4D4F] text-[#FF4D4F] rounded-full text-base">
                       ถูกปิดการใช้งาน
                     </span>
                   )}
@@ -572,7 +666,7 @@ export const Users = () => {
                   {user.status ? (
                     <div className="py-2 px-4 flex items-center gap-3">
                       <button
-                        className="text-blue-500 hover:text-blue-700"
+                        className="text-[#1890FF] hover:text-[#1890FF]"
                         title="แก้ไข"
                       >
                         <Icon
@@ -582,7 +676,7 @@ export const Users = () => {
                         />
                       </button>
                       <button
-                        className="text-red-500 hover:text-red-700"
+                        className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                         title="ลบ"
                       >
                         <Icon

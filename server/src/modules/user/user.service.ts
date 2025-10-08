@@ -21,27 +21,6 @@ async function getUserById(id: number) {
     });
 }
 
-//ADD
-async function getAllUsers() {
-    return prisma.users.findMany({
-        select: {
-            user_id: true,
-            firstname: true,
-            lastname: true,
-            username: true,
-            email: true,
-            phone: true,
-            images: true,
-            role_id: true,
-            dept_id: true,
-            sec_id: true,
-            is_active: true,
-            created_at: true,
-            updated_at: true,
-        },
-    });
-}
-
 // await argon2.hash(data.password);
 async function createUser(data: {
     emp_code?: string;

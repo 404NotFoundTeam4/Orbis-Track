@@ -18,14 +18,6 @@ export class UserController extends BaseController {
         return { data: user };
     }
 
-
-    //ADD
-    async getAll(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-        const user = await userService.getAllUsers();
-        if (!user) throw new HttpError(HttpStatus.NOT_FOUND, "User not found");
-        return { data: user };
-    }
-
     async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
         const {
             emp_code,

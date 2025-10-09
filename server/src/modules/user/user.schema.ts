@@ -19,6 +19,42 @@ export const CreateUserSchema = z.object({
     is_active: z.boolean().default(true),
 });
 
+export const departmentSchema = z.object({
+    dept_id: z.coerce.number(),
+    dept_name: z.string()
+});
+
+export const sectionSchema = z.object({
+    sec_id: z.coerce.number(),
+    sec_name: z.string(),
+    sec_dept_id: z.coerce.number()
+});
+
+export const userSchema = z.object({
+    us_id: z.coerce.number(),
+    us_emp_code: z.string().optional().nullable(),
+    us_firstname: z.string(),
+    us_lastname: z.string(),
+    us_username: z.string(),
+    us_email: z.string(),
+    us_phone: z.string(),
+    us_images: z.string().optional().nullable(),
+    us_role: z.string(),
+    us_dept_id: z.coerce.number().optional().nullable(),
+    us_sec_id: z.coerce.number().optional().nullable(),
+    us_is_active: z.boolean(),
+    us_dept_name: z.string().optional(),
+    us_sec_name: z.string().optional()
+});
+
+export const getAllUsersResponseSchema = z.object({
+    departments: z.array(departmentSchema),
+    sections: z.array(sectionSchema),
+    userWithDetails: z.array(userSchema)
+});
+
+export type GetAllUsersResponseSchema = z.infer<typeof getAllUsersResponseSchema>;
+
 export type CreateUserDto = z.infer<typeof CreateUserSchema>;
 
 export type IdParamDto = z.infer<typeof IdParamSchema>;

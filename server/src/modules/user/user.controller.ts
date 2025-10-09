@@ -4,6 +4,7 @@ import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { HttpError, ValidationError } from "../../errors/errors.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
+import { GetAllUsersResponseSchema } from "./user.schema.js";
 
 export class UserController extends BaseController {
     constructor() {
@@ -18,50 +19,48 @@ export class UserController extends BaseController {
         return { data: user };
     }
 
-
-    //ADD
-    async getAll(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    // ดึงพนักงานทั้งหมด
+    async getAll(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetAllUsersResponseSchema>> {
         const user = await userService.getAllUsers();
-        if (!user) throw new HttpError(HttpStatus.NOT_FOUND, "User not found");
         return { data: user };
     }
 
-    async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-        const {
-            emp_code,
-            firstname,
-            lastname,
-            username,
-            password,
-            email,
-            phone,
-            images,
-            role_id,
-            dept_id,
-            sec_id,
-        } = req.body;
+    // async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    //     const {
+    //         emp_code,
+    //         firstname,
+    //         lastname,
+    //         username,
+    //         password,
+    //         email,
+    //         phone,
+    //         images,
+    //         role_id,
+    //         dept_id,
+    //         sec_id,
+    //     } = req.body;
 
-        if (!firstname || !lastname || !username || !password || !role_id) {
-            throw new ValidationError("Missing required fields");
-        }
+    //     if (!firstname || !lastname || !username || !password || !role_id) {
+    //         throw new ValidationError("Missing required fields");
+    //     }
 
-        // hash password
-        const hashedPassword = password;
+    //     // hash password
+    //     const hashedPassword = password;
 
-        const newUser = await userService.createUser({
-            emp_code,
-            firstname,
-            lastname,
-            username,
-            password: hashedPassword,
-            email,
-            phone,
-            images,
-            role_id,
-            dept_id,
-            sec_id,
-        });
+    //     const newUser = await userService.createUser({
+    //         emp_code,
+    //         firstname,
+    //         lastname,
+    //         username,
+    //         password: hashedPassword,
+    //         email,
+    //         phone,
+    //         images,
+    //         role_id,
+    //         dept_id,
+    //         sec_id,
+    //     });
 
-        return { message: "User created successfully" }
-    }
+    //     return { message: "User created successfully" }
+    // }
 };

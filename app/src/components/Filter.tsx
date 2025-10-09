@@ -9,7 +9,7 @@ interface FilterProps {
 
 const defaultOpt = [{ label: "ทั้งหมด", value: "" }];
 
-export const UserFilter: React.FC<FilterProps> = ({
+export const Filter: React.FC<FilterProps> = ({
   onChange,
   option = defaultOpt,
 }) => {
@@ -43,4 +43,4 @@ export const UserFilter: React.FC<FilterProps> = ({
   );
 };
 
-export default UserFilter;
+export default Filter;

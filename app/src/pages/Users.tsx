@@ -1,13 +1,8 @@
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
-import UserFilter from "../components/UserFilter";
 import Filter from "../components/Filter";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownShortWide,
-  faArrowUpShortWide,
-  faPenToSquare,
-} from "@fortawesome/free-solid-svg-icons";
+import SearchFilter from "../components/SearchFilter";
+import AddButton from "../components/AddButton";
 import { Icon } from "@iconify/react";
 
 interface User {
@@ -358,7 +353,7 @@ export const Users = () => {
 
   /**
    * Description: แปลงวันที่
-   * Input : iso: string 
+   * Input : iso: string
    * Output : `${day} / ${month} / ${year}`
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
@@ -378,8 +373,8 @@ export const Users = () => {
 
   /**
    * Description: เปลี่ยน field ที่ต้องการจะเรีบง หรือ เปลี่ยนลักษณะการเรียง
-   * Input : field: keyof User | "statusText" 
-   * Output : 
+   * Input : field: keyof User | "statusText"
+   * Output :
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
   const HandleSort = (field: keyof User | "statusText") => {
@@ -393,21 +388,25 @@ export const Users = () => {
     }
   };
 
-  // filterข้อมูล
-  const [filters, setFilters] = useState({
+  //Search Filter
+  const [searchFilter, setSearchFilters] = useState({
     search: "",
-    position: "",
-    department: "",
-    subDepartment: "",
   });
-
-  //test
-  const [filters2, setFilters2] = useState({
+  //Filter position
+  const [positionFilter, setPositionFilters] = useState({
+    option: "",
+  });
+  //Filter department
+  const [departmentFilter, setDepartmentFilters] = useState({
+    option: "",
+  });
+  //Filter subDepartment
+  const [subDepartmentFilter, setSubDepartmentFilters] = useState({
     option: "",
   });
 
   const filtered = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
+    const search = searchFilter.search.trim().toLowerCase();
     let result = users.filter((u) => {
       const bySearch =
         !search ||
@@ -423,14 +422,14 @@ export const Users = () => {
           .join(" ")
           .toLowerCase()
           .includes(search);
-      const byPos = !filters.position || u.position === filters.position;
-      const byDep = !filters.department || u.department === filters.department;
+      const byPos =
+        !positionFilter.option || u.position === positionFilter.option;
+      const byDep =
+        !departmentFilter.option || u.department === departmentFilter.option;
       const bySub =
-        !filters.subDepartment || u.subDepartment === filters.subDepartment;
-
-      //test
-      const byTest = !filters2.option || u.position === filters2.option;
-      return bySearch && byPos && byDep && bySub && byTest;
+        !subDepartmentFilter.option ||
+        u.subDepartment === subDepartmentFilter.option;
+      return bySearch && byPos && byDep && bySub;
     });
 
     //เริ่มทำการ sort
@@ -461,7 +460,14 @@ export const Users = () => {
       return sortDirection === "asc" ? valA - valB : valB - valA;
     });
     return result;
-  }, [users, filters, filters2, sortDirection]);
+  }, [
+    users,
+    searchFilter,
+    positionFilter,
+    departmentFilter,
+    subDepartmentFilter,
+    sortDirection,
+  ]);
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
@@ -470,7 +476,13 @@ export const Users = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   useEffect(() => {
     setPage(1);
-  }, [filters, sortDirection]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
+  }, [
+    searchFilter,
+    positionFilter,
+    departmentFilter,
+    subDepartmentFilter,
+    sortDirection,
+  ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
   const pageRows = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -491,17 +503,24 @@ export const Users = () => {
             ผู้ใช้งานทั้งหมด {users.length}
           </div>
         </div>
-        <div className="mb-[23px]">
-          <UserFilter
-            onChange={setFilters}
-            positions={positionOptions}
-            departments={departmentOptions}
-            subDepartments={subDeptOptions}
-          />
-          <Filter 
-            onChange={setFilters2}
-            option={positionOptions}
-          />
+
+        {/* Filter */}
+        <div className="w-full mb-[23px]">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
+            <SearchFilter onChange={setSearchFilters} />
+            <div className="flex space-x-[4px]">
+              <Filter onChange={setPositionFilters} option={positionOptions} />
+              <Filter
+                onChange={setDepartmentFilters}
+                option={departmentOptions}
+              />
+              <Filter
+                onChange={setSubDepartmentFilters}
+                option={subDeptOptions}
+              />
+              <AddButton label="บัญชีผู้ใช้" />
+            </div>
+          </div>
         </div>
 
         <div className="w-[1655px]">

@@ -40,7 +40,6 @@ export function Login() {
         </svg>
       </div>
       <div className="absolute top-[221px] left-[144px] w-[663px] h-[543px] bg-sky-300/50 rounded-full blur-[200px]"></div>
-
       <div className="absolute top-[402px] left-[612px] w-[532px] h-[435px] bg-[#D7ABFF]/50 rounded-full blur-[200px]"></div>
       <div className="absolute bottom-20 right-2 w-[450px] h-[450px] bg-[#5292FF]/40 rounded-full blur-[200px]"></div>
       <div className="z-2 top-[286.88px] left-[95px] absolute w-[447px] h-[288px] rounded-2xl skew-x-6 overflow-hidden shadow-[0px_9px_16.7px_0px_#CDE0FF] rotate-[-5deg]">
@@ -61,14 +60,26 @@ export function Login() {
         <div className="absolute top-0 left-0 w-full h-1/2 bg-[#FFFFFF]"></div>
         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-[#F6F6F6]"></div>
       </div>
-   
-          <div className="top-[723px] left-[182px] absolute opacity-10"><Icon icon="pepicons-print:wrench-circle" width="82" height="82" /></div>
-          <div className="top-[749px] left-[915px] absolute opacity-10"><Icon icon="pepicons-print:wrench-circle" width="82" height="82" /></div>
-          <div className="top-[245px] left-[499px] absolute opacity-5"><Icon icon="pepicons-print:wrench-circle" width="82" height="82" /></div>
-          <div className="top-[215px] left-[175px] absolute opacity-10"><Icon  icon="fluent:box-checkmark-24-filled" width="82" height="82" /></div>
-          <div className="top-[352px] left-[672px] absolute opacity-10"><Icon  icon="fluent:box-checkmark-24-filled" width="82" height="82" /></div>
-             <div className="top-[867px] left-[499px] absolute opacity-10"><Icon  icon="fluent:box-search-24-filled" width="82" height="82" /></div>
-        
+
+      <div className="top-[723px] left-[182px] absolute opacity-10">
+        <Icon icon="pepicons-print:wrench-circle" width="82" height="82" />
+      </div>
+      <div className="top-[749px] left-[915px] absolute opacity-10">
+        <Icon icon="pepicons-print:wrench-circle" width="82" height="82" />
+      </div>
+      <div className="top-[245px] left-[499px] absolute opacity-5">
+        <Icon icon="pepicons-print:wrench-circle" width="82" height="82" />
+      </div>
+      <div className="top-[215px] left-[175px] absolute opacity-10">
+        <Icon icon="fluent:box-checkmark-24-filled" width="82" height="82" />
+      </div>
+      <div className="top-[352px] left-[672px] absolute opacity-10">
+        <Icon icon="fluent:box-checkmark-24-filled" width="82" height="82" />
+      </div>
+      <div className="top-[867px] left-[499px] absolute opacity-10">
+        <Icon icon="fluent:box-search-24-filled" width="82" height="82" />
+      </div>
+
       <div className="z-10 ml-[66px] mt-[67px] relative flex gap-[29px] items-center">
         <div>
           <Icon
@@ -84,96 +95,118 @@ export function Login() {
           </p>
         </div>
       </div>
-     <div className="flex items-center justify-end mr-[70px]">
-  <div
-    className="relative w-[821px] rounded-[100px] p-10
+      <div className="flex items-center justify-end mr-[70px]">
+        <div
+          className="relative w-[821px] rounded-[100px] p-10
               backdrop-blur-2xl
                shadow-[inset_-15px_0_25px_rgba(0,0,0,0.08)]
                border border-white/70 
                flex flex-col justify-center items-center"
-  >
-    {/* เพิ่มเงาสะท้อนขาวด้านขวา */}
-    <div className="absolute inset-y-0 right-0 w-[150px] 
-                    bg-gradient-to-r from-white/20 to-transparent
-                    pointer-events-none rounded-[100px]"></div>
-
-    {/* Header Section */}
-    <div className="z-10 relative flex gap-[15px] items-center mb-[48px]">
-      <Icon icon="pepicons-print:wrench-circle" width="98" height="98" />
-      <div>
-        <h1 className="font-roboto font-extrabold text-[64px] text-[#40A9FF]">
-          สวัสดี !
-        </h1>
-        <p className="font-roboto font-regular text-[32px]">
-          ยินดีต้อนรับเข้าสู่ระบบ Orbis Track
-        </p>
-      </div>
-    </div>
-
-    {/* Form */}
-    <form>
-      <div className="space-y-[27px] mb-12">
-        {/* Username */}
-        <div className="space-y-[10px]">
-          <label className="block font-roboto text-[32px]">ชื่อผู้ใช้</label>
-          <div className="flex items-center w-[557px] h-[76px] rounded-full border border-[#40A9FF] shadow-sm px-6 space-x-4">
-            <Icon icon="icon-park-solid:people" width="25" height="25" className="text-sky-500" />
-            <input
-              type="text"
-              placeholder="ชื่อผู้ใช้"
-              className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
-            />
-          </div>
-        </div>
-
-        {/* Password */}
-        <div className="space-y-[10px]">
-          <label className="block font-roboto text-[32px]">รหัสผ่าน</label>
-          <div className="flex items-center w-[557px] h-[76px] rounded-full border border-[#40A9FF] shadow-sm px-6 space-x-4 focus-within:ring-2 focus-within:ring-sky-400">
-            <Icon icon="ph:key-duotone" width="25" height="25" className="text-sky-500" />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="รหัสผ่าน"
-              className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="text-gray-500 hover:text-sky-500 transition-colors"
-            >
-              <Icon icon={showPassword ? "mdi:eye-off" : "mdi:eye"} width="32" height="32" />
-            </button>
-          </div>
-        </div>
-
-        {/* Remember + Forgot */}
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-[15px] cursor-pointer">
-            <input
-              type="checkbox"
-              className="appearance-none w-[29px] h-[29px] rounded-md bg-[#BFBFBF] checked:bg-sky-500 checked:border-sky-500 border transition-all duration-200"
-            />
-            <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
-          </label>
-          <a href="#" className="text-sky-500 hover:underline font-roboto text-[32px]">
-            ลืมรหัสผ่าน
-          </a>
-        </div>
-      </div>
-
-      {/* Button */}
-      <div className="flex justify-center">
-        <button
-          type="submit"
-          className="w-[196px] h-[61px] bg-sky-500 hover:bg-sky-600 text-white rounded-full font-roboto text-[32px] shadow-lg transition-all"
         >
-          เข้าสู่ระบบ
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+          {/* เพิ่มเงาสะท้อนขาวด้านขวา */}
+          <div
+            className="absolute inset-y-0 right-0 w-[2px] 
+                    bg-gradient-to-r from-white/80 to-transparent
+                    pointer-events-none rounded-[100px]"
+          ></div>
 
+          {/* Header Section */}
+          <div className="z-10 relative flex gap-[15px] items-center mb-[48px]">
+            <Icon icon="pepicons-print:wrench-circle" width="98" height="98" />
+            <div>
+              <h1 className="font-roboto font-extrabold text-[64px] text-[#40A9FF]">
+                สวัสดี !
+              </h1>
+              <p className="font-roboto font-regular text-[32px]">
+                ยินดีต้อนรับเข้าสู่ระบบ Orbis Track
+              </p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <form>
+            <div className="space-y-[27px] mb-12">
+              {/* Username */}
+              <div className="space-y-[10px]">
+                <label className="block font-roboto text-[32px]">
+                  ชื่อผู้ใช้
+                </label>
+                <div className="flex items-center w-[557px] h-[76px] rounded-full border border-[#40A9FF] shadow-sm px-6 space-x-4">
+                  <Icon
+                    icon="icon-park-solid:people"
+                    width="25"
+                    height="25"
+                    className="text-sky-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="ชื่อผู้ใช้"
+                    className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-[10px]">
+                <label className="block font-roboto text-[32px]">
+                  รหัสผ่าน
+                </label>
+                <div className="flex items-center w-[557px] h-[76px] rounded-full border border-[#40A9FF] shadow-sm px-6 space-x-4 focus-within:ring-2 focus-within:ring-sky-400">
+                  <Icon
+                    icon="ph:key-duotone"
+                    width="25"
+                    height="25"
+                    className="text-sky-500"
+                  />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="รหัสผ่าน"
+                    className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-500 hover:text-sky-500 transition-colors"
+                  >
+                    <Icon
+                      icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                      width="32"
+                      height="32"
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember + Forgot */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-[15px] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="appearance-none w-[29px] h-[29px] rounded-md bg-[#BFBFBF] checked:bg-sky-500 checked:border-sky-500 border transition-all duration-200"
+                  />
+                  <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
+                </label>
+                <a
+                  href="#"
+                  className="text-sky-500 hover:underline font-roboto text-[32px]"
+                >
+                  ลืมรหัสผ่าน
+                </a>
+              </div>
+            </div>
+
+            {/* Button */}
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                className="w-[196px] h-[61px] bg-sky-500 hover:bg-sky-600 text-white rounded-full font-roboto text-[32px] shadow-lg transition-all"
+              >
+                เข้าสู่ระบบ
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

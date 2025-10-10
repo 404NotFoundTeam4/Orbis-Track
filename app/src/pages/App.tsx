@@ -6,12 +6,16 @@ import { Layout } from "../layout/Layout";
 import Home from "./Home";
 import Dashboard from "./Dashboard";
 import '../styles/css/index.css'
+import  {Resetpassword } from "./Resetpassword"
+import {Otppassword} from "./Otppassword"
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Public Route */}
         <Route path="/login" element={<Login />} />
+          <Route path="/OTP" element={<Otppassword/>} />
+         <Route path="/resetpassword" element={<Resetpassword/>} />
         <Route path="/" element={<Login />} />
 
         {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}

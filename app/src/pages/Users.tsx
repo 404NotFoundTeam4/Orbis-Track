@@ -1,47 +1,8 @@
-// export const Users = () => {
-//   return (
-//     <>
-//       <div>
-//         <span>การจัดการ &gt;</span>
-//         <span>บัญชีผู้ใช้</span>
-//       </div>
-//       <h1>จัดการบัญชีผู้ใช้</h1>
-//       <table className="border-separate border border-gray-400 ...">
-//         <thead>
-//           <tr>
-//             <th>ชื่อผู้ใช้</th>
-//             <th>ตำแหน่ง</th>
-//             <th>แผนก</th>
-//             <th>ฝ่ายย่อย</th>
-//             <th>เบอร์ติดต่อ</th>
-//             <th>วันที่เพิ่ม</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           <tr>
-//             <td>John Doe</td>
-//             <td>Developer</td>
-//             <td>IT</td>
-//             <td>Software</td>
-//             <td>095-123-4567</td>
-//             <td>2025-08-22</td>
-//           </tr>
-//         </tbody>
-//       </table>
-//     </>
-//   );
-// };
-// export default Users;
-
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
-import UserFilter from "../components/UserFilter";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowDownShortWide,
-  faArrowUpShortWide,
-  faPenToSquare,
-} from "@fortawesome/free-solid-svg-icons";
+import Filter from "../components/Filter";
+import SearchFilter from "../components/SearchFilter";
+import AddButton from "../components/AddButton";
 import { Icon } from "@iconify/react";
 
 interface User {
@@ -390,8 +351,13 @@ export const Users = () => {
     },
   ]);
 
-  // helper: แปลง ISO -> "21 / ส.ค. / 2568"
-  const formatThaiDate = (iso: string) => {
+  /**
+   * Description: แปลงวันที่
+   * Input : iso: string
+   * Output : `${day} / ${month} / ${year}`
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
+  const FormatThaiDate = (iso: string) => {
     const d = new Date(iso);
     const day = d.toLocaleDateString("th-TH", { day: "2-digit" }); // 21
     const month = d.toLocaleDateString("th-TH", { month: "short" }); // ส.ค.
@@ -399,22 +365,48 @@ export const Users = () => {
     return `${day} / ${month} / ${year}`;
   };
 
+  // state เก็บฟิลด์ที่ใช้เรียง เช่น name
+  const [sortField, setSortField] = useState<keyof User | "statusText">(
+    "dateAdded"
+  );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const toggleSortDate = () => {
-    setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+  /**
+   * Description: เปลี่ยน field ที่ต้องการจะเรีบง หรือ เปลี่ยนลักษณะการเรียง
+   * Input : field: keyof User | "statusText"
+   * Output :
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
+  const HandleSort = (field: keyof User | "statusText") => {
+    if (sortField === field) {
+      // ถ้ากด field เดิม → สลับ asc/desc
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      // ถ้ากด field ใหม่ → ตั้ง field ใหม่ และเริ่มจาก asc
+      setSortField(field);
+      setSortDirection("asc");
+    }
   };
 
-  // filterข้อมูล
-  const [filters, setFilters] = useState({
+  //Search Filter
+  const [searchFilter, setSearchFilters] = useState({
     search: "",
-    position: "",
-    department: "",
-    subDepartment: "",
+  });
+  //Filter position
+  const [positionFilter, setPositionFilters] = useState({
+    option: "",
+  });
+  //Filter department
+  const [departmentFilter, setDepartmentFilters] = useState({
+    option: "",
+  });
+  //Filter subDepartment
+  const [subDepartmentFilter, setSubDepartmentFilters] = useState({
+    option: "",
   });
 
   const filtered = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
+    const search = searchFilter.search.trim().toLowerCase();
     let result = users.filter((u) => {
       const bySearch =
         !search ||
@@ -430,21 +422,52 @@ export const Users = () => {
           .join(" ")
           .toLowerCase()
           .includes(search);
-      const byPos = !filters.position || u.position === filters.position;
-      const byDep = !filters.department || u.department === filters.department;
+      const byPos =
+        !positionFilter.option || u.position === positionFilter.option;
+      const byDep =
+        !departmentFilter.option || u.department === departmentFilter.option;
       const bySub =
-        !filters.subDepartment || u.subDepartment === filters.subDepartment;
+        !subDepartmentFilter.option ||
+        u.subDepartment === subDepartmentFilter.option;
       return bySearch && byPos && byDep && bySub;
     });
 
+    //เริ่มทำการ sort
     result = [...result].sort((a, b) => {
-      const dateA = new Date(a.dateAdded).getTime();
-      const dateB = new Date(b.dateAdded).getTime();
-      return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
-    });
+      let valA: any = a[sortField as keyof User];
+      let valB: any = b[sortField as keyof User];
 
+      // พิเศษ: ถ้าเป็นวันที่
+      if (sortField === "dateAdded") {
+        valA = new Date(valA).getTime();
+        valB = new Date(valB).getTime();
+      }
+
+      // พิเศษ: ถ้าเป็น boolean ให้แปลงเป็นตัวเลข
+      if (sortField === "status") {
+        valA = a.status ? 1 : 0;
+        valB = b.status ? 1 : 0;
+      }
+
+      // แปลงเป็น string สำหรับ compare ถ้าเป็น text
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortDirection === "asc"
+          ? valA.localeCompare(valB, "th")
+          : valB.localeCompare(valA, "th");
+      }
+
+      // ถ้าเป็นตัวเลข
+      return sortDirection === "asc" ? valA - valB : valB - valA;
+    });
     return result;
-  }, [users, filters, sortDirection]);
+  }, [
+    users,
+    searchFilter,
+    positionFilter,
+    departmentFilter,
+    subDepartmentFilter,
+    sortDirection,
+  ]);
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
@@ -453,7 +476,13 @@ export const Users = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   useEffect(() => {
     setPage(1);
-  }, [filters, sortDirection]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
+  }, [
+    searchFilter,
+    positionFilter,
+    departmentFilter,
+    subDepartmentFilter,
+    sortDirection,
+  ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
   const pageRows = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -463,260 +492,308 @@ export const Users = () => {
   return (
     <div className="w-full min-h-screen flex flex-col p-4">
       <div className="flex-1">
-        <div className="mb-4">
-          <span className="text-gray-700">การจัดการ &gt;</span>
-          <span className="text-blue-600">บัญชีผู้ใช้</span>
+        <div className="mb-[8px] space-x-[9px]">
+          <span className="text-[#858585]">การจัดการ</span>
+          <span className="text-[#858585]">&gt;</span>
+          <span className="text-[#000000]">บัญชีผู้ใช้</span>
         </div>
-        <h1 className="text-2xl font-semibold mb-4">จัดการบัญชีผู้ใช้</h1>
-        <div>
-          <UserFilter
-            total={users.length}
-            onChange={setFilters}
-            positions={positionOptions}
-            departments={departmentOptions}
-            subDepartments={subDeptOptions}
-          />
+        <div className="flex items-center gap-[14px] mb-[21px]">
+          <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
+          <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
+            ผู้ใช้งานทั้งหมด {users.length}
+          </div>
         </div>
-        <table className="min-w-full table-auto border-collapse">
-          <thead className="h-20 relative after:block after:h-5 after:w-full">
-            <tr className="border rounded-t-[16px]">
-              <th className="py-2 px-4 text-left">
-                <span>ชื่อผู้ใช้ </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                <span>ตำแหน่ง </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                แผนก
-                <span>แผนก </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                <span>ฝ่ายย่อย </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">เบอร์ติดต่อ</th>
-              <th className="py-2 px-4 text-left">
-                <span>วันที่เพิ่ม </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">
-                <span>สถานะ </span>
-                <span>
-                  <button type="button" onClick={toggleSortDate}>
-                    <FontAwesomeIcon
-                      icon={
-                        sortDirection === "asc"
-                          ? faArrowUpShortWide
-                          : faArrowDownShortWide
-                      }
-                      className="ml-1 "
-                    />
-                  </button>
-                </span>
-              </th>
-              <th className="py-2 px-4 text-left">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody className="border rounded-t-[16px]">
+
+        {/* Filter */}
+        <div className="w-full mb-[23px]">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
+            <SearchFilter onChange={setSearchFilters} />
+            <div className="flex space-x-[4px]">
+              <Filter onChange={setPositionFilters} option={positionOptions} />
+              <Filter
+                onChange={setDepartmentFilters}
+                option={departmentOptions}
+              />
+              <Filter
+                onChange={setSubDepartmentFilters}
+                option={subDeptOptions}
+              />
+              <AddButton label="บัญชีผู้ใช้" />
+            </div>
+          </div>
+        </div>
+
+        <div className="w-[1655px]">
+          {/* หัวตาราง */}
+          <div
+            className="grid [grid-template-columns:351px_220px_203px_183px_188px_179px_166px_81px]
+              bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center"
+          >
+            <div className="py-2 px-4 text-left flex items-center">
+              ชื่อผู้ใช้
+              <button type="button" onClick={() => HandleSort("name")}>
+                <Icon
+                  icon={
+                    sortField === "name"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              ตำแหน่ง
+              <button type="button" onClick={() => HandleSort("position")}>
+                <Icon
+                  icon={
+                    sortField === "position"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              แผนก
+              <button type="button" onClick={() => HandleSort("department")}>
+                <Icon
+                  icon={
+                    sortField === "department"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              ฝ่ายย่อย
+              <button type="button" onClick={() => HandleSort("subDepartment")}>
+                <Icon
+                  icon={
+                    sortField === "subDepartment"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              เบอร์ติดต่อ
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              วันที่เพิ่ม
+              <button type="button" onClick={() => HandleSort("dateAdded")}>
+                <Icon
+                  icon={
+                    sortField === "dateAdded"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              สถานะ
+              <button type="button" onClick={() => HandleSort("status")}>
+                <Icon
+                  icon={
+                    sortField === "status"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down" //default icon
+                  }
+                  width="24"
+                  height="24"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">จัดการ</div>
+          </div>
+
+          <div className="border border-[#D9D9D9] rounded-[16px]">
+            {/* แถวข้อมูล */}
             {pageRows.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="py-2 px-4">
-                  <div className="flex items-center">
-                    <img
-                      src={user.imageUrl} // ลิงก์รูปภาพ
-                      alt={user.name} // ข้อความสำรอง
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div className="ml-3">
-                      <div>{user.name}</div>
-                      <div>
-                        <span className="text-blue-600">{user.email} : </span>
-                        <span>{user.employeeId}</span>
-                      </div>
+              <div
+                key={user.id}
+                className="grid [grid-template-columns:351px_220px_203px_183px_188px_179px_166px_81px]
+                 items-center hover:bg-gray-50"
+              >
+                {/* ชื่อผู้ใช้ */}
+                <div className="py-2 px-4 flex items-center">
+                  <img
+                    src={user.imageUrl}
+                    alt={user.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div className="ml-3">
+                    <div>{user.name}</div>
+                    <div>
+                      <span className="text-blue-600">{user.email} : </span>
+                      <span>{user.employeeId}</span>
                     </div>
                   </div>
-                </td>
-                <td className="py-2 px-4">{user.position}</td>
-                <td className="py-2 px-4">{user.department}</td>
-                <td className="py-2 px-4">{user.subDepartment}</td>
-                <td className="py-2 px-4">{user.phone}</td>
-                <td className="py-2 px-4">{formatThaiDate(user.dateAdded)}</td>
-                <td className="py-2 px-4">
+                </div>
+
+                <div className="py-2 px-4">{user.position}</div>
+                <div className="py-2 px-4">{user.department}</div>
+                <div className="py-2 px-4">{user.subDepartment}</div>
+                <div className="py-2 px-4">{user.phone}</div>
+                <div className="py-2 px-4">
+                  {FormatThaiDate(user.dateAdded)}
+                </div>
+
+                <div className="py-2 px-4">
                   {user.status ? (
-                    <span className="px-4 py-1 items-center justify-center w-[120px] h-[34px] border border-green-400 text-green-500 rounded-full text-base">
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
                       ใช้งานได้ปกติ
                     </span>
                   ) : (
-                    <span className="px-4 py-1 items-center justify-center w-[120px] h-[34px] border border-red-400 text-red-500 rounded-full text-base">
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#FF4D4F] text-[#FF4D4F] rounded-full text-base">
                       ถูกปิดการใช้งาน
                     </span>
                   )}
-                </td>
-                <td className="py-2 px-4">
-                  <div className="flex items-center justify-start gap-3">
-                    {/* ปุ่มแก้ไข */}
-                    <button
-                      className="flex items-center justify-center text-blue-500 hover:text-blue-700"
-                      title="แก้ไข"
-                    >
-                      <Icon icon="prime:pen-to-square" width="22" height="22" />
-                    </button>
+                </div>
 
-                    {/* ปุ่มลบ */}
-                    <button
-                      className="flex items-center justify-center text-red-500 hover:text-red-700"
-                      title="ลบ"
-                    >
-                      <Icon
-                        icon="solar:trash-bin-trash-outline"
-                        width="22"
-                        height="22"
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                <div>
+                  {user.status ? (
+                    <div className="py-2 px-4 flex items-center gap-3">
+                      <button
+                        className="text-[#1890FF] hover:text-[#1890FF]"
+                        title="แก้ไข"
+                      >
+                        <Icon
+                          icon="prime:pen-to-square"
+                          width="22"
+                          height="22"
+                        />
+                      </button>
+                      <button
+                        className="text-[#FF4D4F] hover:text-[#FF4D4F]"
+                        title="ลบ"
+                      >
+                        <Icon
+                          icon="solar:trash-bin-trash-outline"
+                          width="22"
+                          height="22"
+                        />
+                      </button>
+                    </div>
+                  ) : (
+                    <div></div>
+                  )}
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
 
-        <div className="mt-3 pt-3 flex items-center justify-end">
-          {/* ขวา: ตัวแบ่งหน้า */}
-          <div className="flex items-center gap-2">
-            {/* ปุ่มก่อนหน้า */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-gray-400 disabled:bg-gray-50"
-            >
-              {"<"}
-            </button>
+            {/* ปุ่มหน้า */}
+            <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+              {/* ขวา: ตัวแบ่งหน้า */}
+              <div className="flex items-center gap-2">
+                {/* ปุ่มก่อนหน้า */}
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
+                >
+                  {"<"}
+                </button>
 
-            {/* หน้า 1 */}
-            <button
-              type="button"
-              onClick={() => setPage(1)}
-              className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-blue-500 text-blue-600" : ""}`}
-            >
-              1
-            </button>
+                {/* หน้า 1 */}
+                <button
+                  type="button"
+                  onClick={() => setPage(1)}
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                >
+                  1
+                </button>
 
-            {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบน้ำเงิน */}
-            {page > 2 && <span className="px-1 text-gray-400">…</span>}
-            {page > 1 && page < totalPages && (
-              <button
-                type="button"
-                className="h-8 min-w-8 px-2 rounded border text-sm border-blue-500 text-blue-600"
-              >
-                {page}
-              </button>
-            )}
-            {page < totalPages - 1 && (
-              <span className="px-1 text-gray-400">…</span>
-            )}
+                {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
+                {page > 2 && <span className="px-1 text-gray-400">…</span>}
+                {page > 1 && page < totalPages && (
+                  <button
+                    type="button"
+                    className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                  >
+                    {page}
+                  </button>
+                )}
+                {page < totalPages - 1 && (
+                  <span className="px-1 text-gray-400">…</span>
+                )}
 
-            {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
-            {totalPages > 1 && (
-              <button
-                type="button"
-                onClick={() => setPage(totalPages)}
-                className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-blue-500 text-blue-600" : ""}`}
-              >
-                {totalPages}
-              </button>
-            )}
+                {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
+                {totalPages > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setPage(totalPages)}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                  >
+                    {totalPages}
+                  </button>
+                )}
 
-            {/* ถัดไป */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-gray-400 disabled:bg-gray-50"
-            >
-              {">"}
-            </button>
+                {/* ถัดไป */}
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+                >
+                  {">"}
+                </button>
 
-            {/* ไปหน้าที่ */}
-            <form
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const fd = new FormData(e.currentTarget);
-                  const v = Number(fd.get("goto"));
-                  if (!Number.isNaN(v))
-                    setPage(Math.min(totalPages, Math.max(1, v)));
-                }
-              }}
-              className="flex items-center gap-1"
-            >
-              <span>ไปที่หน้า</span>
-              <input
-                name="goto"
-                type="number"
-                min={1}
-                max={totalPages}
-                className="h-8 w-14 rounded border px-2 text-sm"
-              />
-            </form>
+                {/* ไปหน้าที่ */}
+                <form
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const fd = new FormData(e.currentTarget);
+                      const v = Number(fd.get("goto"));
+                      if (!Number.isNaN(v))
+                        setPage(Math.min(totalPages, Math.max(1, v)));
+                    }
+                  }}
+                  className="flex items-center gap-1"
+                >
+                  <span>ไปที่หน้า</span>
+                  <input
+                    name="goto"
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
+                  />
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>

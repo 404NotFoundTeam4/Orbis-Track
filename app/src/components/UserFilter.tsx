@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { Icon } from "@iconify/react";
 
 type Option = { label: string; value: string };
 
 interface UserFilterProps {
-  total: number;
   onChange: (filters: {
     search: string;
     position: string;
@@ -20,7 +20,6 @@ interface UserFilterProps {
 const defaultOpt = [{ label: "ทั้งหมด", value: "" }];
 
 export const UserFilter: React.FC<UserFilterProps> = ({
-  total,
   onChange,
   positions = defaultOpt,
   departments = defaultOpt,
@@ -36,41 +35,37 @@ export const UserFilter: React.FC<UserFilterProps> = ({
   }, [search, position, department, subDepartment, onChange]);
 
   const inputClass =
-    "h-10 rounded-xl border border-gray-300 px-3 text-sm outline-none " +
+    "h-10 border border-gray-300 text-sm outline-none " +
     "focus:ring-2 focus:ring-blue-200 focus:border-blue-300 bg-white";
 
   return (
     <div className="w-full mb-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-sm text-gray-700">
-          ผู้ใช้งานทั้งหมด <span className="font-semibold">{total}</span>
+      {/* แถวตัวกรอง */}
+      <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
+        {/* Search */}
+        <div
+          className={`${inputClass} w-[438px] h-[46px] px-[24px] py-[10px] flex items-center gap-2 rounded-full`}
+        >
+          <FontAwesomeIcon
+            icon={faMagnifyingGlass}
+            className="w-4 h-4 text-gray-400 shrink-0"
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ค้นหา"
+            aria-label="ค้นหา"
+            className="flex-1 h-10 bg-transparent border-0 outline-none text-sm "
+          />
         </div>
 
-        {/* แถวตัวกรอง */}
-        <div className="flex flex-wrap gap-2">
-          {/* Search */}
-
-          <div
-            className={`${inputClass} min-w-[220px] flex-1 flex items-center gap-2`}
-          >
-            <FontAwesomeIcon
-              icon={faMagnifyingGlass}
-              className="w-4 h-4 text-gray-400 shrink-0"
-            />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ค้นหา"
-              aria-label="ค้นหา"
-              className="flex-1 h-10 bg-transparent border-0 outline-none text-sm"
-            />
-          </div>
-
+        {/* filter */}
+        <div className="flex space-x-[4px]">
           {/* ตำแหน่ง */}
           <select
             value={position}
             onChange={(e) => setPosition(e.target.value)}
-            className={`${inputClass} w-[180px]`}
+            className={`${inputClass} w-[210px] h-[46px] px-[20px] py-[8px] rounded-[16px]`}
             aria-label="ตำแหน่ง"
           >
             {positions.map((o) => (
@@ -84,7 +79,7 @@ export const UserFilter: React.FC<UserFilterProps> = ({
           <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            className={`${inputClass} w-[180px]`}
+            className={`${inputClass} w-[210px] h-[46px] px-[20px] py-[8px] rounded-[16px]`}
             aria-label="แผนก"
           >
             {departments.map((o) => (
@@ -98,7 +93,7 @@ export const UserFilter: React.FC<UserFilterProps> = ({
           <select
             value={subDepartment}
             onChange={(e) => setSubDepartment(e.target.value)}
-            className={`${inputClass} w-[180px]`}
+            className={`${inputClass} w-[210px] h-[46px] px-[20px] py-[8px] rounded-[16px]`}
             aria-label="ฝ่ายย่อย"
           >
             {subDepartments.map((o) => (
@@ -107,6 +102,12 @@ export const UserFilter: React.FC<UserFilterProps> = ({
               </option>
             ))}
           </select>
+
+          {/* ปุ่มเพิ่ม */}
+          <div className="flex items-center justify-center w-[150px] h-[46px] border bg-[#1890FF] rounded-full text-[#FFFFFF]">
+            <Icon icon="ic:baseline-plus" width="22" height="22" />{" "}
+            เพิ่มบัญชีผู้ใช้
+          </div>
         </div>
       </div>
     </div>

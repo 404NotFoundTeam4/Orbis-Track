@@ -15,9 +15,9 @@ import { blacklistToken } from './token-blacklist.service.js';
  */
 async function checkLogin(payload: LoginPayload) {
     // quick guard: ช่องว่าง/ไม่กรอกมา
-    const { username, passwords } = payload;
+    const { username, passwords, isRemember } = payload;
     if (!username || !passwords) {
-        throw new ValidationError("Missing required fields");
+        throw new ValidationError("Missing required fields: username, passwords");
     }
 
     // หา user แบบเลือกเฉพาะฟิลด์ที่ต้องใช้
@@ -45,7 +45,7 @@ async function checkLogin(payload: LoginPayload) {
     }
 
     // ออก token พร้อม payload ที่ต้องใช้ต่อฝั่ง server
-    const exp = payload.isRemember ? "30d" : env.JWT_EXPIRES_IN as SignOptions["expiresIn"];
+    const exp = isRemember ? "30d" : env.JWT_EXPIRES_IN as SignOptions["expiresIn"];
     const token = signToken({
         sub: result.us_id,
         username: result.us_username,

@@ -3,7 +3,7 @@ import { UserController } from "./user.controller.js";
 import { getAllUsersResponseSchema, userSchema } from "./user.schema.js";
 
 const userController = new UserController();
-const router = new Router();
+const router = new Router(undefined, '/users');
 
 router.get("/:id", userController.get);
 router.getDoc("/", { tag: "Users", res: getAllUsersResponseSchema, auth: true } ,userController.getAll);

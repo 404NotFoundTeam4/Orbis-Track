@@ -4,352 +4,89 @@ import Filter from "../components/Filter";
 import SearchFilter from "../components/SearchFilter";
 import AddButton from "../components/AddButton";
 import { Icon } from "@iconify/react";
+import axios from "axios";
 
-interface User {
-  id: number;
-  name: string;
-  employeeId: string;
-  position: string;
-  department: string;
-  subDepartment: string;
-  phone: string;
-  dateAdded: string;
-  status: boolean;
-  email: string;
-  imageUrl: string;
-}
+type User = {
+  us_id: number;
+  us_emp_code: string;
+  us_firstname: string;
+  us_lastname: string;
+  us_username: string;
+  us_email: string;
+  us_phone: string;
+  us_images: string;
+  us_role: string;
+  us_dept_id: number;
+  us_sec_id: number;
+  us_is_active: boolean;
+  us_dept_name: string;
+  us_sec_name: string;
+};
 
-//ตั้งข้อมูลใน dropdown
-const positionOptions = [
-  { label: "ทั้งหมด", value: "" },
-  { label: "Team Leader", value: "Team Leader" },
-  { label: "Support Manager", value: "Support Manager" },
-];
+type Section = {
+  sec_id: number;
+  sec_name: string;
+  sec_dept_id: number;
+};
 
-const departmentOptions = [
-  { label: "ทั้งหมด", value: "" },
-  { label: "Marketing", value: "Marketing" },
-  { label: "Media", value: "Media" },
-];
-
-const subDeptOptions = [
-  { label: "ทั้งหมด", value: "" },
-  { label: "F", value: "F" },
-  { label: "A", value: "A" },
-];
+type Department = {
+  dept_id: number;
+  dept_name: string;
+};
 
 export const Users = () => {
-  // ข้อมูลผู้ใช้ตัวอย่าง
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 1,
-      name: "นายทศพล อนุชัย",
-      employeeId: "123456",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Marketing",
-      subDepartment: "F",
-      phone: "095-461-4305",
-      dateAdded: "2025-08-20",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 2,
-      name: "นายอาทิวัฒน์ มีตัว",
-      employeeId: "789101",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Media",
-      subDepartment: "F",
-      phone: "095-461-4305",
-      dateAdded: "2025-08-21",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 3,
-      name: "น.ส.กมลชนก ศรีประเสริฐ",
-      employeeId: "789102",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Marketing",
-      subDepartment: "A",
-      phone: "095-461-4306",
-      dateAdded: "2025-08-19",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 4,
-      name: "นายพงศธร วัฒนากูล",
-      employeeId: "789103",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Media",
-      subDepartment: "F",
-      phone: "095-461-4307",
-      dateAdded: "2025-08-18",
-      status: false,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 5,
-      name: "น.ส.ธนิกานต์ ชัยมงคล",
-      employeeId: "789104",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Media",
-      subDepartment: "A",
-      phone: "095-461-4308",
-      dateAdded: "2025-08-17",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 6,
-      name: "นายภูริภัทร เกียรติไกร",
-      employeeId: "789105",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Marketing",
-      subDepartment: "F",
-      phone: "095-461-4309",
-      dateAdded: "2025-08-16",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 7,
-      name: "น.ส.ปาณิสรา แสงสุริยา",
-      employeeId: "789106",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Marketing",
-      subDepartment: "F",
-      phone: "095-461-4310",
-      dateAdded: "2025-08-15",
-      status: false,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 8,
-      name: "นายณัฐนนท์ มีศักดิ์",
-      employeeId: "789107",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Media",
-      subDepartment: "A",
-      phone: "095-461-4311",
-      dateAdded: "2025-08-14",
-      status: false,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 9,
-      name: "น.ส.สุพิชญา รัตนชัย",
-      employeeId: "789108",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Media",
-      subDepartment: "F",
-      phone: "095-461-4312",
-      dateAdded: "2025-08-13",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 10,
-      name: "นายธีรดนย์ บุณยรัตน์",
-      employeeId: "789109",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Marketing",
-      subDepartment: "A",
-      phone: "095-461-4313",
-      dateAdded: "2025-08-12",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 11,
-      name: "น.ส.จิราภรณ์ สุนทรศักดิ์",
-      employeeId: "789110",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Marketing",
-      subDepartment: "A",
-      phone: "095-461-4314",
-      dateAdded: "2025-08-11",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 12,
-      name: "นายศุภกฤต พิพัฒน์ไทย",
-      employeeId: "789111",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Media",
-      subDepartment: "F",
-      phone: "095-461-4315",
-      dateAdded: "2025-08-10",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 13,
-      name: "น.ส.รพีพร จันทร์เพ็ญ",
-      employeeId: "789112",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Marketing",
-      subDepartment: "F",
-      phone: "095-461-4316",
-      dateAdded: "2025-08-09",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 14,
-      name: "นายตะวัน คงรักษ์",
-      employeeId: "789113",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Media",
-      subDepartment: "A",
-      phone: "095-461-4317",
-      dateAdded: "2025-08-08",
-      status: false,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 15,
-      name: "น.ส.ปวีณา ตรีวัฒน์",
-      employeeId: "789114",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Media",
-      subDepartment: "F",
-      phone: "095-461-4318",
-      dateAdded: "2025-08-07",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 16,
-      name: "นายธนกฤต อินทรโชติ",
-      employeeId: "789115",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Marketing",
-      subDepartment: "A",
-      phone: "095-461-4319",
-      dateAdded: "2025-08-06",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 17,
-      name: "น.ส.ชนิสรา บวรุตม์",
-      employeeId: "789116",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Marketing",
-      subDepartment: "F",
-      phone: "095-461-4320",
-      dateAdded: "2025-08-05",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 18,
-      name: "นายปฐมพงศ์ ชาญชัย",
-      employeeId: "789117",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Media",
-      subDepartment: "F",
-      phone: "095-461-4321",
-      dateAdded: "2025-08-04",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 19,
-      name: "น.ส.ธัญชนก กิตติคุณ",
-      employeeId: "789118",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Marketing",
-      subDepartment: "A",
-      phone: "095-461-4322",
-      dateAdded: "2025-08-03",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 20,
-      name: "นายณภัทร รุ่งเรือง",
-      employeeId: "789119",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Media",
-      subDepartment: "F",
-      phone: "095-461-4323",
-      dateAdded: "2025-08-02",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 21,
-      name: "น.ส.ภัสสรา ศักดิ์สิทธิ์",
-      employeeId: "789120",
-      email: "Giga@xxxxx.com",
-      position: "Team Leader",
-      department: "Media",
-      subDepartment: "A",
-      phone: "095-461-4324",
-      dateAdded: "2025-08-01",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-    {
-      id: 22,
-      name: "นายกิตติภูมิ อนงค์ชัย",
-      employeeId: "789121",
-      email: "Giga@xxxxx.com",
-      position: "Support Manager",
-      department: "Marketing",
-      subDepartment: "F",
-      phone: "095-461-4325",
-      dateAdded: "2025-08-22",
-      status: true,
-      imageUrl:
-        "https://cdn-useast1.kapwing.com/static/templates/crying-cat-meme-template-regular-096fc808.webp",
-    },
-  ]);
+  //ตั้งข้อมูล section ไว้ใช้ใน filter
+  const [sections, setSections] = useState<Section[]>([]);
+  const sectionOptions = [
+    { label: "ทั้งหมด", value: "" },
+    ...sections.map((section) => ({
+      label: section.sec_name,
+      value: section.sec_name,
+    })),
+  ];
+  const [sectionFilter, setSectionFilter] = useState({ option: "" });
+  //ตั้งข้อมูล department ไว้ใช้ใน filter
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const departmentOptions = [
+    { label: "ทั้งหมด", value: "" },
+    ...departments.map((department) => ({
+      label: department.dept_name,
+      value: department.dept_name,
+    })),
+  ];
+  const [departmentFilter, setDepartmentFilters] = useState({ option: "" });
+
+  const [users, setusers] = useState<User[]>([]);
+  //ตั้งข้อมูล role ไว้ใช้ใน filter
+  const roleOptions = [
+    { label: "ทั้งหมด", value: "" },
+    ...Array.from(
+      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
+    ).map((r) => ({
+      label: r,
+      value: r,
+    })),
+  ];
+  const [roleFilter, setRoleFilters] = useState({ option: "" });
+
+  //Search Filter
+  const [searchFilter, setSearchFilters] = useState({
+    search: "",
+  });
+
+  //ดึงข้อมูล api จาก back-end
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await axios.get("/api/users");
+      const data = res.data;
+
+      setSections(data.data.sections || []);
+      setDepartments(data.data.departments || []);
+      setusers(data.data.userWithDetails || []);
+    };
+
+    fetchData();
+  }, []);
 
   /**
    * Description: แปลงวันที่
@@ -366,9 +103,8 @@ export const Users = () => {
   };
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
-  const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "dateAdded"
-  );
+  const [sortField, setSortField] = useState<keyof User | "statusText">();
+  // "dateAdded"
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   /**
@@ -388,84 +124,78 @@ export const Users = () => {
     }
   };
 
-  //Search Filter
-  const [searchFilter, setSearchFilters] = useState({
-    search: "",
-  });
-  //Filter position
-  const [positionFilter, setPositionFilters] = useState({
-    option: "",
-  });
-  //Filter department
-  const [departmentFilter, setDepartmentFilters] = useState({
-    option: "",
-  });
-  //Filter subDepartment
-  const [subDepartmentFilter, setSubDepartmentFilters] = useState({
-    option: "",
-  });
-
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
     let result = users.filter((u) => {
       const bySearch =
         !search ||
         [
-          u.name,
-          u.employeeId,
-          u.position,
-          u.department,
-          u.subDepartment,
-          u.phone,
-          u.dateAdded,
+          u.us_firstname,
+          u.us_lastname,
+          u.us_emp_code,
+          u.us_role,
+          u.us_dept_name,
+          u.us_sec_name,
+          u.us_phone,
+          // u.dateAdded,
         ]
           .join(" ")
           .toLowerCase()
           .includes(search);
-      const byPos =
-        !positionFilter.option || u.position === positionFilter.option;
+      const byRole = !roleFilter.option || u.us_role === roleFilter.option;
       const byDep =
-        !departmentFilter.option || u.department === departmentFilter.option;
-      const bySub =
-        !subDepartmentFilter.option ||
-        u.subDepartment === subDepartmentFilter.option;
-      return bySearch && byPos && byDep && bySub;
+        !departmentFilter.option || u.us_dept_name === departmentFilter.option;
+      const bySec =
+        !sectionFilter.option || u.us_sec_name === sectionFilter.option;
+      return bySearch && byRole && byDep && bySec;
     });
 
     //เริ่มทำการ sort
     result = [...result].sort((a, b) => {
-      let valA: any = a[sortField as keyof User];
-      let valB: any = b[sortField as keyof User];
+      let valA: any;
+      let valB: any;
 
-      // พิเศษ: ถ้าเป็นวันที่
-      if (sortField === "dateAdded") {
-        valA = new Date(valA).getTime();
-        valB = new Date(valB).getTime();
+      switch (sortField) {
+        case "us_firstname":
+          valA = `${a.us_firstname} ${a.us_lastname}`;
+          valB = `${b.us_firstname} ${b.us_lastname}`;
+          break;
+        case "us_role":
+          valA = a.us_role;
+          valB = b.us_role;
+          break;
+        case "us_dept_name":
+          valA = a.us_dept_name;
+          valB = b.us_dept_name;
+          break;
+        case "us_sec_name":
+          valA = a.us_sec_name;
+          valB = b.us_sec_name;
+          break;
+        case "us_is_active":
+          valA = a.us_is_active ? 1 : 0;
+          valB = b.us_is_active ? 1 : 0;
+          break;
+        default:
+          valA = a.us_id;
+          valB = b.us_id;
       }
 
-      // พิเศษ: ถ้าเป็น boolean ให้แปลงเป็นตัวเลข
-      if (sortField === "status") {
-        valA = a.status ? 1 : 0;
-        valB = b.status ? 1 : 0;
-      }
-
-      // แปลงเป็น string สำหรับ compare ถ้าเป็น text
       if (typeof valA === "string" && typeof valB === "string") {
         return sortDirection === "asc"
           ? valA.localeCompare(valB, "th")
           : valB.localeCompare(valA, "th");
       }
 
-      // ถ้าเป็นตัวเลข
       return sortDirection === "asc" ? valA - valB : valB - valA;
     });
     return result;
   }, [
     users,
     searchFilter,
-    positionFilter,
+    roleFilter,
     departmentFilter,
-    subDepartmentFilter,
+    sectionFilter,
     sortDirection,
   ]);
 
@@ -478,9 +208,9 @@ export const Users = () => {
     setPage(1);
   }, [
     searchFilter,
-    positionFilter,
+    roleFilter,
     departmentFilter,
-    subDepartmentFilter,
+    sectionFilter,
     sortDirection,
   ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
@@ -492,11 +222,14 @@ export const Users = () => {
   return (
     <div className="w-full min-h-screen flex flex-col p-4">
       <div className="flex-1">
+        {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">บัญชีผู้ใช้</span>
         </div>
+        
+        {/* ชื่อหน้า */}
         <div className="flex items-center gap-[14px] mb-[21px]">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
@@ -509,20 +242,24 @@ export const Users = () => {
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <SearchFilter onChange={setSearchFilters} />
             <div className="flex space-x-[4px]">
-              <Filter onChange={setPositionFilters} option={positionOptions} />
               <Filter
-                onChange={setDepartmentFilters}
+                onChange={(value) => setRoleFilters({ option: value })}
+                option={roleOptions}
+              />
+              <Filter
+                onChange={(value) => setDepartmentFilters({ option: value })}
                 option={departmentOptions}
               />
               <Filter
-                onChange={setSubDepartmentFilters}
-                option={subDeptOptions}
+                onChange={(value) => setSectionFilter({ option: value })}
+                option={sectionOptions}
               />
               <AddButton label="บัญชีผู้ใช้" />
             </div>
           </div>
         </div>
 
+        {/* ตาราง */}
         <div className="w-[1655px]">
           {/* หัวตาราง */}
           <div
@@ -531,10 +268,10 @@ export const Users = () => {
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
-              <button type="button" onClick={() => HandleSort("name")}>
+              <button type="button" onClick={() => HandleSort("us_firstname")}>
                 <Icon
                   icon={
-                    sortField === "name"
+                    sortField === "us_firstname"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
@@ -548,10 +285,10 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ตำแหน่ง
-              <button type="button" onClick={() => HandleSort("position")}>
+              <button type="button" onClick={() => HandleSort("us_role")}>
                 <Icon
                   icon={
-                    sortField === "position"
+                    sortField === "us_role"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
@@ -565,10 +302,10 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               แผนก
-              <button type="button" onClick={() => HandleSort("department")}>
+              <button type="button" onClick={() => HandleSort("us_dept_name")}>
                 <Icon
                   icon={
-                    sortField === "department"
+                    sortField === "us_dept_name"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
@@ -582,10 +319,10 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ฝ่ายย่อย
-              <button type="button" onClick={() => HandleSort("subDepartment")}>
+              <button type="button" onClick={() => HandleSort("us_sec_name")}>
                 <Icon
                   icon={
-                    sortField === "subDepartment"
+                    sortField === "us_sec_name"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
@@ -602,7 +339,7 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               วันที่เพิ่ม
-              <button type="button" onClick={() => HandleSort("dateAdded")}>
+              {/* <button type="button" onClick={() => HandleSort("dateAdded")}>
                 <Icon
                   icon={
                     sortField === "dateAdded"
@@ -615,14 +352,14 @@ export const Users = () => {
                   height="24"
                   className="ml-1"
                 />
-              </button>
+              </button> */}
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               สถานะ
-              <button type="button" onClick={() => HandleSort("status")}>
+              <button type="button" onClick={() => HandleSort("us_is_active")}>
                 <Icon
                   icon={
-                    sortField === "status"
+                    sortField === "us_is_active"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
@@ -639,38 +376,38 @@ export const Users = () => {
 
           <div className="border border-[#D9D9D9] rounded-[16px]">
             {/* แถวข้อมูล */}
-            {pageRows.map((user) => (
+            {pageRows.map((u) => (
               <div
-                key={user.id}
+                key={u.us_id}
                 className="grid [grid-template-columns:351px_220px_203px_183px_188px_179px_166px_81px]
                  items-center hover:bg-gray-50"
               >
                 {/* ชื่อผู้ใช้ */}
                 <div className="py-2 px-4 flex items-center">
                   <img
-                    src={user.imageUrl}
-                    alt={user.name}
+                    src={u.us_images}
+                    alt={u.us_firstname}
                     className="w-10 h-10 rounded-full object-cover"
                   />
                   <div className="ml-3">
-                    <div>{user.name}</div>
+                    <div>{`${u.us_firstname} ${u.us_lastname}`}</div>
                     <div>
-                      <span className="text-blue-600">{user.email} : </span>
-                      <span>{user.employeeId}</span>
+                      <span className="text-blue-600">{u.us_email} : </span>
+                      <span>{u.us_emp_code}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="py-2 px-4">{user.position}</div>
-                <div className="py-2 px-4">{user.department}</div>
-                <div className="py-2 px-4">{user.subDepartment}</div>
-                <div className="py-2 px-4">{user.phone}</div>
+                <div className="py-2 px-4">{u.us_role}</div>
+                <div className="py-2 px-4">{u.us_dept_name}</div>
+                <div className="py-2 px-4">{u.us_sec_name}</div>
+                <div className="py-2 px-4">{u.us_phone}</div>
                 <div className="py-2 px-4">
-                  {FormatThaiDate(user.dateAdded)}
+                  {/* {FormatThaiDate(user.dateAdded)} */}
                 </div>
 
                 <div className="py-2 px-4">
-                  {user.status ? (
+                  {u.us_is_active ? (
                     <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
                       ใช้งานได้ปกติ
                     </span>
@@ -682,7 +419,7 @@ export const Users = () => {
                 </div>
 
                 <div>
-                  {user.status ? (
+                  {u.us_is_active ? (
                     <div className="py-2 px-4 flex items-center gap-3">
                       <button
                         className="text-[#1890FF] hover:text-[#1890FF]"
@@ -796,6 +533,7 @@ export const Users = () => {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

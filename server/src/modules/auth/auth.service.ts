@@ -1,11 +1,12 @@
 import { SignOptions } from 'jsonwebtoken';
 import { env } from '../../config/env.js';
-import { ValidationError } from '../../errors/errors.js';
+import { HttpError, ValidationError } from '../../errors/errors.js';
 import { prisma } from '../../infrastructure/database/client.js';
 import { signToken, verifyToken } from '../../utils/jwt.js';
 import { verifyPassword } from '../../utils/password.js';
-import type { LoginPayload } from './auth.schema.js';
+import type { AccessTokenPayload, LoginPayload } from './auth.schema.js';
 import { blacklistToken } from './token-blacklist.service.js';
+import { HttpStatus } from '../../core/http-status.enum.js';
 
 /**
  * Description: ตรวจ login จาก DB แล้วออก JWT
@@ -15,9 +16,9 @@ import { blacklistToken } from './token-blacklist.service.js';
  */
 async function checkLogin(payload: LoginPayload) {
     // quick guard: ช่องว่าง/ไม่กรอกมา
-    const { username, passwords } = payload;
+    const { username, passwords, isRemember } = payload;
     if (!username || !passwords) {
-        throw new ValidationError("Missing required fields");
+        throw new ValidationError("Missing required fields: username, passwords");
     }
 
     // หา user แบบเลือกเฉพาะฟิลด์ที่ต้องใช้
@@ -25,11 +26,8 @@ async function checkLogin(payload: LoginPayload) {
         where: { us_username: username },
         select: {
             us_id: true,
-            us_username: true,
             us_password: true,
             us_role: true,
-            us_dept_id: true,
-            us_sec_id: true,
             us_is_active: true,
         },
     });
@@ -45,14 +43,10 @@ async function checkLogin(payload: LoginPayload) {
     }
 
     // ออก token พร้อม payload ที่ต้องใช้ต่อฝั่ง server
-    const exp = payload.isRemember ? "30d" : env.JWT_EXPIRES_IN as SignOptions["expiresIn"];
+    const exp = isRemember ? "30d" : env.JWT_EXPIRES_IN as SignOptions["expiresIn"];
     const token = signToken({
         sub: result.us_id,
-        username: result.us_username,
         role: result.us_role,
-        dept_id: result.us_dept_id,
-        sec_id: result.us_sec_id,
-        is_active: result.us_is_active,
     }, exp);
 
     return token;
@@ -79,4 +73,44 @@ async function logout(token: string) {
     }
 }
 
-export const authService = { checkLogin, logout };
+/**
+ * Description: ดึงข้อมูลผู้ใช้ปัจจุบันจาก database ตาม user ID ใน token
+ * Input : AccessTokenPayload { sub (user_id), role }
+ * Output : meDto (ข้อมูลผู้ใช้ครบถ้วนจาก database)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function fetchMe(user: AccessTokenPayload) {
+    // ตรวจสอบว่ามี user data ใน token หรือไม่
+    if (!user) {
+        throw new HttpError(HttpStatus.UNAUTHORIZED, 'User not authenticated');
+    }
+
+    // ค้นหาข้อมูลผู้ใช้จาก database โดยใช้ user ID จาก token
+    const result = await prisma.users.findUnique({
+        where: { us_id: user.sub },
+        select: {
+            us_id: true,
+            us_emp_code: true,
+            us_username: true,
+            us_firstname: true,
+            us_lastname: true,
+            us_email: true,
+            us_phone: true,
+            us_role: true,
+            us_images: true,
+            us_pa_id: true,
+            us_dept_id: true,
+            us_sec_id: true,
+            us_is_active: true,
+        },
+    });
+
+    // ตรวจสอบว่าพบข้อมูลผู้ใช้หรือไม่
+    if (!result) {
+        throw new HttpError(HttpStatus.NOT_FOUND, 'User not found');
+    }
+
+    return result;
+}
+
+export const authService = { checkLogin, logout, fetchMe };

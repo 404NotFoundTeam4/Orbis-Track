@@ -14,11 +14,7 @@ export const loginPayload = z.object({
 // JWT payload schema ข้อมูลผู้ใช้ + iat/exp (Unix seconds)
 export const accessTokenPayload = z.object({
     sub: z.coerce.number().int().positive(), // user_id
-    username: z.string().min(1),
     role: z.enum(Object.values(UserRole) as [string, ...string[]]),
-    dept_id: z.coerce.number().int().positive().nullable().optional(),
-    sec_id: z.coerce.number().int().positive().nullable().optional(),
-    is_active: z.boolean().default(true),
     iat: z.number().optional(),
     exp: z.number().optional(),
 }).strict();
@@ -26,6 +22,23 @@ export const accessTokenPayload = z.object({
 // Token DTO หลัง login ส่ง accessToken ตัวเดียว
 export const tokenDto = z.object({
     accessToken: z.string().min(1),
+}).strict();
+
+// User DTO สำหรับข้อมูลผู้ใช้ที่ครบถ้วน (ใช้ใน /me endpoint)
+export const meDto = z.object({
+    us_id: z.coerce.number().int().positive(),
+    us_emp_code: z.string().nullable(),
+    us_username: z.string().min(1),
+    us_firstname: z.string().nullable(),
+    us_lastname: z.string().nullable(),
+    us_email: z.string().nullable(),
+    us_phone: z.string().nullable(),
+    us_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
+    us_images: z.string().nullable(),
+    us_pa_id: z.coerce.number().int().positive().nullable(),
+    us_dept_id: z.coerce.number().int().positive().nullable(),
+    us_sec_id: z.coerce.number().int().positive().nullable(),
+    us_is_active: z.boolean(),
 }).strict();
 
 // เพิ่ม user payload จาก token ลงใน Express Request (ใช้ใน auth middleware)
@@ -37,3 +50,4 @@ export interface AuthRequest extends Request {
 export type TokenDto = z.infer<typeof tokenDto>;
 export type LoginPayload = z.infer<typeof loginPayload>;
 export type AccessTokenPayload = z.infer<typeof accessTokenPayload>;
+export type MeDto = z.infer<typeof meDto>;

@@ -43,8 +43,9 @@ export const userSchema = z.object({
     us_dept_id: z.coerce.number().optional().nullable(),
     us_sec_id: z.coerce.number().optional().nullable(),
     us_is_active: z.boolean(),
+    created_at: z.coerce.date().nullable(),
     us_dept_name: z.string().optional(),
-    us_sec_name: z.string().optional()
+    us_sec_name: z.string().optional(),
 });
 
 export const getAllUsersResponseSchema = z.object({

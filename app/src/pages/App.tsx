@@ -16,7 +16,7 @@ function App() {
 
         {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
         <Route element={<Layout />}>
-          <Route path="/users" element={<Users />} />
+          <Route path="/administrator/account-management" element={<Users />} />
           <Route path="/home" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>

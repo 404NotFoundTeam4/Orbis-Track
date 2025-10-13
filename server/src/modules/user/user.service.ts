@@ -57,7 +57,8 @@ async function getAllUsers() {
                 us_role: true,
                 us_dept_id: true,
                 us_sec_id: true,
-                us_is_active: true
+                us_is_active: true,
+                created_at: true,
             }
         })
     ]);

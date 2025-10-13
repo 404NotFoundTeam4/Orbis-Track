@@ -21,6 +21,7 @@ type User = {
   us_is_active: boolean;
   us_dept_name: string;
   us_sec_name: string;
+  created_at: Date;
 };
 
 type Section = {
@@ -94,17 +95,18 @@ export const Users = () => {
    * Output : `${day} / ${month} / ${year}`
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
-  const FormatThaiDate = (iso: string) => {
+
+  const FormatThaiDate = (iso: string | Date) => {
     const d = new Date(iso);
-    const day = d.toLocaleDateString("th-TH", { day: "2-digit" }); // 21
-    const month = d.toLocaleDateString("th-TH", { month: "short" }); // ส.ค.
-    const year = d.getFullYear() + 543; // แปลง ค.ศ. -> พ.ศ.
-    return `${day} / ${month} / ${year}`;
+    const day = d.getDate(); // วัน
+    const month = d.toLocaleString("th-TH", { month: "short" }); // เดือนแบบย่อ
+    const year = d.getFullYear() + 543; // แปลง ค.ศ. → พ.ศ.
+    return `${day} ${month} ${year}`;
   };
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">();
-  // "dateAdded"
+  ("created_at");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   /**
@@ -176,6 +178,10 @@ export const Users = () => {
           valA = a.us_is_active ? 1 : 0;
           valB = b.us_is_active ? 1 : 0;
           break;
+        case "created_at":
+          valA = new Date(a.created_at).getTime(); // แปลงเป็น timestamp
+          valB = new Date(b.created_at).getTime();
+          break;
         default:
           valA = a.us_id;
           valB = b.us_id;
@@ -228,7 +234,7 @@ export const Users = () => {
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">บัญชีผู้ใช้</span>
         </div>
-        
+
         {/* ชื่อหน้า */}
         <div className="flex items-center gap-[14px] mb-[21px]">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
@@ -263,8 +269,8 @@ export const Users = () => {
         <div className="w-[1655px]">
           {/* หัวตาราง */}
           <div
-            className="grid [grid-template-columns:351px_220px_203px_183px_188px_179px_166px_81px]
-              bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center"
+            className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
+              bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
@@ -339,10 +345,10 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               วันที่เพิ่ม
-              {/* <button type="button" onClick={() => HandleSort("dateAdded")}>
+              <button type="button" onClick={() => HandleSort("created_at")}>
                 <Icon
                   icon={
-                    sortField === "dateAdded"
+                    sortField === "created_at"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
@@ -352,7 +358,7 @@ export const Users = () => {
                   height="24"
                   className="ml-1"
                 />
-              </button> */}
+              </button>
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               สถานะ
@@ -379,8 +385,9 @@ export const Users = () => {
             {pageRows.map((u) => (
               <div
                 key={u.us_id}
-                className="grid [grid-template-columns:351px_220px_203px_183px_188px_179px_166px_81px]
-                 items-center hover:bg-gray-50"
+                // 400px_100px_203px_230px_188px_179px_166px_81px
+                className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px] 
+                 items-center hover:bg-gray-50 text-[16px] gap-3"
               >
                 {/* ชื่อผู้ใช้ */}
                 <div className="py-2 px-4 flex items-center">
@@ -402,9 +409,7 @@ export const Users = () => {
                 <div className="py-2 px-4">{u.us_dept_name}</div>
                 <div className="py-2 px-4">{u.us_sec_name}</div>
                 <div className="py-2 px-4">{u.us_phone}</div>
-                <div className="py-2 px-4">
-                  {/* {FormatThaiDate(user.dateAdded)} */}
-                </div>
+                <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
 
                 <div className="py-2 px-4">
                   {u.us_is_active ? (
@@ -533,7 +538,6 @@ export const Users = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

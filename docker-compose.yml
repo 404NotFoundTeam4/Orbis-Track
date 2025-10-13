@@ -8,7 +8,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Asia/Bangkok
     ports:
-      - "4042:5432" # เปิดถ้าต้องเข้า psql จากข้างนอก, ไม่จำเป็นก็เอาออกได้
+      - "4142:5432" # เปิดถ้าต้องเข้า psql จากข้างนอก, ไม่จำเป็นก็เอาออกได้
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/db-init:/docker-entrypoint-initdb.d:ro # มีสคริปต์ init/extension อยู่แล้ว
@@ -28,7 +28,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-404Redis}
       REDIS_URL: ${REDIS_URL:-redis://default:${REDIS_PASSWORD:-404Redis}@redis:6379}
     ports:
-      - "4046:6379"
+      - "4143:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -73,7 +73,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "4041:4044"
+      - "4141:4044"
     restart: unless-stopped
 
   app:
@@ -86,7 +86,7 @@ services:
       #   - VITE_API_BASE=https://api.yourdomain.com   # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy
     # ถ้า serve ที่พอร์ต 4173 ตาม Dockerfile
     ports:
-      - "4040:4173"
+      - "4140:4173"
     depends_on:
       - server
     restart: unless-stopped

@@ -23,6 +23,12 @@ type Doc = {
     headers?: ZodType;
 };
 
+const joinPath = (a = '', b = '') =>
+    '/' + [a, b]
+        .map(s => (s || '').replace(/(?:^\/+|\/+$)/g, ''))
+        .filter(Boolean)
+        .join('/');
+
 export const catchAsync =
     (fn: (...args: any[]) => any) =>
         (req: Request, res: Response, next: NextFunction) => {
@@ -58,7 +64,10 @@ function registerDoc(method: "get" | "post" | "put" | "patch" | "delete", path: 
 
 // คลาส Router ที่หุ้ม express.Router อีกทีให้โค้ดอ่านง่ายและ return รูปแบบเดียวกันทุก endpoint
 export class Router {
-    constructor(public readonly instance: express.Router = express.Router()) { }
+    constructor(
+        public readonly instance: express.Router = express.Router(),
+        private readonly docPrefix = ""
+    ) { }
 
     private extractHandlers(handlers: RequestHandler[]) {
         const handler = handlers[handlers.length - 1];
@@ -118,23 +127,23 @@ export class Router {
 
     //============================= Swagger Doc ===============================//
     getDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
-        registerDoc("get", path, doc);
+        registerDoc("get", joinPath(this.docPrefix, path), doc);
         this.get(path, ...handlers);
     }
     postDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
-        registerDoc("post", path, doc);
+        registerDoc("post", joinPath(this.docPrefix, path), doc);
         this.post(path, ...handlers);
     }
     putDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
-        registerDoc("put", path, doc);
+        registerDoc("put", joinPath(this.docPrefix, path), doc);
         this.put(path, ...handlers);
     }
     patchDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
-        registerDoc("patch", path, doc);
+        registerDoc("patch", joinPath(this.docPrefix, path), doc);
         this.patch(path, ...handlers);
     }
     deleteDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
-        registerDoc("delete", path, doc);
+        registerDoc("delete", joinPath(this.docPrefix, path), doc);
         this.delete(path, ...handlers);
     }
 }

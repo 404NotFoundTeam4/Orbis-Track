@@ -6,7 +6,7 @@ const userController = new UserController();
 const router = new Router(undefined, '/users');
 
 router.get("/:id", userController.get);
-router.getDoc("/", { tag: "Users", res: getAllUsersResponseSchema, auth: true } ,userController.getAll);
+router.getDoc("/", { tag: "Users", res: getAllUsersResponseSchema, auth: true }, userController.getAll);
 // router.post("/", userController.create);
 
 export default router.instance;

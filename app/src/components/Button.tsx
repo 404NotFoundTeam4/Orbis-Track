@@ -30,7 +30,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   // สไตล์พื้นฐานที่ใช้ร่วมกันทุกสถานะของปุ่ม
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
 
   // โทนสีและพฤติกรรม hover/active แยกตามชนิดปุ่ม
   const variantStyles = {

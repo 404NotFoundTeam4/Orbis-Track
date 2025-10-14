@@ -177,7 +177,7 @@ function DropDown<T extends DropDownItem>({
   );
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className} w-[250px]`} ref={dropdownRef}>
       {/* Label */}
       {label && (
         <label className="block text-sm font-medium text-[#000000] mb-1.5">

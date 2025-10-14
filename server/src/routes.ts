@@ -1,6 +1,6 @@
 import { Router, type Express } from "express";
 
-import userRouter from "./modules/user/index.js";
+import accountsRouter from "./modules/accounts/index.js";
 import authRouter from "./modules/auth/auth.routes.js";
 
 /**
@@ -18,7 +18,7 @@ export function routes(app: Express) {
 
     api.get("/health", (_req, res) => res.json({ ok: true }));
 
-    api.use("/users", userRouter);
+    api.use("/accounts", accountsRouter);
 
     // ผูก router ทั้งหมดไว้ใต้ /api/v1
     app.use("/api/v1", api);

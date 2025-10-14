@@ -4,7 +4,22 @@ import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { HttpError, ValidationError } from "../../errors/errors.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
-import { createAccountsPayload,CreateAccountsSchema,GetAllAccountsResponseSchema } from "./accounts.schema.js";
+import { createAccountsPayload, CreateAccountsSchema, GetAllAccountsResponseSchema } from "./accounts.schema.js";
+
+// Extend Request type to include multer file
+interface MulterRequest extends Request {
+    file?: {
+        fieldname: string;
+        originalname: string;
+        encoding: string;
+        mimetype: string;
+        size: number;
+        destination: string;
+        filename: string;
+        path: string;
+        buffer: Buffer;
+    };
+}
 
 export class AccountsController extends BaseController {
     constructor() {
@@ -26,7 +41,7 @@ export class AccountsController extends BaseController {
     }
 
     // เพิ่มพนักงาน
-    async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<CreateAccountsSchema>> {
+    async create(req: MulterRequest, res: Response, next: NextFunction): Promise<BaseResponse<CreateAccountsSchema>> {
         // ถ้ามีไฟล์ที่อัปโหลดเข้ามาให้เก็บชื่อไฟล์
         const images = req.file ? req.file.path : undefined;
         const payload = createAccountsPayload.parse((req.body));
@@ -34,5 +49,5 @@ export class AccountsController extends BaseController {
 
         // คืนค่าบัญชีผู้ใช้ใหม่
         return { data: result };
-     }
+    }
 };

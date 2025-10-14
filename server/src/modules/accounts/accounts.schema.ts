@@ -20,18 +20,19 @@ export const createAccountsPayload = z.object({
 });
 
 export const createAccountsSchema = z.object({
+    us_id: z.coerce.number().int().positive(),
     us_emp_code: z.string().min(1).max(50).nullable().optional(),
     us_firstname: z.string(),
     us_lastname: z.string(),
     us_username: z.string(),
     us_email: z.string().min(1).max(120),
     us_phone: z.string().min(1).max(20),
-    us_images: z.string().nullable().optional(),
     us_role: z.enum(['ADMIN', 'HOD', 'HOS', 'TECHNICAL', 'STAFF', 'EMPLOYEE']),
+    us_images: z.string().nullable().optional(),
     us_dept_id: z.coerce.number().int().positive().nullable().optional(),
     us_sec_id: z.coerce.number().int().positive().nullable().optional(),
-    created_at: z.date(),
-    updated_at: z.date(),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable(),
 });
 
 export const departmentSchema = z.object({

@@ -4,6 +4,7 @@ export const IdParamSchema = z.object({
     id: z.coerce.number().int().positive(),
 });
 
+// สำหรับตรวจสอบข้อมูลที่ใช้ในการสร้างบัญชีผู้ใช้ใหม่
 export const createAccountsPayload = z.object({
     us_emp_code: z.string().min(1).max(50).nullable().optional(),
     us_firstname: z.string().min(1).max(120),
@@ -19,6 +20,7 @@ export const createAccountsPayload = z.object({
     us_is_active: z.boolean().default(true),
 });
 
+// สำหรับตรวจสอบข้อมูลผู้ใช้หลังจากสร้างบัญชีสำเร็จ
 export const createAccountsSchema = z.object({
     us_id: z.coerce.number().int().positive(),
     us_emp_code: z.string().min(1).max(50).nullable().optional(),
@@ -35,17 +37,20 @@ export const createAccountsSchema = z.object({
     updated_at: z.date().nullable(),
 });
 
+// สำหรับตรวจสอบข้อมูลแผนก
 export const departmentSchema = z.object({
     dept_id: z.coerce.number(),
     dept_name: z.string()
 });
 
+// สำหรับตรวจสอบข้อมูลฝ่ายย่อย
 export const sectionSchema = z.object({
     sec_id: z.coerce.number(),
     sec_name: z.string(),
     sec_dept_id: z.coerce.number()
 });
 
+// สำหรับตรวจสอบข้อมูลผู้ใช้
 export const accountsSchema = z.object({
     us_id: z.coerce.number(),
     us_emp_code: z.string().optional().nullable(),
@@ -64,6 +69,7 @@ export const accountsSchema = z.object({
     us_sec_name: z.string().optional(),
 });
 
+// สำหรับข้อมูลผลลัพธ์จากการดึงข้อมูลผู้ใช้ทั้งหมดพร้อมแผนกและฝ่ายย่อย
 export const getAllAccountsResponseSchema = z.object({
     departments: z.array(departmentSchema),
     sections: z.array(sectionSchema),

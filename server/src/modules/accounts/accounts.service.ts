@@ -25,7 +25,7 @@ async function getAccountsById(id: number) {
 }
 
 /**
- * Description: ดึงข้อมูลพนักงานพร้อมแผนก และฝ่ายย่อย
+ * Description: ดึงข้อมูลพนักงานพร้อมแผนกและฝ่ายย่อย
  * Input : -
  * Output : ข้อมูลพนักงานพร้อมแนก และฝ่ายย่อย
  * Author: Thakdanai Makmi (Ryu) 66160355
@@ -33,12 +33,14 @@ async function getAccountsById(id: number) {
 
 async function getAllAccounts() {
     const [departments, sections, users] = await Promise.all([
+        // ดึงข้อมูลจากตาราง departments
         prisma.departments.findMany({
             select: {
                 dept_id: true,
                 dept_name: true
             }
         }),
+        // ดึงข้อมูลจากตาราง sections
         prisma.sections.findMany({
             select: {
                 sec_id: true,
@@ -46,6 +48,7 @@ async function getAllAccounts() {
                 sec_dept_id: true
             }
         }),
+        // ดึงข้อมูลจากตาราง users
         prisma.users.findMany({
             select: {
                 us_id: true,
@@ -117,6 +120,7 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
     // Hash Password
     const hashedPassword = await hashPassword(us_password);
 
+    // เพิ่มข้อมูลผู้ใช้ใหม่ลงในตาราง users
     return await prisma.users.create({
         data: {
             us_emp_code,

@@ -34,17 +34,30 @@ export class AccountsController extends BaseController {
         return { data: user };
     }
 
-    // ดึงพนักงานทั้งหมด
+    /**
+     * Description: ดึงข้อมูลผู้ใช้ทั้งหมด
+     * Input : -
+     * Output : ข้อมูลบัญชีผู้ใช้ทั้งหมด รวมถึงแผนกและฝ่ายย่อย
+     * Author : Thakdanai Makmi (Ryu) 66160355
+     */
     async getAll(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetAllAccountsResponseSchema>> {
+        // เรียกใช้งาน service เพื่อดึงข้อมูลผู้ใช้
         const user = await accountsService.getAllAccounts();
         return { data: user };
     }
 
-    // เพิ่มพนักงาน
+    /**
+     * Description: เพิ่มข้อมูลบัญชีผู้ใช้ใหม่
+     * Input : req.body (ข้อมูลจากฟอร์ม และไฟล์รูปภาพ)
+     * Output : ข้อมูลบัญชีผู้ใช้ที่ถูกเพิ่มใหม่
+     * Author : Thakdanai Makmi (Ryu) 66160355
+     */
     async create(req: MulterRequest, res: Response, next: NextFunction): Promise<BaseResponse<CreateAccountsSchema>> {
         // ถ้ามีไฟล์ที่อัปโหลดเข้ามาให้เก็บชื่อไฟล์
         const images = req.file ? req.file.path : undefined;
+        // ตรวจสอบและ validate ข้อมูลที่ส่งมา
         const payload = createAccountsPayload.parse((req.body));
+        // เรียกใช้งาน service เพื่อบันทึกข้อมูลลงฐานข้อมูล
         const result = await accountsService.createAccounts(payload, images);
 
         // คืนค่าบัญชีผู้ใช้ใหม่

@@ -4,9 +4,21 @@ import "../styles/css/Login.css";
 import { Icon } from "@iconify/react";
 import male from "../assets/images/login/male.png";
 import female from "../assets/images/login/female.png";
+import { useLogin } from "../hooks/useLogin"
+
 /** หน้าเข้าสู่ระบบตามภาพตัวอย่าง */
 export function Login() {
+
+  const { handleLogin } = useLogin();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+ 
+  const onSubmit = async (a) => {
+  a.preventDefault();
+   handleLogin(username, password,false);
+ 
+};
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden">
       <div className=" absolute -top-[220px] -left-[200px] ">
@@ -124,7 +136,7 @@ export function Login() {
           </div>
 
           {/* Form */}
-          <form>
+          <form onSubmit={onSubmit}>
             <div className="space-y-[27px] mb-12">
               {/* Username */}
               <div className="space-y-[10px]">
@@ -141,7 +153,9 @@ export function Login() {
                   <input
                     type="text"
                     placeholder="ชื่อผู้ใช้"
-                    className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
+                     value={username}
+          onChange={(e) => setUsername(e.target.value)}
+                    className=" flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -156,11 +170,14 @@ export function Login() {
                     icon="ph:key-duotone"
                     width="25"
                     height="25"
+                    
                     className="text-sky-500"
                   />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="รหัสผ่าน"
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
                     className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
                   />
                   <button
@@ -179,13 +196,10 @@ export function Login() {
 
               {/* Remember + Forgot */}
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-[15px] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="appearance-none w-[29px] h-[29px] rounded-md bg-[#BFBFBF] checked:bg-sky-500 checked:border-sky-500 border transition-all duration-200"
-                  />
+                <div className="flex items-center mb-4 gap-[15px]">
+                  <input id="default-checkbox" type="checkbox" value="" className="w-[29px] h-[29px] accent-[#BFBFBF] "/>
                   <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
-                </label>
+                </div>
                 <a
                   href="#"
                   className="text-sky-500 hover:underline font-roboto text-[32px]"

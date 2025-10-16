@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { loginPayload, TokenDto } from "./auth.schema.js";
+import { loginPayload, TokenDto, MeDto, AuthRequest, accessTokenPayload } from "./auth.schema.js";
 import { authService } from "./auth.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
@@ -48,5 +48,17 @@ export class AuthController extends BaseController {
         await authService.logout(token);
 
         return { message: "Logout successful" };
+    }
+
+    /**
+     * Description: ดึงข้อมูลผู้ใช้ปัจจุบันจาก token
+     * Input : req.user จาก auth middleware
+     * Output : { message: "Fetch me successful", data: meDto }
+     * Author : Pakkapon Chomchoey (Tonnam) 66160080
+     */
+    async fetchMe(req: AuthRequest, res: Response, next: NextFunction): Promise<BaseResponse<MeDto>> {
+        const user = accessTokenPayload.parse(req.user);
+        const result = await authService.fetchMe(user);
+        return { message: "Fetch me successful", data: result };
     }
 }

@@ -22,17 +22,18 @@ RUN npm run build
 FROM node:22-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=4044
+ENV PORT=4041
 ENV PRISMA_SCHEMA_PATH=./src/infrastructure/database/prisma/schema.prisma
 RUN apk add --no-cache openssl postgresql-client
 COPY package.json package-lock.json ./
 COPY server/package.json ./server/package.json
-RUN npm ci --omit=dev --workspaces --include-workspace-root=false
+RUN npm ci --omit=dev --workspaces --include-workspace-root=false && \
+    npm install -g prisma
 COPY --from=builder /app/dist ./dist
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma
 COPY server/docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
-EXPOSE 4044
+EXPOSE 4041
 CMD ["./docker-entrypoint.sh"]
 
 # ---------- dev (hot-reload) ----------

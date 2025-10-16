@@ -2,8 +2,8 @@ import { Router, type Express } from "express";
 
 import userRouter from "./modules/user/index.js";
 import authRouter from "./modules/auth/auth.routes.js";
-import departmentRouter from "./modules/department/index.js";
-import roleRouter from "./modules/role/index.js";
+import departmentRouter from "./modules/departments/index.js";
+import roleRouter from "./modules/roles/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1

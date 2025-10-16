@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export const IdParamSchema = z.object({
+    id: z.coerce.number().int().positive(),
+});
+
 export const departmentSchema = z.object({
     dept_id: z.coerce.number(),
     dept_name: z.string()
@@ -22,3 +26,5 @@ export const getAllSectionSchema = z.object({
 export type GetAllDepartmentSchema = z.infer<typeof getAllDepartmentSchema>;
 
 export type GetAllSectionSchema = z.infer<typeof getAllSectionSchema>;
+
+export type IdParamDto = z.infer<typeof IdParamSchema>;

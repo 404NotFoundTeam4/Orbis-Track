@@ -48,11 +48,41 @@ export const userSchema = z.object({
     us_sec_name: z.string().optional(),
 });
 
+export const editUserSchema = z.object({
+    us_firstname: z.string().optional(),
+    us_lastname: z.string().optional(),
+    us_username: z.string().optional(),
+    us_emp_code: z.string().optional(),
+    us_email: z.string().email().optional(),
+    us_phone: z.string().optional(),
+    us_images: z.string().optional(),
+    us_role: z.string().optional(),
+    us_dept_id: z.number().optional(),
+    us_sec_id: z.number().optional(),
+})
+
+export const editUserResponseSchema = z.object({
+    us_firstname: z.string().optional(),
+    us_lastname: z.string().optional(),
+    us_username: z.string().optional(),
+    us_emp_code: z.string().optional(),
+    us_email: z.string().email().optional(),
+    us_phone: z.string().optional(),
+    us_images: z.string().optional(),
+    us_role: z.string().optional(),
+    us_dept_id: z.number().optional(),
+    us_sec_id: z.number().optional(),
+})
+
 export const getAllUsersResponseSchema = z.object({
     departments: z.array(departmentSchema),
     sections: z.array(sectionSchema),
     userWithDetails: z.array(userSchema)
 });
+
+export type EditUserSchema = z.infer<typeof editUserSchema>;
+
+export type EditUserResponseSchema = z.infer<typeof editUserResponseSchema>;
 
 export type GetAllUsersResponseSchema = z.infer<typeof getAllUsersResponseSchema>;
 

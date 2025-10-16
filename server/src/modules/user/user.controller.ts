@@ -4,63 +4,54 @@ import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { HttpError, ValidationError } from "../../errors/errors.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
-import { GetAllUsersResponseSchema } from "./user.schema.js";
+import { GetAllUsersResponseSchema, editUserSchema } from "./user.schema.js";
+import { z } from "zod";
 
 export class UserController extends BaseController {
-    constructor() {
-        super()
-    }
+  constructor() {
+    super();
+  }
 
-    async get(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-        const id = Number(req.params.id);
-        if (isNaN(id)) throw new ValidationError("Invalid id");
-        const user = await userService.getUserById(id);
-        if (!user) throw new HttpError(HttpStatus.NOT_FOUND, "User not found");
-        return { data: user };
-    }
+  async get(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse> {
+    const id = Number(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid id");
+    const user = await userService.getUserById(id);
+    if (!user) throw new HttpError(HttpStatus.NOT_FOUND, "User not found");
+    return { data: user };
+  }
 
-    // ดึงพนักงานทั้งหมด
-    async getAll(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetAllUsersResponseSchema>> {
-        const user = await userService.getAllUsers();
-        return { data: user };
-    }
+  // ดึงพนักงานทั้งหมด
+  async getAll(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<GetAllUsersResponseSchema>> {
+    const user = await userService.getAllUsers();
+    return { data: user };
+  }
 
-    // async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    //     const {
-    //         emp_code,
-    //         firstname,
-    //         lastname,
-    //         username,
-    //         password,
-    //         email,
-    //         phone,
-    //         images,
-    //         role_id,
-    //         dept_id,
-    //         sec_id,
-    //     } = req.body;
+  async update(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse> {
+    const id = Number(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid user id");
 
-    //     if (!firstname || !lastname || !username || !password || !role_id) {
-    //         throw new ValidationError("Missing required fields");
-    //     }
+    // ✅ ใช้ schema ที่ประกาศไว้แล้ว
+    const validatedData = editUserSchema.parse(req.body);
 
-    //     // hash password
-    //     const hashedPassword = password;
+    // ✅ ส่งข้อมูลไปให้ service
+    const updatedUser = await userService.updateUser(id, validatedData);
 
-    //     const newUser = await userService.createUser({
-    //         emp_code,
-    //         firstname,
-    //         lastname,
-    //         username,
-    //         password: hashedPassword,
-    //         email,
-    //         phone,
-    //         images,
-    //         role_id,
-    //         dept_id,
-    //         sec_id,
-    //     });
+    return {
+      message: "User updated successfully",
+      data: updatedUser,
+    };
+  }
 
-    //     return { message: "User created successfully" }
-    // }
-};
+}

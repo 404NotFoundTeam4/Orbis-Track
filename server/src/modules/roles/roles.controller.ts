@@ -1,10 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
-import { roleService } from "./role.service.js";
+import { roleService } from "./roles.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { HttpError, ValidationError } from "../../errors/errors.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
-import { GetAllUsersRole } from "./role.schema.js";
+import { GetAllUsersRole } from "./roles.schema.js";
 
 export class RoleController extends BaseController {
     constructor() {

@@ -1,3 +1,4 @@
+import { Param } from "@prisma/client/runtime/library";
 import { z } from "zod";
 
 export const IdParamSchema = z.object({
@@ -17,6 +18,15 @@ export const CreateUserSchema = z.object({
     dept_id: z.coerce.number().int().positive().nullable().optional(),
     sec_id: z.coerce.number().int().positive().nullable().optional(),
     is_active: z.boolean().default(true),
+});
+
+export const SoftDeleteUserSchema = z.object({
+    Param : IdParamSchema 
+});
+
+export const softDeleteResponseSchema = z.object({
+  us_id: z.number().int(),
+  deletedAt: z.date(), 
 });
 
 export const departmentSchema = z.object({
@@ -53,6 +63,10 @@ export const getAllUsersResponseSchema = z.object({
     sections: z.array(sectionSchema),
     userWithDetails: z.array(userSchema)
 });
+
+export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
+
+export type SoftDeleteParams = z.infer<typeof IdParamSchema>;  // { id: number }
 
 export type GetAllUsersResponseSchema = z.infer<typeof getAllUsersResponseSchema>;
 

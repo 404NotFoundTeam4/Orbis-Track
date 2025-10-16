@@ -25,6 +25,13 @@ export class UserController extends BaseController {
         return { data: user };
     }
 
+    async softDelete(req: Request , res : Response , next : NextFunction) : Promise<BaseResponse>{
+        const id = Number(req.params.id); //อ่านตัว ID
+        if(!Number.isInteger(id) || id <= 0) throw new ValidationError("Invalid id"); //เช็คค่า ID
+        const result = await userService.SoftDeleteUser(id); //เรียกตัว Service SoftDeleteUser
+        return { data: { us_id: result.userID, deletedAt: result.deleteAt }, message: "User soft-deleted" };
+    }
+
     // async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
     //     const {
     //         emp_code,

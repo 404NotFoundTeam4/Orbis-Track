@@ -85,6 +85,30 @@ async function getAllUsers() {
     })
 }
 
+
+export async function SoftDeleteUser(us_id : number) {
+
+    //เช็คตัว UserId ว่าเจอไหม
+    const user = await prisma.users.findUnique({ where : {us_id}});
+    if (!user) throw new Error("User not found");
+
+    //update ตัว Field
+    const updated = await prisma.users.update({
+    where: { us_id },
+    data: {
+      deleted_at: new Date(),   
+      us_is_active: false,
+    },
+    select: { us_id: true, deleted_at: true },
+    });
+
+    return{
+        userID : updated.us_id,
+        deleteAt : updated.delete_at
+    }
+
+}
+
 // // await argon2.hash(data.password);
 // async function createUser(data: {
 //     emp_code?: string;
@@ -122,4 +146,4 @@ async function getAllUsers() {
 //     });
 // }
 
-export const userService = { getUserById, getAllUsers};
+export const userService = { getUserById, getAllUsers, SoftDeleteUser};

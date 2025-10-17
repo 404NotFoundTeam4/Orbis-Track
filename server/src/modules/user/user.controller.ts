@@ -34,18 +34,19 @@ export class UserController extends BaseController {
     return { data: user };
   }
 
+  /**
+   * Description: อัปเดตข้อมูลผู้ใช้ตาม id
+   * Input : req.params.id (number), req.body (ตาม editUserSchema)
+   * Output : BaseResponse { message: string, data: updated user object }
+   * Author: Nontapat Sinthum (Guitar) 66160104
+   */
   async update(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<BaseResponse> {
     const id = Number(req.params.id);
-    if (isNaN(id)) throw new ValidationError("Invalid user id");
-
-    // ✅ ใช้ schema ที่ประกาศไว้แล้ว
     const validatedData = editUserSchema.parse(req.body);
-
-    // ✅ ส่งข้อมูลไปให้ service
     const updatedUser = await userService.updateUser(id, validatedData);
 
     return {

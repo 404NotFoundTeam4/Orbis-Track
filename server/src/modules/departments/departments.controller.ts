@@ -2,19 +2,29 @@ import type { Request, Response, NextFunction } from "express";
 import { departmentService } from "./departments.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
-import { HttpError, ValidationError } from "../../errors/errors.js";
-import { HttpStatus } from "../../core/http-status.enum.js";
 import {
   GetAllDepartmentSchema,
   GetAllSectionSchema,
+  idParamSchema,
 } from "./departments.schema.js";
 
+/**
+ * Description: คอนโทรลเลอร์ Department ดูแลการจัดการข้อมูลแผนกและฝ่ายย่อย (Section)
+ * Input : req/res/next ของ Express
+ * Output : Response ตามรูปแบบ BaseResponse<GetAllDepartmentSchema | GetAllSectionSchema>
+ * Author : Nontapat Sinthum (Guitar) 66160104
+ */
 export class DepartmentController extends BaseController {
   constructor() {
     super();
   }
 
-  // ดึงแผนก
+  /**
+   * Description: ดึงข้อมูลรายการแผนกทั้งหมดจากฐานข้อมูล
+   * Input : ไม่มี input เพิ่มเติม (ใช้ req/res/next ของ Express)
+   * Output : { data: { departments: [{ dept_id, dept_name }, ...] } }
+   * Author : Nontapat Sinthum (Guitar) 66160104
+   */
   async getAllDepartment(
     req: Request,
     res: Response,
@@ -24,20 +34,19 @@ export class DepartmentController extends BaseController {
     return { data: department };
   }
 
+  /**
+   * Description: ดึงข้อมูล "ฝ่ายย่อย (Sections)" ของแผนกตาม dept_id ที่ส่งมาใน path parameter
+   * Input : req.params.id (number) ผ่านการตรวจสอบด้วย zod (idParamSchema)
+   * Output : { data: { sections: [{ sec_id, sec_name, sec_dept_id }, ...] } }
+   * Author : Nontapat Sinthum (Guitar) 66160104
+   */
   async getSection(
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse> {
-    const id = Number(req.params.id);
-    if (isNaN(id)) throw new ValidationError("Invalid id");
-
+  ): Promise<BaseResponse<GetAllSectionSchema>> {
+    const id = idParamSchema.parse(req.params);
     const sections = await departmentService.getSectionById(id);
-
-    // ⚠️ findMany() จะคืน [] ไม่ใช่ null
-    if (!sections || sections.length === 0)
-      throw new HttpError(HttpStatus.NOT_FOUND, "Section not found");
-
     return { data: sections };
   }
 }

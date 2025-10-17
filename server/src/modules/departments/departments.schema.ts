@@ -1,7 +1,9 @@
 import { z } from "zod";
 
-export const IdParamSchema = z.object({
-    id: z.coerce.number().int().positive(),
+// Author: Nontapat Sinthum (Guitar) 66160104
+
+export const idParamSchema = z.object({
+    id: z.coerce.number().positive(),
 });
 
 export const departmentSchema = z.object({
@@ -27,4 +29,4 @@ export type GetAllDepartmentSchema = z.infer<typeof getAllDepartmentSchema>;
 
 export type GetAllSectionSchema = z.infer<typeof getAllSectionSchema>;
 
-export type IdParamDto = z.infer<typeof IdParamSchema>;
+export type IdParamDto = z.infer<typeof idParamSchema>;

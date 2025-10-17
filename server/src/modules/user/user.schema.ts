@@ -48,6 +48,8 @@ export const userSchema = z.object({
     us_sec_name: z.string().optional(),
 });
 
+// Author: Nontapat Sinthum (Guitar) 66160104
+
 export const editUserSchema = z.object({
     us_firstname: z.string().optional(),
     us_lastname: z.string().optional(),

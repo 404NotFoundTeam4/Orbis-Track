@@ -6,6 +6,5 @@ const roleController = new RoleController();
 const router = new Router(undefined, '/roles');
 
 router.getDoc("/", { tag: "Roles", res: getAllUsersRole, auth: true }, roleController.getAll);
-// router.post("/", userController.create);
 
 export default router.instance;

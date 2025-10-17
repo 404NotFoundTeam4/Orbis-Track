@@ -88,6 +88,14 @@ async function getAllUsers() {
   };
 }
 
+/**
+ * Description: อัปเดตข้อมูลผู้ใช้ตาม id
+ * Input :
+ * - id: number
+ * - data: Partial<{ us_firstname, us_lastname, us_username, us_emp_code, us_email, us_phone, us_images, us_role, us_dept_id, us_sec_id }>
+ * Output : updated user object
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
 async function updateUser(
   id: number,
   data: {
@@ -103,6 +111,8 @@ async function updateUser(
     us_sec_id?: number;
   }
 ) {
+  const user = await prisma.users.findUnique({ where: { us_id: id } });
+  if (!user) throw new Error("account not found");
   // ใช้ Prisma fully qualified type
   return prisma.users.update({
     where: { us_id: id },

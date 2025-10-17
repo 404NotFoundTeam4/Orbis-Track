@@ -35,6 +35,12 @@ type Department = {
   dept_name: string;
 };
 
+/**
+ * Description: คอมโพเนนต์หลักจัดการผู้ใช้งาน
+ * - ดึงข้อมูลผู้ใช้จาก API
+ * - มีฟังก์ชัน filter, search, sort, pagination
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
 export const Users = () => {
   //ตั้งข้อมูล section ไว้ใช้ใน filter
   const [sections, setSections] = useState<Section[]>([]);
@@ -46,7 +52,11 @@ export const Users = () => {
       value: s.sec_name,
     })),
   ];
-  const [sectionFilter, setSectionFilter] = useState<{ id: number | string; label: string; value: string } | null>(null);
+  const [sectionFilter, setSectionFilter] = useState<{
+    id: number | string;
+    label: string;
+    value: string;
+  } | null>(null);
   //ตั้งข้อมูล department ไว้ใช้ใน filter
   const [departments, setDepartments] = useState<Department[]>([]);
   const departmentOptions = [
@@ -57,7 +67,11 @@ export const Users = () => {
       value: d.dept_name,
     })),
   ];
-  const [departmentFilter, setDepartmentFilter] = useState<{ id: number | string; label: string; value: string } | null>(null);
+  const [departmentFilter, setDepartmentFilter] = useState<{
+    id: number | string;
+    label: string;
+    value: string;
+  } | null>(null);
 
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
@@ -83,7 +97,10 @@ export const Users = () => {
     search: "",
   });
 
-  //ดึงข้อมูล api จาก back-end
+  /**
+   * Description: ดึงข้อมูลผู้ใช้/แผนก/ฝ่ายย่อยจาก API
+   * Author: Nontapat Sinthum (Guitar) 66160104
+   */
   useEffect(() => {
     const fetchData = async () => {
       const res = await axios.get("/api/users");
@@ -103,7 +120,6 @@ export const Users = () => {
    * Output : `${day} / ${month} / ${year}`
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
-
   const FormatThaiDate = (iso: string | Date) => {
     const d = new Date(iso);
     const day = d.getDate(); // วัน
@@ -134,6 +150,10 @@ export const Users = () => {
     }
   };
 
+  /**
+   * Description: กรองและ sort users ตาม search/filter/sort
+   * Author: Nontapat Sinthum (Guitar) 66160104
+   */
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
     let result = users.filter((u) => {
@@ -266,14 +286,20 @@ export const Users = () => {
                 value={departmentFilter}
                 onChange={setDepartmentFilter}
                 placeholder="แผนก"
-              /><Dropdown
+              />
+              <Dropdown
                 items={sectionOptions}
                 value={sectionFilter}
                 onChange={setSectionFilter}
                 placeholder="ฝ่ายย่อย"
               />
               {/* <AddButton label="บัญชีผู้ใช้" /> */}
-              <Button size="md" icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}>เพิ่มบัญชีผู้ใช้</Button>
+              <Button
+                size="md"
+                icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
+              >
+                เพิ่มบัญชีผู้ใช้
+              </Button>
             </div>
           </div>
         </div>

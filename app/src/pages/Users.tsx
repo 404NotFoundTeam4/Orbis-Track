@@ -1,22 +1,15 @@
-import { useLocation } from "react-router-dom";
-import { useUserStore } from "../store/userStore";
-import { useEffect, useState } from "react";
-import { user_data } from "../service/auth.service";
+
+import { useUserStore } from "../stores/userStore";
+import { useEffect } from "react";
+import { useLogin } from "../hooks/useLogin.js"
 
 export const Users = () => {
-  const location = useLocation();
-  const storeUser = useUserStore((s) => s.user);
-  const [user, setUser] = useState(location.state?.user || storeUser);
+ const { reloaduser } = useLogin();
+  const { user } = useUserStore();
 
   useEffect(() => {
-    // ถ้าไม่มี user ให้ลองโหลดจาก localStorage ด้วย token
-    // if (!user) {
-    //   const token = localStorage.getItem("token");
-    //   if (token) {
-    //     user_data(token).then((res) => setUser(res));
-    //   }
-    // }
-  }, [user]);
+      reloaduser()
+  }, []);
 
   if (!user) return <p>กำลังโหลดข้อมูล...</p>;
 

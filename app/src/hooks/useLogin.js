@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { useUserStore } from "../store/userStore";
+import { useUserStore } from "../stores/userStore";
 import { login, user_data } from "../service/auth.service";
-
 export const useLogin = () => {
   const setUser = useUserStore((s) => s.setUser);
   const navigate = useNavigate();
@@ -19,9 +18,8 @@ export const useLogin = () => {
         
 
         // ✅ เก็บ user ลงใน store
-        setUser(users);
-     
-        // ✅ เก็บ token ใน localStorage
+ 
+        setUser(users)
         localStorage.setItem("token", token);
 
         // ✅ เก็บข้อมูลผู้ใช้ถ้า remember
@@ -38,6 +36,12 @@ export const useLogin = () => {
       console.error("❌ Login error:", err);
     }
   };
+   const reloaduser = async() =>{
+      const token = localStorage.getItem("token");
+    const users = await user_data(token);
+    setUser(users)
+    
+  };
 
-  return { handleLogin };
+  return { handleLogin,reloaduser };
 };

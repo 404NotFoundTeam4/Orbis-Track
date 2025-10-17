@@ -9,6 +9,7 @@ import '../styles/css/index.css'
 import  {Resetpassword } from "./Resetpassword"
 import {Otppassword} from "./Otppassword"
 import Navbar from "../components/Navbar";
+import ProtectedRoute from "../middlewares/ProtectedRoute";
 function App() {
   return (
     <BrowserRouter>
@@ -20,10 +21,12 @@ function App() {
         <Route path="/" element={<Login />} />
 
         {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
+          <Route element={<ProtectedRoute />}>
         <Route element={<Navbar />}>
           <Route path="/users" element={<Users />} />
           <Route path="/home" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

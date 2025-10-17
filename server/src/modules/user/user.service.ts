@@ -1,8 +1,16 @@
-import { departments } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
-import { Prisma } from "@prisma/client";
+import { EditUserSchema, IdParamDto } from "./user.schema.js";
 
-async function getUserById(id: number) {
+/**
+ * ดึงข้อมูลผู้ใช้ตาม id
+ * Input: params - object { id: number }
+ * Output: ข้อมูลผู้ใช้ (select fields)
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
+async function getUserById(params: IdParamDto) {
+  const { id } = params;
+  const user = await prisma.users.findUnique({ where: { us_id: id } });
+  if (!user) throw new Error("account not found");
   return prisma.users.findUnique({
     where: { us_id: id },
     select: {
@@ -10,6 +18,7 @@ async function getUserById(id: number) {
       us_firstname: true,
       us_lastname: true,
       us_username: true,
+      us_emp_code: true,
       us_email: true,
       us_phone: true,
       us_images: true,
@@ -96,31 +105,19 @@ async function getAllUsers() {
  * Output : updated user object
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-async function updateUser(
-  id: number,
-  data: {
-    us_firstname?: string;
-    us_lastname?: string;
-    us_username?: string;
-    us_emp_code?: string;
-    us_email?: string;
-    us_phone?: string;
-    us_images?: string;
-    us_role?: string;
-    us_dept_id?: number;
-    us_sec_id?: number;
-  }
-) {
+async function updateUser(params: IdParamDto, body: EditUserSchema) {
+  const { id } = params;
   const user = await prisma.users.findUnique({ where: { us_id: id } });
   if (!user) throw new Error("account not found");
   // ใช้ Prisma fully qualified type
-  return prisma.users.update({
+  await prisma.users.update({
     where: { us_id: id },
     data: {
-      ...data,
+      ...body,
       updated_at: new Date(),
-    } as Prisma.usersUncheckedUpdateInput,
+    },
   });
+  return { message: "User updated successfully" };
 }
 
 export const userService = { getUserById, getAllUsers, updateUser };

@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { UserRole } from "../../core/roles.enum.js";
 
-export const IdParamSchema = z.object({
+export const idParamSchema = z.object({
     id: z.coerce.number().int().positive(),
 });
 
@@ -58,20 +59,7 @@ export const editUserSchema = z.object({
     us_email: z.string().email().optional(),
     us_phone: z.string().optional(),
     us_images: z.string().optional(),
-    us_role: z.string().optional(),
-    us_dept_id: z.number().optional(),
-    us_sec_id: z.number().optional(),
-})
-
-export const editUserResponseSchema = z.object({
-    us_firstname: z.string().optional(),
-    us_lastname: z.string().optional(),
-    us_username: z.string().optional(),
-    us_emp_code: z.string().optional(),
-    us_email: z.string().email().optional(),
-    us_phone: z.string().optional(),
-    us_images: z.string().optional(),
-    us_role: z.string().optional(),
+    role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
     us_dept_id: z.number().optional(),
     us_sec_id: z.number().optional(),
 })
@@ -84,10 +72,8 @@ export const getAllUsersResponseSchema = z.object({
 
 export type EditUserSchema = z.infer<typeof editUserSchema>;
 
-export type EditUserResponseSchema = z.infer<typeof editUserResponseSchema>;
-
 export type GetAllUsersResponseSchema = z.infer<typeof getAllUsersResponseSchema>;
 
 export type CreateUserDto = z.infer<typeof CreateUserSchema>;
 
-export type IdParamDto = z.infer<typeof IdParamSchema>;
+export type IdParamDto = z.infer<typeof idParamSchema>;

@@ -90,6 +90,15 @@ export const forgotPasswordPayload = z.object({
     path: ['confirmNewPassword'],
 });
 
+export const resetPasswordPayload = z.object({
+  token: z.string().min(1),
+  newPassword: passwordValidation,
+  confirmNewPassword: passwordValidation,
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: 'รหัสผ่านไม่ตรงกัน',
+    path: ['confirmNewPassword'],
+});
+
 // TS types inferred from zod schemas (ใช้ใน controller/service)
 export type TokenDto = z.infer<typeof tokenDto>;
 export type LoginPayload = z.infer<typeof loginPayload>;
@@ -99,3 +108,4 @@ export type SendOtpPayload = z.infer<typeof sendOtpPayload>;
 export type VerifyOtpPayload = z.infer<typeof verifyOtpPayload>;
 export type OtpSchema = z.infer<typeof otpSchema>;
 export type ForgotPasswordPayload = z.infer<typeof forgotPasswordPayload>;
+export type ResetPasswordPayload = z.infer<typeof resetPasswordPayload>;

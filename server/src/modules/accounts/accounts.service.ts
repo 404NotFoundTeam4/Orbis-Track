@@ -1,8 +1,14 @@
+import { env } from "../../config/env.js";
 import { UserRole } from "../../core/roles.enum.js";
 import { ValidationError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
 import { hashPassword } from "../../utils/password.js";
+import { OneTimeTokenUtil } from "../../utils/token.js";
 import { CreateAccountsPayload, EditAccountSchema, IdParamDto } from "./accounts.schema.js";
+import redisUtils from "../../infrastructure/redis.cjs";
+import emailService from "../../utils/email/email.service.js";
+
+const { redisSet } = redisUtils;
 
 /**
  * ดึงข้อมูลผู้ใช้ตาม id
@@ -126,13 +132,11 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
         throw new ValidationError("Missing required fields");
     }
 
-    const us_images = images;
-
     // Hash Password
     const hashedPassword = await hashPassword(us_password);
 
     // เพิ่มข้อมูลผู้ใช้ใหม่ลงในตาราง users
-    return await prisma.users.create({
+    const newUser = await prisma.users.create({
         data: {
             us_emp_code,
             us_firstname,
@@ -142,7 +146,7 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
             us_email,
             us_phone,
             us_role: us_role as UserRole,
-            us_images,
+            us_images: images,
             us_dept_id,
             us_sec_id,
             created_at: new Date(),
@@ -164,6 +168,21 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
             updated_at: true,
         }
     });
+    
+    const { plainTextToken } = await OneTimeTokenUtil.generateToken();
+    const redisKey = `welcome-token:${plainTextToken}`;
+    const expiryInSeconds = Number(env.EXPIRE_TOKEN); // 24 ชั่วโมง
+    await redisSet(redisKey, newUser.us_id.toString(), expiryInSeconds);
+    const welcomeUrl = `${env.FRONTEND_URL}/set-password?token=${plainTextToken}`;
+    
+    await emailService.sendWelcome(newUser.us_email, {
+        name: newUser.us_firstname,
+        username: newUser.us_username,
+        resetPasswordUrl: welcomeUrl,
+        expiryHours: String(expiryInSeconds),
+    });
+    
+    return newUser;
 }
 
 /**

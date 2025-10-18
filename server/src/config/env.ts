@@ -50,7 +50,7 @@ const Env = z.object({
 
     // auth/jwt
     JWT_SECRET: z.string().min(8),
-    JWT_EXPIRES_IN: z.string().default("24h"),
+    JWT_EXPIRES_IN: z.string().default("2h"),
 
     // email/smtp
     SMTP_HOST: z.string().default("smtp.gmail.com"),
@@ -67,6 +67,9 @@ const Env = z.object({
     APP_URL: z.string().default("https://obistrack.com"),
     SUPPORT_EMAIL: z.string().default("support@obistrack.com"),
     FRONTEND_URL: z.string().default("http://localhost:4042"),
+    
+    //token/crypto
+    EXPIRE_TOKEN: z.string()
 });
 
 export type EnvType = z.infer<typeof Env>;

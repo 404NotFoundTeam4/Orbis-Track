@@ -1,6 +1,7 @@
 import { env } from "../../../config/env.js";
 
 interface PasswordChangedTemplateData {
+    name: string,
     username?: string;
     changedAt: Date;
     ipAddress?: string;
@@ -8,7 +9,7 @@ interface PasswordChangedTemplateData {
 }
 
 export const passwordChangedTemplate = (data: PasswordChangedTemplateData): string => {
-    const { username, changedAt, ipAddress, userAgent } = data;
+    const { name, username, changedAt, ipAddress, userAgent } = data;
 
     return `
     <!DOCTYPE html>
@@ -51,17 +52,23 @@ export const passwordChangedTemplate = (data: PasswordChangedTemplateData): stri
                 <h1>Obis Track</h1>
             </div>
             <div class="content">
-                ${username ? `<p class="greeting">เรียนคุณ ${username}</p>` : '<p class="greeting">เรียนผู้ใช้งาน</p>'}
+                ${name ? `<p class="greeting">เรียนคุณ ${name}</p>` : '<p class="greeting">เรียนผู้ใช้งาน</p>'}
 
                 <p style="color: #555555; font-size: 15px; line-height: 1.6;">
                 รหัสผ่านของคุณสำหรับบัญชี Obis Track ได้รับการเปลี่ยนแปลงเรียบร้อยแล้ว
                 </p>
-ห
+
                 <div class="info-box">
                 <h3>รายละเอียดการเปลี่ยนแปลง</h3>
+                ${username ? `
+                    <div class="info-row">
+                    <span class="info-label">ชื่อผู้ใช้งาน</span>
+                    <span class="info-value">&nbsp;${username}</span>
+                    </div>
+                ` : ''}
                 <div class="info-row">
                     <span class="info-label">วันที่และเวลา</span>
-                    <span class="info-value">&nbsp${changedAt.toLocaleString('th-TH')}</span>
+                    <span class="info-value">&nbsp;${changedAt.toLocaleString('th-TH')}</span>
                 </div>
                 ${ipAddress ? `
                     <div class="info-row">

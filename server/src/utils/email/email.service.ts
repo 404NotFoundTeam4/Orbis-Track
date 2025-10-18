@@ -116,14 +116,18 @@ class EmailService {
     async sendWelcome(
         to: string,
         data: {
+            name: string;
             username: string;
             resetPasswordUrl: string;
+            expiryHours: string;
         }
     ): Promise<void> {
         const html = welcomeTemplate({
+            name: data.name,
             username: data.username,
             userEmail: to,
             resetPasswordUrl: data.resetPasswordUrl,
+            expiryHours: data.expiryHours,
         });
 
         await this.send({
@@ -139,12 +143,14 @@ class EmailService {
     async sendPasswordChanged(
         to: string,
         data: {
+            name: string;
             username?: string;
             ipAddress?: string;
             userAgent?: string;
         }
     ): Promise<void> {
         const html = passwordChangedTemplate({
+            name: data.name,
             username: data.username,
             changedAt: new Date(),
             ipAddress: data.ipAddress,

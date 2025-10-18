@@ -1,13 +1,15 @@
 import { env } from "../../../config/env.js";
 
 interface WelcomeTemplateData {
+    name: string,
     username: string;
     userEmail: string;
     resetPasswordUrl: string;
+    expiryHours: string;
 }
 
 export const welcomeTemplate = (data: WelcomeTemplateData): string => {
-    const { username, userEmail, resetPasswordUrl } = data;
+    const { name, username, userEmail, resetPasswordUrl, expiryHours } = data;
 
     return `
     <!DOCTYPE html>
@@ -55,7 +57,7 @@ export const welcomeTemplate = (data: WelcomeTemplateData): string => {
                 <h1>Obis Track</h1>
             </div>
             <div class="content">
-                <p class="greeting">เรียนคุณ ${username}</p>
+                <p class="greeting">เรียนคุณ ${name}</p>
                 <p class="intro">
                 ผู้ดูแลระบบได้สร้างบัญชีผู้ใช้งานสำหรับคุณในระบบ Obis Track เรียบร้อยแล้ว 
                 กรุณาคลิกปุ่มด้านล่างเพื่อตั้งรหัสผ่านและเริ่มใช้งาน
@@ -64,18 +66,18 @@ export const welcomeTemplate = (data: WelcomeTemplateData): string => {
                 <div class="credentials-box">
                 <h3>ข้อมูลบัญชีของคุณ</h3>
                 <div class="credential-row">
-                    <span class="credential-label">อีเมล</span>
-                    <span class="credential-value">${userEmail}</span>
+                    <span class="credential-label">ชื่อผู้ใช้</span>
+                    <span class="credential-value">&nbsp;${username}</span>
                 </div>
                 <p style="color: #888; font-size: 13px; margin: 15px 0 0 0;">
-                คุณจะใช้อีเมลนี้ในการเข้าสู่ระบบ
+                คุณจะใช้ชื่อผู้ใช้นี้ในการเข้าสู่ระบบ
                 </p>
                 </div>
 
                 <div class="button-box">
                     <a href="${resetPasswordUrl}" class="button">ตั้งรหัสผ่าน</a>
                     <p style="color: #888; font-size: 13px; margin: 15px 0 0 0;">
-                    ลิงก์นี้จะหมดอายุภายใน 24 ชั่วโมง
+                      ลิงก์นี้จะหมดอายุภายใน ${expiryHours} ชั่วโมง
                     </p>
                 </div>
 
@@ -87,9 +89,9 @@ export const welcomeTemplate = (data: WelcomeTemplateData): string => {
 
                 <div class="steps">
                 <h3>ขั้นตอนการเริ่มต้นใช้งาน</h3>
-                <div class="step-item" data-step="1.">คลิกปุ่ม "ตั้งรหัสผ่าน" ด้านบน</div>
-                <div class="step-item" data-step="2.">สร้างรหัสผ่านใหม่ที่คุณต้องการ</div>
-                <div class="step-item" data-step="3.">เข้าสู่ระบบด้วยอีเมลและรหัสผ่านที่ตั้งไว้</div>
+                <div class="step-item" data-step="1.">1. คลิกปุ่ม "ตั้งรหัสผ่าน" ด้านบน</div>
+                <div class="step-item" data-step="2.">2. สร้างรหัสผ่านใหม่ที่คุณต้องการ</div>
+                <div class="step-item" data-step="3.">3. เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านที่ตั้งไว้</div>
                 </div>
 
                 <p class="info">

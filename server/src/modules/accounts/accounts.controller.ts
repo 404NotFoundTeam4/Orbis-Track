@@ -2,20 +2,28 @@ import type { Request, Response, NextFunction } from "express";
 import { accountsService } from "./accounts.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
-import { HttpError, ValidationError } from "../../errors/errors.js";
-import { HttpStatus } from "../../core/http-status.enum.js";
-import { createAccountsPayload, CreateAccountsSchema, GetAllAccountsResponseSchema } from "./accounts.schema.js";
+import {
+    createAccountsPayload, CreateAccountsSchema, GetAllAccountsResponseSchema, editAccountSchema, idParamSchema,
+} from "./accounts.schema.js";
 
 export class AccountsController extends BaseController {
     constructor() {
         super()
     }
 
-    async get(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-        const id = Number(req.params.id);
-        if (Number.isNaN(id)) throw new ValidationError("Invalid id");
-        const user = await accountsService.getAccountsById(id);
-        if (!user) throw new HttpError(HttpStatus.NOT_FOUND, "User not found");
+    /**
+     * ดึงข้อมูลผู้ใช้ตาม id
+     * Input: req.params.id
+     * Output: BaseResponse { data: user object }
+     * Author: Nontapat Sinthum (Guitar) 66160104
+     */
+    async get(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<BaseResponse> {
+        const id = idParamSchema.parse(req.params);
+        const user = await accountsService.getAccountById(id);
         return { data: user };
     }
 
@@ -47,5 +55,25 @@ export class AccountsController extends BaseController {
 
         // คืนค่าบัญชีผู้ใช้ใหม่
         return { data: result };
+    }
+
+    /**
+     * Description: อัปเดตข้อมูลผู้ใช้ตาม id
+     * Input : req.params.id (number), req.body (ตาม editUserSchema)
+     * Output : BaseResponse { message: string, data: updated user object }
+     * Author: Nontapat Sinthum (Guitar) 66160104
+     */
+    async update(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<BaseResponse<void>> {
+        const id = idParamSchema.parse(req.params);
+        const validatedData = editAccountSchema.parse(req.body);
+        const result = await accountsService.updateAccount(id, validatedData);
+
+        return {
+            message: result.message,
+        };
     }
 };

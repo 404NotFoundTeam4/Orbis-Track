@@ -35,6 +35,12 @@ type Department = {
   dept_name: string;
 };
 
+/**
+ * Description: คอมโพเนนต์หลักจัดการผู้ใช้งาน
+ * - ดึงข้อมูลผู้ใช้จาก API
+ * - มีฟังก์ชัน filter, search, sort, pagination
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
 export const Users = () => {
   //ตั้งข้อมูล section ไว้ใช้ใน filter
   const [sections, setSections] = useState<Section[]>([]);
@@ -91,7 +97,10 @@ export const Users = () => {
     search: "",
   });
 
-  //ดึงข้อมูล api จาก back-end
+  /**
+   * Description: ดึงข้อมูลผู้ใช้/แผนก/ฝ่ายย่อยจาก API
+   * Author: Nontapat Sinthum (Guitar) 66160104
+   */
   useEffect(() => {
     const fetchData = async () => {
       const res = await axios.get("/api/accounts");
@@ -111,7 +120,6 @@ export const Users = () => {
    * Output : `${day} / ${month} / ${year}`
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
-
   const FormatThaiDate = (iso: string | Date) => {
     const d = new Date(iso);
     const day = d.getDate(); // วัน
@@ -142,6 +150,10 @@ export const Users = () => {
     }
   };
 
+  /**
+   * Description: กรองและ sort users ตาม search/filter/sort
+   * Author: Nontapat Sinthum (Guitar) 66160104
+   */
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
     let result = users.filter((u) => {

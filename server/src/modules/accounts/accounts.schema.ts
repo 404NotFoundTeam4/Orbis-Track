@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { UserRole } from "../../core/roles.enum.js";
 
-export const IdParamSchema = z.object({
+export const idParamSchema = z.object({
     id: z.coerce.number().int().positive(),
 });
 
@@ -14,7 +15,7 @@ export const createAccountsPayload = z.object({
     us_email: z.string().min(1).max(120),
     us_phone: z.string().min(1).max(20),
     us_images: z.string().nullable().optional(),
-    us_role: z.enum(['ADMIN', 'HOD', 'HOS', 'TECHNICAL', 'STAFF', 'EMPLOYEE']),
+    us_role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
     us_dept_id: z.coerce.number().int().positive().nullable().optional(),
     us_sec_id: z.coerce.number().int().positive().nullable().optional(),
     us_is_active: z.boolean().default(true),
@@ -29,7 +30,7 @@ export const createAccountsSchema = z.object({
     us_username: z.string(),
     us_email: z.string().min(1).max(120),
     us_phone: z.string().min(1).max(20),
-    us_role: z.enum(['ADMIN', 'HOD', 'HOS', 'TECHNICAL', 'STAFF', 'EMPLOYEE']),
+    us_role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
     us_images: z.string().nullable().optional(),
     us_dept_id: z.coerce.number().int().positive().nullable().optional(),
     us_sec_id: z.coerce.number().int().positive().nullable().optional(),
@@ -76,10 +77,26 @@ export const getAllAccountsResponseSchema = z.object({
     accountsWithDetails: z.array(accountsSchema)
 });
 
+// Author: Nontapat Sinthum (Guitar) 66160104
+export const editAccountSchema = z.object({
+    us_firstname: z.string().optional(),
+    us_lastname: z.string().optional(),
+    us_username: z.string().optional(),
+    us_emp_code: z.string().optional(),
+    us_email: z.string().email().optional(),
+    us_phone: z.string().optional(),
+    us_images: z.string().optional(),
+    us_role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
+    us_dept_id: z.number().optional(),
+    us_sec_id: z.number().optional(),
+})
+
+export type EditAccountSchema = z.infer<typeof editAccountSchema>;
+
 export type GetAllAccountsResponseSchema = z.infer<typeof getAllAccountsResponseSchema>;
 
 export type CreateAccountsPayload = z.infer<typeof createAccountsPayload>;
 
 export type CreateAccountsSchema = z.infer<typeof createAccountsSchema>;
 
-export type IdParamDto = z.infer<typeof IdParamSchema>;
+export type IdParamDto = z.infer<typeof idParamSchema>;

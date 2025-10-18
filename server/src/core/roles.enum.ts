@@ -8,7 +8,7 @@ export enum UserRole {
     ADMIN = 'ADMIN',
     HEADDEPT = 'HOD',
     HEADSEC = 'HOS',
-    STAFF = 'STAFF',
     TECHNICAL = 'TECHNICAL',
+    STAFF = 'STAFF',
     USER = 'EMPLOYEE',
 }

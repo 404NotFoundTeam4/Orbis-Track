@@ -1,9 +1,18 @@
 import { ValidationError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
 import { hashPassword } from "../../utils/password.js";
-import { CreateAccountsPayload } from "./accounts.schema.js";
+import { CreateAccountsPayload, EditAccountSchema, IdParamDto } from "./accounts.schema.js";
 
-async function getAccountsById(id: number) {
+/**
+ * ดึงข้อมูลผู้ใช้ตาม id
+ * Input: params - object { id: number }
+ * Output: ข้อมูลผู้ใช้ (select fields)
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
+async function getAccountById(params: IdParamDto) {
+    const { id } = params;
+    const user = await prisma.users.findUnique({ where: { us_id: id } });
+    if (!user) throw new Error("account not found");
     return prisma.users.findUnique({
         where: { us_id: id },
         select: {
@@ -11,6 +20,7 @@ async function getAccountsById(id: number) {
             us_firstname: true,
             us_lastname: true,
             us_username: true,
+            us_emp_code: true,
             us_email: true,
             us_phone: true,
             us_images: true,
@@ -155,4 +165,27 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
     });
 }
 
-export const accountsService = { getAccountsById, getAllAccounts, createAccounts };
+/**
+ * Description: อัปเดตข้อมูลผู้ใช้ตาม id
+ * Input :
+ * - id: number
+ * - data: Partial<{ us_firstname, us_lastname, us_username, us_emp_code, us_email, us_phone, us_images, us_role, us_dept_id, us_sec_id }>
+ * Output : updated user object
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
+async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
+    const { id } = params;
+    const user = await prisma.users.findUnique({ where: { us_id: id } });
+    if (!user) throw new Error("account not found");
+    // ใช้ Prisma fully qualified type
+    await prisma.users.update({
+        where: { us_id: id },
+        data: {
+            ...body,
+            updated_at: new Date(),
+        },
+    });
+    return { message: "User updated successfully" };
+}
+
+export const accountsService = { getAccountById, getAllAccounts, createAccounts, updateAccount };

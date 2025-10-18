@@ -14,8 +14,6 @@ export PGPASSWORD
 PRISMA_DEV_APPLY=migrate
 PRISMA_MIGRATION_NAME=init
 
-psql_admin() { psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -v ON_ERROR_STOP=1 "$@"; }
-
 SCHEMA_DIR="$(dirname "$PRISMA_SCHEMA_PATH")"
 MIGRATIONS_DIR="$SCHEMA_DIR/migrations"
 # ถ้าใน schema ตั้ง output เป็น "../generated/prisma" ตามตัวอย่างเดิม
@@ -31,22 +29,6 @@ if [ ! -f "$PRISMA_SCHEMA_PATH" ]; then
   echo "❌ Prisma schema not found at $PRISMA_SCHEMA_PATH"
   exit 1
 fi
-
-# ติดตั้ง dev deps ถ้ายังไม่มี (กรณีถูกทับด้วย volume)
-# ensure_dev_deps() {
-# if ! command -v nodemon >/dev/null 2>&1; then
-#   if [ -f ../package-lock.json ]; then
-#     echo "📦 npm ci (workspaces at repo root)..."
-#     (cd .. && npm ci --workspaces --include-workspace-root)
-#   elif [ -f package-lock.json ]; then
-#     echo "📦 npm ci (local)..."
-#     npm ci
-#   else
-#     echo "📦 package-lock.json ไม่เจอ → ใช้ npm i แทน"
-#     npm i
-#   fi
-# fi
-# }
 
 # ---- wait for DB (ลองเชื่อมต่อด้วย prisma; ลูปจนกว่าจะได้) ----
 wait_for_db() {

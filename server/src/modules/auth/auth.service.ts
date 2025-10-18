@@ -3,10 +3,17 @@ import { env } from '../../config/env.js';
 import { HttpError, ValidationError } from '../../errors/errors.js';
 import { prisma } from '../../infrastructure/database/client.js';
 import { signToken, verifyToken } from '../../utils/jwt.js';
-import { verifyPassword } from '../../utils/password.js';
-import type { AccessTokenPayload, LoginPayload } from './auth.schema.js';
-import { blacklistToken } from './token-blacklist.service.js';
+import type { AccessTokenPayload, LoginPayload, SendOtpPayload, VerifyOtpPayload, ForgotPasswordPayload } from './auth.schema.js';
 import { HttpStatus } from '../../core/http-status.enum.js';
+import { hashPassword, verifyPassword } from '../../utils/password.js';
+import { otpSchema } from './auth.schema.js';
+import { blacklistToken } from './token-blacklist.service.js';
+import { OtpUtil } from '../../utils/otp.js';
+import emailService from '../../utils/email/email.service.js';
+import redisUtils from "../../infrastructure/redis.cjs";
+import { logger } from '../../infrastructure/logger.js';
+
+const { setJSON, getJSON, redisDel, redisTTL } = redisUtils;
 
 /**
  * Description: ตรวจ login จาก DB แล้วออก JWT
@@ -113,4 +120,121 @@ async function fetchMe(user: AccessTokenPayload) {
     return result;
 }
 
-export const authService = { checkLogin, logout, fetchMe };
+async function sendOtp(payload: SendOtpPayload) {
+    const { email } = payload;
+    // หา user จากอีเมล
+    const user = await prisma.users.findUnique({
+        where: { us_email: email },
+        select: { us_id: true, us_email: true },
+    });
+
+    // ไม่บอกว่าไม่เจออีเมล (เพื่อความปลอดภัย)
+    if (!user) {
+        return {
+            message: 'หากอีเมลนี้มีอยู่ในระบบ เราจะส่งรหัส OTP ไปให้',
+        };
+    }
+
+    // สร้าง OTP
+    const otp = OtpUtil.generateOtp();
+
+    // เก็บ OTP ใน Redis (TTL 5 นาที)
+    const redisKey = `otp:send-otp:${email}`;
+    await setJSON(
+        redisKey,
+        {
+            otp,
+            userId: user?.us_id,
+            attempts: 0,
+        },
+        900 // 5 minutes
+    );
+
+    // ส่ง OTP ทางอีเมล
+    await emailService.sendOtp(email, otp);
+
+    logger.info(`📧 OTP sent to ${email}: ${otp}`);
+
+    return {
+        message: 'หากอีเมลนี้มีอยู่ในระบบ เราจะส่งรหัส OTP ไปให้',
+    };
+}
+
+async function verifyOtp(payload: VerifyOtpPayload) {
+    const { email, otp } = payload;
+
+    const redisKey = `otp:send-otp:${email}`;
+    const otpData = await getJSON(redisKey);
+
+    // ไม่มี OTP หรือหมดอายุ
+    if (!otpData) {
+        return {
+            success: false,
+            message: 'รหัส OTP หมดอายุหรือไม่ถูกต้อง',
+        };
+    }
+
+    const otpDataSchema = otpSchema.parse(otpData);
+
+    // เช็คจำนวนครั้งที่พยายาม
+    if (otpDataSchema.attempts >= 5) {
+        await redisDel(redisKey);
+        return {
+            success: false,
+            message: 'คุณใส่รหัส OTP ผิดเกิน 5 ครั้ง กรุณาขอรหัสใหม่',
+        };
+    }
+
+    // ตรวจสอบ OTP
+    const isValid = OtpUtil.verifyOtp(otp, otpDataSchema.otp);
+
+    if (!isValid) {
+        // เพิ่มจำนวนครั้งที่พยายาม
+        otpDataSchema.attempts += 1;
+
+        // เก็บ TTL เดิมไว้
+        const ttl = await redisTTL(redisKey);
+        await setJSON(redisKey, otpDataSchema, ttl);
+        return {
+            success: false,
+            message: `รหัส OTP ไม่ถูกต้อง (เหลือ ${5 - otpDataSchema.attempts} ครั้ง)`,
+        };
+    }
+
+    return {
+        success: true,
+        message: 'ยืนยัน OTP สำเร็จ',
+    };
+}
+
+async function forgotPassword(payload: ForgotPasswordPayload) {
+    const { email, newPassword, confirmNewPassword } = payload;
+    if (newPassword !== confirmNewPassword) {
+        throw new ValidationError("Passwords do not match");
+    }
+
+    const redisKey = `otp:send-otp:${email}`
+
+    const result = await prisma.users.update({
+        where: { us_email: email, us_is_active: true },
+        data: { us_password: await hashPassword(newPassword), updated_at: new Date() },
+        select: { us_email: true, us_username: true },
+    })
+
+    await redisDel(redisKey);
+
+    if (result.us_username && result.us_email) {
+        await emailService.sendPasswordChanged(
+            result.us_email,
+            {
+                username: result.us_username,
+            }
+        );
+    }
+
+    return {
+        message: 'รีเซ็ตรหัสผ่านสำเร็จ คุณสามารถใช้รหัสผ่านใหม่เข้าสู่ระบบได้',
+    };
+}
+
+export const authService = { checkLogin, logout, sendOtp, verifyOtp, forgotPassword, fetchMe };

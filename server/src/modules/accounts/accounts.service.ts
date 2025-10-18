@@ -1,3 +1,4 @@
+import { UserRole } from "../../core/roles.enum.js";
 import { ValidationError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
 import { hashPassword } from "../../utils/password.js";
@@ -140,7 +141,7 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
             us_password: hashedPassword,
             us_email,
             us_phone,
-            us_role,
+            us_role: us_role as UserRole,
             us_images,
             us_dept_id,
             us_sec_id,
@@ -173,19 +174,20 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
  * Output : updated user object
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
-    const { id } = params;
-    const user = await prisma.users.findUnique({ where: { us_id: id } });
-    if (!user) throw new Error("account not found");
-    // ใช้ Prisma fully qualified type
-    await prisma.users.update({
-        where: { us_id: id },
-        data: {
-            ...body,
-            updated_at: new Date(),
-        },
-    });
-    return { message: "User updated successfully" };
-}
+ async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
+     const { id } = params;
+     const user = await prisma.users.findUnique({ where: { us_id: id } });
+     if (!user) throw new Error("account not found");
+     const updateData: any = {
+       ...body,
+       updated_at: new Date(),
+     }
+
+     await prisma.users.update({
+         where: { us_id: id },
+         data: updateData,
+     });
+     return { message: "User updated successfully" };
+ }
 
 export const accountsService = { getAccountById, getAllAccounts, createAccounts, updateAccount };

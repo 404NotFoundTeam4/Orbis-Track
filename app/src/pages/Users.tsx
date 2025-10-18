@@ -78,7 +78,7 @@ export const Users = () => {
   const roleOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
+      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
       label: r,
@@ -108,7 +108,7 @@ export const Users = () => {
 
       setSections(data.data.sections || []);
       setDepartments(data.data.departments || []);
-      setusers(data.data.userWithDetails || []);
+      setusers(data.data.accountsWithDetails || []);
     };
 
     fetchData();
@@ -425,7 +425,7 @@ export const Users = () => {
               <div
                 key={u.us_id}
                 // 400px_100px_203px_230px_188px_179px_166px_81px
-                className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px] 
+                className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
                  items-center hover:bg-gray-50 text-[16px] gap-3"
               >
                 {/* ชื่อผู้ใช้ */}

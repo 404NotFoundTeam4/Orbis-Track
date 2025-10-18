@@ -173,7 +173,7 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
     const redisKey = `welcome-token:${plainTextToken}`;
     const expiryInSeconds = Number(env.EXPIRE_TOKEN); // 24 ชั่วโมง
     await redisSet(redisKey, newUser.us_id.toString(), expiryInSeconds);
-    const welcomeUrl = `${env.FRONTEND_URL}/set-password?token=${plainTextToken}`;
+    const welcomeUrl = `${env.FRONTEND_URL}/reset-password?token=${plainTextToken}`;
     
     await emailService.sendWelcome(newUser.us_email, {
         name: newUser.us_firstname,

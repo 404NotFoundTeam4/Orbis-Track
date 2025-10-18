@@ -22,9 +22,17 @@ interface EmailOptions {
 
 class EmailService {
     private readonly transporter: Transporter;
+    private isVerified: boolean = false;
 
     constructor() {
-        this.transporter = nodemailer.createTransport(emailConfig.smtp);
+        this.transporter = nodemailer.createTransport({
+            ...emailConfig.smtp,
+            pool: true, // ← เปิด connection pooling
+            maxConnections: 5, // ส่งพร้อมกันได้ 5 connections
+            maxMessages: 100, // ส่งได้ 100 emails ต่อ connection
+            rateDelta: 1000, // 1 วินาที
+            rateLimit: 5, // ส่งได้ 5 emails ต่อวินาที
+        });
     }
 
     /**
@@ -33,9 +41,12 @@ class EmailService {
     private async verifyConnection(): Promise<void> {
         try {
             await this.transporter.verify();
+            this.isVerified = true;
             console.log('Email service is ready');
         } catch (error) {
+            this.isVerified = false;
             console.error('Email service connection failed:', error);
+            throw error;
         }
     }
 
@@ -44,8 +55,9 @@ class EmailService {
      */
     async send(options: EmailOptions): Promise<void> {
         try {
-            // ทดสอบการเชื่อมต่อก่อนส่งอีเมล
-            await this.verifyConnection();
+            if (!this.isVerified) {
+                await this.verifyConnection();
+            }
 
             const { to, subject, html, text, cc, bcc, attachments } = options;
 
@@ -64,6 +76,12 @@ class EmailService {
             console.log(`Email sent to: ${recipients} Successfully`);
         } catch (error) {
             console.error('Email sending failed:', error);
+
+            // ✅ Retry connection if failed
+            if (!this.isVerified) {
+                await this.verifyConnection();
+            }
+
             throw new Error('Failed to send email');
         }
     }
@@ -152,6 +170,11 @@ class EmailService {
             this.send({ to, subject, html })
         );
         await Promise.all(promises);
+    }
+
+    async close(): Promise<void> {
+        this.transporter.close();
+        console.log('📪 Email service closed');
     }
 }
 

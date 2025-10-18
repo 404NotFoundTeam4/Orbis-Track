@@ -6,79 +6,22 @@ import { useEffect, useMemo, useState } from "react"
 import DropdownArrow from "../components/DropdownArrow"
 import axios from "axios"
 
-const mockUpDepartment = [
-    {
-        dept_id: 1,
-        dept_name: "คลังสินค้า",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"]
-    },
-    {
-        dept_id: 2,
-        dept_name: "แผนกซ่อมบำรุง",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"]
-    },
-    {
-        dept_id: 3,
-        dept_name: "IT",
-        sections: ["ฝ่ายย่อย A"]
-    },
-    {
-        dept_id: 4,
-        dept_name: "AB",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"]
-    },
-    {
-        dept_id: 5,
-        dept_name: "CD",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"]
-    },
-    {
-        dept_id: 6,
-        dept_name: "EF",
-        sections: ["ฝ่ายย่อย A"]
-    },
-    {
-        dept_id: 7,
-        dept_name: "GH",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"]
-    }
-    ,
-    {
-        dept_id: 8,
-        dept_name: "IJ",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"]
-    },
-    {
-        dept_id: 9,
-        dept_name: "KL",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"]
-    },
-    {
-        dept_id: 10,
-        dept_name: "MN",
-        sections: ["ฝ่ายย่อย A"]
-    },
-    {
-        dept_id: 11,
-        dept_name: "OP",
-        sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"]
-    }
-];
-
+// กำหนดชนิดข้อมูล Department
 type Department = {
     dept_id: number;
     dept_name: string;
-    sections: string[];
+    sections: Section[];
 };
 
+// กำหนดชนิดข้อมูล Section
 type Section = {
     sec_id: number,
-    sec_name: string
+    sec_name: string,
+    sec_dept_id: number
 }
 
 const Departments = () => {
-    //ตั้งข้อมูล department ไว้ใช้ใน filter
-    const [departments, setDepartments] = useState<Department[]>(mockUpDepartment);
+    const [departments, setDepartments] = useState<Department[]>([]);
 
     const departmentOptions = [
         { id: "", label: "ทั้งหมด", value: "" },
@@ -102,19 +45,59 @@ const Departments = () => {
         });
     };
 
-    // ตั้งข้อมูล section ไว้ใช้ใน filter
-    const [sections, setSections] = useState<Section[]>([]);
-
-    const [sectionFilter, setSectionFilter] = useState<{ id: number | string; label: string; value: string } | null>(null);
-
     // ดึงข้อมูล api จาก backend
     useEffect(() => {
         const fetchData = async () => {
-            const res = await axios.get("/api/v1/departments-section");
-            const data = res.data;
+            // const res = await axios.get("/api/v1/departments-section");
+            // const { departments, sections } = res.data;
 
-            setDepartments(data.departments || []);
-            // setSections(data.sections || []);
+            const mockUpData = {
+                departments: [
+                    {
+                        "dept_id": 1,
+                        "dept_name": "IT"
+                    },
+                    {
+                        "dept_id": 2,
+                        "dept_name": "Design"
+                    },
+                    {
+                        "dept_id": 3,
+                        "dept_name": "คลังสินค้า"
+                    }
+                ],
+                sections: [
+                    {
+                        "sec_id": 1,
+                        "sec_name": "ฝ่ายย่อย A",
+                        "sec_dept_id": 1
+                    },
+                    {
+                        "sec_id": 2,
+                        "sec_name": "ฝ่ายย่อย B",
+                        "sec_dept_id": 1
+                    },
+                    {
+                        "sec_id": 3,
+                        "sec_name": "ฝ่ายย่อย A",
+                        "sec_dept_id": 2
+                    },
+                    {
+                        "sec_id": 4,
+                        "sec_name": "ฝ่ายย่อย A",
+                        "sec_dept_id": 3
+                    }
+                ]
+            }
+
+            // รวม section เข้ากับ department
+            const combined = mockUpData.departments.map((dept: any) => ({
+                ...dept,
+                sections: mockUpData.sections.filter((sec: any) => sec.sec_dept_id === dept.dept_id)
+            }));
+
+            // กำหนด department ให้เป็นที่รวมกับ section แล้ว
+            setDepartments(combined);
         }
         fetchData();
     }, [])
@@ -157,9 +140,15 @@ const Departments = () => {
             let valB: any;
 
             switch (sortField) {
+                // sort ชื่อแผนก
                 case "dept_name":
                     valA = a.dept_name;
                     valB = b.dept_name;
+                    break;
+                // sort จำนวนฝ่ายย่อย
+                case "sections":
+                    valA = a.sections.length;
+                    valB = b.sections.length;
                     break;
                 default:
                     valA = a.dept_id;
@@ -175,7 +164,7 @@ const Departments = () => {
             return sortDirection === "asc" ? valA - valB : valB - valA;
         });
         return result;
-    }, [searchFilter, departmentFilter, sectionFilter, sortDirection]);
+    }, [searchFilter, departmentFilter, sortDirection]);
 
     //จัดการแบ่งแต่ละหน้า
     const [page, setPage] = useState(1);
@@ -187,7 +176,6 @@ const Departments = () => {
     }, [
         searchFilter,
         departmentFilter,
-        sectionFilter,
         sortDirection,
     ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
@@ -251,7 +239,7 @@ const Departments = () => {
                         </div>
                         <div className="py-2 px-4 text-left flex items-center">
                             จำนวนฝ่ายย่อย
-                            <button type="button" onClick={() => HandleSort("dept_name")}>
+                            <button type="button" onClick={() => HandleSort("sections")}>
                                 <Icon
                                     icon={
                                         sortField === "dept_name"
@@ -326,7 +314,7 @@ const Departments = () => {
                                                         <div className="py-2 px-4"></div>
                                                         {/* ชื่อฝ่ายย่อย */}
                                                         <div className="py-2 px-4">
-                                                            {section}
+                                                            {section.sec_name}
                                                         </div>
                                                         {/* พื้นที่ว่าง */}
                                                         <div className="py-2 px-4"></div>
@@ -366,7 +354,7 @@ const Departments = () => {
                     }
                 </div>
                 {/* ปุ่มหน้า */}
-                <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+                <div className="mt-25 mr-[24px] flex items-center justify-end">
                     {/* ขวา: ตัวแบ่งหน้า */}
                     <div className="flex items-center gap-2">
                         {/* ปุ่มก่อนหน้า */}

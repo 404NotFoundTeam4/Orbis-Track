@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { loginPayload, TokenDto } from "./auth.schema.js";
+import { sendOtpPayload, loginPayload, TokenDto, verifyOtpPayload, forgotPasswordPayload } from "./auth.schema.js";
 import { authService } from "./auth.service.js";
 import { BaseController } from "../../core/base.controller.js";
-import type { BaseResponse } from "../../core/base.response.js";
+import { BaseResponse } from "../../core/base.response.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
 
@@ -23,7 +23,7 @@ export class AuthController extends BaseController {
      * Output : { message: "Login successful", data: { accessToken } }
      * Author : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async login(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<TokenDto>> {
+    async login(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<TokenDto>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = loginPayload.parse(req.body);
         const result = await authService.checkLogin(payload);
@@ -48,5 +48,26 @@ export class AuthController extends BaseController {
         await authService.logout(token);
 
         return { message: "Logout successful" };
+    }
+
+    async sendOtp(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<void>> {
+        // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
+        const payload = sendOtpPayload.parse(req.body);
+        const { message } = await authService.sendOtp(payload);
+        return { message };
+    }
+
+    async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<void>> {
+        // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
+        const payload = verifyOtpPayload.parse(req.body);
+        const { success, message } = await authService.verifyOtp(payload);
+        return { success, message };
+    }
+
+    async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<void>> {
+        // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
+        const payload = forgotPasswordPayload.parse(req.body);
+        const { message } = await authService.forgotPassword(payload);
+        return { message };
     }
 }

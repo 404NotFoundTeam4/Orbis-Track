@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
-import { loginPayload, TokenDto } from "./auth.schema.js";
+import type { TokenDto } from "./auth.schema.js";
+import { loginPayload } from "./auth.schema.js";
 import { authService } from "./auth.service.js";
 import { BaseController } from "../../core/base.controller.js";
-import { BaseResponse } from "../../core/base.response.js";
+import type { BaseResponse } from "../../core/base.response.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
 
@@ -23,7 +24,7 @@ export class AuthController extends BaseController {
      * Output : { message: "Login successful", data: { accessToken } }
      * Author : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async login(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<TokenDto>> {
+    async login(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<TokenDto>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = loginPayload.parse(req.body);
         const result = await authService.checkLogin(payload);
@@ -36,7 +37,7 @@ export class AuthController extends BaseController {
      * Output : { message: "Logout successful" }
      * Author : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async logout(req: Request, res: Response, next: NextFunction) {
+    async logout(req: Request, _res: Response, _next: NextFunction) {
         // ต้องมี Authorization: Bearer <token> มา ไม่งั้นไม่รับ
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith("Bearer ")) {

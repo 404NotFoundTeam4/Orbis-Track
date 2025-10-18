@@ -6,11 +6,12 @@
  */
 import type { Request, Response, NextFunction } from 'express';
 import express from 'express';
-import { BaseResponse } from './base.response.js';
-import { MaybePromise } from '../types/types.js';
+import type { BaseResponse } from "./base.response.js";
+import type { MaybePromise } from "../types/types.js";
+import type { PaginatedResult } from "./paginated-result.interface.js";
 import { z, type ZodType } from "zod";
 import { registry } from "../docs/swagger.js";
-import { PaginatedResult } from './paginated-result.interface.js';
+
 
 export type RequestHandler = (req: Request, res: Response, next: NextFunction) => MaybePromise<BaseResponse>;
 type Doc = {

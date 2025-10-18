@@ -86,7 +86,7 @@ export const Users = () => {
   //ดึงข้อมูล api จาก back-end
   useEffect(() => {
     const fetchData = async () => {
-      const res = await axios.get("/api/users");
+      const res = await axios.get("/api/accounts");
       const data = res.data;
 
       setSections(data.data.sections || []);

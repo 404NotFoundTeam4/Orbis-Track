@@ -86,6 +86,11 @@ export const Navbar = () => {
                   แชทบอท
                 </Link>
               </li>
+              <li className="dropdown-item">
+                <Link to="/administrator/departments-management" className="block py-2 px-6">
+                  แผนกและฝ่ายย่อย
+                </Link>
+              </li>
             </ul>
           </li>
 

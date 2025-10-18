@@ -3,7 +3,7 @@ import { env } from '../../config/env.js';
 import { HttpError, ValidationError } from '../../errors/errors.js';
 import { prisma } from '../../infrastructure/database/client.js';
 import { signToken, verifyToken } from '../../utils/jwt.js';
-import type { AccessTokenPayload, LoginPayload, SendOtpPayload, VerifyOtpPayload, ForgotPasswordPayload } from './auth.schema.js';
+import type { AccessTokenPayload, LoginPayload, SendOtpPayload, VerifyOtpPayload, ForgotPasswordPayload, ResetPasswordPayload } from './auth.schema.js';
 import { HttpStatus } from '../../core/http-status.enum.js';
 import { hashPassword, verifyPassword } from '../../utils/password.js';
 import { otpSchema } from './auth.schema.js';
@@ -13,7 +13,7 @@ import emailService from '../../utils/email/email.service.js';
 import redisUtils from "../../infrastructure/redis.cjs";
 import { logger } from '../../infrastructure/logger.js';
 
-const { setJSON, getJSON, redisDel, redisTTL } = redisUtils;
+const { setJSON, getJSON, redisDel, redisTTL, redisGet } = redisUtils;
 
 /**
  * Description: ตรวจ login จาก DB แล้วออก JWT
@@ -218,15 +218,16 @@ async function forgotPassword(payload: ForgotPasswordPayload) {
     const result = await prisma.users.update({
         where: { us_email: email, us_is_active: true },
         data: { us_password: await hashPassword(newPassword), updated_at: new Date() },
-        select: { us_email: true, us_username: true },
+        select: { us_email: true, us_username: true, us_firstname: true },
     })
 
     await redisDel(redisKey);
 
-    if (result.us_username && result.us_email) {
+    if (result.us_username && result.us_email && result.us_firstname) {
         await emailService.sendPasswordChanged(
             result.us_email,
             {
+                name: result.us_firstname,
                 username: result.us_username,
             }
         );
@@ -237,4 +238,41 @@ async function forgotPassword(payload: ForgotPasswordPayload) {
     };
 }
 
-export const authService = { checkLogin, logout, sendOtp, verifyOtp, forgotPassword, fetchMe };
+async function resetPassword(payload: ResetPasswordPayload) {
+  const { token, newPassword, confirmNewPassword } = payload;
+  if (newPassword !== confirmNewPassword) {
+      throw new ValidationError("Passwords do not match");
+  }
+  const redisKey = `welcome-token:${token}`;
+  const userId = await redisGet(redisKey);
+  
+  // ถ้าไม่เจอ Key ใน Redis แสดงว่า Token ผิด หรือหมดอายุไปแล้ว
+  if (!userId) {
+    throw new HttpError(HttpStatus.UNAUTHORIZED, "Token ไม่ถูกต้องหรือหมดอายุแล้ว");
+  }
+  
+  const newPasswordHash = await hashPassword(newPassword);
+  const result = await prisma.users.update({
+    where: { us_id: Number(userId) },
+    data: { us_password: newPasswordHash, updated_at: new Date() },
+    select: { us_email: true, us_username: true, us_firstname: true },
+  });
+      
+  await redisDel(redisKey);
+      
+  if (result.us_username && result.us_email && result.us_firstname) {
+    await emailService.sendPasswordChanged(
+      result.us_email,
+      {
+        name: result.us_firstname,
+        username: result.us_username,
+      }
+    );
+  }
+      
+  return {
+    message: 'รีเซ็ตรหัสผ่านสำเร็จ คุณสามารถใช้รหัสผ่านใหม่เข้าสู่ระบบได้',
+  };
+}
+
+export const authService = { checkLogin, logout, sendOtp, verifyOtp, forgotPassword, fetchMe, resetPassword };

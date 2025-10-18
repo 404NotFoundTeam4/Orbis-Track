@@ -1,11 +1,11 @@
 import multer from 'multer';
-import fs from 'fs';
+import fs from 'node:fs';
 
 // ที่เก็บไฟล์รูปภาพ
 const uploadDir = "uploads";
 
 // ตรวจสอบว่ามีโฟลเดอร์ uploads ไหม
-if(!fs.existsSync(uploadDir)) {
+if (!fs.existsSync(uploadDir)) {
     // สร้างโฟลเดอร์ uploads
     fs.mkdirSync(uploadDir);
 }

@@ -69,9 +69,9 @@ export class Router {
         private readonly docPrefix = ""
     ) { }
 
-    private extractHandlers(handlers: RequestHandler[]) {
-        const handler = handlers[handlers.length - 1];
-        const middlewares = handlers.slice(0, handlers.length - 1);
+    private extractHandlers(handlers: (express.RequestHandler | RequestHandler)[]) {
+        const handler = handlers[handlers.length - 1] as RequestHandler;
+        const middlewares = handlers.slice(0, -1) as express.RequestHandler[];
         return { handler, middlewares };
     }
 
@@ -100,49 +100,49 @@ export class Router {
         return catchAsync(invokeHandler);
     }
 
-    get(path: string, ...handlers: RequestHandler[]) {
+    get(path: string, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         const { handler, middlewares } = this.extractHandlers(handlers);
-        this.instance.route(path).get(middlewares, this.preRequest(handler));
+        this.instance.route(path).get(...middlewares, this.preRequest(handler));
     }
 
-    post(path: string, ...handlers: RequestHandler[]) {
+    post(path: string, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         const { handler, middlewares } = this.extractHandlers(handlers);
-        this.instance.route(path).post(middlewares, this.preRequest(handler));
+        this.instance.route(path).post(...middlewares, this.preRequest(handler));
     }
 
-    put(path: string, ...handlers: RequestHandler[]) {
+    put(path: string, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         const { handler, middlewares } = this.extractHandlers(handlers);
-        this.instance.route(path).put(middlewares, this.preRequest(handler));
+        this.instance.route(path).put(...middlewares, this.preRequest(handler));
     }
 
-    patch(path: string, ...handlers: RequestHandler[]) {
+    patch(path: string, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         const { handler, middlewares } = this.extractHandlers(handlers);
-        this.instance.route(path).patch(middlewares, this.preRequest(handler));
+        this.instance.route(path).patch(...middlewares, this.preRequest(handler));
     }
 
-    delete(path: string, ...handlers: RequestHandler[]) {
+    delete(path: string, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         const { handler, middlewares } = this.extractHandlers(handlers);
-        this.instance.route(path).delete(middlewares, this.preRequest(handler));
+        this.instance.route(path).delete(...middlewares, this.preRequest(handler));
     }
 
     //============================= Swagger Doc ===============================//
-    getDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
+    getDoc(path: string, doc: Doc, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         registerDoc("get", joinPath(this.docPrefix, path), doc);
         this.get(path, ...handlers);
     }
-    postDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
+    postDoc(path: string, doc: Doc, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         registerDoc("post", joinPath(this.docPrefix, path), doc);
         this.post(path, ...handlers);
     }
-    putDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
+    putDoc(path: string, doc: Doc, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         registerDoc("put", joinPath(this.docPrefix, path), doc);
         this.put(path, ...handlers);
     }
-    patchDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
+    patchDoc(path: string, doc: Doc, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         registerDoc("patch", joinPath(this.docPrefix, path), doc);
         this.patch(path, ...handlers);
     }
-    deleteDoc(path: string, doc: Doc, ...handlers: RequestHandler[]) {
+    deleteDoc(path: string, doc: Doc, ...handlers: [...express.RequestHandler[], RequestHandler]) {
         registerDoc("delete", joinPath(this.docPrefix, path), doc);
         this.delete(path, ...handlers);
     }

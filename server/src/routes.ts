@@ -1,7 +1,7 @@
 import { Router, type Express } from "express";
 
-import accountsRouter from "./modules/accounts/index.js";
-import authRouter from "./modules/auth/auth.routes.js";
+import { accountsRouter } from "./modules/accounts/index.js";
+import { authRouter } from "./modules/auth/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1

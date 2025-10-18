@@ -7,7 +7,7 @@ const accountsController = new AccountsController();
 const router = new Router(undefined, '/accounts');
 
 router.get("/:id", accountsController.get);
-router.getDoc("/", { tag: "accounts", res: getAllAccountsResponseSchema, auth: true } ,accountsController.getAll);
-router.postDoc("/", { tag: "accounts", res: createAccountsSchema, auth: true }, upload.single("us_images") as any, accountsController.create);
+router.getDoc("/", { tag: "accounts", res: getAllAccountsResponseSchema, auth: true }, accountsController.getAll);
+router.postDoc("/", { tag: "accounts", res: createAccountsSchema, auth: true }, upload.single("us_images"), accountsController.create);
 
 export default router.instance;

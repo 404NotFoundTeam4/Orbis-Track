@@ -46,7 +46,11 @@ export const Users = () => {
       value: s.sec_name,
     })),
   ];
-  const [sectionFilter, setSectionFilter] = useState<{ id: number | string; label: string; value: string } | null>(null);
+  const [sectionFilter, setSectionFilter] = useState<{
+    id: number | string;
+    label: string;
+    value: string;
+  } | null>(null);
   //ตั้งข้อมูล department ไว้ใช้ใน filter
   const [departments, setDepartments] = useState<Department[]>([]);
   const departmentOptions = [
@@ -57,7 +61,11 @@ export const Users = () => {
       value: d.dept_name,
     })),
   ];
-  const [departmentFilter, setDepartmentFilter] = useState<{ id: number | string; label: string; value: string } | null>(null);
+  const [departmentFilter, setDepartmentFilter] = useState<{
+    id: number | string;
+    label: string;
+    value: string;
+  } | null>(null);
 
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
@@ -266,14 +274,20 @@ export const Users = () => {
                 value={departmentFilter}
                 onChange={setDepartmentFilter}
                 placeholder="แผนก"
-              /><Dropdown
+              />
+              <Dropdown
                 items={sectionOptions}
                 value={sectionFilter}
                 onChange={setSectionFilter}
                 placeholder="ฝ่ายย่อย"
               />
               {/* <AddButton label="บัญชีผู้ใช้" /> */}
-              <Button size="md" icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}>เพิ่มบัญชีผู้ใช้</Button>
+              <Button
+                size="md"
+                icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
+              >
+                เพิ่มบัญชีผู้ใช้
+              </Button>
             </div>
           </div>
         </div>

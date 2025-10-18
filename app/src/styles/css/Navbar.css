@@ -1,12 +1,6 @@
-.background {
-    background-color: #F4F4F4;
-}
-
-
 /* CSS สำหรับ dropdown */
 .dropdown-menu {
     display: block;
-    padding-left: 2px;
     list-style-type: none;
     margin: 0;
     max-height: 0; /* ซ่อน dropdown */
@@ -29,9 +23,4 @@
 .down {
   transform: rotate(45deg);
   -webkit-transform: rotate(45deg);
-}
-.menu-item:hover .icon,
-.menu-item:hover  ,
-.dropdown-item:hover{
-  color: #008CFF;
 }

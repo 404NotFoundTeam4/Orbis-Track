@@ -1,146 +1,227 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "../styles/css/icon.css";
 import "../styles/css/Navbar.css";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faBell,faChevronUp, faCartShopping, faCircleUser, faServer, faBoxArchive, faBoxesStacked, faWrench, faChartLine, faClockRotateLeft, faGear } from '@fortawesome/free-solid-svg-icons';
-import logo from "../assets/images/logoblue.png";
-import CircleDropdown from "./CircleDropdown";
+import { Outlet } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useUserStore } from "../stores/userStore";
+import {
+  faHome,
+  faBell,
+  faChevronUp,
+  faCartShopping,
+  faCircleUser,
+  faServer,
+  faBoxArchive,
+  faBoxesStacked,
+  faWrench,
+  faChartLine,
+  faClockRotateLeft,
+  faGear,
+} from "@fortawesome/free-solid-svg-icons";
+
 export const Navbar = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [lang] = useState("EN");
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
   };
-
+  const navigate = useNavigate();
+  const { user, logout } = useUserStore();
+  const closeDropdown = () => setDropdownOpen(false);
+  const handleLogout = () => {
+    logout(); // ❌ ล้าง token + user
+    navigate("/login"); // 🔄 กลับหน้า login
+  };
   return (
-    <div className="flex background ">
+    <div className="flex flex-col background w-full min-h-screen ">
       {/* Navbar */}
-      <div className="w-full bg-[#343434] text-white px-4 py-2 h-[65px] flex justify-between items-center fixed top-0 left-0 z-50">
-        <div className="flex ">
-          <img src={logo} alt="" className="w-7 h-7 rounded-lg mr-3" />
-          <span className="font-bold text-lg">Orbis Track</span>
+      <div className=" w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4 py-2 h-[110px] flex justify-between items-center  top-0 left-0 z-50">
+        <div className="flex text-white ml-3 w-[149px] h-[44px] rounded-full bg-[#40A9FF] items-center justify-center">
+          <span className="font-bold text-2xl">Orbis Track</span>
         </div>
 
-        <div className="flex items-center gap-[23px]">
-          <div className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full">
+        <div className="flex items-center gap-[20px]">
+          <div className="w-[174px] h-[46px] bg-black flex  items-center rounded-full border-2 border-black">
+            <div className="w-[46px] h-[46px] bg-[#2E2E2E] rounded-full"></div>
+            <div className="font-semibold p-3.5">คุยกับ GiGa</div>
+          </div>
+          <div className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full mr-1 border-2 border-black">
+            <FontAwesomeIcon icon={faBell} className="text-[22px] text-black" />
+          </div>
+          <div className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full border-2 border-black">
+            <FontAwesomeIcon
+              icon={faCartShopping}
+              className="text-[22px] text-black"
+            />
+          </div>
 
-          </div>
-          <div className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full">
-            <FontAwesomeIcon icon={faCartShopping} className="text-[22px] text-[#005BAC]" />
-          </div>
-          <div className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full mr-1">
-            <FontAwesomeIcon icon={faBell} className="text-[22px] text-[#FFC107]" />
-          </div>
-          <div className="flex gap-1 items-center">
-            <FontAwesomeIcon icon={faCircleUser} className="text-[40px]" />
-            <div className=" text-left ">
-              <div className="text-sm">นายอภิทัชชา</div>
-              <div className="text-[11px] text-white/70">(ตำแหน่ง พนักงานทั่วไป)</div>
+          <div className="flex gap-1 items-center bg-white rounded-full border-2 border-black w-auto h-[46px] p-4 ">
+            <div className=" text-left text-black pr-8">
+              <div className="text-[16px] font-semibold">นายอภิทัชชา</div>
+              <div className="text-[13px] font-normal">พนักงานทั่วไป</div>
             </div>
+            <img src="" alt="" className="w-9 h-9 rounded-full" />
           </div>
-          <CircleDropdown
-            value={lang}
-            items={[
-              { label: "TH - ไทย", value: "TH" },
-              { label: "EN - English", value: "EN" },
-            
-            ]}
-          />
         </div>
       </div>
       {/* Sidebar */}
-      <div className="w-[207px] bg-white text-black p-2 shadow-xl fixed left-0 top-[65px]  h-[calc(100%-65px)] z-40">
-        <ul className="px-4 text-left space-y-6">
-          <li className="">
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 ">
-              <FontAwesomeIcon icon={faHome} className="" />
-              <Link to="/home" className="block py-2  "> หน้าหลัก </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 " onClick={toggleDropdown}>
-              <FontAwesomeIcon icon={faServer} className="" />
-              <span>การจัดการ</span>
-              <FontAwesomeIcon icon={faChevronUp} className={`ml-1 mt-1 transform transition-transform duration-300  rotate-180 ${isDropdownOpen ? "rotate-360" : ""}`} />
-             
-            </div>
-            <ul className={`pl-4 overflow-hidden dropdown-menu ${isDropdownOpen ? "open" : ""}`}>
-              <li className="dropdown-item ">
-                <Link to="/manage/equipment" className="block py-2 px-6">
+      <div className="flex">
+        <div className="w-[213px] bg-white text-black px-2 shadow-xl min-h-screen z-40">
+          <div className="text-left">
+            {/* 🏠 หน้าหลัก */}
+            <Link
+              to="/users"
+              onClick={closeDropdown}
+              className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+            >
+              <FontAwesomeIcon icon={faHome} />
+              <span>หน้าหลัก</span>
+            </Link>
+
+            {/* ⚙️ เมนูการจัดการ */}
+            <li>
+              <div
+                onClick={toggleDropdown}
+                className={`px-7.5 flex items-center w-full cursor-pointer gap-2 h-[50px] rounded-[9px] select-none transition-colors duration-200 ${
+                  isDropdownOpen
+                    ? "bg-[#40A9FF] text-white"
+                    : "hover:bg-[#F0F0F0]"
+                }`}
+              >
+                <FontAwesomeIcon icon={faServer} />
+                <span>การจัดการ</span>
+                <FontAwesomeIcon
+                  icon={faChevronUp}
+                  className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${
+                    isDropdownOpen ? "rotate-0" : "rotate-180"
+                  }`}
+                />
+              </div>
+
+              <ul
+                className={`overflow-hidden transition-all duration-800 ease-in-out ${
+                  isDropdownOpen
+                    ? "max-h-[500px] opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                <Link
+                  to="/users"
+                  className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                >
                   คำร้อง
                 </Link>
-              </li>
-              <li className="dropdown-item">
-                <Link to="/manage/equipment" className="block py-2 px-6">
+
+                <Link
+                  to="/users"
+                 className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                >
                   คลังอุปกรณ์
                 </Link>
-              </li>
-              <li className="dropdown-item">
-                <Link to="/users" className="block py-2  px-6">
+
+                <Link
+                  to="/users"
+                   className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                >
                   บัญชีผู้ใช้
                 </Link>
-              </li>
-              <li className="dropdown-item">
-                <Link to="/manage/chatbot" className="block py-2 px-6">
+
+                <Link
+                  to="/users"
+                 className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                >
                   แชทบอท
                 </Link>
-              </li>
-            </ul>
-          </li>
 
-          <li>
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 ">
-              <FontAwesomeIcon icon={faBoxArchive} />
-              <Link to="/reports/equipment" className="block">
-                รายการอุปกรณ์
+                 <Link
+                  to="/users"
+                 className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                >
+                  แผนกและฝ่ายย่อย
+                </Link>
+
+                 <Link
+                  to="/users"
+                 className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                >
+                  หมวดหมู่อุปกรณ์
+                </Link>
+
+              </ul>
+
+              {/* 📦 เมนูอื่น ๆ */}
+
+              <Link
+                to="/users"
+                onClick={closeDropdown}
+                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+              >
+                <FontAwesomeIcon icon={faBoxArchive} />
+                <span>รายการอุปกรณ์</span>
               </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 ">
-              <FontAwesomeIcon icon={faBoxesStacked} />
-              <Link to="/reports/requests" className="block ">
-                รายการยืม
+
+              <Link
+                to="/users"
+                onClick={closeDropdown}
+                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+              >
+                <FontAwesomeIcon icon={faBoxesStacked} />
+                <span>รายการยืม</span>
               </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 ">
-              <FontAwesomeIcon icon={faWrench} />
-              <Link to="/support" className="block hover:bg-gray-200">
-                แจ้งปัญหา
+
+              <Link
+                to="/users"
+                onClick={closeDropdown}
+                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+              >
+                <FontAwesomeIcon icon={faWrench} />
+                <span>แจ้งปัญหา</span>
               </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 ">
-              <FontAwesomeIcon icon={faChartLine} flip="horizontal" />
-              <Link to="/dashboard" className="block  hover:bg-gray-200">
-                แดชบอร์ด
+
+              <Link
+                to="/users"
+                onClick={closeDropdown}
+                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+              >
+                <FontAwesomeIcon icon={faChartLine} flip="horizontal" />
+                <span>แดชบอร์ด</span>
               </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 ">
-              <FontAwesomeIcon icon={faClockRotateLeft} />
-              <Link to="/settings" className="block  hover:bg-gray-200">
-                ดูประวัติ
+
+              <Link
+                to="/users"
+                onClick={closeDropdown}
+                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+              >
+                <FontAwesomeIcon icon={faClockRotateLeft} />
+                <span>ดูประวัติ</span>
               </Link>
-            </div>
-          </li>
-          <li>
-            <div className="flex items-center w-full cursor-pointer menu-item gap-2 ">
-              <FontAwesomeIcon icon={faGear} />
-              <Link to="/settings" className="block  hover:bg-gray-200">
-                การตั้งค่า
+
+              <Link
+                to="/users"
+                onClick={closeDropdown}
+                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+              >
+                <FontAwesomeIcon icon={faGear} />
+                <span>การตั้งค่า</span>
               </Link>
-            </div>
-          </li>
-        </ul>
+            </li>
+            <button
+              onClick={handleLogout}
+              className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
+            >
+              ออกจากระบบ
+            </button>
+          </div>
+        </div>
+
+        <main className="flex-1 m-6 bg-[#FAFAFA] ">
+          <div className=" w-full min-h-[calc(100vh-150px)]  ">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   );
-}
+};
 
 export default Navbar;

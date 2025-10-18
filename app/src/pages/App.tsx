@@ -7,6 +7,8 @@ import Home from "./Home";
 import Dashboard from "./Dashboard";
 import "../styles/css/index.css";
 import TestDropDown from "./ExampleComponent";
+import Departments from "./Departments";
+
 function App() {
   return (
     <BrowserRouter>
@@ -19,6 +21,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/administrator/account-management" element={<Users />} />
           <Route path="/users" element={<Users />} />
+          <Route path="/administrator/departments-management"element={<Departments/>}/>
           <Route path="/example-component" element={<TestDropDown />} />
           <Route path="/home" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />

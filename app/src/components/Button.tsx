@@ -8,7 +8,8 @@ interface ButtonProps {
     | "outline"
     | "ghost"
     | "danger"
-    | "dangerIcon";
+    | "dangerIcon"
+    | "addSection";
   size?: "sm" | "md" | "lg";
   children: React.ReactNode;
   onClick?: () => void;
@@ -43,6 +44,9 @@ const Button: React.FC<ButtonProps> = ({
     danger: "bg-[#FF4D4F] text-[#FFFFFF] hover:bg-red-500 active:bg-red-600",
     dangerIcon:
       "bg-[#DF203B] text-[#FFFFFF] hover:bg-red-700 active:bg-red-800",
+    addSection:
+      "bg-[#FFFFFF] text-[#008CFF] hover:bg-[#F5F5F5] border border-[#008CFF]"
+    
   };
 
   // ขนาดปุ่ม (ระยะห่างและขนาดตัวอักษร) แยกเป็น sm / md / lg

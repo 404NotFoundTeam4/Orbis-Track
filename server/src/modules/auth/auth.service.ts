@@ -124,7 +124,7 @@ async function fetchMe(user: AccessTokenPayload) {
  * Description: ส่งรหัส OTP (6 หลัก) ไปยังอีเมลของผู้ใช้ เพื่อใช้ในการยืนยันตัวตน
  * Input     : SendOtpPayload { email }
  * Output    : { message: string } - ข้อความแจ้งผลการส่ง OTP (ไม่บอกว่ามีอีเมลในระบบหรือไม่เพื่อความปลอดภัย)
- * Note      : OTP จะหมดอายุใน 5 นาที (900 วินาที) และเก็บใน Redis
+ * Note      : OTP จะหมดอายุใน 15 นาที (900 วินาที) และเก็บใน Redis
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 async function sendOtp(payload: SendOtpPayload) {
@@ -154,7 +154,7 @@ async function sendOtp(payload: SendOtpPayload) {
             userId: user?.us_id,
             attempts: 0,
         },
-        900 // 5 minutes
+        900 // 15 minutes
     );
 
     // ส่ง OTP ทางอีเมล

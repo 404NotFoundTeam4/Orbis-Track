@@ -109,7 +109,7 @@ export const welcomeTemplate = (data: WelcomeTemplateData): string => {
                 </div>
 
                 <div class="warning-box">
-                <strong>สำคัญ: กรุณาตั้งรหัสผ่านภายใน 24 ชั่วโมง</strong>
+                <strong>สำคัญ: กรุณาตั้งรหัสผ่านภายใน ${Math.floor(Number(expiryHours)/ 86400)} วัน</strong>
                 เพื่อความปลอดภัยของบัญชี กรุณาคลิกปุ่มด้านบนเพื่อตั้งรหัสผ่านที่คุณต้องการ 
                 หากลิงก์หมดอายุ กรุณาติดต่อผู้ดูแลระบบเพื่อขอลิงก์ใหม่
                 </div>

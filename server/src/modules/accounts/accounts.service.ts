@@ -47,7 +47,6 @@ async function getAccountById(params: IdParamDto) {
  * Output : ข้อมูลพนักงานพร้อมแนก และฝ่ายย่อย
  * Author: Thakdanai Makmi (Ryu) 66160355
 */
-
 async function getAllAccounts() {
     const [departments, sections, users] = await Promise.all([
         // ดึงข้อมูลจากตาราง departments
@@ -113,7 +112,6 @@ async function getAllAccounts() {
  * Output : บัญชีผู้ใช้งานคนใหม่
  * Author: Thakdanai Makmi (Ryu) 66160355
 */
-
 async function createAccounts(payload: CreateAccountsPayload, images: any) {
     const {
         us_emp_code,
@@ -169,12 +167,19 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
         }
     });
     
+    // Author: Pakkapon Chomchoey (Tonnam) 66160080
+    // สร้าง one-time token สำหรับให้ผู้ใช้ใหม่ตั้งรหัสผ่านครั้งแรก
     const { plainTextToken } = await OneTimeTokenUtil.generateToken();
+    
+    // สร้าง Redis key และเก็บ token พร้อม user id โดยกำหนดเวลาหมดอายุ
     const redisKey = `welcome-token:${plainTextToken}`;
     const expiryInSeconds = Number(env.EXPIRE_TOKEN); // 24 ชั่วโมง
     await redisSet(redisKey, newUser.us_id.toString(), expiryInSeconds);
+    
+    // สร้าง URL สำหรับหน้า reset password พร้อม token
     const welcomeUrl = `${env.FRONTEND_URL}/reset-password?token=${plainTextToken}`;
     
+    // ส่งอีเมล welcome พร้อม link สำหรับตั้งรหัสผ่านให้ผู้ใช้ใหม่
     await emailService.sendWelcome(newUser.us_email, {
         name: newUser.us_firstname,
         username: newUser.us_username,

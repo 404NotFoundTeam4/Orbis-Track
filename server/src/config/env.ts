@@ -68,7 +68,7 @@ const Env = z.object({
     SUPPORT_EMAIL: z.string().default("support@obistrack.com"),
     FRONTEND_URL: z.string().default("http://localhost:4042"),
     
-    //token/crypto
+    // token/crypto
     EXPIRE_TOKEN: z.string()
 });
 

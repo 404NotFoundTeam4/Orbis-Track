@@ -1,5 +1,19 @@
+/**
+ * Description: Email template สำหรับแจ้งเตือนผู้ใช้เมื่อมีการเปลี่ยนรหัสผ่านสำเร็จ
+ * Note      : Template รองรับ responsive design และมีปุ่มรายงานปัญหาหากเป็นการเปลี่ยนรหัสผ่านโดยไม่ได้รับอนุญาต
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { env } from "../../../config/env.js";
 
+/**
+ * Interface: ข้อมูลที่ใช้ในการสร้าง Password Changed email template
+ * Properties:
+ *   - name      : ชื่อผู้ใช้สำหรับแสดงในอีเมล (required)
+ *   - username  : username ของผู้ใช้ (optional)
+ *   - changedAt : วันเวลาที่เปลี่ยนรหัสผ่าน (required)
+ *   - ipAddress : IP address ที่ใช้เปลี่ยนรหัสผ่าน (optional)
+ *   - userAgent : ข้อมูลอุปกรณ์/browser ที่ใช้เปลี่ยนรหัสผ่าน (optional)
+ */
 interface PasswordChangedTemplateData {
     name: string,
     username?: string;
@@ -8,6 +22,18 @@ interface PasswordChangedTemplateData {
     userAgent?: string;
 }
 
+/**
+ * Description: สร้าง HTML email template สำหรับแจ้งเตือนการเปลี่ยนรหัสผ่าน
+ * Input     : PasswordChangedTemplateData { name, username?, changedAt, ipAddress?, userAgent? }
+ * Output    : string (HTML email template พร้อม inline CSS)
+ * Features  : 
+ *   - Responsive design (รองรับมือถือ)
+ *   - แสดงรายละเอียดการเปลี่ยนรหัสผ่าน (วันเวลา, IP, อุปกรณ์)
+ *   - มีปุ่มรายงานปัญหาหากผู้ใช้ไม่ได้เปลี่ยนรหัสผ่านเอง
+ *   - มีคำแนะนำด้านความปลอดภัยสำหรับผู้ใช้
+ *   - มีข้อมูลติดต่อทีมสนับสนุน
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const passwordChangedTemplate = (data: PasswordChangedTemplateData): string => {
     const { name, username, changedAt, ipAddress, userAgent } = data;
 

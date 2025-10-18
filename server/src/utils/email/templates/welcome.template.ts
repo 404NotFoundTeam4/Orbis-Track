@@ -1,5 +1,19 @@
+/**
+ * Description: Email template สำหรับต้อนรับผู้ใช้ใหม่ พร้อมลิงก์สำหรับตั้งรหัสผ่านครั้งแรก
+ * Note      : Template รองรับ responsive design และมีขั้นตอนการเริ่มต้นใช้งานที่ชัดเจน
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { env } from "../../../config/env.js";
 
+/**
+ * Interface: ข้อมูลที่ใช้ในการสร้าง Welcome email template
+ * Properties:
+ *   - name             : ชื่อผู้ใช้สำหรับแสดงในอีเมล (required)
+ *   - username         : username สำหรับเข้าสู่ระบบ (required)
+ *   - userEmail        : อีเมลของผู้ใช้ (required)
+ *   - resetPasswordUrl : URL สำหรับตั้งรหัสผ่านครั้งแรก (required)
+ *   - expiryHours      : เวลาหมดอายุของลิงก์ (ชั่วโมง) (required)
+ */
 interface WelcomeTemplateData {
     name: string,
     username: string;
@@ -8,6 +22,19 @@ interface WelcomeTemplateData {
     expiryHours: string;
 }
 
+/**
+ * Description: สร้าง HTML email template สำหรับต้อนรับผู้ใช้ใหม่
+ * Input     : WelcomeTemplateData { name, username, userEmail, resetPasswordUrl, expiryHours }
+ * Output    : string (HTML email template พร้อม inline CSS)
+ * Features  : 
+ *   - Responsive design (รองรับมือถือ)
+ *   - แสดงข้อมูลบัญชีผู้ใช้ (username)
+ *   - ปุ่มสำหรับตั้งรหัสผ่านพร้อมแสดงเวลาหมดอายุ
+ *   - มีขั้นตอนการเริ่มต้นใช้งานที่ชัดเจน
+ *   - คำเตือนให้ตั้งรหัสผ่านภายในเวลาที่กำหนด
+ *   - มีข้อมูลติดต่อทีมสนับสนุน
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const welcomeTemplate = (data: WelcomeTemplateData): string => {
     const { name, username, userEmail, resetPasswordUrl, expiryHours } = data;
 

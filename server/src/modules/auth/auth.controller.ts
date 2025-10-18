@@ -62,6 +62,12 @@ export class AuthController extends BaseController {
         return { message: "Fetch me successful", data: result };
     }
 
+    /**
+    * Description: Controller สำหรับส่ง OTP ไปยังอีเมลของผู้ใช้ เพื่อใช้ในการรีเซ็ตรหัสผ่าน
+    * Input     : req.body (email) - อีเมลของผู้ใช้ที่ต้องการขอ OTP
+    * Output    : { message: string } - ข้อความแจ้งผลการส่ง OTP
+    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+    */
     async sendOtp(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<void>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = sendOtpPayload.parse(req.body);
@@ -69,6 +75,12 @@ export class AuthController extends BaseController {
         return { message };
     }
 
+    /**
+     * Description: Controller สำหรับยืนยัน OTP ที่ผู้ใช้กรอกเข้ามา เพื่อตรวจสอบความถูกต้อง
+     * Input     : req.body (email, otp) - อีเมลและรหัส OTP ที่ผู้ใช้กรอก
+     * Output    : { success: boolean, message: string } - ผลการยืนยันและข้อความ
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
     async verifyOtp(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<void>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = verifyOtpPayload.parse(req.body);
@@ -76,6 +88,12 @@ export class AuthController extends BaseController {
         return { success, message };
     }
 
+    /**
+     * Description: Controller สำหรับคนที่ลืมรหัสผ่าน และต้องการรีเซ็ตรหัสผ่าน
+     * Input     : req.body (email) - อีเมลของผู้ใช้ที่ต้องการรีเซ็ตรหัสผ่าน เพราะลืมรหัสผ่าน
+     * Output    : { message: string } - ข้อความแจ้งผลการส่งลิงก์รีเซ็ตรหัสผ่าน
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
     async forgotPassword(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<void>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = forgotPasswordPayload.parse(req.body);
@@ -83,6 +101,12 @@ export class AuthController extends BaseController {
         return { message };
     }
 
+    /**
+     * Description: Controller สำหรับตั้งรหัสผ่านใหม่ผ่าน token ที่ได้รับจากอีเมล หลังจากสร้าง account ใหม่
+     * Input     : req.body (token, newPassword) - token จากอีเมลและรหัสผ่านใหม่ที่ต้องการตั้ง
+     * Output    : { message: string } - ข้อความแจ้งผลการรีเซ็ตรหัสผ่าน
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
     async resetPassword(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<void>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = resetPasswordPayload.parse(req.body);

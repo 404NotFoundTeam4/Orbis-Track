@@ -1,11 +1,35 @@
+/**
+ * Description: Email template สำหรับส่งรหัส OTP ไปยังผู้ใช้เพื่อยืนยันตัวตนในการรีเซ็ตรหัสผ่าน
+ * Note      : Template รองรับ responsive design และมีคำเตือนด้านความปลอดภัย
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { env } from "../../../config/env.js";
 
+/**
+ * Interface: ข้อมูลที่ใช้ในการสร้าง OTP email template
+ * Properties:
+ *   - otp           : รหัส OTP 6 หลัก (required)
+ *   - expiryMinutes : เวลาหมดอายุของ OTP (นาที) - default 15 นาที
+ *   - username      : ชื่อผู้ใช้สำหรับแสดงในอีเมล (optional)
+ */
 interface OtpTemplateData {
     otp: string;
     expiryMinutes?: number;
     username?: string;
 }
 
+/**
+ * Description: สร้าง HTML email template สำหรับส่งรหัส OTP
+ * Input     : OtpTemplateData { otp, expiryMinutes?, username? }
+ * Output    : string (HTML email template พร้อม inline CSS)
+ * Features  : 
+ *   - Responsive design (รองรับมือถือ)
+ *   - แสดงรหัส OTP แบบ monospace ขนาดใหญ่เพื่อความชัดเจน
+ *   - มีคำเตือนด้านความปลอดภัยเกี่ยวกับการใช้ OTP
+ *   - แสดงเวลาหมดอายุของ OTP
+ *   - มีข้อมูลติดต่อทีมสนับสนุน
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const otpTemplate = (data: OtpTemplateData): string => {
     const { otp, expiryMinutes = 15, username } = data;
 

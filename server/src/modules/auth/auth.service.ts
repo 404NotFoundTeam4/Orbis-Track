@@ -120,6 +120,13 @@ async function fetchMe(user: AccessTokenPayload) {
     return result;
 }
 
+/**
+ * Description: ส่งรหัส OTP (6 หลัก) ไปยังอีเมลของผู้ใช้ เพื่อใช้ในการยืนยันตัวตน
+ * Input     : SendOtpPayload { email }
+ * Output    : { message: string } - ข้อความแจ้งผลการส่ง OTP (ไม่บอกว่ามีอีเมลในระบบหรือไม่เพื่อความปลอดภัย)
+ * Note      : OTP จะหมดอายุใน 5 นาที (900 วินาที) และเก็บใน Redis
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function sendOtp(payload: SendOtpPayload) {
     const { email } = payload;
     // หา user จากอีเมล
@@ -160,6 +167,13 @@ async function sendOtp(payload: SendOtpPayload) {
     };
 }
 
+/**
+ * Description: ยืนยันรหัส OTP ที่ผู้ใช้กรอกเข้ามา โดยตรวจสอบกับรหัสที่เก็บไว้ใน Redis
+ * Input     : VerifyOtpPayload { email, otp }
+ * Output    : { success: boolean, message: string } - ผลการยืนยันและข้อความ
+ * Note      : จำกัดการยืนยันไม่เกิน 5 ครั้ง หากเกินจะต้องขอ OTP ใหม่
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function verifyOtp(payload: VerifyOtpPayload) {
     const { email, otp } = payload;
 
@@ -207,6 +221,13 @@ async function verifyOtp(payload: VerifyOtpPayload) {
     };
 }
 
+/**
+ * Description: ตั้งรหัสผ่านใหม่ผ่านกระบวนการ forgot password (หลังจากยืนยัน OTP สำเร็จ)
+ * Input     : ForgotPasswordPayload { email, newPassword, confirmNewPassword }
+ * Output    : { message: string } - ข้อความแจ้งผลการรีเซ็ตรหัสผ่าน
+ * Note      : จะลบ OTP ออกจาก Redis และส่งอีเมลแจ้งเตือนการเปลี่ยนรหัสผ่าน
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function forgotPassword(payload: ForgotPasswordPayload) {
     const { email, newPassword, confirmNewPassword } = payload;
     if (newPassword !== confirmNewPassword) {
@@ -220,9 +241,11 @@ async function forgotPassword(payload: ForgotPasswordPayload) {
         data: { us_password: await hashPassword(newPassword), updated_at: new Date() },
         select: { us_email: true, us_username: true, us_firstname: true },
     })
-
+    
+    // ลบ OTP ออกจาก Redis (เพราะใช้งานเสร็จแล้ว)
     await redisDel(redisKey);
 
+    // ส่งอีเมลแจ้งเตือนการเปลี่ยนรหัสผ่านสำเร็จ
     if (result.us_username && result.us_email && result.us_firstname) {
         await emailService.sendPasswordChanged(
             result.us_email,
@@ -238,6 +261,13 @@ async function forgotPassword(payload: ForgotPasswordPayload) {
     };
 }
 
+/**
+ * Description: ตั้งรหัสผ่านใหม่ผ่าน token (ใช้กับ welcome email หรือ reset password link)
+ * Input     : ResetPasswordPayload { token, newPassword, confirmNewPassword }
+ * Output    : { message: string } - ข้อความแจ้งผลการรีเซ็ตรหัสผ่าน
+ * Note      : Token จะถูกเก็บใน Redis และจะถูกลบออกหลังจากใช้งานเสร็จ (one-time use)
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function resetPassword(payload: ResetPasswordPayload) {
   const { token, newPassword, confirmNewPassword } = payload;
   if (newPassword !== confirmNewPassword) {

@@ -83,6 +83,8 @@ services:
       target: dev
     working_dir: /app/server
     entrypoint: ["/bin/sh", "-lc", "/bin/sh ./docker-entrypoint.sh"]
+    env_file:
+      - .env
     environment:
       PORT: 4041
       NODE_ENV: development
@@ -96,6 +98,17 @@ services:
       RUN_MIGRATIONS: "true"
       PRISMA_STRATEGY: auto
       START_CMD: auto
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_REQUIRETLS: ${SMTP_REQUIRETLS}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+      APP_NAME: ${APP_NAME}
+      APP_URL: ${APP_URL}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL}
     ports: ["4041:4041"]
     volumes:
       - ./:/app

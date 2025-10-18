@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import type { TokenDto } from "./auth.schema.js";
-import { loginPayload } from "./auth.schema.js";
+import { sendOtpPayload, loginPayload, verifyOtpPayload, forgotPasswordPayload } from "./auth.schema.js";
 import { authService } from "./auth.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import type { BaseResponse } from "../../core/base.response.js";
@@ -37,7 +37,7 @@ export class AuthController extends BaseController {
      * Output : { message: "Logout successful" }
      * Author : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async logout(req: Request, _res: Response, _next: NextFunction) {
+    async logout(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<void>> {
         // ต้องมี Authorization: Bearer <token> มา ไม่งั้นไม่รับ
         const authHeader = req.headers.authorization;
         if (!authHeader?.startsWith("Bearer ")) {
@@ -49,5 +49,26 @@ export class AuthController extends BaseController {
         await authService.logout(token);
 
         return { message: "Logout successful" };
+    }
+
+    async sendOtp(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<void>> {
+        // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
+        const payload = sendOtpPayload.parse(req.body);
+        const { message } = await authService.sendOtp(payload);
+        return { message };
+    }
+
+    async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<void>> {
+        // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
+        const payload = verifyOtpPayload.parse(req.body);
+        const { success, message } = await authService.verifyOtp(payload);
+        return { success, message };
+    }
+
+    async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<void>> {
+        // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
+        const payload = forgotPasswordPayload.parse(req.body);
+        const { message } = await authService.forgotPassword(payload);
+        return { message };
     }
 }

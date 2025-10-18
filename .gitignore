@@ -33,3 +33,4 @@ Thumbs.db
 *.tsbuildinfo
 
 /src/generated/prisma
+*.zod

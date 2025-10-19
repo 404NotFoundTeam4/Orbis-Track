@@ -3,9 +3,12 @@ import { departmentService } from "./departments.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
+  editDepartmentPayload,
+  editSectionPayload,
   GetAllDepartmentSchema,
   GetAllSectionSchema,
   idParamSchema,
+  paramEditSecSchema,
 } from "./departments.schema.js";
 
 /**
@@ -48,5 +51,39 @@ export class DepartmentController extends BaseController {
     const id = idParamSchema.parse(req.params);
     const sections = await departmentService.getSectionById(id);
     return { data: sections };
+  }
+
+  /**
+   * Description: Controller สำหรับแก้ไขข้อมูลแผนก (Department)
+   * Input     : req.params.id (รหัสแผนก), req.body (ข้อมูลแผนกที่ต้องการแก้ไข)
+   * Output    : { message: string } - ข้อความแจ้งผลการแก้ไข
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async editDepartment(
+    req: Request,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<void>> {
+    const id = idParamSchema.parse(req.params);
+    const payload = editDepartmentPayload.parse(req.body);
+    const { message } = await departmentService.editDepartment(id, payload);
+    return { message };
+  }
+  
+  /**
+   * Description: Controller สำหรับแก้ไขข้อมูลฝ่ายย่อย (Section)
+   * Input     : req.params (ไอดีแผนกและไอดีฝ่ายย่อย), req.body (ข้อมูลฝ่ายย่อยที่ต้องการแก้ไข)
+   * Output    : { message: string } - ข้อความแจ้งผลการแก้ไข
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async editSection(
+    req: Request,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<void>> {
+    const id = paramEditSecSchema.parse(req.params);
+    const payload = editSectionPayload.parse(req.body);
+    const { message } = await departmentService.editSection(id, payload);
+    return { message };
   }
 }

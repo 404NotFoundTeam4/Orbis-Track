@@ -3,6 +3,7 @@ import { Router, type Express } from "express";
 import userRouter from "./modules/user/index.js";
 import authRouter, { fetchMeRouter } from "./modules/auth/index.js";
 import { authMiddleware } from "./middlewares/auth.middleware.js";
+import { departmentRouter } from "./modules/departments/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1
@@ -18,6 +19,8 @@ export function routes(app: Express) {
     api.use("/", authRouter);
 
     api.use("/auth", authMiddleware, fetchMeRouter)
+
+    api.use("/departments", departmentRouter);
 
     api.get("/health", (_req, res) => res.json({ ok: true }));
 

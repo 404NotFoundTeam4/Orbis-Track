@@ -37,6 +37,9 @@ export const catchAsync =
 
 function registerDoc(method: "get" | "post" | "put" | "patch" | "delete", path: string, d?: Doc) {
     if (!d) return;
+    
+    const openapiPath = path.replace(/:([A-Za-z0-9_]+)/g, '{$1}');
+        
     const content = (s?: ZodType) => s ? { "application/json": { schema: s } } : undefined;
     const base = (s?: ZodType) =>
     ({
@@ -54,7 +57,7 @@ function registerDoc(method: "get" | "post" | "put" | "patch" | "delete", path: 
     if (d.body) req.body = { required: true, content: content(d.body) };
 
     registry.registerPath({
-        method, path,
+        method, path: openapiPath,
         tags: d.tag ? [d.tag] : undefined,
         security: d.auth ? [{ BearerAuth: [] }] : undefined,
         request: req,

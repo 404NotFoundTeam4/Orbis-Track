@@ -3,12 +3,14 @@ import { departmentService } from "./departments.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
+  AddDepartmentsSchema,
   editDepartmentPayload,
   editSectionPayload,
   GetAllDepartmentSchema,
   GetAllSectionSchema,
   idParamSchema,
   paramEditSecSchema,
+  addDepartmentsPayload
 } from "./departments.schema.js";
 
 /**
@@ -85,5 +87,17 @@ export class DepartmentController extends BaseController {
     const payload = editSectionPayload.parse(req.body);
     const { message } = await departmentService.editSection(id, payload);
     return { message };
+  }
+
+  /**
+   * Description: Controller สำหรับเพิ่มแผนก (Departments)
+   * Input     : req.body (ข้อมูลชื่อแผนก)
+   * Output    : { data: result } - ข้อมูลที่เพิ่มเข้ามา
+   * Author    : Sutaphat Thahin (Yeen) 66160378
+   */
+  async addDepartments(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<AddDepartmentsSchema>> {
+    const payload = addDepartmentsPayload.parse(req.body);
+    const result = await departmentService.addDepartments(payload);
+    return { data: result }
   }
 }

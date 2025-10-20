@@ -4,6 +4,7 @@ import DropDown from "../components/DropDown"
 import SearchFilter from "../components/SearchFilter"
 import { useEffect, useMemo, useState } from "react"
 import DropdownArrow from "../components/DropdownArrow"
+import AddDepartmentsModal from "../components/AddDepartmentsModal"
 import axios from "axios"
 
 const mockUpDepartment = [
@@ -101,6 +102,8 @@ const Departments = () => {
             return prev.includes(id) ? prev.filter((deptId) => deptId !== id) : [...prev, id];
         });
     };
+
+    const [openModalAsDepartments, setopenModalAsDepartments] = useState<boolean>(false);
 
     // ตั้งข้อมูล section ไว้ใช้ใน filter
     const [sections, setSections] = useState<Section[]>([]);
@@ -222,11 +225,15 @@ const Departments = () => {
                                 onChange={setDepartmentFilter}
                                 placeholder="แผนก"
                             />
-                            <Button size="md" icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}>เพิ่มแผนก</Button>
+                            <Button onClick={() => setopenModalAsDepartments(true)} size="md" icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}>เพิ่มแผนก</Button>
                             <Button variant="addSection" size="md" icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}>เพิ่มฝ่ายย่อย</Button>
                         </div>
                     </div>
                 </div>
+
+                {openModalAsDepartments && (
+                    <AddDepartmentsModal />
+                )}
 
                 <div className="w-full">
                     <div className="grid [grid-template-columns:150px_200px_740px_80px]
@@ -390,7 +397,7 @@ const Departments = () => {
 
                         {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
                         {page > 2 && <span className="px-1 text-gray-400">…</span>}
-                        {page > 1 && page < totalPages && (
+                        {page < 1 && page < totalPages && (
                             <button
                                 type="button"
                                 className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
@@ -408,7 +415,7 @@ const Departments = () => {
                                 type="button"
                                 onClick={() => setPage(totalPages)}
                                 className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
-                            >
+                        >
                                 {totalPages}
                             </button>
                         )}

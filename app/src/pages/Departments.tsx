@@ -4,14 +4,43 @@ import DropDown from "../components/DropDown"
 import SearchFilter from "../components/SearchFilter"
 import { useEffect, useMemo, useState } from "react"
 import DropdownArrow from "../components/DropdownArrow"
-import { departmentService } from "../service/DepartmentsService"
 import { type getDepartmentsWithSections } from "../service/DepartmentsService"
+import { DepartmentModal } from "../components/DepartmentModal"
+import { departmentService, sectionService } from "../service/DepartmentsService"
+import { useToast } from "../components/Toast"
 
 const Departments = () => {
     // เก็บข้อมูลแผนกทั้งหมด
     const [departments, setDepartments] = useState<getDepartmentsWithSections[]>([]);
 
     // ตัวเลือกแผนกใน Dropdown
+
+// กำหนดชนิดข้อมูล Department
+type Department = {
+    dept_id: number;
+    dept_name: string;
+    sections: Section[];
+};
+
+// กำหนดชนิดข้อมูล Section
+type Section = {
+    sec_id: number,
+    sec_name: string,
+    sec_dept_id: number
+}
+
+type ModalType = 'add-department' | 'edit-department' | 'add-section' | 'edit-section';
+
+const Departments = () => {
+    const { push } = useToast();
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [loading, setLoading] = useState(false);
+    
+    // Modal state
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalType, setModalType] = useState<ModalType>('add-department');
+    const [selectedData, setSelectedData] = useState<any>(null);
+    
     const departmentOptions = [
         { id: "", label: "ทั้งหมด", value: "" },
         ...departments.map((d) => ({
@@ -48,6 +77,36 @@ const Departments = () => {
       
         fetchData();
       }, []);
+    
+    const handleModalSubmit = async (data: any) => {
+            setLoading(true);
+            try {
+                switch (modalType) {
+                    case 'edit-department':
+                        await departmentService.updateDepartment(data.id, { department: data.department });
+                        push({
+                          tone: "success",        
+                          message: "แก้ไขแผนกเสร็จสิ้น!",
+                        });
+                        break;
+                    case 'edit-section':
+                        await sectionService.updateSection(data.id, data.departmentId, { section: data.section });
+                        push({
+                          tone: "success",                  
+                          message: "แก้ไขฝ่ายย่อยเสร็จสิ้น!",
+                        });
+                        break;
+                }
+                // await fetchData(); // Refresh data
+            } catch (error: any) {
+                push({
+                  tone: "danger",                  
+                  message: "เกิดข้อผิดพลาด",
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
 
     //Search Filter
     const [searchFilter, setSearchFilters] = useState({
@@ -227,8 +286,17 @@ const Departments = () => {
                                     <div>
                                         <div className="py-2 px-4 flex items-center gap-3">
                                             <button
+                                                type="submit"
                                                 className="text-[#1890FF] hover:text-[#1890FF]"
                                                 title="แก้ไข"
+                                                onClick={() => {
+                                                    setModalType('edit-department');
+                                                    setSelectedData({
+                                                        id: dep.dept_id,
+                                                        department: dep.dept_name
+                                                    });
+                                                    setModalOpen(true);
+                                                }}
                                             >
                                                 <Icon
                                                     onClick={() => alert(`Edit Department ${dep.dept_id}`)}
@@ -238,6 +306,7 @@ const Departments = () => {
                                                 />
                                             </button>
                                             <button
+                                                type="submit"
                                                 className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                                                 title="ลบ"
                                             >
@@ -272,8 +341,19 @@ const Departments = () => {
                                                         <div>
                                                             <div className="py-2 px-4 flex items-center gap-3">
                                                                 <button
+                                                                    type="submit"
                                                                     className="text-[#1890FF] hover:text-[#1890FF]"
                                                                     title="แก้ไข"
+                                                                    onClick={() => {
+                                                                        setModalType('edit-section');
+                                                                        setSelectedData({
+                                                                            sectionId: section.sec_id,
+                                                                            department: dep.dept_name,
+                                                                            departmentId: dep.dept_id,
+                                                                            section: section.sec_name
+                                                                        });
+                                                                        setModalOpen(true);
+                                                                    }}
                                                                 >
                                                                     <Icon
                                                                         onClick={() => alert(`Edit Section ${section.sec_id}`)}
@@ -283,6 +363,7 @@ const Departments = () => {
                                                                     />
                                                                 </button>
                                                                 <button
+                                                                    type="submit"
                                                                     className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                                                                     title="ลบ"
                                                                 >
@@ -388,8 +469,18 @@ const Departments = () => {
                     </div>
                 </div>
             </div>
+            {/* Modal */}
+            <DepartmentModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                type={modalType}
+                departments={departments.map(d => ({ id: d.dept_id, name: d.dept_name }))}
+                initialData={selectedData}
+                onSubmit={handleModalSubmit}
+            />
         </div>
     )
+}
 }
 
 export default Departments

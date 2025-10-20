@@ -73,7 +73,7 @@ const PopupAddSubDepartment = ({ isOpen, onClose }: PopupAddSubDepartmentProps) 
         <div className="flex justify-center">
           <button
             onClick={() => console.log({ department, subDepartment })}
-            className="px-6 py-2 bg-[#40A9FF] text-white rounded-[8px] hover:bg-[#1890FF] gap-4"
+            className="text-[16px] w-[128px] h-[46px] px-6 py-2 bg-[#40A9FF] text-white rounded-[100px] hover:bg-[#1890FF] gap-4"
           >
             บันทึก
           </button>

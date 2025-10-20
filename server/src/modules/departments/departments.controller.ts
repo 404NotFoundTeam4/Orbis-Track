@@ -3,8 +3,10 @@ import { departmentService } from "./departments.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
+
   editDepartmentPayload,
   editSectionPayload,
+  addSectionPayload,
   GetAllDepartmentSchema,
   GetAllSectionSchema,
   idParamSchema,
@@ -85,5 +87,26 @@ export class DepartmentController extends BaseController {
     const payload = editSectionPayload.parse(req.body);
     const { message } = await departmentService.editSection(id, payload);
     return { message };
+  }
+
+   /**
+   * Description: Controller สำหรับเพิ่มข้อมูลฝ่ายย่อย (Section) ภายใต้แผนกที่เลือก
+   * Input     : req.params (deptId - รหัสแผนก), req.body (section - ชื่อฝ่ายย่อยที่ต้องการเพิ่ม)
+   * Output    : { data: { sections: [newSection] } } หรือ { message: string } หากเกิดข้อผิดพลาด
+   * Author    : Salsabeela Sa-e (San) 66160349
+   */
+  async addSection(
+    req: Request,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<GetAllSectionSchema>> {
+    const id = idParamSchema.parse(req.params);
+    const payload = addSectionPayload.parse(req.body);
+
+    // เรียกใช้ service เพื่อเพิ่ม section
+    const newSection = await departmentService.addSection(id.id, payload.section);
+
+    // ส่งข้อมูล section ที่ถูกเพิ่มกลับไป
+    return { data: { sections: [newSection] } };
   }
 }

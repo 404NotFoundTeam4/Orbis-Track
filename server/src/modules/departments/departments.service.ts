@@ -6,6 +6,7 @@ import {
   EditSectionPayload,
   IdParamDto,
   ParamEditSecSchema,
+  ParamAddSecSchema
 } from "./departments.schema.js";
 
 /**
@@ -141,9 +142,70 @@ async function editSection(
   return { message: "Department updated successfully" };
 }
 
+/**
+ * Description: เพิ่มฝ่ายย่อย (Section) ใหม่ภายใต้แผนกที่เลือก โดยตรวจสอบชื่อซ้ำ
+ * Input     : deptId (number) จาก params, section (string) จาก body
+ * Output    : object { sec_id: number, sec_name: string, sec_dept_id: number }
+ * Logic     :
+ *   - ตรวจสอบว่าแผนกมีอยู่จริงในฐานข้อมูล
+ *   - ตรวจสอบว่าฝ่ายย่อยชื่อเดียวกันในแผนกนั้นมีอยู่แล้วหรือไม่
+ *   - ถ้ามี → ส่ง error "Section name already exists in this department"
+ *   - ถ้าไม่มี → เพิ่มข้อมูลใหม่ในตาราง sections
+ * Author    : Salsabeela Sa-e (San) 66160349
+ */
+async function addSection(deptId: number, section: string) {
+  // ตรวจสอบว่าแผนกมีอยู่จริง
+  const dept = await prisma.departments.findUnique({
+    where: { dept_id: deptId },
+    select: { dept_name: true },
+  });
+  if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
+
+  // ตรวจสอบว่ามีชื่อฝ่ายนี้อยู่แล้วในแผนกนี้หรือไม่
+  const existingSection = await prisma.sections.findFirst({
+    where: {
+      sec_dept_id: deptId,
+      sec_name: {
+        contains: section, // ใช้ contains เพื่อกันกรณีชื่อย่อยที่คล้ายกัน เช่น “ฝ่ายย่อยIT” กับ “ฝ่ายย่อย IT”
+        mode: "insensitive", // ไม่สนตัวพิมพ์เล็กใหญ่
+      },
+    },
+  });
+
+  if (existingSection) {
+    throw new HttpError(
+      HttpStatus.CONFLICT,
+      "Section name already exists in this department"
+    );
+  }
+
+  // สร้างชื่อเต็มของฝ่าย (เพิ่มชื่อแผนกและคำว่า "ฝ่ายย่อย")
+  const newSecName = section.includes("ฝ่ายย่อย")
+    ? `${dept.dept_name} ${section}`
+    : isEnglishText(section)
+      ? `${dept.dept_name} ฝ่ายย่อย ${section}`
+      : `${dept.dept_name} ฝ่ายย่อย${section}`;
+
+  // เพิ่มข้อมูลฝ่ายใหม่ลงในฐานข้อมูล
+  const newSection = await prisma.sections.create({
+    data: {
+      sec_name: newSecName,
+      sec_dept_id: deptId,
+    },
+    select: {
+      sec_id: true,
+      sec_name: true,
+      sec_dept_id: true,
+    },
+  });
+
+  return newSection;
+}
+
 export const departmentService = {
   getAllDepartment,
   getSectionById,
   editDepartment,
   editSection,
+  addSection,
 };

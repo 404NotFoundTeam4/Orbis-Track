@@ -4,7 +4,8 @@ import DropDown from "../components/DropDown"
 import SearchFilter from "../components/SearchFilter"
 import { useEffect, useMemo, useState } from "react"
 import DropdownArrow from "../components/DropdownArrow"
-import axios from "axios"
+import { DepartmentModal } from "../components/DepartmentModal"
+import { departmentService, sectionService } from "../service/DepartmentsService"
 
 // กำหนดชนิดข้อมูล Department
 type Department = {
@@ -20,9 +21,17 @@ type Section = {
     sec_dept_id: number
 }
 
+type ModalType = 'add-department' | 'edit-department' | 'add-section' | 'edit-section';
+
 const Departments = () => {
     const [departments, setDepartments] = useState<Department[]>([]);
-
+    const [loading, setLoading] = useState(false);
+    
+    // Modal state
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalType, setModalType] = useState<ModalType>('add-department');
+    const [selectedData, setSelectedData] = useState<any>(null);
+    
     const departmentOptions = [
         { id: "", label: "ทั้งหมด", value: "" },
         ...departments.map((d) => ({
@@ -101,6 +110,28 @@ const Departments = () => {
         }
         fetchData();
     }, [])
+    
+    const handleModalSubmit = async (data: any) => {
+            setLoading(true);
+            try {
+                switch (modalType) {
+                    case 'edit-department':
+                        await departmentService.updateDepartment(data.id, { department: data.department });
+                        alert('แก้ไขแผนกสำเร็จ');
+                        break;
+                    case 'edit-section':
+                        await sectionService.updateSection(data.id, data.departmentId, { section: data.section });
+                        alert('แก้ไขฝ่ายย่อยสำเร็จ');
+                        break;
+                }
+                // await fetchData(); // Refresh data
+            } catch (error: any) {
+                console.error('Error:', error);
+                alert(`เกิดข้อผิดพลาด: ${error.response?.data?.message || error.message}`);
+            } finally {
+                setLoading(false);
+            }
+        };
 
     //Search Filter
     const [searchFilter, setSearchFilters] = useState({
@@ -279,8 +310,17 @@ const Departments = () => {
                                     <div>
                                         <div className="py-2 px-4 flex items-center gap-3">
                                             <button
+                                                type="submit"
                                                 className="text-[#1890FF] hover:text-[#1890FF]"
                                                 title="แก้ไข"
+                                                onClick={() => {
+                                                    setModalType('edit-department');
+                                                    setSelectedData({
+                                                        id: dep.dept_id,
+                                                        department: dep.dept_name
+                                                    });
+                                                    setModalOpen(true);
+                                                }}
                                             >
                                                 <Icon
                                                     icon="prime:pen-to-square"
@@ -289,6 +329,7 @@ const Departments = () => {
                                                 />
                                             </button>
                                             <button
+                                                type="submit"
                                                 className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                                                 title="ลบ"
                                             >
@@ -322,8 +363,19 @@ const Departments = () => {
                                                         <div>
                                                             <div className="py-2 px-4 flex items-center gap-3">
                                                                 <button
+                                                                    type="submit"
                                                                     className="text-[#1890FF] hover:text-[#1890FF]"
                                                                     title="แก้ไข"
+                                                                    onClick={() => {
+                                                                        setModalType('edit-section');
+                                                                        setSelectedData({
+                                                                            sectionId: section.sec_id,
+                                                                            department: dep.dept_name,
+                                                                            departmentId: dep.dept_id,
+                                                                            section: section.sec_name
+                                                                        });
+                                                                        setModalOpen(true);
+                                                                    }}
                                                                 >
                                                                     <Icon
                                                                         icon="prime:pen-to-square"
@@ -332,6 +384,7 @@ const Departments = () => {
                                                                     />
                                                                 </button>
                                                                 <button
+                                                                    type="submit"
                                                                     className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                                                                     title="ลบ"
                                                                 >
@@ -436,6 +489,15 @@ const Departments = () => {
                     </div>
                 </div>
             </div>
+            {/* Modal */}
+            <DepartmentModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                type={modalType}
+                departments={departments.map(d => ({ id: d.dept_id, name: d.dept_name }))}
+                initialData={selectedData}
+                onSubmit={handleModalSubmit}
+            />
         </div>
     )
 }

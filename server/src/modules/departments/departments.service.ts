@@ -64,7 +64,8 @@ async function getSectionById(params: IdParamDto) {
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 function isEnglishText(text: string): boolean {
-  return /^[a-zA-Z\s]+$/.test(text);
+  // อนุญาตให้มี a-z, A-Z, 0-9, และช่องว่าง
+  return /^[a-zA-Z0-9\s]+$/.test(text);
 }
 
 /**

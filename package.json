@@ -35,6 +35,7 @@
   "homepage": "https://github.com/404NotFoundTeam4/Orbis-Track#readme",
   "dependencies": {
     "@types/ioredis": "^4.28.10",
+    "axios": "^1.12.2",
     "ioredis": "^5.7.0"
   }
 }

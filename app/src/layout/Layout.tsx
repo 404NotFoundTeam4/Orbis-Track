@@ -5,7 +5,7 @@ export const Layout = () => {
   return (
     <div className="flex">
       {/* Navbar จะปรากฏในทุกหน้า */}
-      <div className="w-[250px] ml-[120px]  text-white h-full fixed top-0 left-0 p-4 z-50">
+      <div className="w-[250px]  text-white h-full fixed top-0 left-0 p-4 z-50">
         {/* เพิ่มเนื้อหาของ Sidebar ที่นี่ */}
       <Navbar />
         </div>

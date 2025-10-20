@@ -13,12 +13,11 @@ export function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
- 
+
   const onSubmit = async (a) => {
-  a.preventDefault();
-   handleLogin(username, password,false);
- 
-};
+    a.preventDefault();
+    handleLogin(username, password, false);
+  };
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden">
       <div className=" absolute -top-[220px] -left-[200px] ">
@@ -153,8 +152,8 @@ export function Login() {
                   <input
                     type="text"
                     placeholder="ชื่อผู้ใช้"
-                     value={username}
-          onChange={(e) => setUsername(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className=" flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
                   />
                 </div>
@@ -170,14 +169,14 @@ export function Login() {
                     icon="ph:key-duotone"
                     width="25"
                     height="25"
-                    
+
                     className="text-sky-500"
                   />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="รหัสผ่าน"
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
                   />
                   <button
@@ -193,11 +192,10 @@ export function Login() {
                   </button>
                 </div>
               </div>
-
               {/* Remember + Forgot */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center mb-4 gap-[15px]">
-                  <input id="default-checkbox" type="checkbox" value="" className="w-[29px] h-[29px] accent-[#BFBFBF] "/>
+                  <input id="default-checkbox" type="checkbox" value="" className="w-[29px] h-[29px] accent-[#BFBFBF] " />
                   <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
                 </div>
                 <a

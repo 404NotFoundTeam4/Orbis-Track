@@ -1,3 +1,4 @@
+import { assert } from "console";
 import api from "../api/axios";
 
 export const login = async (username, passwords,isRemember) => {
@@ -13,8 +14,9 @@ export const user_data = async (token) => {
   });
   return res.data.data
 };
-export const addaccount = async (username, passwords,isRemember) => {
-  const user = { username, passwords,isRemember};
-  const res = await api.post("/login", user);
-  return res.data; // ส่งต่อข้อมูลจาก backend
-};
+
+export const ResetPassword =async (Password,ConfirmPassword) =>{
+const res = await api.post()
+return res;
+
+}

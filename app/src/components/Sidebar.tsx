@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import "../styles/css/icon.css";
-import "../styles/css/Navbar.css";
+import "../styles/css/Sidebar.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome, faBell,faChevronUp, faCartShopping, faCircleUser, faServer, faBoxArchive, faBoxesStacked, faWrench, faChartLine, faClockRotateLeft, faGear } from '@fortawesome/free-solid-svg-icons';
 import logo from "../assets/images/logoblue.png";
 import CircleDropdown from "./CircleDropdown";
-export const Navbar = () => {
+export const Sidebar = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [lang] = useState("EN");
   const toggleDropdown = () => {
@@ -15,7 +15,7 @@ export const Navbar = () => {
 
   return (
     <div className="flex background ">
-      {/* Navbar */}
+      {/* Sidebar */}
       <div className="w-full bg-[#343434] text-white px-4 py-2 h-[65px] flex justify-between items-center fixed top-0 left-0 z-50">
         <div className="flex ">
           <img src={logo} alt="" className="w-7 h-7 rounded-lg mr-3" />
@@ -148,4 +148,4 @@ export const Navbar = () => {
   );
 }
 
-export default Navbar;
+export default Sidebar;

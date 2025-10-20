@@ -5,6 +5,7 @@ import SearchFilter from "../components/SearchFilter"
 import { useEffect, useMemo, useState } from "react"
 import DropdownArrow from "../components/DropdownArrow"
 import axios from "axios"
+import PopupAddSection from "../components/PopupAddSection"
 
 const mockUpDepartment = [
     {
@@ -106,6 +107,9 @@ const Departments = () => {
     const [sections, setSections] = useState<Section[]>([]);
 
     const [sectionFilter, setSectionFilter] = useState<{ id: number | string; label: string; value: string } | null>(null);
+
+    // เพิ่ม state สำหรับ modal
+    const [isAddSectionOpen, setIsAddSectionOpen] = useState(false);
 
     // ดึงข้อมูล api จาก backend
     useEffect(() => {
@@ -223,7 +227,14 @@ const Departments = () => {
                                 placeholder="แผนก"
                             />
                             <Button size="md" icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}>เพิ่มแผนก</Button>
-                            <Button variant="addSection" size="md" icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}>เพิ่มฝ่ายย่อย</Button>
+                            <Button
+                                variant="addSection"
+                                size="md"
+                                icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
+                                onClick={() => setIsAddSectionOpen(true)} // เปิด modal
+                            >
+                                เพิ่มฝ่ายย่อย
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -447,6 +458,10 @@ const Departments = () => {
                         </form>
                     </div>
                 </div>
+
+                {/* แทรก Popup modal */}
+                <PopupAddSection isOpen={isAddSectionOpen} onClose={() => setIsAddSectionOpen(false)} />
+
             </div>
         </div>
     )

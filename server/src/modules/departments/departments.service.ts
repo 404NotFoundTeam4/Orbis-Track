@@ -30,6 +30,25 @@ async function getAllDepartment() {
   };
 }
 
+async function getDepartmentsWithSections() {
+  const [departments] = await Promise.all([
+    prisma.departments.findMany({
+      select: {
+        dept_id: true,
+        dept_name: true,
+        sections: {
+          select: {
+            sec_id: true,
+            sec_name: true,
+            sec_dept_id: true
+          }
+        }
+      }
+    })
+  ])
+  return { departments }
+}
+
 /**
  * Description: ดึง section ของแผนกตาม id
  * Input : IdParamDto { id: number }
@@ -143,6 +162,7 @@ async function editSection(
 
 export const departmentService = {
   getAllDepartment,
+  getDepartmentsWithSections,
   getSectionById,
   editDepartment,
   editSection,

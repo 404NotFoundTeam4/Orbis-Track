@@ -37,6 +37,11 @@ export class DepartmentController extends BaseController {
     return { data: department };
   }
 
+  async getDepartmentsWithSections(req: Request, res: Response, next: NextFunction) {
+    const department = await departmentService.getDepartmentsWithSections();
+    return { data: department }
+  }
+
   /**
    * Description: ดึงข้อมูล "ฝ่ายย่อย (Sections)" ของแผนกตาม dept_id ที่ส่งมาใน path parameter
    * Input : req.params.id (number) ผ่านการตรวจสอบด้วย zod (idParamSchema)
@@ -69,7 +74,7 @@ export class DepartmentController extends BaseController {
     const { message } = await departmentService.editDepartment(id, payload);
     return { message };
   }
-  
+
   /**
    * Description: Controller สำหรับแก้ไขข้อมูลฝ่ายย่อย (Section)
    * Input     : req.params (ไอดีแผนกและไอดีฝ่ายย่อย), req.body (ข้อมูลฝ่ายย่อยที่ต้องการแก้ไข)

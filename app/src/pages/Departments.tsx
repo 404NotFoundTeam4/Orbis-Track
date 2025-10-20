@@ -4,8 +4,10 @@ import DropDown from "../components/DropDown"
 import SearchFilter from "../components/SearchFilter"
 import { useEffect, useMemo, useState } from "react"
 import DropdownArrow from "../components/DropdownArrow"
-import axios from "axios"
 import PopupAddSection from "../components/PopupAddSection"
+import { DepartmentModal } from "../components/DepartmentModal"
+import { departmentService, sectionService } from "../service/DepartmentsService"
+import { useToast } from "../components/Toast"
 
 const mockUpDepartment = [
     {
@@ -66,21 +68,32 @@ const mockUpDepartment = [
     }
 ];
 
+// กำหนดชนิดข้อมูล Department
 type Department = {
     dept_id: number;
     dept_name: string;
-    sections: string[];
+    sections: Section[];
 };
 
+// กำหนดชนิดข้อมูล Section
 type Section = {
     sec_id: number,
-    sec_name: string
+    sec_name: string,
+    sec_dept_id: number
 }
 
-const Departments = () => {
-    //ตั้งข้อมูล department ไว้ใช้ใน filter
-    const [departments, setDepartments] = useState<Department[]>(mockUpDepartment);
+type ModalType = 'add-department' | 'edit-department' | 'add-section' | 'edit-section';
 
+const Departments = () => {
+    const { push } = useToast();
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [loading, setLoading] = useState(false);
+    
+    // Modal state
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalType, setModalType] = useState<ModalType>('add-department');
+    const [selectedData, setSelectedData] = useState<any>(null);
+    
     const departmentOptions = [
         { id: "", label: "ทั้งหมด", value: "" },
         ...departments.map((d) => ({
@@ -114,14 +127,89 @@ const Departments = () => {
     // ดึงข้อมูล api จาก backend
     useEffect(() => {
         const fetchData = async () => {
-            const res = await axios.get("/api/v1/departments-section");
-            const data = res.data;
+            // const res = await axios.get("/api/v1/departments-section");
+            // const { departments, sections } = res.data;
 
-            setDepartments(data.departments || []);
-            // setSections(data.sections || []);
+            const mockUpData = {
+                departments: [
+                    {
+                        "dept_id": 1,
+                        "dept_name": "IT"
+                    },
+                    {
+                        "dept_id": 2,
+                        "dept_name": "Design"
+                    },
+                    {
+                        "dept_id": 3,
+                        "dept_name": "คลังสินค้า"
+                    }
+                ],
+                sections: [
+                    {
+                        "sec_id": 1,
+                        "sec_name": "ฝ่ายย่อย A",
+                        "sec_dept_id": 1
+                    },
+                    {
+                        "sec_id": 2,
+                        "sec_name": "ฝ่ายย่อย B",
+                        "sec_dept_id": 1
+                    },
+                    {
+                        "sec_id": 3,
+                        "sec_name": "ฝ่ายย่อย A",
+                        "sec_dept_id": 2
+                    },
+                    {
+                        "sec_id": 4,
+                        "sec_name": "ฝ่ายย่อย A",
+                        "sec_dept_id": 3
+                    }
+                ]
+            }
+
+            // รวม section เข้ากับ department
+            const combined = mockUpData.departments.map((dept: any) => ({
+                ...dept,
+                sections: mockUpData.sections.filter((sec: any) => sec.sec_dept_id === dept.dept_id)
+            }));
+
+            // กำหนด department ให้เป็นที่รวมกับ section แล้ว
+            setDepartments(combined);
         }
         fetchData();
     }, [])
+    
+    const handleModalSubmit = async (data: any) => {
+            setLoading(true);
+            try {
+                switch (modalType) {
+                    case 'edit-department':
+                        await departmentService.updateDepartment(data.id, { department: data.department });
+                        push({
+                          tone: "success",        
+                          message: "แก้ไขแผนกเสร็จสิ้น!",
+                        });
+                        break;
+                    case 'edit-section':
+                        await sectionService.updateSection(data.id, data.departmentId, { section: data.section });
+                        push({
+                          tone: "success",                  
+                          message: "แก้ไขฝ่ายย่อยเสร็จสิ้น!",
+                        });
+                        break;
+                }
+                // await fetchData(); // Refresh data
+            } catch (error: any) {
+                push({
+                  tone: "danger",                  
+                  message: "เกิดข้อผิดพลาด",
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
 
     //Search Filter
     const [searchFilter, setSearchFilters] = useState({
@@ -161,9 +249,15 @@ const Departments = () => {
             let valB: any;
 
             switch (sortField) {
+                // sort ชื่อแผนก
                 case "dept_name":
                     valA = a.dept_name;
                     valB = b.dept_name;
+                    break;
+                // sort จำนวนฝ่ายย่อย
+                case "sections":
+                    valA = a.sections.length;
+                    valB = b.sections.length;
                     break;
                 default:
                     valA = a.dept_id;
@@ -179,7 +273,7 @@ const Departments = () => {
             return sortDirection === "asc" ? valA - valB : valB - valA;
         });
         return result;
-    }, [searchFilter, departmentFilter, sectionFilter, sortDirection]);
+    }, [searchFilter, departmentFilter, sortDirection]);
 
     //จัดการแบ่งแต่ละหน้า
     const [page, setPage] = useState(1);
@@ -191,7 +285,6 @@ const Departments = () => {
     }, [
         searchFilter,
         departmentFilter,
-        sectionFilter,
         sortDirection,
     ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
@@ -262,7 +355,7 @@ const Departments = () => {
                         </div>
                         <div className="py-2 px-4 text-left flex items-center">
                             จำนวนฝ่ายย่อย
-                            <button type="button" onClick={() => HandleSort("dept_name")}>
+                            <button type="button" onClick={() => HandleSort("sections")}>
                                 <Icon
                                     icon={
                                         sortField === "dept_name"
@@ -302,8 +395,17 @@ const Departments = () => {
                                     <div>
                                         <div className="py-2 px-4 flex items-center gap-3">
                                             <button
+                                                type="submit"
                                                 className="text-[#1890FF] hover:text-[#1890FF]"
                                                 title="แก้ไข"
+                                                onClick={() => {
+                                                    setModalType('edit-department');
+                                                    setSelectedData({
+                                                        id: dep.dept_id,
+                                                        department: dep.dept_name
+                                                    });
+                                                    setModalOpen(true);
+                                                }}
                                             >
                                                 <Icon
                                                     icon="prime:pen-to-square"
@@ -312,6 +414,7 @@ const Departments = () => {
                                                 />
                                             </button>
                                             <button
+                                                type="submit"
                                                 className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                                                 title="ลบ"
                                             >
@@ -337,7 +440,7 @@ const Departments = () => {
                                                         <div className="py-2 px-4"></div>
                                                         {/* ชื่อฝ่ายย่อย */}
                                                         <div className="py-2 px-4">
-                                                            {section}
+                                                            {section.sec_name}
                                                         </div>
                                                         {/* พื้นที่ว่าง */}
                                                         <div className="py-2 px-4"></div>
@@ -345,8 +448,19 @@ const Departments = () => {
                                                         <div>
                                                             <div className="py-2 px-4 flex items-center gap-3">
                                                                 <button
+                                                                    type="submit"
                                                                     className="text-[#1890FF] hover:text-[#1890FF]"
                                                                     title="แก้ไข"
+                                                                    onClick={() => {
+                                                                        setModalType('edit-section');
+                                                                        setSelectedData({
+                                                                            sectionId: section.sec_id,
+                                                                            department: dep.dept_name,
+                                                                            departmentId: dep.dept_id,
+                                                                            section: section.sec_name
+                                                                        });
+                                                                        setModalOpen(true);
+                                                                    }}
                                                                 >
                                                                     <Icon
                                                                         icon="prime:pen-to-square"
@@ -355,6 +469,7 @@ const Departments = () => {
                                                                     />
                                                                 </button>
                                                                 <button
+                                                                    type="submit"
                                                                     className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                                                                     title="ลบ"
                                                                 >
@@ -377,7 +492,7 @@ const Departments = () => {
                     }
                 </div>
                 {/* ปุ่มหน้า */}
-                <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+                <div className="mt-25 mr-[24px] flex items-center justify-end">
                     {/* ขวา: ตัวแบ่งหน้า */}
                     <div className="flex items-center gap-2">
                         {/* ปุ่มก่อนหน้า */}
@@ -463,6 +578,15 @@ const Departments = () => {
                 <PopupAddSection isOpen={isAddSectionOpen} onClose={() => setIsAddSectionOpen(false)} />
 
             </div>
+            {/* Modal */}
+            <DepartmentModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                type={modalType}
+                departments={departments.map(d => ({ id: d.dept_id, name: d.dept_name }))}
+                initialData={selectedData}
+                onSubmit={handleModalSubmit}
+            />
         </div>
     )
 }

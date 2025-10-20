@@ -186,11 +186,11 @@ async function editSection(
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 async function getDeptSection() {
-  const deptsection = await prisma.deptsection.findMany({
+  const deptsection = await prisma.departments.findMany({
     select: {
       dept_id: true,
       dept_name: true,
-      section: {
+      sections: {
         select: {
           sec_id: true,
           sec_name: true,
@@ -200,8 +200,19 @@ async function getDeptSection() {
     },
   });
 
-  return { deptsection };
+  // ตัดคำว่า "แผนก" และ "ฝ่ายย่อย" ออกจากชื่อ
+   const cleanedDeptSection = deptsection.map((dept:any) => ({
+    ...dept,
+    dept_name: dept.dept_name.replace(/แผนก/g, "").trim(), // เอา "แผนก" ออก
+    sections: dept.sections.map((sec:any) => ({
+      ...sec,
+      sec_name: sec.sec_name.replace(dept.dept_name, "").trim(), 
+    })),
+  }));
+
+  return { deptsection: cleanedDeptSection };
 }
+
 
 export const departmentService = {
   getAllDepartment,

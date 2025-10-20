@@ -174,9 +174,39 @@ async function editSection(
   return { message: "Department updated successfully" };
 }
 
+/**
+ * Description: ดึงข้อมูลแผนก (Department) พร้อมข้อมูลฝ่ายย่อย (Section) ที่อยู่ภายใต้แต่ละแผนก
+ * Input     : None - ไม่ต้องรับพารามิเตอร์ (ดึงทั้งหมด)
+ * Output    : { deptsection: Array } - รายการแผนกแต่ละรายการ พร้อมข้อมูลฝ่ายย่อยภายใน
+ * Logic     :
+ *   - ใช้ Prisma ORM ดึงข้อมูลจากตาราง deptsection
+ *   - เลือกฟิลด์ dept_id และ dept_name จากตารางแผนก
+ *   - ดึงข้อมูล section ที่สัมพันธ์กับแต่ละแผนก (sec_id, sec_name, sec_dept_id)
+ *   - รวมข้อมูลแผนกและฝ่ายย่อยเป็นออบเจกต์เดียวกัน
+ * Author    : Rachata Jitjeankhan (Tang) 66160369
+ */
+async function getDeptSection() {
+  const deptsection = await prisma.deptsection.findMany({
+    select: {
+      dept_id: true,
+      dept_name: true,
+      section: {
+        select: {
+          sec_id: true,
+          sec_name: true,
+          sec_dept_id: true,
+        },
+      }
+    },
+  });
+
+  return { deptsection };
+}
+
 export const departmentService = {
   getAllDepartment,
   getSectionById,
   editDepartment,
   editSection,
+  getDeptSection,
 };

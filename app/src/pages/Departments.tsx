@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react"
 import DropdownArrow from "../components/DropdownArrow"
 import { DepartmentModal } from "../components/DepartmentModal"
 import { departmentService, sectionService } from "../service/DepartmentsService"
+import { useToast } from "../components/Toast"
 
 // กำหนดชนิดข้อมูล Department
 type Department = {
@@ -24,6 +25,7 @@ type Section = {
 type ModalType = 'add-department' | 'edit-department' | 'add-section' | 'edit-section';
 
 const Departments = () => {
+    const { push } = useToast();
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(false);
     
@@ -117,17 +119,25 @@ const Departments = () => {
                 switch (modalType) {
                     case 'edit-department':
                         await departmentService.updateDepartment(data.id, { department: data.department });
-                        alert('แก้ไขแผนกสำเร็จ');
+                        push({
+                          tone: "success",        
+                          message: "แก้ไขแผนกเสร็จสิ้น!",
+                        });
                         break;
                     case 'edit-section':
                         await sectionService.updateSection(data.id, data.departmentId, { section: data.section });
-                        alert('แก้ไขฝ่ายย่อยสำเร็จ');
+                        push({
+                          tone: "success",                  
+                          message: "แก้ไขฝ่ายย่อยเสร็จสิ้น!",
+                        });
                         break;
                 }
                 // await fetchData(); // Refresh data
             } catch (error: any) {
-                console.error('Error:', error);
-                alert(`เกิดข้อผิดพลาด: ${error.response?.data?.message || error.message}`);
+                push({
+                  tone: "danger",                  
+                  message: "เกิดข้อผิดพลาด",
+                });
             } finally {
                 setLoading(false);
             }

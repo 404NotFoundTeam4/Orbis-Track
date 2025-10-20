@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { AlertDialog } from "../components/AlertDialog";
 import { Icon } from "@iconify/react";
+import { useToast } from "../components/Toast";
 
 /**
  * Component: SimpleExample
@@ -344,6 +345,30 @@ function AlertDemoPage() {
   );
 }
 
+function DemoButtons() {
+  const { push } = useToast();
+
+  return (
+    <div className="space-x-2">
+      <button
+        className="rounded-full bg-rose-500 px-4 py-2 text-white"
+        onClick={() =>
+          push({ tone: "confirm", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" })
+        }
+      >
+        ลบสำเร็จ (แดง)
+      </button>
+
+      <button
+        className="rounded-full bg-emerald-500 px-4 py-2 text-white"
+        onClick={() => push({ tone: "danger", message: "ลบอุปกรณ์เสร็จสิ้น!" })}
+      >
+        บันทึกสำเร็จ (เขียว)
+      </button>
+    </div>
+  );
+}
+
 function TestDropDownPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
@@ -352,6 +377,7 @@ function TestDropDownPage() {
       <TableFilterExample />
       <ButtonExamples />
       <AlertDemoPage />
+      <DemoButtons />
     </div>
   );
 }

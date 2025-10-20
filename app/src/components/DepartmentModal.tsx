@@ -74,9 +74,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       ? ""
       : `แผนก: ${department || initialData?.department || "-"}`;
 
-  const iconName = isEdit
-    ? "mdi:pencil-circle-outline"
-    : "mdi:clipboard-check-outline";
+  const iconName = isEdit ? "ci:warning" : "mdi:clipboard-check-outline";
   const dialogTone: "success" | "warning" | "danger" = isEdit
     ? "warning"
     : "success";
@@ -291,7 +289,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         tone={dialogTone}
         title={titleText}
         description={descText}
-        icon={<Icon icon={iconName} className="h-16 w-16" />}
+        icon={<Icon icon={iconName} className="h-20 w-20" />}
         // (optionally) ใส่สัดส่วนตามสเปค
         onConfirm={doSubmit}
       />

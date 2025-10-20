@@ -1,4 +1,8 @@
-// components/DepartmentModal.tsx
+/**
+ * Description: Modal Component สำหรับจัดการแผนก (Department) และฝ่ายย่อย (Section)
+ * Note      : รองรับ 4 modes - เพิ่ม/แก้ไขแผนก, เพิ่ม/แก้ไขฝ่ายย่อย พร้อม AlertDialog สำหรับยืนยัน
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
 import { Icon } from "@iconify/react";

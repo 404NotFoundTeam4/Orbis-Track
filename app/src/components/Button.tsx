@@ -1,3 +1,8 @@
+/**
+ * Description: Reusable Button Component พร้อม variants, sizes และ icon support
+ * Note      : รองรับ 8 variants และ 3 sizes, fullWidth option, disabled state
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import React from "react";
 
 // TypeScript interfaces

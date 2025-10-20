@@ -35,7 +35,13 @@ export const departmentService = {
     return data;
   },
 
-  // Update department
+  /**
+   * Description: อัพเดทชื่อแผนก
+   * Input     : id (number) - รหัสแผนก, payload (UpdateDepartmentPayload) - ชื่อแผนกใหม่
+   * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการอัพเดท
+   * Endpoint  : PUT /api/departments/:id
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   updateDepartment: async (
     id: number,
     payload: UpdateDepartmentPayload,
@@ -47,7 +53,16 @@ export const departmentService = {
 
 // Section API
 export const sectionService = {
-  // Update section
+  /**
+   * Description: อัพเดทชื่อส่วนงาน/ฝ่ายย่อย
+   * Input     :
+   *   - secId (number) - รหัสส่วนงาน
+   *   - deptId (number) - รหัสแผนกที่สังกัด
+   *   - payload (UpdateSectionPayload) - ชื่อส่วนงานใหม่
+   * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการอัพเดท
+   * Endpoint  : PUT /api/departments/:deptId/section/:secId
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   updateSection: async (
     secId: number,
     deptId: number,

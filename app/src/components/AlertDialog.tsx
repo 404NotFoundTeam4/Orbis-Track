@@ -1,10 +1,8 @@
-/*
- * File: components/AlertDialog.tsx
- * Component: AlertDialog (Reusable + Flexible)
- * Spec-friendly (ตามภาพ) + ยืดหยุ่นด้วย props
- * - ไอคอน 104×104 + วงกลม (รับ icon จากภายนอกได้)
- * - Title 32px, Description 18px, ปุ่ม 112×46 ระยะห่าง 36 (แก้ได้ผ่าน props)
- * - ปิดได้ด้วย Overlay/ESC, a11y ครบ
+/**
+ * Description: Alert Dialog Component สำหรับยืนยันการกระทำต่างๆ
+ * Note      : รองรับ 3 tones (success, warning, danger), customizable layout, accessible (a11y)
+ *             ปิดได้ด้วย Overlay/ESC key
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 import React, { useEffect, useId } from "react";
 import Button from "./Button";

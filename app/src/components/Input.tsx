@@ -1,4 +1,8 @@
-// components/Input.tsx
+/**
+ * Description: Reusable Input Component พร้อม label, error message และ size variants
+ * Note      : รองรับ forwardRef สำหรับใช้กับ form libraries, รองรับ disabled state
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import React from "react";
 
 type InputSize = "sm" | "md" | "lg";

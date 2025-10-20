@@ -1,3 +1,8 @@
+/**
+ * Description: Toast Notification Component สำหรับแสดงข้อความแจ้งเตือนแบบชั่วคราว
+ * Note      : รองรับ multiple toasts, auto-dismiss, slide animations และ 4 tones (danger, confirm, warning, info)
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import React, {
   createContext,
   useContext,
@@ -47,9 +52,29 @@ const ToastCtx = createContext<{
   dismiss: (id: string) => void;
 } | null>(null);
 
+// ==================== Toast Provider ====================
+
+/**
+ * Component: ToastProvider - Context Provider สำหรับจัดการ toast notifications
+ * Description: 
+ *   - จัดการ state ของ toasts ทั้งหมด
+ *   - รองรับการเพิ่ม/ลบ toast
+ *   - แสดง toasts ที่มุมขวาบน (fixed position)
+ *   - รองรับ slide-in/out animations
+ * Usage: ครอบ App component ด้วย <ToastProvider>
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export function ToastProvider({ children }: PropsWithChildren<{}>) {
   const [toasts, setToasts] = useState<ToastInternal[]>([]);
 
+  /**
+   * Function: dismiss - ปิด toast โดยเล่น animation ก่อนลบออกจาก DOM
+   * Input: id (string) - รหัส toast ที่ต้องการปิด
+   * Logic: 
+   *   1. Set leaving flag = true เพื่อเล่น slide-out animation
+   *   2. รอ 250ms (ให้ animation เล่นเสร็จ)
+   *   3. ลบ toast ออกจาก state
+   */
   const dismiss = useCallback((id: string) => {
     // set leaving flag ให้ ToastCard เล่นอนิเมชันออก
     setToasts((list) =>
@@ -61,6 +86,15 @@ export function ToastProvider({ children }: PropsWithChildren<{}>) {
     }, 250);
   }, []);
 
+  /**
+   * Function: push - เพิ่ม toast ใหม่และตั้งเวลา auto-dismiss
+   * Input: opt (ToastOptions) - ตัวเลือกสำหรับสร้าง toast
+   * Output: string - รหัส toast ที่สร้างขึ้น
+   * Logic:
+   *   1. สร้าง id ใหม่ (ถ้าไม่มีจะใช้ crypto.randomUUID())
+   *   2. เพิ่ม toast เข้า state (อันใหม่อยู่บนสุด)
+   *   3. ตั้งเวลา auto-dismiss ตาม duration
+   */
   const push = useCallback(
     (opt: ToastOptions) => {
       const id = opt.id ?? crypto.randomUUID();
@@ -108,13 +142,36 @@ export function ToastProvider({ children }: PropsWithChildren<{}>) {
   );
 }
 
+// ==================== useToast Hook ====================
+
+/**
+ * Hook: useToast - ใช้สำหรับเข้าถึง toast functions
+ * Output: { toasts, push, dismiss }
+ * Usage: const { push } = useToast(); push({ message: "Success!" });
+ * Note: ต้องใช้ภายใน <ToastProvider> เท่านั้น
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export function useToast() {
   const ctx = useContext(ToastCtx);
   if (!ctx) throw new Error("useToast must be used inside <ToastProvider/>");
   return ctx;
 }
 
-/* --------------------------- Visual Toast Card --------------------------- */
+// ==================== Toast Card Component ====================
+
+/**
+ * Component: ToastCard - แสดง toast notification card พร้อม animation
+ * Description:
+ *   - แสดงไอคอนตาม tone
+ *   - แสดงข้อความ
+ *   - มีปุ่มปิด
+ *   - รองรับ slide-in/out animations
+ * Features:
+ *   - แท็บด้านซ้ายแสดงสีตาม tone
+ *   - ไอคอนและขอบสีตาม tone
+ *   - Animation ด้วย opacity และ transform
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 function ToastCard({
   tone = "confirm",
   message,

@@ -20,6 +20,11 @@ export const sectionSchema = z.object({
 export const departmentSchema = z.object({
     dept_id: z.number(),
     dept_name: z.string(),
+});
+
+export const departmentSectionSchema = z.object({
+    dept_id: z.number(),
+    dept_name: z.string(),
     sections: z.array(sectionSchema), // nested sections
 });
 
@@ -47,7 +52,7 @@ export const getDeptSection = z.object({
 
 /** Data wrapper */
 export const deptSectionSchema = z.object({
-    deptsection: z.array(departmentSchema),
+    deptsection: z.array(departmentSectionSchema),
 });
 
 export type GetDeptSection = z.infer<typeof getDeptSection>;

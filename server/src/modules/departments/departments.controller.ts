@@ -9,7 +9,6 @@ import {
   GetAllSectionSchema,
   idParamSchema,
   paramEditSecSchema,
-  GetDeptSection,
   DeptSectionSchema,
 } from "./departments.schema.js";
 
@@ -37,11 +36,6 @@ export class DepartmentController extends BaseController {
   ): Promise<BaseResponse<GetAllDepartmentSchema>> {
     const department = await departmentService.getAllDepartment();
     return { data: department };
-  }
-
-  async getDepartmentsWithSections(req: Request, res: Response, next: NextFunction) {
-    const department = await departmentService.getDepartmentsWithSections();
-    return { data: department }
   }
 
   /**

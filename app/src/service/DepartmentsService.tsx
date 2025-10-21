@@ -23,24 +23,14 @@ export interface UpdateSectionPayload {
 
 // รูปแบบข้อมูลแผนกและฝ่ายย่อย
 export interface getDepartmentsWithSections {
-    dept_id: number;
-    dept_name: string;
-    sections: Section[];
+  dept_id: number;
+  dept_name: string;
+  sections: {
+    sec_id: number;
+    sec_name: string;
+    sec_dept_id: number;
+  }[];
 }
-
-/**
- * Description: รูปแบบการตอบกลับสำหรับดึงข้อมูลแผนกทั้งหมด
- * Input     : -
- * Output    : { data: { departments: getDepartmentsWithSections[] } }
- * Endpoint  : GET /api/departments/section
- * Author    : Thakdanai Makmi (Ryu) 66160355
- */
-
-export interface DepartmentsWithSectionsResponse {
-    data: {
-      departments: getDepartmentsWithSections[];
-    };
-  }
 
 // Department API
 export const departmentService = {
@@ -64,9 +54,9 @@ export const departmentService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
 
-  getDepartmentsWithSections: async (): Promise<DepartmentsWithSectionsResponse> => {
+  getDepartmentsWithSections: async (): Promise<getDepartmentsWithSections[]> => {
     const { data } = await axios.get(`/api/departments/section`);
-    return data;
+    return data.data.deptsection;
   },
 
   /**

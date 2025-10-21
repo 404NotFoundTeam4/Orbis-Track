@@ -9,38 +9,13 @@ import { DepartmentModal } from "../components/DepartmentModal"
 import { departmentService, sectionService } from "../service/DepartmentsService"
 import { useToast } from "../components/Toast"
 
+type ModalType = 'add-department' | 'edit-department' | 'add-section' | 'edit-section';
+
 const Departments = () => {
     // เก็บข้อมูลแผนกทั้งหมด
     const [departments, setDepartments] = useState<getDepartmentsWithSections[]>([]);
 
     // ตัวเลือกแผนกใน Dropdown
-
-// กำหนดชนิดข้อมูล Department
-type Department = {
-    dept_id: number;
-    dept_name: string;
-    sections: Section[];
-};
-
-// กำหนดชนิดข้อมูล Section
-type Section = {
-    sec_id: number,
-    sec_name: string,
-    sec_dept_id: number
-}
-
-type ModalType = 'add-department' | 'edit-department' | 'add-section' | 'edit-section';
-
-const Departments = () => {
-    const { push } = useToast();
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [loading, setLoading] = useState(false);
-    
-    // Modal state
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<ModalType>('add-department');
-    const [selectedData, setSelectedData] = useState<any>(null);
-    
     const departmentOptions = [
         { id: "", label: "ทั้งหมด", value: "" },
         ...departments.map((d) => ({
@@ -49,6 +24,14 @@ const Departments = () => {
             value: d.dept_name,
         })),
     ];
+
+    const { push } = useToast();
+    const [loading, setLoading] = useState(false);
+    
+    // Modal state
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalType, setModalType] = useState<ModalType>('add-department');
+    const [selectedData, setSelectedData] = useState<any>(null);
 
     // ตัวกรองแผนก
     const [departmentFilter, setDepartmentFilter] = useState<{ id: number | string; label: string; value: string } | null>(null);
@@ -68,9 +51,9 @@ const Departments = () => {
     useEffect(() => {
         const fetchData = async () => {
           // เรียกใช้ API ดึงข้อมูลแผนกพร้อมฝ่ายย่อย 
-          const res = await departmentService.getDepartmentsWithSections();
+          const departments = await departmentService.getDepartmentsWithSections();
           // เก็บข้อมูลแผนก
-          setDepartments(res.data.departments);
+          setDepartments(departments);
           // ตั้งค่า filter แผนกเริ่มต้นเป็น "ทั้งหมด"
           setDepartmentFilter((prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" });
         };
@@ -224,7 +207,7 @@ const Departments = () => {
 
                 <div className="w-full">
                     <div className="grid [grid-template-columns:150px_250px_1090px_80px]
-                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3">
+                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center gap-3">
                         <div className="py-2 px-4 text-left flex items-center"></div>
                         <div className="py-2 px-4 text-left flex items-center">
                             แผนก
@@ -480,7 +463,6 @@ const Departments = () => {
             />
         </div>
     )
-}
 }
 
 export default Departments

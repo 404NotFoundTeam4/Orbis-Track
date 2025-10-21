@@ -3,15 +3,13 @@ import { departmentService } from "./departments.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
-
+  addSectionPayload,
   editDepartmentPayload,
   editSectionPayload,
-  //addSectionPayload,
   GetAllDepartmentSchema,
   GetAllSectionSchema,
   idParamSchema,
   paramEditSecSchema,
-  //ParamAddSecSchema
 } from "./departments.schema.js";
 
 /**
@@ -72,7 +70,7 @@ export class DepartmentController extends BaseController {
     const { message } = await departmentService.editDepartment(id, payload);
     return { message };
   }
-  
+
   /**
    * Description: Controller สำหรับแก้ไขข้อมูลฝ่ายย่อย (Section)
    * Input     : req.params (ไอดีแผนกและไอดีฝ่ายย่อย), req.body (ข้อมูลฝ่ายย่อยที่ต้องการแก้ไข)
@@ -90,7 +88,7 @@ export class DepartmentController extends BaseController {
     return { message };
   }
 
-   /**
+  /**
    * Description: Controller สำหรับเพิ่มข้อมูลฝ่ายย่อย (Section) ภายใต้แผนกที่เลือก
    * Input     : req.params (deptId - รหัสแผนก), req.body (section - ชื่อฝ่ายย่อยที่ต้องการเพิ่ม)
    * Output    : { data: { sections: [newSection] } } หรือ { message: string } หากเกิดข้อผิดพลาด
@@ -103,11 +101,13 @@ export class DepartmentController extends BaseController {
   ): Promise<BaseResponse> {
     const id = idParamSchema.parse(req.params);
 
-    //const payload = addSectionPayload.parse(req.body);
-    const payload = req.body;
+    const payload = addSectionPayload.parse(req.body);
 
     // เรียกใช้ service เพื่อเพิ่ม section
-    const newSection = await departmentService.addSection(id.id, payload.section);
+    const newSection = await departmentService.addSection(
+      id.id,
+      payload.sec_name,
+    );
 
     // ส่งข้อมูล section ที่ถูกเพิ่มกลับไป
     return { data: newSection };

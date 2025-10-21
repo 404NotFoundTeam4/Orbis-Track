@@ -212,17 +212,16 @@ async function addSection(deptId: number, section: string) {
   //   );
   // }
 
-  // // สร้างชื่อเต็มของฝ่าย (เพิ่มชื่อแผนกและคำว่า "ฝ่ายย่อย")
-  // const newSecName = section.includes("ฝ่ายย่อย")
-  //   ? `${dept.dept_name} ${section}`
-  //   : isEnglishText(section)
-  //     ? `${dept.dept_name} ฝ่ายย่อย ${section}`
-  //     : `${dept.dept_name} ฝ่ายย่อย${section}`;
+  const newSecName = section.includes("ฝ่ายย่อย")
+    ? `${dept.dept_name} ${section}`
+    : isEnglishText(section)
+      ? `${dept.dept_name} ฝ่ายย่อย ${section}`
+      : `${dept.dept_name} ฝ่ายย่อย${section}`;
 
   // เพิ่มข้อมูลฝ่ายใหม่ลงในฐานข้อมูล
   const newSection = await prisma.sections.create({
     data: {
-      sec_name: section,
+      sec_name: newSecName,
       sec_dept_id: deptId,
     },
     select: {

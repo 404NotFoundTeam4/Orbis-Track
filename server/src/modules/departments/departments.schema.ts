@@ -45,8 +45,7 @@ export const editSectionPayload = z.object({
  * Author    : Salsabeela Sa-e (San) 66160349
  */
 export const addSectionPayload = z.object({
-    sec_name: z.string(),
-    
+    sec_name: z.string(), 
 });
 
 

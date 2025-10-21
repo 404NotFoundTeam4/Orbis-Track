@@ -45,9 +45,10 @@ export const editSectionPayload = z.object({
  * Author    : Salsabeela Sa-e (San) 66160349
  */
 export const addSectionPayload = z.object({
-  // ใช้ nonempty เพื่อจัดการทั้งกรณีว่างและกรณีไม่มีค่า
-  section: z.string().nonempty("กรุณาระบุชื่อฝ่ายย่อย"),
+    sec_name: z.string(),
+    
 });
+
 
 
 export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
@@ -62,4 +63,4 @@ export type IdParamDto = z.infer<typeof idParamSchema>;
 
 export type ParamEditSecSchema = z.infer<typeof paramEditSecSchema>;
 
-export type ParamAddSecSchema = z.infer<typeof addSectionPayload>;
+export type AddSecSchema = z.infer<typeof addSectionPayload>;

@@ -6,11 +6,12 @@ import {
 
   editDepartmentPayload,
   editSectionPayload,
-  addSectionPayload,
+  //addSectionPayload,
   GetAllDepartmentSchema,
   GetAllSectionSchema,
   idParamSchema,
   paramEditSecSchema,
+  //ParamAddSecSchema
 } from "./departments.schema.js";
 
 /**
@@ -99,14 +100,16 @@ export class DepartmentController extends BaseController {
     req: Request,
     _res: Response,
     _next: NextFunction,
-  ): Promise<BaseResponse<GetAllSectionSchema>> {
+  ): Promise<BaseResponse> {
     const id = idParamSchema.parse(req.params);
-    const payload = addSectionPayload.parse(req.body);
+
+    //const payload = addSectionPayload.parse(req.body);
+    const payload = req.body;
 
     // เรียกใช้ service เพื่อเพิ่ม section
     const newSection = await departmentService.addSection(id.id, payload.section);
 
     // ส่งข้อมูล section ที่ถูกเพิ่มกลับไป
-    return { data: { sections: [newSection] } };
+    return { data: newSection };
   }
 }

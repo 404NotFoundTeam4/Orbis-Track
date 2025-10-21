@@ -6,7 +6,7 @@ import {
   EditSectionPayload,
   IdParamDto,
   ParamEditSecSchema,
-  ParamAddSecSchema
+  //ParamAddSecSchema
 } from "./departments.schema.js";
 
 /**
@@ -195,34 +195,34 @@ async function addSection(deptId: number, section: string) {
   if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
 
   // ตรวจสอบว่ามีชื่อฝ่ายนี้อยู่แล้วในแผนกนี้หรือไม่
-  const existingSection = await prisma.sections.findFirst({
-    where: {
-      sec_dept_id: deptId,
-      sec_name: {
-        contains: section, // ใช้ contains เพื่อกันกรณีชื่อย่อยที่คล้ายกัน เช่น “ฝ่ายย่อยIT” กับ “ฝ่ายย่อย IT”
-        mode: "insensitive", // ไม่สนตัวพิมพ์เล็กใหญ่
-      },
-    },
-  });
+  // const existingSection = await prisma.sections.findFirst({
+  //   where: {
+  //     sec_dept_id: deptId,
+  //     sec_name: {
+  //       contains: section, // ใช้ contains เพื่อกันกรณีชื่อย่อยที่คล้ายกัน เช่น “ฝ่ายย่อยIT” กับ “ฝ่ายย่อย IT”
+  //       mode: "insensitive", // ไม่สนตัวพิมพ์เล็กใหญ่
+  //     },
+  //   },
+  // });
 
-  if (existingSection) {
-    throw new HttpError(
-      HttpStatus.CONFLICT,
-      "Section name already exists in this department"
-    );
-  }
+  // if (existingSection) {
+  //   throw new HttpError(
+  //     HttpStatus.CONFLICT,
+  //     "Section name already exists in this department"
+  //   );
+  // }
 
-  // สร้างชื่อเต็มของฝ่าย (เพิ่มชื่อแผนกและคำว่า "ฝ่ายย่อย")
-  const newSecName = section.includes("ฝ่ายย่อย")
-    ? `${dept.dept_name} ${section}`
-    : isEnglishText(section)
-      ? `${dept.dept_name} ฝ่ายย่อย ${section}`
-      : `${dept.dept_name} ฝ่ายย่อย${section}`;
+  // // สร้างชื่อเต็มของฝ่าย (เพิ่มชื่อแผนกและคำว่า "ฝ่ายย่อย")
+  // const newSecName = section.includes("ฝ่ายย่อย")
+  //   ? `${dept.dept_name} ${section}`
+  //   : isEnglishText(section)
+  //     ? `${dept.dept_name} ฝ่ายย่อย ${section}`
+  //     : `${dept.dept_name} ฝ่ายย่อย${section}`;
 
   // เพิ่มข้อมูลฝ่ายใหม่ลงในฐานข้อมูล
   const newSection = await prisma.sections.create({
     data: {
-      sec_name: newSecName,
+      sec_name: section,
       sec_dept_id: deptId,
     },
     select: {
@@ -231,7 +231,7 @@ async function addSection(deptId: number, section: string) {
       sec_dept_id: true,
     },
   });
-
+  console.log("New Section Added:", newSection);
   return newSection;
 }
 

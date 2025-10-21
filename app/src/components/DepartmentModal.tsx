@@ -189,7 +189,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     >
       {/* Modal Content */}
       <div
-        className={`bg-white rounded-[42px] p-8 pb-0 w-[90%] max-w-[804px]
+        className={`bg-white rounded-[42px] p-8 pb-0 w-[90%] max-w-[804px] 
           ${type.includes("section") ? "h-[470px]" : "h-[371px]"} relative shadow-2xl transform transition-all duration-300 ease-out flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -211,7 +211,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
           {/* Form */}
           <form
             onSubmit={handleSubmit}
-            className="space-y-6 flex flex-col items-center w-full"
+            className="space-y-6 flex flex-col items-center w-full gap-[47px]"
           >
             {/* Field: แผนก (input) - สำหรับ add/edit department */}
             {(type === "add-department" || type === "edit-department") && (

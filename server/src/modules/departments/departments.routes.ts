@@ -9,7 +9,7 @@ router.getDoc("/", { tag: "Departments", res: getAllDepartmentSchema, auth: true
 router.getDoc("/:id/section", { tag: "Departments", params: idParamSchema, res: getAllSectionSchema, auth: true }, departmentController.getSection)
 router.putDoc("/:id", {tag: "Departments", params: idParamSchema, body: editDepartmentPayload, auth: true }, departmentController.editDepartment)
 router.putDoc("/:deptId/section/:secId", { tag: "Departments", params: paramEditSecSchema, body: editSectionPayload, auth: true }, departmentController.editSection)
-router.postDoc("/:id/section", { tag: "Departments", params: idParamSchema, body: addSectionPayload, auth: true }, departmentController.addSection);
+router.postDoc("/:id/section", { tag: "Departments", params: idParamSchema,  body:addSectionPayload, auth: true }, departmentController.addSection);
 
 
 export default router.instance;

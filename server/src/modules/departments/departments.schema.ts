@@ -11,15 +11,21 @@ export const paramEditSecSchema = z.object({
     secId: z.coerce.number().positive()
 })
 
-export const departmentSchema = z.object({
-    dept_id: z.coerce.number(),
-    dept_name: z.string()
-});
-
 export const sectionSchema = z.object({
     sec_id: z.coerce.number(),
     sec_name: z.string(),
     sec_dept_id: z.coerce.number()
+});
+
+export const departmentSchema = z.object({
+    dept_id: z.number(),
+    dept_name: z.string(),
+});
+
+export const departmentSectionSchema = z.object({
+    dept_id: z.number(),
+    dept_name: z.string(),
+    sections: z.array(sectionSchema), // nested sections
 });
 
 export const getAllDepartmentSchema = z.object({
@@ -49,6 +55,18 @@ export const addSectionPayload = z.object({
 });
 
 
+export const getDeptSection = z.object({
+    dept_id: z.coerce.number().positive(),
+    dept_name: z.string(),
+    sections: z.array(sectionSchema)
+})
+
+/** Data wrapper */
+export const deptSectionSchema = z.object({
+    deptsection: z.array(departmentSectionSchema),
+});
+
+export type GetDeptSection = z.infer<typeof getDeptSection>;
 
 export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
 
@@ -63,3 +81,5 @@ export type IdParamDto = z.infer<typeof idParamSchema>;
 export type ParamEditSecSchema = z.infer<typeof paramEditSecSchema>;
 
 export type AddSecSchema = z.infer<typeof addSectionPayload>;
+
+export type DeptSectionSchema = z.infer<typeof deptSectionSchema>;

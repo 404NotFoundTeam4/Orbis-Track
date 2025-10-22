@@ -4,81 +4,13 @@ import DropDown from "../components/DropDown";
 import SearchFilter from "../components/SearchFilter";
 import { useEffect, useMemo, useState } from "react";
 import DropdownArrow from "../components/DropdownArrow";
+import { type getDepartmentsWithSections } from "../service/DepartmentsService";
 import { DepartmentModal } from "../components/DepartmentModal";
-import {departmentService,sectionService,} from "../service/DepartmentsService";
+import {
+  departmentService,
+  sectionService,
+} from "../service/DepartmentsService";
 import { useToast } from "../components/Toast";
-
-const mockUpDepartment = [
-  {
-    dept_id: 1,
-    dept_name: "คลังสินค้า",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"],
-  },
-  {
-    dept_id: 2,
-    dept_name: "แผนกซ่อมบำรุง",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"],
-  },
-  {
-    dept_id: 3,
-    dept_name: "IT",
-    sections: ["ฝ่ายย่อย A"],
-  },
-  {
-    dept_id: 4,
-    dept_name: "AB",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"],
-  },
-  {
-    dept_id: 5,
-    dept_name: "CD",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"],
-  },
-  {
-    dept_id: 6,
-    dept_name: "EF",
-    sections: ["ฝ่ายย่อย A"],
-  },
-  {
-    dept_id: 7,
-    dept_name: "GH",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"],
-  },
-  {
-    dept_id: 8,
-    dept_name: "IJ",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"],
-  },
-  {
-    dept_id: 9,
-    dept_name: "KL",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B"],
-  },
-  {
-    dept_id: 10,
-    dept_name: "MN",
-    sections: ["ฝ่ายย่อย A"],
-  },
-  {
-    dept_id: 11,
-    dept_name: "OP",
-    sections: ["ฝ่ายย่อย A", "ฝ่ายย่อย B", "ฝ่ายย่อย D"],
-  },
-];
-
-// กำหนดชนิดข้อมูล Department
-type Department = {
-  dept_id: number;
-  dept_name: string;
-  sections: Section[];
-};
-
-// กำหนดชนิดข้อมูล Section
-type Section = {
-  sec_id: number;
-  sec_name: string;
-  sec_dept_id: number;
-};
 
 type ModalType =
   | "add-department"
@@ -87,15 +19,12 @@ type ModalType =
   | "edit-section";
 
 const Departments = () => {
-  const { push } = useToast();
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(false);
+  // เก็บข้อมูลแผนกทั้งหมด
+  const [departments, setDepartments] = useState<getDepartmentsWithSections[]>(
+    []
+  );
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<ModalType>("add-department"); 
-  const [selectedData, setSelectedData] = useState<any>(null);
-
+  // ตัวเลือกแผนกใน Dropdown
   const departmentOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
     ...departments.map((d) => ({
@@ -105,6 +34,15 @@ const Departments = () => {
     })),
   ];
 
+  const { push } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>("add-department");
+  const [selectedData, setSelectedData] = useState<any>(null);
+
+  // ตัวกรองแผนก
   const [departmentFilter, setDepartmentFilter] = useState<{
     id: number | string;
     label: string;
@@ -124,74 +62,19 @@ const Departments = () => {
     });
   };
 
-  // ตั้งข้อมูล section ไว้ใช้ใน filter
-  const [sections, setSections] = useState<Section[]>([]);
-
-  const [sectionFilter, setSectionFilter] = useState<{
-    id: number | string;
-    label: string;
-    value: string;
-  } | null>(null);
-
-  // เพิ่ม state สำหรับ modal
-  const [isAddSectionOpen, setIsAddSectionOpen] = useState(false);
-
   // ดึงข้อมูล api จาก backend
   useEffect(() => {
     const fetchData = async () => {
-      // const res = await axios.get("/api/v1/departments-section");
-      // const { departments, sections } = res.data;
-
-      const mockUpData = {
-        departments: [
-          {
-            dept_id: 1,
-            dept_name: "IT",
-          },
-          {
-            dept_id: 2,
-            dept_name: "Design",
-          },
-          {
-            dept_id: 3,
-            dept_name: "คลังสินค้า",
-          },
-        ],
-        sections: [
-          {
-            sec_id: 1,
-            sec_name: "ฝ่ายย่อย A",
-            sec_dept_id: 1,
-          },
-          {
-            sec_id: 2,
-            sec_name: "ฝ่ายย่อย B",
-            sec_dept_id: 1,
-          },
-          {
-            sec_id: 3,
-            sec_name: "ฝ่ายย่อย A",
-            sec_dept_id: 2,
-          },
-          {
-            sec_id: 4,
-            sec_name: "ฝ่ายย่อย A",
-            sec_dept_id: 3,
-          },
-        ],
-      };
-
-      // รวม section เข้ากับ department
-      const combined = mockUpData.departments.map((dept: any) => ({
-        ...dept,
-        sections: mockUpData.sections.filter(
-          (sec: any) => sec.sec_dept_id === dept.dept_id
-        ),
-      }));
-
-      // กำหนด department ให้เป็นที่รวมกับ section แล้ว
-      setDepartments(combined);
+      // เรียกใช้ API ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
+      const departments = await departmentService.getDepartmentsWithSections();
+      // เก็บข้อมูลแผนก
+      setDepartments(departments);
+      // ตั้งค่า filter แผนกเริ่มต้นเป็น "ทั้งหมด"
+      setDepartmentFilter(
+        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
+      );
     };
+
     fetchData();
   }, []);
 
@@ -218,7 +101,10 @@ const Departments = () => {
           });
           break;
         case "add-section":
-          await sectionService.addSection({deptId: data.departmentId, sec_name: data.section})
+          await sectionService.addSection({
+            dept_id: data.departmentId,
+            sec_name: data.section,
+          });
           push({
             tone: "success",
             message: "เพิ่มฝ่ายย่อยเสร็จสิ้น!",
@@ -236,17 +122,11 @@ const Departments = () => {
     }
   };
 
-  //Search Filter
-  const [searchFilter, setSearchFilters] = useState({
-    search: "",
-  });
+  const [searchFilter, setSearchFilters] = useState({ search: "" });
 
-  // state เก็บฟิลด์ที่ใช้เรียง เช่น name
-  const [sortField, setSortField] = useState<keyof Department | "statusText">();
-
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  const HandleSort = (field: keyof Department | "statusText") => {
+  const HandleSort = (
+    field: keyof getDepartmentsWithSections | "statusText"
+  ) => {
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -256,6 +136,13 @@ const Departments = () => {
       setSortDirection("asc");
     }
   };
+
+  // state เก็บฟิลด์ที่ใช้เรียง เช่น name
+  const [sortField, setSortField] = useState<
+    keyof getDepartmentsWithSections | "statusText"
+  >();
+
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
@@ -364,8 +251,8 @@ const Departments = () => {
 
         <div className="w-full">
           <div
-            className="grid [grid-template-columns:150px_200px_740px_80px]
-                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
+            className="grid [grid-template-columns:150px_250px_1090px_80px]
+                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center"></div>
             <div className="py-2 px-4 text-left flex items-center">
@@ -379,8 +266,8 @@ const Departments = () => {
                         : "bx:sort-up"
                       : "bx:sort-down" //default icon
                   }
-                  width="24"
-                  height="24"
+                  width="28"
+                  height="28"
                   className="ml-1"
                 />
               </button>
@@ -396,8 +283,8 @@ const Departments = () => {
                         : "bx:sort-up"
                       : "bx:sort-down" //default icon
                   }
-                  width="24"
-                  height="24"
+                  width="28"
+                  height="28"
                   className="ml-1"
                 />
               </button>
@@ -407,14 +294,12 @@ const Departments = () => {
           {pageRows.map((dep) => (
             <div
               key={dep.dept_id}
+              onClick={() => toggleOpen(dep.dept_id)}
               className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
             >
-              <div className="grid [grid-template-columns:150px_200px_740px_80px] mt-[30px] mb-[30px] items-center text-[16px] gap-3">
+              <div className="grid [grid-template-columns:150px_250px_1090px_80px] mt-[30px] mb-[30px] items-center text-[16px] gap-3">
                 {/* Dropdown Arrow */}
-                <div
-                  className="py-2 px-4 flex justify-center items-center hover:cursor-pointer"
-                  onClick={() => toggleOpen(dep.dept_id)}
-                >
+                <div className="py-2 px-4 flex justify-center items-center hover:cursor-pointer">
                   <DropdownArrow isOpen={openDeptId.includes(dep.dept_id)} />
                 </div>
                 {/* ชื่อแผนก */}
@@ -441,7 +326,12 @@ const Departments = () => {
                         setModalOpen(true);
                       }}
                     >
-                      <Icon icon="prime:pen-to-square" width="22" height="22" />
+                      <Icon
+                        onClick={() => alert(`Edit Department ${dep.dept_id}`)}
+                        icon="prime:pen-to-square"
+                        width="28"
+                        height="28"
+                      />
                     </button>
                     <button
                       type="submit"
@@ -449,9 +339,12 @@ const Departments = () => {
                       title="ลบ"
                     >
                       <Icon
+                        onClick={() =>
+                          alert(`Delete Department ${dep.dept_id}`)
+                        }
                         icon="solar:trash-bin-trash-outline"
-                        width="22"
-                        height="22"
+                        width="28"
+                        height="28"
                       />
                     </button>
                   </div>
@@ -461,11 +354,11 @@ const Departments = () => {
                 // ถ้า openDeptId เปิดอยู่ (แสดงฝ่ายย่อย)
                 openDeptId.includes(dep.dept_id) && (
                   <div className="flex flex-col gap-5 mt-[30px] mb-[30px]">
-                    <hr className="border-t border-gray-200 mx-[70px]" />
+                    <hr className="border-t border-gray-200 mx-[60px]" />
                     {dep.sections.map((section, index) => (
                       <div
                         key={index}
-                        className="grid [grid-template-columns:150px_200px_740px_80px] h-[35px] items-center hover:bg-gray-50 text-[16px] gap-3"
+                        className="grid [grid-template-columns:150px_250px_1090px_80px] h-[35px] items-center hover:bg-gray-50 text-[16px] gap-3"
                       >
                         {/* พื้นที่ว่าง */}
                         <div className="py-2 px-4"></div>
@@ -492,9 +385,12 @@ const Departments = () => {
                               }}
                             >
                               <Icon
+                                onClick={() =>
+                                  alert(`Edit Section ${section.sec_id}`)
+                                }
                                 icon="prime:pen-to-square"
-                                width="22"
-                                height="22"
+                                width="28"
+                                height="28"
                               />
                             </button>
                             <button
@@ -503,9 +399,12 @@ const Departments = () => {
                               title="ลบ"
                             >
                               <Icon
+                                onClick={() =>
+                                  alert(`Delete Section ${section.sec_id}`)
+                                }
                                 icon="solar:trash-bin-trash-outline"
-                                width="22"
-                                height="22"
+                                width="28"
+                                height="28"
                               />
                             </button>
                           </div>
@@ -519,7 +418,7 @@ const Departments = () => {
           ))}
         </div>
         {/* ปุ่มหน้า */}
-        <div className="mt-25 mr-[24px] flex items-center justify-end">
+        <div className="mt-25 pt-3 mr-[24px] flex items-center justify-end">
           {/* ขวา: ตัวแบ่งหน้า */}
           <div className="flex items-center gap-2">
             {/* ปุ่มก่อนหน้า */}
@@ -600,7 +499,6 @@ const Departments = () => {
             </form>
           </div>
         </div>
-
       </div>
       {/* Modal */}
       <DepartmentModal

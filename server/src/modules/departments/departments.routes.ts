@@ -1,6 +1,6 @@
 import { Router } from "../../core/router.js";
 import { DepartmentController } from "./departments.controller.js"
-import { editDepartmentPayload, addSectionPayload, editSectionPayload, getAllDepartmentSchema, getAllSectionSchema, idParamSchema, paramEditSecSchema } from "./departments.schema.js";
+import { editDepartmentPayload, editSectionPayload, getAllDepartmentSchema, getAllSectionSchema, deptSectionSchema, idParamSchema, paramEditSecSchema, addSectionPayload } from "./departments.schema.js";
 
 const departmentController = new DepartmentController();
 const router = new Router(undefined, '/departments');
@@ -10,6 +10,6 @@ router.getDoc("/:id/section", { tag: "Departments", params: idParamSchema, res: 
 router.putDoc("/:id", {tag: "Departments", params: idParamSchema, body: editDepartmentPayload, auth: true }, departmentController.editDepartment)
 router.putDoc("/:deptId/section/:secId", { tag: "Departments", params: paramEditSecSchema, body: editSectionPayload, auth: true }, departmentController.editSection)
 router.postDoc("/:id/section", { tag: "Departments", params: idParamSchema,  body: addSectionPayload, auth: true }, departmentController.addSection);
-
+router.getDoc("/section", {tag: "Departments", res: deptSectionSchema,  auth: true }, departmentController.getdeptsection)
 
 export default router.instance;

@@ -10,6 +10,7 @@ import {
   GetAllSectionSchema,
   idParamSchema,
   paramEditSecSchema,
+  DeptSectionSchema,
 } from "./departments.schema.js";
 
 /**
@@ -111,5 +112,15 @@ export class DepartmentController extends BaseController {
 
     // ส่งข้อมูล section ที่ถูกเพิ่มกลับไป
     return { data: newSection };
+
+  }
+
+    async getdeptsection(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<BaseResponse<DeptSectionSchema>> {
+    const deptSection = await departmentService.getDeptSection();
+    return { data: deptSection };
   }
 }

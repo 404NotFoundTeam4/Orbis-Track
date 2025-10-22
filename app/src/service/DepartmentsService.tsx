@@ -26,6 +26,17 @@ export interface addSectionPayload {
 
 }
 
+// รูปแบบข้อมูลแผนกและฝ่ายย่อย
+export interface getDepartmentsWithSections {
+  dept_id: number;
+  dept_name: string;
+  sections: {
+    sec_id: number;
+    sec_name: string;
+    sec_dept_id: number;
+  }[];
+}
+
 // Department API
 export const departmentService = {
   // Get all departments
@@ -38,6 +49,19 @@ export const departmentService = {
   getDepartmentById: async (id: number): Promise<Department> => {
     const { data } = await axios.get(`/api/departments/${id}`);
     return data;
+  },
+  
+   /**
+   * Description: ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
+   * Input     : -
+   * Output    : Promise<DepartmentsWithSectionsResponse> - ข้อมูลแผนกพร้อมฝ่ายย่อย
+   * Endpoint  : GET /api/departments/section
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+
+  getDepartmentsWithSections: async (): Promise<getDepartmentsWithSections[]> => {
+    const { data } = await axios.get(`/api/departments/section`);
+    return data.data.deptsection;
   },
 
   /**

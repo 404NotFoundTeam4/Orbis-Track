@@ -194,23 +194,6 @@ async function addSection(deptId: number, section: string) {
   });
   if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
 
-  // ตรวจสอบว่ามีชื่อฝ่ายนี้อยู่แล้วในแผนกนี้หรือไม่
-  // const existingSection = await prisma.sections.findFirst({
-  //   where: {
-  //     sec_dept_id: deptId,
-  //     sec_name: {
-  //       contains: section, // ใช้ contains เพื่อกันกรณีชื่อย่อยที่คล้ายกัน เช่น “ฝ่ายย่อยIT” กับ “ฝ่ายย่อย IT”
-  //       mode: "insensitive", // ไม่สนตัวพิมพ์เล็กใหญ่
-  //     },
-  //   },
-  // });
-
-  // if (existingSection) {
-  //   throw new HttpError(
-  //     HttpStatus.CONFLICT,
-  //     "Section name already exists in this department"
-  //   );
-  // }
 
   const newSecName = section.includes("ฝ่ายย่อย")
     ? `${dept.dept_name} ${section}`
@@ -234,10 +217,49 @@ async function addSection(deptId: number, section: string) {
   return newSection;
 }
 
+//    * Description: ดึงข้อมูลแผนก (Department) พร้อมข้อมูลฝ่ายย่อย (Section) ที่อยู่ภายใต้แต่ละแผนก
+//  * Input     : None - ไม่ต้องรับพารามิเตอร์ (ดึงทั้งหมด)
+//  * Output    : { deptsection: Array } - รายการแผนกแต่ละรายการ พร้อมข้อมูลฝ่ายย่อยภายใน
+//  * Logic     :
+//  *   - ใช้ Prisma ORM ดึงข้อมูลจากตาราง deptsection
+//  *   - เลือกฟิลด์ dept_id และ dept_name จากตารางแผนก
+//  *   - ดึงข้อมูล section ที่สัมพันธ์กับแต่ละแผนก (sec_id, sec_name, sec_dept_id)
+//  *   - รวมข้อมูลแผนกและฝ่ายย่อยเป็นออบเจกต์เดียวกัน
+//  * Author    : Rachata Jitjeankhan (Tang) 66160369
+//  */
+async function getDeptSection() {
+  const deptsection = await prisma.departments.findMany({
+    select: {
+      dept_id: true,
+      dept_name: true,
+      sections: {
+        select: {
+          sec_id: true,
+          sec_name: true,
+          sec_dept_id: true,
+        },
+      }
+    },
+  });
+
+  // ตัดคำว่า "แผนก" และ "ฝ่ายย่อย" ออกจากชื่อ
+   const cleanedDeptSection = deptsection.map((dept:any) => ({
+    ...dept,
+    dept_name: dept.dept_name.replace(/แผนก/g, "").trim(), // เอา "แผนก" ออก
+    sections: dept.sections.map((sec:any) => ({
+      ...sec,
+      sec_name: sec.sec_name.replace(dept.dept_name, "").trim(), 
+    })),
+  }));
+
+  return { deptsection: cleanedDeptSection };
+}
+
 export const departmentService = {
   getAllDepartment,
   getSectionById,
   editDepartment,
   editSection,
   addSection,
+  getDeptSection,
 };

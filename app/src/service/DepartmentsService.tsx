@@ -20,6 +20,11 @@ export interface UpdateDepartmentPayload {
 export interface UpdateSectionPayload {
   section: string;
 }
+export interface addSectionPayload {
+  deptId: number;
+  sec_name: string;
+
+}
 
 // Department API
 export const departmentService = {
@@ -72,6 +77,14 @@ export const sectionService = {
       `/api/departments/${deptId}/section/${secId}`,
       payload,
     );
+    return data;
+  },
+
+  addSection: async (
+    payload: addSectionPayload) : Promise<{ message: string }> => {
+    const { deptId, sec_name } = payload;
+    const { data } = await axios.post(
+      `/api/departments/${deptId}/sections`, sec_name);
     return data;
   },
 };

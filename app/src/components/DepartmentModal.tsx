@@ -62,6 +62,19 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
   const isEdit = type.startsWith("edit");
   const isSection = type.includes("section");
 
+  // ไอคอนกากบาทวงกลมจาก Radix Icons (ใช้แทนไอคอนปิด)
+const CrossCircledIcon = (props: any) => (
+  <svg
+    {...props}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
   const titleText = isEdit
     ? isSection
       ? "ยืนยันการแก้ไขฝ่ายย่อย?"
@@ -189,17 +202,17 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     >
       {/* Modal Content */}
       <div
-        className={`bg-white rounded-[42px] p-8 pb-0 w-[90%] max-w-[804px] 
+        className={`bg-white rounded-[42px] p-8 pb-0 w-[90%] max-w-[804px] border border-solid border-[#858585]
           ${type.includes("section") ? "h-[470px]" : "h-[371px]"} relative shadow-2xl transform transition-all duration-300 ease-out flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           type="button"
-          onClick={handleClose}
-          className="absolute top-7 right-7 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-[#000000] hover:text-gray-900 text-2xl"
+          onClick={onClose}
+          className="absolute top-7 right-7 color-[#000000] transition"
         >
-          <Icon icon="radix-icons:cross-circled" width="35" height="35" />
+          <CrossCircledIcon className="w-[35px] h-[35px]" />
         </button>
 
         {/* Title */}
@@ -211,7 +224,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
           {/* Form */}
           <form
             onSubmit={handleSubmit}
-            className="space-y-6 flex flex-col items-center w-full gap-[47px]"
+            className="flex flex-col items-center w-full gap-[47px]"
           >
             {/* Field: แผนก (input) - สำหรับ add/edit department */}
             {(type === "add-department" || type === "edit-department") && (
@@ -273,7 +286,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
               </div>
             )}
             {/* Submit Button */}
-            <div className="flex justify-center items-center mt-9">
+            <div className="flex justify-center items-center">
               <Button
                 type="submit"
                 variant="primary"
@@ -293,7 +306,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         tone={dialogTone}
         title={titleText}
         description={descText}
-        icon={<Icon icon={iconName} className="h-20 w-20" />}
+        
         // (optionally) ใส่สัดส่วนตามสเปค
         onConfirm={doSubmit}
       />

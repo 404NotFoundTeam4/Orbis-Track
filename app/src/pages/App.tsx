@@ -32,6 +32,7 @@ function App() {
                 path="/administrator/account-management"
                 element={<Users />}
               />
+              <Route path="/users" element={<Users />} />
               <Route
                 path="/administrator/departments-management"
                 element={<Departments />}

@@ -15,10 +15,10 @@ export const useLogin = () => {
 
         // ✅ ดึงข้อมูลผู้ใช้จาก token
         const users = await user_data(token);
-        
+
 
         // ✅ เก็บ user ลงใน store
- 
+
         setUser(users)
         localStorage.setItem("token", token);
 
@@ -36,12 +36,12 @@ export const useLogin = () => {
       console.error("❌ Login error:", err);
     }
   };
-   const reloaduser = async() =>{
-      const token = localStorage.getItem("token");
+  const reloaduser = async () => {
+    const token = localStorage.getItem("token");
     const users = await user_data(token);
     setUser(users)
-    
+
   };
 
-  return { handleLogin,reloaduser };
+  return { handleLogin, reloaduser };
 };

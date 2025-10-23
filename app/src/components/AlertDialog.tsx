@@ -51,7 +51,7 @@ export type AlertDialogProps = {
 const TONE_HEX: Record<AlertTone, string> = {
   success: "#FFC107",
   warning: "#FFC107",
-  danger: "#FF4D4F",
+  danger: "#FFC107",
 };
 
 const CONFIRM_OVERRIDE: Record<AlertTone, string> = {

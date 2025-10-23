@@ -327,7 +327,6 @@ const Departments = () => {
                       }}
                     >
                       <Icon
-                        onClick={() => alert(`Edit Department ${dep.dept_id}`)}
                         icon="prime:pen-to-square"
                         width="28"
                         height="28"

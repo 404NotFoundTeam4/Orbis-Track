@@ -20,10 +20,24 @@ export interface UpdateDepartmentPayload {
 export interface UpdateSectionPayload {
   section: string;
 }
-export interface addSectionPayload {
-  deptId: number;
-  sec_name: string;
 
+/**
+ * Description: โครงสร้างข้อมูล (Payload) สำหรับการเพิ่มฝ่ายย่อย (Section) ใหม่
+ * Fields    :
+ *   - dept_id (number): รหัสของแผนกที่ฝ่ายย่อยจะถูกเพิ่มเข้าไป
+ *   - sec_name (string): ชื่อของฝ่ายย่อยที่ต้องการเพิ่ม
+ * Usage     :
+ *   - ใช้เป็นชนิดข้อมูล (interface) สำหรับส่งข้อมูลไปยัง API หรือ Service ที่ทำหน้าที่เพิ่มฝ่ายย่อย
+ * Example   :
+ *   const payload: AddSectionPayload = {
+ *     dept_id: 1,
+ *     sec_name: "ฝ่ายย่อยจัดการ",
+ *   };
+ * Author    : Salsabeela Sa-e (San) 66160349
+ */
+export interface AddSectionPayload {
+  dept_id: number;
+  sec_name: string;
 }
 
 // รูปแบบข้อมูลแผนกและฝ่ายย่อย
@@ -103,12 +117,25 @@ export const sectionService = {
     );
     return data;
   },
-
+  
+  /**
+  * Description: เรียกใช้งาน API สำหรับเพิ่มฝ่ายย่อย (Section) ใหม่ภายใต้แผนกที่เลือก
+  * Input     :
+  *   - payload (AddSecSchema): ข้อมูลที่ต้องใช้ในการเพิ่มฝ่ายย่อย ประกอบด้วย
+  *       • dept_id (number)   - รหัสแผนก
+  *       • sec_name (string)  - ชื่อฝ่ายย่อยที่ต้องการเพิ่ม
+  * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการเพิ่มฝ่ายย่อย
+  * Endpoint  : POST /api/departments/:deptId/section
+  * Logic     :
+  *   - ส่งคำขอแบบ POST ไปยัง endpoint พร้อมข้อมูล dept_id และ sec_name
+  *   - เมื่อเพิ่มสำเร็จ จะได้รับข้อความตอบกลับจากเซิร์ฟเวอร์
+  * Author    : Salsabeela Sa-e (San) 66160349
+  */
   addSection: async (
-    payload: addSectionPayload) : Promise<{ message: string }> => {
-    const { deptId, sec_name } = payload;
+    payload: AddSectionPayload) : Promise<{ message: string }> => {
+    const { dept_id, sec_name } = payload;
     const { data } = await axios.post(
-      `/api/departments/${deptId}/sections`, sec_name);
+      `/api/departments/${dept_id}/section`, {dept_id, sec_name});
     return data;
   },
 };

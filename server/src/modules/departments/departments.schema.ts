@@ -46,8 +46,11 @@ export const editSectionPayload = z.object({
 
 /**
  * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการเพิ่มฝ่ายย่อย (Section)
- * Input     : { section: string } - ชื่อฝ่ายย่อยที่ต้องการเพิ่ม (ต้องไม่เป็นค่าว่าง)
- * Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้าง { section: string }
+ * Input     : { sec_name: string } - ชื่อฝ่ายย่อยที่ต้องการเพิ่ม
+ * Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้าง { sec_name: string }
+ * Logic     :
+ *   - ตรวจสอบว่าค่าที่ส่งเข้ามาเป็น string
+ *   - ใช้สำหรับ validate ข้อมูลก่อนส่งต่อไปยัง service หรือ controller
  * Author    : Salsabeela Sa-e (San) 66160349
  */
 export const addSectionPayload = z.object({
@@ -80,6 +83,13 @@ export type IdParamDto = z.infer<typeof idParamSchema>;
 
 export type ParamEditSecSchema = z.infer<typeof paramEditSecSchema>;
 
+/**
+ * Description: กำหนดชนิดข้อมูล (Type) สำหรับการเพิ่มฝ่ายย่อย (Section)
+ * Source     : อ้างอิงจาก Schema addSectionPayload ที่สร้างด้วย Zod
+ * Usage      : ใช้สำหรับระบุชนิดข้อมูลของ payload ที่ผ่านการตรวจสอบแล้ว
+ * Output     : TypeScript type - { sec_name: string }
+ * Author     : Salsabeela Sa-e (San) 66160349
+ */
 export type AddSecSchema = z.infer<typeof addSectionPayload>;
 
 export type DeptSectionSchema = z.infer<typeof deptSectionSchema>;

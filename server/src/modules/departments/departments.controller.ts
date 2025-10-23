@@ -109,7 +109,6 @@ export class DepartmentController extends BaseController {
       id.id,
       payload.sec_name,
     );
-
     // ส่งข้อมูล section ที่ถูกเพิ่มกลับไป
     return { data: newSection };
 

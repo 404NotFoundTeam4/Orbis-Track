@@ -166,19 +166,19 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
             updated_at: true,
         }
     });
-    
+
     // Author: Pakkapon Chomchoey (Tonnam) 66160080
     // สร้าง one-time token สำหรับให้ผู้ใช้ใหม่ตั้งรหัสผ่านครั้งแรก
     const { plainTextToken } = await OneTimeTokenUtil.generateToken();
-    
+
     // สร้าง Redis key และเก็บ token พร้อม user id โดยกำหนดเวลาหมดอายุ
     const redisKey = `welcome-token:${plainTextToken}`;
     const expiryInSeconds = Number(env.EXPIRE_TOKEN); // 24 ชั่วโมง
     await redisSet(redisKey, newUser.us_id.toString(), expiryInSeconds);
-    
+
     // สร้าง URL สำหรับหน้า reset password พร้อม token
     const welcomeUrl = `${env.FRONTEND_URL}/reset-password?token=${plainTextToken}`;
-    
+
     // ส่งอีเมล welcome พร้อม link สำหรับตั้งรหัสผ่านให้ผู้ใช้ใหม่
     await emailService.sendWelcome(newUser.us_email, {
         name: newUser.us_firstname,
@@ -186,7 +186,7 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
         resetPasswordUrl: welcomeUrl,
         expiryHours: String(expiryInSeconds),
     });
-    
+
     return newUser;
 }
 
@@ -198,20 +198,42 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
  * Output : updated user object
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
- async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
-     const { id } = params;
-     const user = await prisma.users.findUnique({ where: { us_id: id } });
-     if (!user) throw new Error("account not found");
-     const updateData: any = {
-       ...body,
-       updated_at: new Date(),
-     }
+async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
+    const { id } = params;
+    const user = await prisma.users.findUnique({ where: { us_id: id } });
+    if (!user) throw new Error("account not found");
+    const updateData: any = {
+        ...body,
+        updated_at: new Date(),
+    }
 
-     await prisma.users.update({
-         where: { us_id: id },
-         data: updateData,
-     });
-     return { message: "User updated successfully" };
- }
+    await prisma.users.update({
+        where: { us_id: id },
+        data: updateData,
+    });
+    return { message: "User updated successfully" };
+}
 
-export const accountsService = { getAccountById, getAllAccounts, createAccounts, updateAccount };
+
+export async function softDeleteAccount(us_id: number) {
+    //เช็คตัว UserId ว่าเจอไหม
+    const user = await prisma.users.findUnique({ where: { us_id } });
+    if (!user) throw new Error("User not found");
+
+    //update ตัว Field
+    const updated = await prisma.users.update({
+        where: { us_id },
+        data: {
+            deleted_at: new Date(),
+            us_is_active: false,
+        },
+        select: { us_id: true, deleted_at: true },
+    });
+
+    return {
+        userID: updated.us_id,
+        deleteAt: updated.deleted_at
+    }
+}
+
+export const accountsService = { getAccountById, getAllAccounts, createAccounts, updateAccount, softDeleteAccount };

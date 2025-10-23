@@ -5,6 +5,7 @@ import { BaseResponse } from "../../core/base.response.js";
 import {
     createAccountsPayload, CreateAccountsSchema, GetAllAccountsResponseSchema, editAccountSchema, idParamSchema,
 } from "./accounts.schema.js";
+import { ValidationError } from "../../errors/errors.js";
 
 export class AccountsController extends BaseController {
     constructor() {
@@ -75,5 +76,12 @@ export class AccountsController extends BaseController {
         return {
             message: result.message,
         };
+    }
+
+    async softDelete(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+        const id = Number(req.params.id); //อ่านตัว ID
+        if (!Number.isInteger(id) || id <= 0) throw new ValidationError("Invalid id"); //เช็คค่า ID
+        const result = await accountsService.softDeleteAccount(id); //เรียกตัว Service SoftDeleteUser
+        return { data: { us_id: result.userID, deletedAt: result.deleteAt }, message: "User soft-deleted" };
     }
 };

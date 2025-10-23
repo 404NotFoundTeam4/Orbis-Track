@@ -91,11 +91,24 @@ export const editAccountSchema = z.object({
   us_sec_id: z.string().optional().nullable(),
 });
 
+export const SoftDeleteAccountSchema = z.object({
+  Param: idParamSchema
+});
+
+export const softDeleteResponseSchema = z.object({
+  us_id: z.number().int(),
+  deletedAt: z.date(),
+});
+
 export type EditAccountSchema = z.infer<typeof editAccountSchema>;
 
 export type GetAllAccountsResponseSchema = z.infer<
   typeof getAllAccountsResponseSchema
 >;
+
+export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
+
+export type SoftDeleteParams = z.infer<typeof idParamSchema>;
 
 export type CreateAccountsPayload = z.infer<typeof createAccountsPayload>;
 

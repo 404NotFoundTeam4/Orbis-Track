@@ -80,7 +80,7 @@ function isEnglishText(text: string): boolean {
  */
 async function editDepartment(
   params: IdParamDto,
-  payload: EditDepartmentPayload,
+  payload: EditDepartmentPayload
 ) {
   const { id } = params;
   const { department } = payload;
@@ -145,7 +145,7 @@ async function editDepartment(
  */
 async function editSection(
   params: ParamEditSecSchema,
-  payload: EditSectionPayload,
+  payload: EditSectionPayload
 ) {
   const { deptId, secId } = params;
   const { section } = payload;
@@ -174,9 +174,116 @@ async function editSection(
   return { message: "Department updated successfully" };
 }
 
+/**
+ * Description: เพิ่มฝ่ายย่อย (Section) ใหม่ภายใต้แผนกที่เลือก โดยตรวจสอบชื่อซ้ำ
+ * Input     : deptId (number) จาก params, section (string) จาก body
+ * Output    : object { sec_id: number, sec_name: string, sec_dept_id: number }
+ * Logic     :
+ *   - ตรวจสอบว่าแผนกมีอยู่จริงในฐานข้อมูล
+ *   - ทำความสะอาดชื่อที่รับเข้ามา โดย:
+ *       • ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
+ *       • เพิ่มคำนำหน้า "ฝ่ายย่อย" ให้โดยอัตโนมัติ เช่น input: "ฝ่ายย่อยจัดการ" หรือ "ฝ่ายจัดการ" → บันทึกเป็น "ฝ่ายย่อยจัดการ"
+ *   - ตรวจสอบว่าฝ่ายย่อยชื่อเดียวกันในแผนกนั้นมีอยู่แล้วหรือไม่
+ *   - ถ้ามี → ส่ง error "Section name already exists in this department"
+ *   - ถ้าไม่มี → เพิ่มข้อมูลใหม่ในตาราง sections
+ * Author    : Salsabeela Sa-e (San) 66160349
+ */
+async function addSection(deptId: number, section: string) {
+  // ตรวจสอบว่าแผนกมีอยู่จริง
+  const dept = await prisma.departments.findUnique({
+    where: { dept_id: deptId },
+    select: { dept_name: true },
+  });
+  if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
+
+  // ฟังก์ชันช่วยตรวจสอบว่าข้อความเป็นภาษาอังกฤษหรือไม่
+  const isEnglishText = (text: string) => /^[A-Za-z\s]+$/.test(text);
+
+  // clean text: ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
+  const cleanedName = section
+    .replace(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
+    .replace(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
+    .trim(); // ตัดช่องว่างหัวท้าย
+
+  // เพิ่มคำว่า "ฝ่ายย่อย" กลับเข้าไปตามรูปแบบที่ถูกต้อง
+  const formattedName = isEnglishText(cleanedName)
+    ? `ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+    : `ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
+
+  // ตรวจสอบว่าฝ่ายย่อยชื่อเดียวกันในแผนกนั้นมีอยู่แล้วหรือไม่
+  const existingSection = await prisma.sections.findFirst({
+    where: {
+      sec_name: formattedName,
+      sec_dept_id: deptId,
+    },
+  });
+  if (existingSection)
+    throw new HttpError(
+      HttpStatus.CONFLICT,
+      "Section name already exists in this department"
+    );
+
+  // เพิ่มข้อมูลฝ่ายใหม่ลงในฐานข้อมูล
+  const createdSection = await prisma.sections.create({
+    data: {
+      sec_name: formattedName,
+      sec_dept_id: deptId,
+    },
+    select: {
+      sec_id: true,
+      sec_name: true,
+      sec_dept_id: true,
+    },
+  });
+
+  console.log("New Section Added:", createdSection);
+  return createdSection;
+}
+
+
+//    * Description: ดึงข้อมูลแผนก (Department) พร้อมข้อมูลฝ่ายย่อย (Section) ที่อยู่ภายใต้แต่ละแผนก
+//  * Input     : None - ไม่ต้องรับพารามิเตอร์ (ดึงทั้งหมด)
+//  * Output    : { deptsection: Array } - รายการแผนกแต่ละรายการ พร้อมข้อมูลฝ่ายย่อยภายใน
+//  * Logic     :
+//  *   - ใช้ Prisma ORM ดึงข้อมูลจากตาราง deptsection
+//  *   - เลือกฟิลด์ dept_id และ dept_name จากตารางแผนก
+//  *   - ดึงข้อมูล section ที่สัมพันธ์กับแต่ละแผนก (sec_id, sec_name, sec_dept_id)
+//  *   - รวมข้อมูลแผนกและฝ่ายย่อยเป็นออบเจกต์เดียวกัน
+//  * Author    : Rachata Jitjeankhan (Tang) 66160369
+//  */
+async function getDeptSection() {
+  const deptsection = await prisma.departments.findMany({
+    select: {
+      dept_id: true,
+      dept_name: true,
+      sections: {
+        select: {
+          sec_id: true,
+          sec_name: true,
+          sec_dept_id: true,
+        },
+      },
+    },
+  });
+
+  // ตัดคำว่า "แผนก" และ "ฝ่ายย่อย" ออกจากชื่อ
+  const cleanedDeptSection = deptsection.map((dept: any) => ({
+    ...dept,
+    dept_name: dept.dept_name.replace(/แผนก/g, "").trim(), // เอา "แผนก" ออก
+    sections: dept.sections.map((sec: any) => ({
+      ...sec,
+      sec_name: sec.sec_name.replace(dept.dept_name, "").trim(),
+    })),
+  }));
+
+  return { deptsection: cleanedDeptSection };
+}
+
 export const departmentService = {
   getAllDepartment,
   getSectionById,
   editDepartment,
   editSection,
+  addSection,
+  getDeptSection,
 };

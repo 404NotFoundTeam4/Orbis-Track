@@ -56,10 +56,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ${sizeClasses[size]}
             py-3
             border
-            border-[#A2A2A2]
+            border-[#D8D8D8]
             rounded-[16px]
             text-[#000000]
-            placeholder:text-[#A2A2A2]
+            placeholder:text-[#CDCDCD]
             focus:outline-none
             focus:ring-2
             focus:ring-blue-500

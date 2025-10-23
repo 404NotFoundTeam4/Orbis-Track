@@ -193,21 +193,22 @@ function DropDown<T extends DropDownItem>({
         onClick={handleToggle}
         disabled={disabled}
         className={`
-            w-full px-4 py-2.5
+            w-full h-[46px] px-4 py-2.5
+            text-[16px]
             bg-white
-            border border-[#D9D9D9]
+            border border-[#D8D8D8]
             rounded-[16px]
             flex items-center justify-between
             text-left
             transition-all duration-200
             ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-gray-300 cursor-pointer"}
-            ${isOpen ? "border-[#D9D9D9]" : ""}
+            ${isOpen ? "border-[#D8D8D8]" : ""}
             ${triggerClassName}
             `}
       >
         <span
           className={`text-[16px]`}
-          style={{ color: value ? value.textColor || "#000000" : "#9E9E9E" }}
+          style={{ color: value ? value.textColor || "#000000" : "#CDCDCD" }}
         >
           {value?.label || placeholder}
         </span>

@@ -49,9 +49,9 @@ export type AlertDialogProps = {
 };
 
 const TONE_HEX: Record<AlertTone, string> = {
-  success: "#52C41A",
-  warning: "#FFC53D",
-  danger: "#FF4D4F",
+  success: "#FFC107",
+  warning: "#FFC107",
+  danger: "#FFC107",
 };
 
 const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
@@ -135,7 +135,7 @@ export function AlertDialog({
         aria-describedby={description ? descId : undefined}
         className={cx(
           "relative mx-auto select-none bg-white shadow-2xl",
-          "animate-in fade-in zoom-in-95",
+          "animate-in fade-in zoom-in-95 ",
           className,
         )}
         style={{
@@ -145,6 +145,7 @@ export function AlertDialog({
           paddingRight: padX,
           paddingTop: padY,
           paddingBottom: padY,
+          border: "1px solid #858585",
         }}
       >
         {/* Icon + ring (ใช้ inline style เพื่อรองรับค่า dynamic) */}

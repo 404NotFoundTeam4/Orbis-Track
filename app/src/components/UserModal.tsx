@@ -24,7 +24,7 @@ type UserModalProps = {
   user?: UserApiData | null;
   onClose?: () => void;
   onSubmit?: (data: Partial<UserApiData>) => void;
-  path?: string; // ✅ เช่น "/users" หรือ "/users/delete"
+
    keyvalue: (keyof UserApiData)[] | "all";
 };
 
@@ -33,7 +33,6 @@ export default function UserModal({
   user,
   onClose,
   onSubmit,
-  path = "",
   keyvalue,
 }: UserModalProps) {
   const [formData, setFormData] = useState<UserApiData>({
@@ -55,22 +54,22 @@ export default function UserModal({
 
   const [formOutput, setFormOutput] = useState<Partial<UserApiData>>({});
 
-  // ✅ preload user data เมื่อแก้ไข / ลบ
+  //  preload user data เมื่อแก้ไข / ลบ
   useEffect(() => {
     if (user && (typeform === "edit" || typeform === "delete")) {
       setFormData({ ...user });
     }
   }, [user, typeform]);
 
-  // ✅ filter key ตามที่ส่งมาจาก props (keyvalue)
+  //  filter key ตามที่ส่งมาจาก props (keyvalue)
    useEffect(() => {
     let filtered: Partial<UserApiData> = {};
 
     if (keyvalue === "all") {
-      // ✅ ถ้าเป็น all → เอาทั้ง formData เลย
+      //  ถ้าเป็น all → เอาทั้ง formData เลย
       filtered = { ...formData };
     } else {
-      // ✅ ถ้ามี key เฉพาะ → ดึงเฉพาะ key ที่กำหนด
+      //  ถ้ามี key เฉพาะ → ดึงเฉพาะ key ที่กำหนด
       keyvalue.forEach((key) => {
         filtered[key] = formData[key];
       });
@@ -81,7 +80,7 @@ export default function UserModal({
   }, [formData, keyvalue]);
 
 
-  // ✅ handle input
+  //  handle input
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -89,7 +88,7 @@ export default function UserModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ handle avatar upload
+  //  handle avatar upload
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -98,25 +97,25 @@ export default function UserModal({
     }
   };
 
-  // ✅ handle main API call
+  //  handle main API call
   const handle = async () => {
     try {
       let res;
 
-      // ✅ เตรียม payload ตาม keyvalue
+      //  เตรียม payload ตาม keyvalue
      const payload = keyvalue === "all" ? formData : formOutput;
 
-      // ✅ เรียก API ตาม typeform
-    //   if (typeform === "add") {
-    //     res = await api.post(path, payload);
-    //   } else if (typeform === "edit") {
-    //     res = await api.put(path, payload);
-    //   } else if (typeform === "delete") {
-    //     res = await api.delete(`/users/${payload}`);
-    //   }
+      //  เรียก API ตาม typeform
+      // if (typeform === "add") {
+      //   res = await api.post("/accounts", payload);
+      // } else if (typeform === "edit") {
+      //   res = await api.put(`/accounts/${payload.us_id}`, payload);
+      // } else if (typeform === "delete") {
+      //   res = await api.delete(`/users/${payload}`);
+      // }
 
-    //   console.log("✅ API Response:", res?.data);
-      console.log(formOutput)
+    //   console.log(" API Response:", res?.data);
+    console.log(formOutput)
       if (onSubmit) onSubmit(payload);
       if (onClose) onClose();
     } catch (err) {

@@ -37,9 +37,8 @@ export const Users = () => {
 
       {showModal && (
         <UserModal
-          typeform="delete"
-          path=""
-          keyvalue={["us_id"]}
+          typeform="edit"
+          keyvalue="all"
           user={mockUser}
           onClose={() => setShowModal(false)}
         />

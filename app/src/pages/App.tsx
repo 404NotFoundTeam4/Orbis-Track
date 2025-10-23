@@ -11,31 +11,39 @@ import { Otppassword } from "./Otppassword";
 import Navbar from "../components/Navbar";
 import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
+import Departments from "./Departments";
+import { ToastProvider } from "../components/Toast";
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Route */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/otp" element={<Otppassword />} />
-        <Route path="/resetpassword" element={<Resetpassword />} />
-        <Route path="/" element={<Login />} />
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Route */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/otp" element={<Otppassword />} />
+          <Route path="/resetpassword" element={<Resetpassword />} />
+          <Route path="/" element={<Login />} />
 
-        {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Navbar />}>
-            <Route
-              path="/administrator/account-management"
-              element={<Users />}
-            />
-            <Route path="/users" element={<Users />} />
-            <Route path="/example-component" element={<TestDropDown />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+          {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Navbar />}>
+              <Route
+                path="/administrator/account-management"
+                element={<Users />}
+              />
+              <Route
+                path="/administrator/departments-management"
+                element={<Departments />}
+              />
+              <Route path="/example-component" element={<TestDropDown />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

@@ -1,6 +1,12 @@
-import { departments } from "@prisma/client";
+import { HttpStatus } from "../../core/http-status.enum.js";
+import { HttpError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
-import { IdParamDto } from "./departments.schema.js";
+import {
+  EditDepartmentPayload,
+  EditSectionPayload,
+  IdParamDto,
+  ParamEditSecSchema,
+} from "./departments.schema.js";
 
 /**
  * Description: ดึงข้อมูลทุกแผนกจากฐานข้อมูล
@@ -50,4 +56,127 @@ async function getSectionById(params: IdParamDto) {
   return { sections };
 }
 
-export const departmentService = { getAllDepartment, getSectionById };
+/**
+ * Description: ตรวจสอบว่าข้อความเป็นภาษาอังกฤษหรือไม่ (รวมช่องว่าง)
+ * Input     : text (string) - ข้อความที่ต้องการตรวจสอบ
+ * Output    : boolean - true ถ้าเป็นภาษาอังกฤษ, false ถ้าไม่ใช่
+ * Note      : ใช้ regex เพื่อตรวจสอบว่ามีเฉพาะตัวอักษร a-z, A-Z และช่องว่างเท่านั้น
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
+function isEnglishText(text: string): boolean {
+  // อนุญาตให้มี a-z, A-Z, 0-9, และช่องว่าง
+  return /^[a-zA-Z0-9\s]+$/.test(text);
+}
+
+/**
+ * Description: แก้ไขชื่อแผนก (Department) และอัพเดตชื่อฝ่ายย่อยทั้งหมดที่เกี่ยวข้อง
+ * Input     : params { id } - รหัสแผนก, payload { department } - ชื่อแผนกใหม่
+ * Output    : { message: string } - ผลการแก้ไข
+ * Logic     :
+ *   - จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้าอัตโนมัติ
+ *   - ดึงฝ่ายย่อยทั้งหมดในแผนกและอัพเดตชื่อ (แทนที่ชื่อแผนกเก่าด้วยใหม่)
+ *   - ใช้ transaction เพื่อความปลอดภัยของข้อมูล
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function editDepartment(
+  params: IdParamDto,
+  payload: EditDepartmentPayload,
+) {
+  const { id } = params;
+  const { department } = payload;
+
+  // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
+  const newDept = department.includes("แผนก")
+    ? department // มี "แผนก" อยู่แล้ว ใช้ตามที่กรอกมา
+    : isEnglishText(department)
+      ? `แผนก ${department}` // ภาษาอังกฤษ เว้นวรรค
+      : `แผนก${department}`; // ภาษาไทย ไม่เว้นวรรค
+
+  await prisma.$transaction(async (tx) => {
+    // ดึงข้อมูลแผนกเดิมเพื่อเอาชื่อเก่ามาใช้
+    const oldDepartment = await tx.departments.findUnique({
+      where: { dept_id: id },
+      select: { dept_name: true },
+    });
+
+    if (!oldDepartment) {
+      throw new Error("Department not found");
+    }
+
+    const oldDeptName = oldDepartment.dept_name;
+
+    // อัพเดตชื่อแผนกหลัก
+    await tx.departments.update({
+      where: { dept_id: id },
+      data: { dept_name: newDept },
+    });
+
+    // ดึงฝ่ายย่อยทั้งหมดในแผนกนี้
+    const sections = await tx.sections.findMany({
+      where: { sec_dept_id: id },
+    });
+
+    // 4. อัพเดตชื่อฝ่ายย่อยทั้งหมด (แทนที่ชื่อแผนกเก่าด้วยใหม่)
+    const updatePromises = sections.map((sec) => {
+      const newSectionName = sec.sec_name.replace(oldDeptName, newDept);
+
+      return tx.sections.update({
+        where: { sec_id: sec.sec_id },
+        data: { sec_name: newSectionName },
+      });
+    });
+
+    await Promise.all(updatePromises);
+  });
+
+  return { message: "Department updated successfully" };
+}
+
+/**
+ * Description: แก้ไขชื่อฝ่ายย่อย (Section) โดยเพิ่มชื่อแผนกและคำว่า "ฝ่ายย่อย" ให้อัตโนมัติ
+ * Input     : params { deptId, secId } - รหัสแผนกและรหัสฝ่ายย่อย, payload { section } - ชื่อฝ่ายย่อย
+ * Output    : { message: string } - ข้อความแจ้งผลการแก้ไข
+ * Logic     :
+ *   - ดึงชื่อแผนกมาจาก database ก่อน (ถ้าไม่เจอโยน 404)
+ *   - ถ้าชื่อส่วนงานมีคำว่า "ฝ่ายย่อย" อยู่แล้ว → ใช้ชื่อแผนก + ชื่อที่กรอก
+ *   - ถ้าเป็นภาษาอังกฤษ → ใช้ชื่อแผนก + "ฝ่ายย่อย " (มีเว้นวรรค) + ชื่อที่กรอก
+ *   - ถ้าเป็นภาษาไทย → ใช้ชื่อแผนก + "ฝ่ายย่อย" (ไม่เว้นวรรค) + ชื่อที่กรอก
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function editSection(
+  params: ParamEditSecSchema,
+  payload: EditSectionPayload,
+) {
+  const { deptId, secId } = params;
+  const { section } = payload;
+
+  // ดึงชื่อแผนกจาก database
+  const dept = await prisma.departments.findUnique({
+    where: { dept_id: deptId },
+    select: { dept_name: true },
+  });
+
+  // ตรวจสอบว่าแผนกมีอยู่หรือไม่
+  if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
+
+  // จัดรูปแบบชื่อส่วนงานให้มีชื่อแผนกและคำว่า "ฝ่ายย่อย"
+  const newSec = section.includes("ฝ่ายย่อย")
+    ? `${dept.dept_name} ${section}` // มี "ฝ่ายย่อย" อยู่แล้ว
+    : isEnglishText(section)
+      ? `${dept.dept_name} ฝ่ายย่อย ${section}` // ภาษาอังกฤษ เว้นวรรค
+      : `${dept.dept_name} ฝ่ายย่อย${section}`; // ภาษาไทย ไม่เว้นวรรค
+
+  await prisma.sections.update({
+    where: { sec_id: secId },
+    data: { sec_name: newSec },
+  });
+
+  return { message: "Department updated successfully" };
+}
+
+export const departmentService = {
+  getAllDepartment,
+  getSectionById,
+  editDepartment,
+  editSection,
+};

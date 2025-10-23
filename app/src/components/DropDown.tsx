@@ -27,7 +27,8 @@ interface DropDownProps<T extends DropDownItem> {
   searchable?: boolean; // เปิด/ปิดช่องค้นหา
   renderItem?: (item: T) => React.ReactNode; // Custom render function
   filterFunction?: (item: T, searchTerm: string) => boolean; // Custom filter logic
-  className?: string; // CSS class เพิ่มเติม
+  className?: string; // CSS class ของ wrapper
+  triggerClassName?: string;
   emptyMessage?: string; // ข้อความแสดงเมื่อไม่มีข้อมูล
 }
 
@@ -54,6 +55,7 @@ function DropDown<T extends DropDownItem>({
   renderItem,
   filterFunction,
   className = "",
+  triggerClassName = "",
   emptyMessage = "ไม่พบข้อมูล",
 }: Readonly<DropDownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false); // สถานะเปิด/ปิด dropdown
@@ -177,10 +179,10 @@ function DropDown<T extends DropDownItem>({
   );
 
   return (
-    <div className={`relative ${className} w-[250px]`} ref={dropdownRef}>
+    <div className={`relative w-[250px] ${className}`} ref={dropdownRef}>
       {/* Label */}
       {label && (
-        <label className="block text-sm font-medium text-[#000000] mb-1.5">
+        <label className="block text-[16px] font-medium text-[#000000] mb-1.5">
           {label}
         </label>
       )}
@@ -191,8 +193,8 @@ function DropDown<T extends DropDownItem>({
         onClick={handleToggle}
         disabled={disabled}
         className={`
-            w-full px-4 py-2.5 
-            bg-white 
+            w-full px-4 py-2.5
+            bg-white
             border border-[#D9D9D9]
             rounded-[16px]
             flex items-center justify-between
@@ -200,10 +202,11 @@ function DropDown<T extends DropDownItem>({
             transition-all duration-200
             ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-gray-300 cursor-pointer"}
             ${isOpen ? "border-[#D9D9D9]" : ""}
+            ${triggerClassName}
             `}
       >
         <span
-          className={`text-sm`}
+          className={`text-[16px]`}
           style={{ color: value ? value.textColor || "#000000" : "#9E9E9E" }}
         >
           {value?.label || placeholder}
@@ -236,7 +239,7 @@ function DropDown<T extends DropDownItem>({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="w-full pl-9 pr-3 py-2 text-sm  rounded-[16px] text-[#000000] placeholder:text-[#9E9E9E] focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-2 text-[16px] rounded-[16px] text-[#000000] placeholder:text-[#9E9E9E] focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
                 />
               </div>
             </div>
@@ -254,7 +257,7 @@ function DropDown<T extends DropDownItem>({
                     disabled={item.disabled}
                     className={`
                         w-full px-4 py-2.5
-                        text-left
+                        text-left text-[16px]
                         transition-colors duration-150
                         ${item.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-[#EBF3FE] cursor-pointer"}
                         `}
@@ -264,7 +267,7 @@ function DropDown<T extends DropDownItem>({
                 ))}
               </div>
             ) : (
-              <div className="px-4 py-3 text-center text-sm text-gray-500">
+              <div className="px-4 py-3 text-center text-[16px] text-gray-500">
                 {emptyMessage}
               </div>
             )}

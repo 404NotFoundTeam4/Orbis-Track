@@ -23,6 +23,8 @@ export function routes(app: Express) {
 
   api.use("/auth", authMiddleware, fetchMeRouter);
 
+  api.use("/departments", departmentRouter);
+
   api.get("/health", (_req, res) => res.json({ ok: true }));
 
   api.use("/accounts", accountsRouter);

@@ -6,6 +6,11 @@ export const idParamSchema = z.object({
     id: z.coerce.number().positive(),
 });
 
+export const paramEditSecSchema = z.object({
+    deptId: z.coerce.number().positive(),
+    secId: z.coerce.number().positive()
+})
+
 export const departmentSchema = z.object({
     dept_id: z.coerce.number(),
     dept_name: z.string()
@@ -25,8 +30,22 @@ export const getAllSectionSchema = z.object({
     sections: z.array(sectionSchema)
 })
 
+export const editDepartmentPayload = z.object({
+    department: z.string().min(1)
+})
+
+export const editSectionPayload = z.object({
+    section: z.string().min(1)
+})
+
+export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
+
+export type EditSectionPayload = z.infer<typeof editSectionPayload>;
+
 export type GetAllDepartmentSchema = z.infer<typeof getAllDepartmentSchema>;
 
 export type GetAllSectionSchema = z.infer<typeof getAllSectionSchema>;
 
 export type IdParamDto = z.infer<typeof idParamSchema>;
+
+export type ParamEditSecSchema = z.infer<typeof paramEditSecSchema>;

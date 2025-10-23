@@ -1,8 +1,11 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import Dropdown from "../components/DropDown";
 import Button from "../components/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { AlertDialog } from "../components/AlertDialog";
+import { Icon } from "@iconify/react";
+import { useToast } from "../components/Toast";
 
 /**
  * Component: SimpleExample
@@ -165,6 +168,207 @@ function ButtonExamples() {
   );
 }
 
+function AlertDemoPage() {
+  const [open, setOpen] = React.useState<
+    | null
+    | "add-dept"
+    | "edit-sub"
+    | "add-user"
+    | "delete-dept"
+    | "deactivate"
+    | "return-device"
+  >(null);
+
+  // ค่ามาตรฐานตามภาพ (แก้ตรงนี้ครั้งเดียวทุก dialog จะตาม)
+  const spec = {
+    width: 610,
+    radius: 16,
+    padX: 83,
+    padY: 43,
+    ringThickness: 4,
+    iconSize: 104,
+    buttonsGap: 36,
+    buttonW: 112,
+    buttonH: 46,
+    titleTextPx: 32,
+    descTextPx: 18,
+    buttonTextPx: 18,
+  } as const;
+
+  const Box = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <div className="mb-3 text-xs text-violet-200">{title}</div>
+      <div className="rounded-2xl bg-white p-6 text-center shadow">
+        {children}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen w-full bg-neutral-900 p-6 text-white">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Box title="ยืนยันการเพิ่มแผนก? / success">
+          <Button
+            icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
+            onClick={() => setOpen("add-dept")}
+          >
+            Open
+          </Button>
+        </Box>
+
+        <Box title="ยืนยันการแก้ไขฝ่ายย่อย? / warning (ปุ่มยังเขียว)">
+          <Button
+            icon={<Icon icon="mdi:pencil" width="22" height="22" />}
+            onClick={() => setOpen("edit-sub")}
+          >
+            Open
+          </Button>
+        </Box>
+
+        <Box title="ยืนยันการเพิ่มบัญชีผู้ใช้ใหม่? / success">
+          <Button
+            icon={
+              <Icon icon="mdi:account-plus-outline" width="22" height="22" />
+            }
+            onClick={() => setOpen("add-user")}
+          >
+            Open
+          </Button>
+        </Box>
+
+        <Box title="ลบแผนกซ่อมบำรุง / danger">
+          <Button
+            variant="danger"
+            icon={<Icon icon="mdi:trash-can-outline" width="22" height="22" />}
+            onClick={() => setOpen("delete-dept")}
+          >
+            Open
+          </Button>
+        </Box>
+
+        <Box title="ปิดการใช้งานบัญชีนี้ / danger">
+          <Button
+            variant="danger"
+            icon={<Icon icon="mdi:power" width="22" height="22" />}
+            onClick={() => setOpen("deactivate")}
+          >
+            Open
+          </Button>
+        </Box>
+
+        <Box title="ยืนยันการรับคืนอุปกรณ์? / success">
+          <Button
+            icon={
+              <Icon icon="mdi:clipboard-check-outline" width="22" height="22" />
+            }
+            onClick={() => setOpen("return-device")}
+          >
+            Open
+          </Button>
+        </Box>
+      </div>
+
+      {/* Dialogs */}
+      <AlertDialog
+        open={open === "add-dept"}
+        onOpenChange={(o) => !o && setOpen(null)}
+        tone="success"
+        title="ยืนยันการเพิ่มแผนก?"
+        description="ข้อมูลจะถูกเพิ่มลงในรายการภายในคลังของคุณ"
+        icon={<Icon icon="mdi:clipboard-plus-outline" className="h-16 w-16" />}
+        {...spec}
+        onConfirm={() => console.log("confirm add dept")}
+      />
+
+      <AlertDialog
+        open={open === "edit-sub"}
+        onOpenChange={(o) => !o && setOpen(null)}
+        tone="warning"
+        title="ยืนยันการแก้ไขฝ่ายย่อย?"
+        description="การแก้ไขรายการนี้สามารถถูกบันทึกได้"
+        icon={<Icon icon="mdi:pencil-circle-outline" className="h-16 w-16" />}
+        {...spec}
+        onConfirm={() => console.log("confirm edit sub")}
+      />
+
+      <AlertDialog
+        open={open === "add-user"}
+        onOpenChange={(o) => !o && setOpen(null)}
+        tone="success"
+        title="ยืนยันการเพิ่มบัญชีผู้ใช้ใหม่?"
+        icon={<Icon icon="mdi:account-plus-outline" className="h-16 w-16" />}
+        {...spec}
+        onConfirm={() => console.log("confirm add user")}
+      />
+
+      <AlertDialog
+        open={open === "delete-dept"}
+        onOpenChange={(o) => !o && setOpen(null)}
+        tone="danger"
+        title="คุณแน่ใจหรือไม่ว่าต้องการลบแผนกซ่อมบำรุง?"
+        description="คำสั่งนี้ไม่สามารถกู้คืนได้"
+        icon={<Icon icon="mdi:alert-outline" className="h-16 w-16" />}
+        {...spec}
+        onConfirm={() => console.log("confirm delete dept")}
+      />
+
+      <AlertDialog
+        open={open === "deactivate"}
+        onOpenChange={(o) => !o && setOpen(null)}
+        tone="danger"
+        title="คุณแน่ใจหรือไม่ว่าต้องการปิดการใช้งานบัญชีนี้?"
+        description="การดำเนินการนี้ไม่สามารถยกเลิกได้"
+        icon={<Icon icon="mdi:account-off-outline" className="h-16 w-16" />}
+        {...spec}
+        onConfirm={() => console.log("confirm deactivate")}
+      />
+
+      <AlertDialog
+        open={open === "return-device"}
+        onOpenChange={(o) => !o && setOpen(null)}
+        tone="success"
+        title="ยืนยันการรับคืนอุปกรณ์?"
+        description="การดำเนินการนี้สามารถยกเลิกได้"
+        icon={
+          <Icon icon="mdi:package-variant-closed-check" className="h-16 w-16" />
+        }
+        {...spec}
+        onConfirm={() => console.log("confirm return device")}
+      />
+    </div>
+  );
+}
+
+function DemoButtons() {
+  const { push } = useToast();
+
+  return (
+    <div className="space-x-2">
+      <button
+        className="rounded-full bg-rose-500 px-4 py-2 text-white"
+        onClick={() =>
+          push({ tone: "confirm", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" })
+        }
+      >
+        ลบสำเร็จ (แดง)
+      </button>
+
+      <button
+        className="rounded-full bg-emerald-500 px-4 py-2 text-white"
+        onClick={() => push({ tone: "danger", message: "ลบอุปกรณ์เสร็จสิ้น!" })}
+      >
+        บันทึกสำเร็จ (เขียว)
+      </button>
+    </div>
+  );
+}
+
 function TestDropDownPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
@@ -172,6 +376,8 @@ function TestDropDownPage() {
       <SimpleExample />
       <TableFilterExample />
       <ButtonExamples />
+      <AlertDemoPage />
+      <DemoButtons />
     </div>
   );
 }

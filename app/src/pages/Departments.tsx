@@ -326,11 +326,7 @@ const Departments = () => {
                         setModalOpen(true);
                       }}
                     >
-                      <Icon
-                        icon="prime:pen-to-square"
-                        width="28"
-                        height="28"
-                      />
+                      <Icon icon="prime:pen-to-square" width="28" height="28" />
                     </button>
                     <button
                       type="submit"
@@ -384,9 +380,6 @@ const Departments = () => {
                               }}
                             >
                               <Icon
-                                onClick={() =>
-                                  alert(`Edit Section ${section.sec_id}`)
-                                }
                                 icon="prime:pen-to-square"
                                 width="28"
                                 height="28"
@@ -398,9 +391,6 @@ const Departments = () => {
                               title="ลบ"
                             >
                               <Icon
-                                onClick={() =>
-                                  alert(`Delete Section ${section.sec_id}`)
-                                }
                                 icon="solar:trash-bin-trash-outline"
                                 width="28"
                                 height="28"

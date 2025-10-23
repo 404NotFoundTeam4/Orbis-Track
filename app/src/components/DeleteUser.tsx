@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import UsersService from "../stores/UsersService.js"; 
+import UsersService from "../services/UsersService.js"; 
 import { createPortal } from "react-dom";
 
 type Props = {
@@ -34,9 +34,6 @@ export default function DeleteUser({ open, user, onClose, onDeleted }: Props) {
       const resp = await UsersService.softDelete(user.us_id);  // ใช้ Service
       onDeleted?.(resp.us_id);
       onClose();
-
-
-
   };
 
   //  เรนเดอร์เป็น Portal ไปที่ document.body กันปัญหา overlay/z-index/stack 

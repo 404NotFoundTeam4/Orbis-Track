@@ -1,63 +1,47 @@
-import { useState, useEffect } from "react";
-import { useUserStore } from "../stores/userStore";
-
-import UserModal from "../components/UserModal.js";
+import { useState } from "react";
+import UserModal from "../components/UserModal";
 
 export const Users = () => {
-    const [users, setUsers] = useState([
-    {
-      us_id: 1,
-      us_emp_code: "EMP001",
-      us_firstname: "ทศพล",
-      us_lastname: "อนุชัย",
-      us_username: "tosapon",
-      us_email: "tosapon@example.com",
-      us_phone: "0812345678",
-      us_images: null,
-      us_role: "Admin",
-      us_dept_name: "ฝ่ายไอที",
-      us_sec_name: "Support",
-    }
-  ]);
-  
-  const { user } = useUserStore();
-
-  // ✅ state สำหรับเปิด-ปิด Modal
   const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  // ✅ โหลดข้อมูลผู้ใช้
-
-
-  // ✅ ฟังก์ชันตอนกด “บันทึก” ใน Modal
-  const handleUserSubmit = (data) => {
-    console.log("ข้อมูลที่ return ออกมาจาก UserModal:", data);
-
-    // ตัวอย่าง: จะส่งไป backend ก็ทำได้ เช่น
-    // await axios.post("/api/users", data);
-
-    // ปิด Modal
-    setShowModal(false);
+  const mockUser = {
+    us_id: 5,
+    us_emp_code: "EMP005",
+    us_firstname: "พัชรี",
+    us_lastname: "จิตรมงคล",
+    us_username: "patcharee",
+    us_email: "patcharee@example.com",
+    us_phone: "0912223333",
+    us_images: "https://i.pravatar.cc/150?img=5",
+    us_role: "HR",
+    us_dept_id: 105,
+    us_sec_id: 205,
+    us_is_active: true,
+    created_at: "2025-10-23",
+    us_dept_name: "ฝ่ายทรัพยากรบุคคล",
+    us_sec_name: "ฝึกอบรมและพัฒนา",
   };
-
+  
   return (
     <div className="p-10">
-      <h1 className="text-2xl font-bold mb-6">จัดการบัญชีผู้ใช้</h1>
-
-      {/* ปุ่มเปิด Modal */}
       <button
-        onClick={() => setShowModal(true)}
+        onClick={() => {
+          setSelectedUser(mockUser);
+          setShowModal(true);
+        }}
         className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full"
       >
-        + เพิ่มผู้ใช้ใหม่
+        แก้ไขผู้ใช้
       </button>
 
-      {/* ✅ Modal */}
       {showModal && (
         <UserModal
-        typeform="edit"
-         users={users}
+          typeform="delete"
+          path=""
+          keyvalue={["us_id"]}
+          user={mockUser}
           onClose={() => setShowModal(false)}
-          onSubmit={handleUserSubmit}
         />
       )}
     </div>

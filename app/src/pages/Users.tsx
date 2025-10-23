@@ -78,7 +78,7 @@ export const Users = () => {
   const roleOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
+      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
       label: r,
@@ -251,6 +251,24 @@ export const Users = () => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
+
+  const mockUser = {
+    us_id: 5,
+    us_emp_code: "EMP005",
+    us_firstname: "พัชรี",
+    us_lastname: "จิตรมงคล",
+    us_username: "patcharee",
+    us_email: "patcharee@example.com",
+    us_phone: "0912223333",
+    us_images: "https://i.pravatar.cc/150?img=5",
+    us_role: "HR",
+    us_dept_id: 105,
+    us_sec_id: 205,
+    us_is_active: true,
+    created_at: "2025-10-23",
+    us_dept_name: "ฝ่ายทรัพยากรบุคคล",
+    us_sec_name: "ฝึกอบรมและพัฒนา",
+  };
 
   return (
     <div className="w-full min-h-screen flex flex-col p-4">

@@ -70,7 +70,7 @@ export const Navbar = () => {
           <div className="text-left">
             {/* 🏠 หน้าหลัก */}
             <Link
-              to="/users"
+              to="/home"
               onClick={closeDropdown}
               className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] h-[50px] flex items-center w-full gap-2 transition-colors duration-200"
             >
@@ -214,7 +214,7 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <main className="flex-1 m-6 bg-[#FAFAFA] ">
+        <main className="flex-1 p-6 bg-[#FAFAFA] ">
           <div className=" w-full min-h-[calc(100vh-150px)]  ">
             <Outlet />
           </div>

@@ -133,13 +133,13 @@ export function Otppassword() {
             </button>
 
             {/* ปุ่มกลับ */}
-            <button
-              type="button"
+            <a
+            href="/login"
               className="mt-4 text-gray-500 hover:text-sky-500 transition flex items-center justify-center 
                 gap-1 mx-auto text-[32px] py-[15px] w-[596px] h-[76px]"
             >
               <span>←</span> กลับไปหน้าเข้าสู่ระบบ
-            </button>
+            </a>
           </form>
         </div>
       </div>

@@ -25,7 +25,7 @@ type UserModalProps = {
   onClose?: () => void;
   onSubmit?: (data: Partial<UserApiData>) => void;
 
-   keyvalue: (keyof UserApiData)[] | "all";
+  keyvalue: (keyof UserApiData)[] | "all";
 };
 
 export default function UserModal({
@@ -62,7 +62,7 @@ export default function UserModal({
   }, [user, typeform]);
 
   //  filter key ตามที่ส่งมาจาก props (keyvalue)
-   useEffect(() => {
+  useEffect(() => {
     let filtered: Partial<UserApiData> = {};
 
     if (keyvalue === "all") {
@@ -78,7 +78,6 @@ export default function UserModal({
     setFormOutput(filtered);
     onSubmit?.(filtered);
   }, [formData, keyvalue]);
-
 
   //  handle input
   const handleChange = (
@@ -103,7 +102,7 @@ export default function UserModal({
       let res;
 
       //  เตรียม payload ตาม keyvalue
-     const payload = keyvalue === "all" ? formData : formOutput;
+      const payload = keyvalue === "all" ? formData : formOutput;
 
       //  เรียก API ตาม typeform
       if (typeform === "add") {
@@ -115,7 +114,7 @@ export default function UserModal({
       }
 
       // console.log(" API Response:", res?.data);
-    console.log(formOutput)
+      console.log(formOutput);
       if (onSubmit) onSubmit(payload);
       if (onClose) onClose();
     } catch (err) {
@@ -123,7 +122,7 @@ export default function UserModal({
     }
   };
 
- return (
+  return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
       <div className="relative bg-white rounded-[24px] p-8 w-[804px] max-w-[95%] shadow-2xl border flex flex-col">
         {/* ปุ่มปิด */}

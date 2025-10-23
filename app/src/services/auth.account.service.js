@@ -1,8 +1,8 @@
 import api from "../api/axios";
 
 export const login = async (username, passwords,isRemember) => {
-  const user = { username, passwords,isRemember};
-  const res = await api.post("/login", user);
+  const account = { username, passwords,isRemember};
+  const res = await api.post("/login", account);
   return res.data; // ส่งต่อข้อมูลจาก backend
 };
 export const user_data = async (token) => {
@@ -13,8 +13,15 @@ export const user_data = async (token) => {
   });
   return res.data.data
 };
-export const addaccount = async (username, passwords,isRemember) => {
-  const user = { username, passwords,isRemember};
-  const res = await api.post("/login", user);
+
+export const ResetPassword =async (Password,ConfirmPassword) =>{
+const res = await api.post()
+return res;
+
+}
+
+export const resetpassword = async (username,password,passwordconfrim) => {
+  const account = { username, passwords,isRemember};
+  const res = await api.post("/login", account);
   return res.data; // ส่งต่อข้อมูลจาก backend
 };

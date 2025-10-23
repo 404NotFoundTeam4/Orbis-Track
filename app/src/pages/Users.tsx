@@ -1,8 +1,8 @@
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
-import Filter from "../components/Filter";
+import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";
-import AddButton from "../components/AddButton";
+import Dropdown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import axios from "axios";
 
@@ -35,55 +35,80 @@ type Department = {
   dept_name: string;
 };
 
+/**
+ * Description: คอมโพเนนต์หลักจัดการผู้ใช้งาน
+ * - ดึงข้อมูลผู้ใช้จาก API
+ * - มีฟังก์ชัน filter, search, sort, pagination
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
 export const Users = () => {
   //ตั้งข้อมูล section ไว้ใช้ใน filter
   const [sections, setSections] = useState<Section[]>([]);
   const sectionOptions = [
-    { label: "ทั้งหมด", value: "" },
-    ...sections.map((section) => ({
-      label: section.sec_name,
-      value: section.sec_name,
+    { id: "", label: "ทั้งหมด", value: "" },
+    ...sections.map((s) => ({
+      id: s.sec_id,
+      label: s.sec_name,
+      value: s.sec_name,
     })),
   ];
-  const [sectionFilter, setSectionFilter] = useState({ option: "" });
+  const [sectionFilter, setSectionFilter] = useState<{
+    id: number | string;
+    label: string;
+    value: string;
+  } | null>(null);
   //ตั้งข้อมูล department ไว้ใช้ใน filter
   const [departments, setDepartments] = useState<Department[]>([]);
   const departmentOptions = [
-    { label: "ทั้งหมด", value: "" },
-    ...departments.map((department) => ({
-      label: department.dept_name,
-      value: department.dept_name,
+    { id: "", label: "ทั้งหมด", value: "" },
+    ...departments.map((d) => ({
+      id: d.dept_id,
+      label: d.dept_name,
+      value: d.dept_name,
     })),
   ];
-  const [departmentFilter, setDepartmentFilters] = useState({ option: "" });
+  const [departmentFilter, setDepartmentFilter] = useState<{
+    id: number | string;
+    label: string;
+    value: string;
+  } | null>(null);
 
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
   const roleOptions = [
-    { label: "ทั้งหมด", value: "" },
+    { id: "", label: "ทั้งหมด", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
-    ).map((r) => ({
+      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
+    ).map((r, index) => ({
+      id: index + 1,
       label: r,
       value: r,
     })),
   ];
-  const [roleFilter, setRoleFilters] = useState({ option: "" });
+  // const [roleFilter, setRoleFilters] = useState({ option: "" });
+  const [roleFilter, setRoleFilter] = useState<{
+    id: number | string;
+    label: string;
+    value: string;
+  } | null>(null);
 
   //Search Filter
   const [searchFilter, setSearchFilters] = useState({
     search: "",
   });
 
-  //ดึงข้อมูล api จาก back-end
+  /**
+   * Description: ดึงข้อมูลผู้ใช้/แผนก/ฝ่ายย่อยจาก API
+   * Author: Nontapat Sinthum (Guitar) 66160104
+   */
   useEffect(() => {
     const fetchData = async () => {
-      const res = await axios.get("/api/users");
+      const res = await axios.get("/api/accounts");
       const data = res.data;
 
       setSections(data.data.sections || []);
       setDepartments(data.data.departments || []);
-      setusers(data.data.userWithDetails || []);
+      setusers(data.data.accountsWithDetails || []);
     };
 
     fetchData();
@@ -95,7 +120,6 @@ export const Users = () => {
    * Output : `${day} / ${month} / ${year}`
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
-
   const FormatThaiDate = (iso: string | Date) => {
     const d = new Date(iso);
     const day = d.getDate(); // วัน
@@ -126,6 +150,10 @@ export const Users = () => {
     }
   };
 
+  /**
+   * Description: กรองและ sort users ตาม search/filter/sort
+   * Author: Nontapat Sinthum (Guitar) 66160104
+   */
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
     let result = users.filter((u) => {
@@ -139,16 +167,15 @@ export const Users = () => {
           u.us_dept_name,
           u.us_sec_name,
           u.us_phone,
-          // u.dateAdded,
         ]
           .join(" ")
           .toLowerCase()
           .includes(search);
-      const byRole = !roleFilter.option || u.us_role === roleFilter.option;
+      const byRole = !roleFilter?.value || u.us_role === roleFilter.value;
       const byDep =
-        !departmentFilter.option || u.us_dept_name === departmentFilter.option;
+        !departmentFilter?.value || u.us_dept_name === departmentFilter.value;
       const bySec =
-        !sectionFilter.option || u.us_sec_name === sectionFilter.option;
+        !sectionFilter?.value || u.us_sec_name === sectionFilter.value;
       return bySearch && byRole && byDep && bySec;
     });
 
@@ -248,19 +275,31 @@ export const Users = () => {
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <SearchFilter onChange={setSearchFilters} />
             <div className="flex space-x-[4px]">
-              <Filter
-                onChange={(value) => setRoleFilters({ option: value })}
-                option={roleOptions}
+              <Dropdown
+                items={roleOptions}
+                value={roleFilter}
+                onChange={setRoleFilter}
+                placeholder="ตำแหน่ง"
               />
-              <Filter
-                onChange={(value) => setDepartmentFilters({ option: value })}
-                option={departmentOptions}
+              <Dropdown
+                items={departmentOptions}
+                value={departmentFilter}
+                onChange={setDepartmentFilter}
+                placeholder="แผนก"
               />
-              <Filter
-                onChange={(value) => setSectionFilter({ option: value })}
-                option={sectionOptions}
+              <Dropdown
+                items={sectionOptions}
+                value={sectionFilter}
+                onChange={setSectionFilter}
+                placeholder="ฝ่ายย่อย"
               />
-              <AddButton label="บัญชีผู้ใช้" />
+              {/* <AddButton label="บัญชีผู้ใช้" /> */}
+              <Button
+                size="md"
+                icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
+              >
+                เพิ่มบัญชีผู้ใช้
+              </Button>
             </div>
           </div>
         </div>
@@ -386,7 +425,7 @@ export const Users = () => {
               <div
                 key={u.us_id}
                 // 400px_100px_203px_230px_188px_179px_166px_81px
-                className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px] 
+                className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
                  items-center hover:bg-gray-50 text-[16px] gap-3"
               >
                 {/* ชื่อผู้ใช้ */}

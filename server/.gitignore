@@ -35,3 +35,4 @@ Thumbs.db
 /src/generated/prisma
 
 /generated/prisma
+*.zod

@@ -36,7 +36,15 @@
   "dependencies": {
     "@iconify/react": "^6.0.2",
     "@types/ioredis": "^4.28.10",
-    "axios": "^1.12.2",
     "ioredis": "^5.7.0"
+  },
+  "devDependencies": {
+    "@iconify/tailwind": "^1.2.0",
+    "@iconify/tailwind4": "^1.0.6",
+    "argon2": "^0.44.0",
+    "axios": "^1.12.2",
+    "ioredis": "^5.7.0",
+    "multer": "^2.0.2",
+    "@types/multer": "^2.0.0"
   }
 }

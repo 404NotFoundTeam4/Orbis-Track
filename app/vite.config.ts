@@ -6,7 +6,7 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    port: 5173,
+    port: 4040,
     proxy: {
       '/api': {
         target: 'http://server:4041',

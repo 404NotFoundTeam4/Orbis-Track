@@ -2,6 +2,7 @@ import { App } from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./infrastructure/logger.js";
 import redisPkg from "./infrastructure/redis.cjs"; // default import ทั้งก้อน
+import emailService from "./utils/email/email.service.js";
 const { closeRedis } = redisPkg; // ค่อย destructure เอา closeRedis
 
 /**
@@ -31,6 +32,7 @@ const shutdown =
                 logger.info({ sig }, "Shutting down gracefully...");
                 await closeHttpServer();
                 await closeRedis();
+                await emailService.close();
                 logger.info("Shutdown complete. Bye Bye!");
                 process.exit(0);
             } catch (err) {

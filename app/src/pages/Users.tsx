@@ -73,7 +73,7 @@ export const Users = () => {
     value: string;
   } | null>(null);
 
-  const [users, setusers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
   const roleOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
@@ -108,7 +108,7 @@ export const Users = () => {
 
       setSections(data.data.sections || []);
       setDepartments(data.data.departments || []);
-      setusers(data.data.accountsWithDetails || []);
+      setUsers(data.data.accountsWithDetails || []);
     };
 
     fetchData();
@@ -121,6 +121,7 @@ export const Users = () => {
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
   const FormatThaiDate = (iso: string | Date) => {
+    if (!iso) return "-"; // ถ้าไม่มีวันที่ ให้คืน "-"
     const d = new Date(iso);
     const day = d.getDate(); // วัน
     const month = d.toLocaleString("th-TH", { month: "short" }); // เดือนแบบย่อ
@@ -252,26 +253,8 @@ export const Users = () => {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
-  const mockUser = {
-    us_id: 5,
-    us_emp_code: "EMP005",
-    us_firstname: "พัชรี",
-    us_lastname: "จิตรมงคล",
-    us_username: "patcharee",
-    us_email: "patcharee@example.com",
-    us_phone: "0912223333",
-    us_images: "https://i.pravatar.cc/150?img=5",
-    us_role: "HR",
-    us_dept_id: 105,
-    us_sec_id: 205,
-    us_is_active: true,
-    created_at: "2025-10-23",
-    us_dept_name: "ฝ่ายทรัพยากรบุคคล",
-    us_sec_name: "ฝึกอบรมและพัฒนา",
-  };
-
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
+    <div className="w-full min-h-screen flex flex-col">
       <div className="flex-1">
         {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">
@@ -331,7 +314,11 @@ export const Users = () => {
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
-              <button type="button" onClick={() => HandleSort("us_firstname")}>
+              <button
+                type="button"
+                onClick={() => HandleSort("us_firstname")}
+                className="cursor-pointer"
+              >
                 <Icon
                   icon={
                     sortField === "us_firstname"
@@ -348,7 +335,11 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ตำแหน่ง
-              <button type="button" onClick={() => HandleSort("us_role")}>
+              <button
+                type="button"
+                onClick={() => HandleSort("us_role")}
+                className="cursor-pointer"
+              >
                 <Icon
                   icon={
                     sortField === "us_role"
@@ -365,7 +356,11 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               แผนก
-              <button type="button" onClick={() => HandleSort("us_dept_name")}>
+              <button
+                type="button"
+                onClick={() => HandleSort("us_dept_name")}
+                className="cursor-pointer"
+              >
                 <Icon
                   icon={
                     sortField === "us_dept_name"
@@ -382,7 +377,11 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ฝ่ายย่อย
-              <button type="button" onClick={() => HandleSort("us_sec_name")}>
+              <button
+                type="button"
+                onClick={() => HandleSort("us_sec_name")}
+                className="cursor-pointer"
+              >
                 <Icon
                   icon={
                     sortField === "us_sec_name"
@@ -402,7 +401,11 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               วันที่เพิ่ม
-              <button type="button" onClick={() => HandleSort("created_at")}>
+              <button
+                type="button"
+                onClick={() => HandleSort("created_at")}
+                className="cursor-pointer"
+              >
                 <Icon
                   icon={
                     sortField === "created_at"
@@ -419,7 +422,11 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               สถานะ
-              <button type="button" onClick={() => HandleSort("us_is_active")}>
+              <button
+                type="button"
+                onClick={() => HandleSort("us_is_active")}
+                className="cursor-pointer"
+              >
                 <Icon
                   icon={
                     sortField === "us_is_active"
@@ -449,7 +456,7 @@ export const Users = () => {
                 {/* ชื่อผู้ใช้ */}
                 <div className="py-2 px-4 flex items-center">
                   <img
-                    src={u.us_images}
+                    src={u.us_images || "/no-image.png"}
                     alt={u.us_firstname}
                     className="w-10 h-10 rounded-full object-cover"
                   />
@@ -457,14 +464,14 @@ export const Users = () => {
                     <div>{`${u.us_firstname} ${u.us_lastname}`}</div>
                     <div>
                       <span className="text-blue-600">{u.us_email} : </span>
-                      <span>{u.us_emp_code}</span>
+                      <span>{u.us_emp_code ?? "-"}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="py-2 px-4">{u.us_role}</div>
-                <div className="py-2 px-4">{u.us_dept_name}</div>
-                <div className="py-2 px-4">{u.us_sec_name}</div>
+                <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
+                <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
                 <div className="py-2 px-4">{u.us_phone}</div>
                 <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
 

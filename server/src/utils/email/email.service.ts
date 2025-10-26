@@ -10,6 +10,7 @@ import {
     welcomeTemplate,
     passwordChangedTemplate,
 } from './templates/index.js';
+import { logger } from '../../infrastructure/logger.js';
 
 /**
  * Interface: ตัวเลือกสำหรับการส่งอีเมล
@@ -71,10 +72,10 @@ class EmailService {
         try {
             await this.transporter.verify();
             this.isVerified = true;
-            console.log('Email service is ready');
+            logger.info('Email service is ready');
         } catch (error) {
             this.isVerified = false;
-            console.error('Email service connection failed:', error);
+            logger.debug(`Email service connection failed: ${error}` );
             throw error;
         }
     }
@@ -106,11 +107,10 @@ class EmailService {
             });
 
             const recipients = Array.isArray(to) ? to.join(', ') : to;
-            console.log(`Email sent to: ${recipients} Successfully`);
+            logger.info(`Email sent to: ${recipients} Successfully`);
         } catch (error) {
             console.error('Email sending failed:', error);
 
-            // ✅ Retry connection if failed
             if (!this.isVerified) {
                 await this.verifyConnection();
             }

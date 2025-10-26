@@ -129,6 +129,7 @@ async function fetchMe(user: AccessTokenPayload) {
  */
 async function sendOtp(payload: SendOtpPayload) {
     const { email } = payload;
+    
     // หา user จากอีเมล
     const user = await prisma.users.findUnique({
         where: { us_email: email },
@@ -160,8 +161,15 @@ async function sendOtp(payload: SendOtpPayload) {
     // ส่ง OTP ทางอีเมล
     await emailService.sendOtp(email, otp);
 
-    logger.info(`📧 OTP sent to ${email}: ${otp}`);
-
+    try {
+        await emailService.sendOtp(email, otp);
+        logger.info(`📧 OTP sent to ${email}: ${otp}`);
+    } catch (error) {
+        logger.error(`❌ Failed to send OTP email to ${email}: ${error}`);
+        // ถ้าส่งเมลไม่ได้ ควร throw error หรือ return error message
+        throw new Error('ไม่สามารถส่ง OTP ได้ กรุณาลองใหม่อีกครั้ง');
+    }
+    
     return {
         message: 'หากอีเมลนี้มีอยู่ในระบบ เราจะส่งรหัส OTP ไปให้',
     };

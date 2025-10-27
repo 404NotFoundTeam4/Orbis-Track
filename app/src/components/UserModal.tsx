@@ -1,6 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import api from "../api/axios.js";
+import DropDown from "./DropDown.js";
+import { AlertDialog, AlertTone } from "./AlertDialog"; 
+import { useToast } from "./Toast";
+
+type Department = {
+  dept_id: number;
+  dept_name: string;
+};
+
+type Section = {
+  sec_id: number;
+  sec_name: string;
+  sec_dept_id: number;
+};
+
+type DropDownItemType = {
+  id: string | number;
+  label: string;
+  value: any;
+};
 
 type UserApiData = {
   us_id: number;
@@ -26,14 +46,18 @@ type UserModalProps = {
   onSubmit?: (data: Partial<UserApiData>) => void;
 
   keyvalue: (keyof UserApiData)[] | "all";
+  departments: Department[];
+  sections: Section[];
 };
 
 export default function UserModal({
-  typeform = "add",
+ typeform = "add",
   user,
   onClose,
   onSubmit,
   keyvalue,
+  departments,
+  sections,
 }: UserModalProps) {
   const [formData, setFormData] = useState<UserApiData>({
     us_id: 0,
@@ -51,9 +75,38 @@ export default function UserModal({
     us_dept_name: "",
     us_sec_name: "",
   });
+  
+
 
   const [formOutput, setFormOutput] = useState<Partial<UserApiData>>({});
 
+  const toast = useToast();
+  const [isEditAlertOpen, setIsEditAlertOpen] = useState(false);
+
+  const handleConfirmEdit = async () => {
+    const payload = keyvalue === "all" ? formData : formOutput;
+    try {
+      // 3.1 เรียก API PUT
+      await api.put(`/accounts/${payload.us_id}`, payload);
+      
+      // 3.2 แสดง Toast (ใช้ .push ตามไฟล์ Toast.tsx)
+      toast.push({
+        message: "การแก้ไขสำเร็จ!",
+        tone: "confirm", 
+      });
+
+      // 3.3 แจ้ง Parent (Users.tsx)
+      if (onSubmit) onSubmit(payload);
+
+    } catch (err) {
+      console.error("❌ Error:", err);
+      // 3.4 แสดง Toast เมื่อล้มเหลว
+      toast.push({
+        message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
+        tone: "danger",
+      });
+    }
+  };
   //  preload user data เมื่อแก้ไข / ลบ
   useEffect(() => {
     if (user && (typeform === "edit" || typeform === "delete")) {
@@ -68,15 +121,8 @@ export default function UserModal({
     if (keyvalue === "all") {
       //  ถ้าเป็น all → เอาทั้ง formData เลย
       filtered = { ...formData };
-    } else {
-      //  ถ้ามี key เฉพาะ → ดึงเฉพาะ key ที่กำหนด
-      keyvalue.forEach((key) => {
-        filtered[key] = formData[key];
-      });
-    }
-
+    } 
     setFormOutput(filtered);
-    onSubmit?.(filtered);
   }, [formData, keyvalue]);
 
   //  handle input
@@ -84,7 +130,21 @@ export default function UserModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "us_dept_id") {
+      setFormData((prev) => ({
+        ...prev,
+        us_dept_id: parseInt(value, 10) || 0,
+        us_sec_id: 0, // รีเซ็ตฝ่ายย่อย เมื่อแผนกเปลี่ยน
+      }));
+    } else if (name === "us_sec_id") {
+      setFormData((prev) => ({
+        ...prev,
+        us_sec_id: parseInt(value, 10) || 0,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   //  handle avatar upload
@@ -98,29 +158,78 @@ export default function UserModal({
 
   //  handle main API call
   const handle = async () => {
-    try {
-      let res;
-
-      //  เตรียม payload ตาม keyvalue
-      const payload = keyvalue === "all" ? formData : formOutput;
-
-      //  เรียก API ตาม typeform
-      if (typeform === "add") {
-        res = await api.post("/accounts", payload);
-      } else if (typeform === "edit") {
-        res = await api.put(`/accounts/${payload.us_id}`, payload);
-      } else if (typeform === "delete") {
-        res = await api.delete(`/users/${payload}`);
-      }
-
-      // console.log(" API Response:", res?.data);
-      console.log(formOutput);
-      if (onSubmit) onSubmit(payload);
-      if (onClose) onClose();
-    } catch (err) {
-      console.error("❌ Error:", err);
+    // ตรวจสอบ ถ้าเป็น 'edit' ให้เปิด Alert
+    if (typeform === "edit") {
+      setIsEditAlertOpen(true);
+      return; // หยุดการทำงานตรงนี้
     }
+    const payload = keyvalue === "all" ? formData : formOutput;
+    console.log(formOutput);
+    if (onSubmit) onSubmit(payload);
   };
+
+  const handleRoleChange = (selectedItem: DropDownItemType) => {
+    setFormData((prev) => ({
+      ...prev,
+      us_role: selectedItem.value, // เก็บค่า string "Admin", "Staff" ฯลฯ
+    }));
+  };
+
+  const handleDepartmentChange = (selectedItem: DropDownItemType) => {
+    setFormData((prev) => ({
+      ...prev,
+      us_dept_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
+      us_sec_id: 0, // รีเซ็ตฝ่ายย่อย
+    }));
+  };
+
+  const handleSectionChange = (selectedItem: DropDownItemType) => {
+    setFormData((prev) => ({
+      ...prev,
+      us_sec_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
+    }));
+  };
+
+  const roleOptions: DropDownItemType[] = [
+    { id: "Admin", label: "Admin", value: "Admin" },
+    { id: "Manager", label: "Manager", value: "Manager" },
+    { id: "HR", label: "HR", value: "HR" },
+    { id: "Staff", label: "Staff", value: "Staff" },
+  ];
+
+  // (Department Options)
+  const departmentOptions = useMemo(() => {
+    return departments.map((dept) => ({
+      id: dept.dept_id,
+      label: dept.dept_name,
+      value: dept.dept_id, // เราเก็บ ID ลงใน value
+    }));
+  }, [departments]);
+
+  // (Section Options) - กรองก่อนแล้วค่อยแปลง
+  const filteredSections = useMemo(() => {
+    if (!formData.us_dept_id) {
+      return [];
+    }
+    return sections.filter((sec) => sec.sec_dept_id === formData.us_dept_id);
+  }, [formData.us_dept_id, sections]);
+
+  const sectionOptions = useMemo(() => {
+    return filteredSections.map((sec) => ({
+      id: sec.sec_id,
+      label: sec.sec_name,
+      value: sec.sec_id, // เราเก็บ ID ลงใน value
+    }));
+  }, [filteredSections]);
+
+  const selectedRole =
+    roleOptions.find((option) => option.value === formData.us_role) || undefined;
+
+  const selectedDepartment =
+    departmentOptions.find((option) => option.id === formData.us_dept_id) || undefined;
+
+  const selectedSection =
+    sectionOptions.find((option) => option.id === formData.us_sec_id) || undefined;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
@@ -140,7 +249,7 @@ export default function UserModal({
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-28 h-28 rounded-full border flex items-center justify-center overflow-hidden bg-gray-50">
+          <div className="w-28 h-28 rounded-full border border-[#a2a2a2] flex items-center justify-center overflow-hidden bg-gray-50">
             {formData.us_images ? (
               <img
                 src={formData.us_images}
@@ -156,14 +265,14 @@ export default function UserModal({
               />
             )}
           </div>
-          <label className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm text-gray-600 cursor-pointer">
+          <label className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#a2a2a2] text-[16px] font-normal text-gray-600 cursor-pointer">
             <input
               type="file"
               accept="image/*"
               className="hidden"
               onChange={handleAvatarChange}
             />
-            <span className="text-base">+ เพิ่มรูปภาพ</span>
+            <span>+ เพิ่มรูปภาพ</span>
           </label>
         </div>
 
@@ -174,8 +283,8 @@ export default function UserModal({
         >
           {/* โปรไฟล์ */}
           <div>
-            <h3 className="text-gray-700 font-medium">โปรไฟล์</h3>
-            <div className="text-sm text-gray-400 mb-3">
+            <h3 className="text-[000000] font-medium text-[18px]">โปรไฟล์</h3>
+            <div className="font-medium text-[#858585] mb-3 text-[16px] ">
               รายละเอียดโปรไฟล์ผู้ใช้
             </div>
             <div className="grid grid-cols-3 gap-y-4">
@@ -184,89 +293,108 @@ export default function UserModal({
                 placeholder="ชื่อจริง"
                 value={formData.us_firstname}
                 onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
+                className="w-[221px] h-[46px] border rounded-[16px] px-4 
+               text-[16px] font-normal text-black 
+               placeholder:text-[#CDCDCD] border-[#a2a2a2]"
               />
               <input
                 name="us_lastname"
                 placeholder="นามสกุล"
                 value={formData.us_lastname}
                 onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
+                className="w-[221px] h-[46px] border rounded-[16px] px-4 
+               text-[16px] font-normal text-black 
+               placeholder:text-[#CDCDCD] border-[#a2a2a2]"
               />
               <input
                 name="us_emp_code"
                 placeholder="รหัสพนักงาน"
                 value={formData.us_emp_code}
                 onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
+                className="w-[221px] h-[46px] border rounded-[16px] px-4 
+               text-[16px] font-normal text-black 
+               placeholder:text-[#CDCDCD] border-[#a2a2a2]"
               />
               <input
                 name="us_email"
                 placeholder="อีเมล"
                 value={formData.us_email}
                 onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
+                className="w-[221px] h-[46px] border rounded-[16px] px-4 
+               text-[16px] font-normal text-black 
+               placeholder:text-[#CDCDCD] border-[#a2a2a2]"
               />
               <input
                 name="us_phone"
                 placeholder="เบอร์โทรศัพท์"
                 value={formData.us_phone}
                 onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
+                className="w-[221px] h-[46px] border rounded-[16px] px-4 
+               text-[16px] font-normal text-black 
+               placeholder:text-[#CDCDCD] border-[#a2a2a2]"
               />
             </div>
           </div>
 
           {/* ตำแหน่งงาน */}
           <div>
-            <h3 className="text-gray-700 font-medium">ตำแหน่งงาน</h3>
-            <div className="text-sm text-gray-400 mb-3">
+            <h3 className="text-[000000] font-medium text-[18px]">
+              ตำแหน่งงาน
+            </h3>
+            <div className="font-medium text-[#858585] mb-3 text-[16px]">
               รายละเอียดตำแหน่งงานของผู้ใช้
             </div>
-            <div className="grid grid-cols-3 gap-y-4">
-              <select
-                name="us_role"
-                value={formData.us_role}
-                onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
-              >
-                <option value="">เลือกตำแหน่ง</option>
-                <option value="Admin">Admin</option>
-                <option value="Manager">Manager</option>
-                <option value="HR">HR</option>
-                <option value="Staff">Staff</option>
-              </select>
-              <input
-                name="us_dept_name"
-                placeholder="ชื่อแผนก"
-                value={formData.us_dept_name}
-                onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
+            <div className="grid grid-cols-3 gap-y-4 gap-x-4">
+              {/* ตำแหน่ง (Role) */}
+              <DropDown
+                items={roleOptions}
+                value={selectedRole}
+                onChange={handleRoleChange}
+                placeholder="เลือกตำแหน่ง"
+                className="w-[221px]" // กำหนดขนาดให้เท่า input
+                searchable={true} // ปิด search bar (เพราะมีแค่ 4 ตัวเลือก)
               />
-              <input
-                name="us_sec_name"
-                placeholder="ฝ่ายย่อย"
-                value={formData.us_sec_name}
-                onChange={handleChange}
-                className="w-[221px] h-[46px] border rounded-[16px] px-4 text-sm"
+
+              {/* แผนก (Department) */}
+              <DropDown
+                items={departmentOptions}
+                value={selectedDepartment}
+                onChange={handleDepartmentChange}
+                placeholder="เลือกแผนก"
+                className="w-[221px]" // กำหนดขนาดให้เท่า input
+                searchable={true} // เปิด search bar
+              />
+
+              {/* ฝ่ายย่อย (Section) */}
+              <DropDown
+                items={sectionOptions}
+                value={selectedSection}
+                onChange={handleSectionChange}
+                placeholder="เลือกฝ่ายย่อย"
+                className="w-[221px]" // กำหนดขนาดให้เท่า input
+                searchable={true} // เปิด search bar
+                disabled={filteredSections.length === 0}
               />
             </div>
           </div>
 
           {/* บัญชี */}
           <div>
-            <h3 className="text-gray-700 font-medium">บัญชี</h3>
-            <div className="text-sm text-gray-400 mb-3">
+            <h3 className="text-[000000] font-medium text-[18px]">บัญชี</h3>
+            <div className="font-medium text-[#858585] mb-3 text-[16px]">
               รายละเอียดบัญชีของผู้ใช้
             </div>
-            <div className="w-[221px] h-[46px] border rounded-[16px] px-4 flex items-center gap-2">
+            <div className="font-medium text-[000000] mb-2 text-[16px]">
+              ชื่อผู้ใช้ (ล็อกอิน)
+            </div>
+            <div className="w-[221px] h-[46px] border rounded-[16px] px-4 flex items-center gap-2 border-[#a2a2a2] text-[16px]">
               <span className="text-gray-500">👤</span>
               <input
                 name="us_username"
                 placeholder="ชื่อผู้ใช้"
                 value={formData.us_username}
                 onChange={handleChange}
-                className="flex-1 border-0 outline-none text-sm"
+                className="flex-1 border-0 outline-none text-[16px]"
               />
             </div>
           </div>
@@ -287,6 +415,16 @@ export default function UserModal({
           </div>
         </form>
       </div>
+      <AlertDialog
+      open={isEditAlertOpen}
+      onOpenChange={setIsEditAlertOpen}
+      title="ยืนยันการแก้ไข"
+      description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
+      tone="warning"
+      onConfirm={handleConfirmEdit}
+      confirmText="ยืนยัน"
+      cancelText="ยกเลิก"
+    />
     </div>
   );
 }

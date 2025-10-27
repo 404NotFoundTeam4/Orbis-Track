@@ -5,6 +5,7 @@ import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import axios from "axios";
+import UserModal from "../components/UserModal";
 
 type User = {
   us_id: number;
@@ -14,7 +15,7 @@ type User = {
   us_username: string;
   us_email: string;
   us_phone: string;
-  us_images: string;
+  us_images: string | null;
   us_role: string;
   us_dept_id: number;
   us_sec_id: number;
@@ -73,12 +74,12 @@ export const Users = () => {
     value: string;
   } | null>(null);
 
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
   const roleOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
+      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
       label: r,
@@ -97,6 +98,88 @@ export const Users = () => {
     search: "",
   });
 
+  //  เพิ่ม State สำหรับ Modal และการ Refresh
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+ // สร้างฟังก์ชันสำหรับจัดการ Modal
+  const handleOpenAddModal = () => {
+    setSelectedUser(null);
+    setModalType("add");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (user: User) => {
+    setSelectedUser(user);
+    setModalType("edit");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (user: User) => {
+    setSelectedUser(user);
+    setModalType("delete");
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+  };
+  const handleSaveUser = async (updatedData: Partial<User>) => { 
+    // 1. ตรวจสอบ us_id
+    if (!updatedData.us_id) {
+      console.error("Cannot save user: missing us_id for update");
+      return;
+    }
+
+    try {
+        //  เรียก API PUT/PATCH เพื่อแก้ไขข้อมูล
+        const response = await axios.put(`/api/accounts/${updatedData.us_id}`, updatedData);
+        console.log(`User ID ${updatedData.us_id} updated successfully:`, response.data);
+
+        // 2. อัปเดต State 'users' ใน Frontend (แสดงผลทันที)
+        setusers((prevUsers) => {
+          return prevUsers.map((user) => {
+            if (user.us_id === updatedData.us_id) {
+              // ผสานข้อมูลที่แก้ไขเข้ามา
+              const mergedUser = { ...user, ...updatedData };
+              
+              // หาชื่อแผนกและฝ่ายย่อยใหม่
+              const dept = departments.find((d) => d.dept_id === mergedUser.us_dept_id);
+              const sec = sections.find((s) => s.sec_id === mergedUser.us_sec_id);
+              
+              // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
+              const newDeptName = dept ? dept.dept_name : user.us_dept_name; 
+              const newSecName = sec ? sec.sec_name : '-'; 
+
+              return {
+                ...mergedUser,
+                us_dept_name: newDeptName,
+                us_sec_name: newSecName,
+              };
+            }
+            return user;
+          });
+        });
+
+    } catch (error) {
+        // จัดการข้อผิดพลาด
+        console.error("Error updating user via API:", error);
+        alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+
+    } finally {
+        // 3. ปิด Modal เสมอ ไม่ว่า API จะสำเร็จหรือล้มเหลว
+        handleCloseModal(); 
+    }
+  };
+
+  const handleModalSubmit = () => {
+    handleCloseModal();
+    // สั่งให้ refresh ข้อมูลใหม่
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
   /**
    * Description: ดึงข้อมูลผู้ใช้/แผนก/ฝ่ายย่อยจาก API
    * Author: Nontapat Sinthum (Guitar) 66160104
@@ -108,11 +191,11 @@ export const Users = () => {
 
       setSections(data.data.sections || []);
       setDepartments(data.data.departments || []);
-      setUsers(data.data.accountsWithDetails || []);
+      setusers(data.data.accountsWithDetails || []);
     };
 
     fetchData();
-  }, []);
+  }, [refreshTrigger]);
 
   /**
    * Description: แปลงวันที่
@@ -121,7 +204,6 @@ export const Users = () => {
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
   const FormatThaiDate = (iso: string | Date) => {
-    if (!iso) return "-"; // ถ้าไม่มีวันที่ ให้คืน "-"
     const d = new Date(iso);
     const day = d.getDate(); // วัน
     const month = d.toLocaleString("th-TH", { month: "short" }); // เดือนแบบย่อ
@@ -254,7 +336,7 @@ export const Users = () => {
   }, [filtered, page, pageSize]);
 
   return (
-    <div className="w-full min-h-screen flex flex-col">
+    <div className="w-full min-h-screen flex flex-col p-4">
       <div className="flex-1">
         {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">
@@ -298,6 +380,7 @@ export const Users = () => {
               <Button
                 size="md"
                 icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
+                onClick={handleOpenAddModal}
               >
                 เพิ่มบัญชีผู้ใช้
               </Button>
@@ -314,11 +397,7 @@ export const Users = () => {
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
-              <button
-                type="button"
-                onClick={() => HandleSort("us_firstname")}
-                className="cursor-pointer"
-              >
+              <button type="button" onClick={() => HandleSort("us_firstname")}>
                 <Icon
                   icon={
                     sortField === "us_firstname"
@@ -335,11 +414,7 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ตำแหน่ง
-              <button
-                type="button"
-                onClick={() => HandleSort("us_role")}
-                className="cursor-pointer"
-              >
+              <button type="button" onClick={() => HandleSort("us_role")}>
                 <Icon
                   icon={
                     sortField === "us_role"
@@ -356,11 +431,7 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               แผนก
-              <button
-                type="button"
-                onClick={() => HandleSort("us_dept_name")}
-                className="cursor-pointer"
-              >
+              <button type="button" onClick={() => HandleSort("us_dept_name")}>
                 <Icon
                   icon={
                     sortField === "us_dept_name"
@@ -377,11 +448,7 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               ฝ่ายย่อย
-              <button
-                type="button"
-                onClick={() => HandleSort("us_sec_name")}
-                className="cursor-pointer"
-              >
+              <button type="button" onClick={() => HandleSort("us_sec_name")}>
                 <Icon
                   icon={
                     sortField === "us_sec_name"
@@ -401,11 +468,7 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               วันที่เพิ่ม
-              <button
-                type="button"
-                onClick={() => HandleSort("created_at")}
-                className="cursor-pointer"
-              >
+              <button type="button" onClick={() => HandleSort("created_at")}>
                 <Icon
                   icon={
                     sortField === "created_at"
@@ -422,11 +485,7 @@ export const Users = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">
               สถานะ
-              <button
-                type="button"
-                onClick={() => HandleSort("us_is_active")}
-                className="cursor-pointer"
-              >
+              <button type="button" onClick={() => HandleSort("us_is_active")}>
                 <Icon
                   icon={
                     sortField === "us_is_active"
@@ -456,7 +515,7 @@ export const Users = () => {
                 {/* ชื่อผู้ใช้ */}
                 <div className="py-2 px-4 flex items-center">
                   <img
-                    src={u.us_images || "/no-image.png"}
+                    src={u.us_images}
                     alt={u.us_firstname}
                     className="w-10 h-10 rounded-full object-cover"
                   />
@@ -464,14 +523,14 @@ export const Users = () => {
                     <div>{`${u.us_firstname} ${u.us_lastname}`}</div>
                     <div>
                       <span className="text-blue-600">{u.us_email} : </span>
-                      <span>{u.us_emp_code ?? "-"}</span>
+                      <span>{u.us_emp_code}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="py-2 px-4">{u.us_role}</div>
-                <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
-                <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
+                <div className="py-2 px-4">{u.us_dept_name}</div>
+                <div className="py-2 px-4">{u.us_sec_name}</div>
                 <div className="py-2 px-4">{u.us_phone}</div>
                 <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
 
@@ -491,6 +550,7 @@ export const Users = () => {
                   {u.us_is_active ? (
                     <div className="py-2 px-4 flex items-center gap-3">
                       <button
+                        onClick={() => handleOpenEditModal(u)}
                         className="text-[#1890FF] hover:text-[#1890FF]"
                         title="แก้ไข"
                       >
@@ -501,6 +561,7 @@ export const Users = () => {
                         />
                       </button>
                       <button
+                        onClick={() => handleOpenDeleteModal(u)}
                         className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                         title="ลบ"
                       >
@@ -603,6 +664,17 @@ export const Users = () => {
           </div>
         </div>
       </div>
+      {isModalOpen && (
+        <UserModal
+          typeform={modalType}
+          user={selectedUser}
+          onClose={handleCloseModal}
+          onSubmit={modalType === 'edit' ? handleSaveUser : handleModalSubmit}
+          keyvalue="all"
+          departments={departments} 
+          sections={sections}
+        />
+      )}
     </div>
   );
 };

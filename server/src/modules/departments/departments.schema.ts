@@ -1,3 +1,4 @@
+import e from "express";
 import { z } from "zod";
 
 // Author: Nontapat Sinthum (Guitar) 66160104
@@ -37,6 +38,21 @@ export const editDepartmentPayload = z.object({
 export const editSectionPayload = z.object({
     section: z.string().min(1)
 })
+
+/**
+ 
+Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการลบฝ่ายย่อย (Section)
+Input     : { sectionId: string } - ID ของฝ่ายย่อยที่ต้องการลบ (ต้องไม่เป็นค่าว่าง)
+Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้าง { sectionId: string }
+Author    : Niyada Butchan (Da) 66160361*/
+
+//Schema สำหรับ delete section
+export const deleteSectionSchema = z.object({
+  secId: z.coerce.number().positive(),
+});
+
+//Type สำหรับใช้ใน TypeScript 
+export type DeleteSectionPayload = z.infer<typeof deleteSectionSchema>;
 
 export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
 

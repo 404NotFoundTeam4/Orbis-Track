@@ -2,6 +2,11 @@ import type { Request, Response, NextFunction } from "express";
 import { departmentService } from "./departments.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
+import { HttpError } from "../../errors/errors.js";
+
+import { HttpStatus } from "../../core/http-status.enum.js";     
+
+
 import {
   editDepartmentPayload,
   editSectionPayload,
@@ -9,7 +14,11 @@ import {
   GetAllSectionSchema,
   idParamSchema,
   paramEditSecSchema,
+  deleteSectionSchema,
+  
 } from "./departments.schema.js";
+import { en, id } from "zod/locales";
+import e from "express";
 
 /**
  * Description: คอนโทรลเลอร์ Department ดูแลการจัดการข้อมูลแผนกและฝ่ายย่อย (Section)
@@ -86,4 +95,26 @@ export class DepartmentController extends BaseController {
     const { message } = await departmentService.editSection(id, payload);
     return { message };
   }
+
+  /**
+ * Description: Controller สำหรับลบฝ่ายย่อย (Section)
+ * Input     : req.params (ไอดีฝ่ายย่อย)
+ * Output    : { message: string } - ข้อความแจ้งผลการลบ
+ * Author    : Niyada Butchan (Da) 66160361
+ */
+async deleteSection(
+  req: Request,
+  _res: Response, 
+  _next: NextFunction) {
+
+  // deleteSectionSchema จะช่วย validate ให้แน่ใจว่า secId เป็น string ที่ไม่ว่าง
+  const params = deleteSectionSchema.parse(req.params);
+
+  //สั่งให้ service ลบ section ที่มีเลขไอดี = secId ในฐานข้อมูล
+   await departmentService.deleteSection({ sec_id: params.secId });
+  
+  //return response message
+  return { message: "Section deleted successfully" };
+}
+
 }

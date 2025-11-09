@@ -1,13 +1,15 @@
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
+
 import {
   EditDepartmentPayload,
   EditSectionPayload,
   IdParamDto,
   ParamEditSecSchema,
+  DeleteSectionPayload,
 } from "./departments.schema.js";
-
+import { departmentSchema } from "./index.js";
 /**
  * Description: ดึงข้อมูลทุกแผนกจากฐานข้อมูล
  * Input : void
@@ -174,9 +176,42 @@ async function editSection(
   return { message: "Department updated successfully" };
 }
 
+/**
+ * Description: ลบฝ่ายย่อย (Section) ตามรหัสฝ่ายย่อย
+ * Input     : params { secId } - รหัสฝ่ายย่อย
+ * Output    : { message: string } - ข้อความแจ้งผลการลบ
+ * Logic     :
+ *   - ตรวจสอบว่าฝ่ายย่อยมีอยู่หรือไม่ ถ้าไม่เจอ → โยน 404
+ *   - ถ้ามีอยู่ → ลบฝ่ายย่อยจาก database
+ * Author    : Niyada Butchan(Da) 66160361
+ */
+async function deleteSection(params: { sec_id: number }) {
+  // ดึงค่า sec_id จาก object params
+  const { sec_id } = params;
+
+ // ค้นหา section จากฐานข้อมูลด้วย sec_id
+  const section = await prisma.sections.findUnique({
+    where: { sec_id },
+    select: { sec_name: true },
+  });
+
+  if (!section) {
+    throw new HttpError(HttpStatus.NOT_FOUND, "Section Not Found");
+  }
+  
+  //ถ้าพบลบข้อมูล section ออกจากฐานข้อมูล
+  await prisma.sections.delete({
+    where: { sec_id },
+  });
+  //ส่งผลลัพธ์กลับไปให้ controller
+  return { message: "Section deleted successfully" };
+}
+
 export const departmentService = {
   getAllDepartment,
   getSectionById,
   editDepartment,
   editSection,
+  deleteSection, 
 };
+

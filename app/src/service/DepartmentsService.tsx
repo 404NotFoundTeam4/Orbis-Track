@@ -20,6 +20,9 @@ export interface UpdateDepartmentPayload {
 export interface UpdateSectionPayload {
   section: string;
 }
+export interface DeleteSectionPayload {
+  sec_id: number;
+}
 
 // Department API
 export const departmentService = {
@@ -49,6 +52,19 @@ export const departmentService = {
     const { data } = await axios.put(`/api/departments/${id}`, payload);
     return data;
   },
+
+  /**
+ * Description: ลบข้อมูลแผนก (Department) ตามรหัสที่ระบุ
+ * Input     :
+ *   - id (number) - รหัสแผนกที่ต้องการลบ
+ * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการลบ
+ * Endpoint  : DELETE /api/departments/:id
+ * Author    : Niyada Butchan (Da) 66160361
+ */
+  deleteDepartment: async (id: number): Promise<{ message: string }> => {
+    const { data } = await axios.delete(`/api/departments/${id}`);
+    return data;
+  }
 };
 
 // Section API
@@ -74,4 +90,19 @@ export const sectionService = {
     );
     return data;
   },
+
+/**
+ * Description: ลบข้อมูลฝ่ายย่อย (Section) ตามรหัสที่ระบุ
+ * Input     :
+ *   - sec_id (DeleteSectionPayload) - รหัสฝ่ายย่อยที่ต้องการลบ
+ * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการลบ
+ * Endpoint  : DELETE /api/department/section/:sec_id
+ * Author    : Niyada Butchan(Da) 66160361
+ */
+  // ลบ section ด้วย sec_id
+  deleteSection: async (
+    sec_id: DeleteSectionPayload) : Promise<{ message: string }> => {
+    const { data } = await axios.delete(`/api/department/section/${sec_id}`);
+    return data;
+  }
 };

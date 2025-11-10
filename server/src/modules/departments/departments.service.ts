@@ -84,13 +84,16 @@ async function editDepartment(
 ) {
   const { id } = params;
   const { department } = payload;
+  
+  // clean text: ตัดคำว่า "แผนก" ออกจากชื่อที่ผู้ใช้กรอก
+  const cleanedName = department
+    .replace(/^แผนก\s*/g, "") // ลบคำว่า "แผนก" ต้นประโยค
+    .trim(); // ตัดช่องว่างหัวท้าย
 
   // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
-  const newDept = department.includes("แผนก")
-    ? department // มี "แผนก" อยู่แล้ว ใช้ตามที่กรอกมา
-    : isEnglishText(department)
-      ? `แผนก ${department}` // ภาษาอังกฤษ เว้นวรรค
-      : `แผนก${department}`; // ภาษาไทย ไม่เว้นวรรค
+  const newDept = isEnglishText(cleanedName)
+      ? `แผนก ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+      : `แผนก${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
 
   await prisma.$transaction(async (tx) => {
     // ดึงข้อมูลแผนกเดิมเพื่อเอาชื่อเก่ามาใช้
@@ -158,13 +161,17 @@ async function editSection(
 
   // ตรวจสอบว่าแผนกมีอยู่หรือไม่
   if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
+  
+  // clean text: ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
+  const cleanedName = section
+    .replace(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
+    .replace(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
+    .trim(); // ตัดช่องว่างหัวท้าย
 
   // จัดรูปแบบชื่อส่วนงานให้มีชื่อแผนกและคำว่า "ฝ่ายย่อย"
-  const newSec = section.includes("ฝ่ายย่อย")
-    ? `${dept.dept_name} ${section}` // มี "ฝ่ายย่อย" อยู่แล้ว
-    : isEnglishText(section)
-      ? `${dept.dept_name} ฝ่ายย่อย ${section}` // ภาษาอังกฤษ เว้นวรรค
-      : `${dept.dept_name} ฝ่ายย่อย${section}`; // ภาษาไทย ไม่เว้นวรรค
+  const newSec = isEnglishText(cleanedName)
+      ? `${dept.dept_name} ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+      : `${dept.dept_name} ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
 
   await prisma.sections.update({
     where: { sec_id: secId },
@@ -195,9 +202,6 @@ async function addSection(deptId: number, section: string) {
     select: { dept_name: true },
   });
   if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
-
-  // ฟังก์ชันช่วยตรวจสอบว่าข้อความเป็นภาษาอังกฤษหรือไม่
-  const isEnglishText = (text: string) => /^[A-Za-z\s]+$/.test(text);
 
   // clean text: ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
   const cleanedName = section

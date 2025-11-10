@@ -95,7 +95,7 @@ export class DepartmentController extends BaseController {
    * Output    : { data: result } - ข้อมูลที่เพิ่มเข้ามา
    * Author    : Sutaphat Thahin (Yeen) 66160378
    */
-  async addDepartments(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<AddDepartmentsSchema>> {
+  async addDepartments(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<AddDepartmentsSchema>> {
     const payload = addDepartmentsPayload.parse(req.body);
     const result = await departmentService.addDepartments(payload);
     return { data: result }

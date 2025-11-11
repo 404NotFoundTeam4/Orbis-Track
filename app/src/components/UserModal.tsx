@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import api from "../api/axios.js";
 import DropDown from "./DropDown.js";
-import { AlertDialog, AlertTone } from "./AlertDialog"; 
+import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 
 type Department = {

@@ -1,11 +1,15 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link ,useLocation } from "react-router-dom";
+import {verify} from "../hooks/Verify.js"
 import { Icon } from "@iconify/react";
 export function Resetpassword() {
+  const { ResetPassword} = verify();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfrimPassword, setConfrimPassword] = useState(false);
+   const location = useLocation();
+  const email = location.state?.email || ""; 
   // ตรวจเงื่อนไขความปลอดภัย
   const validations = {
     length: password.length >= 12 && password.length <= 16,
@@ -235,6 +239,7 @@ export function Resetpassword() {
                   : "bg-gray-300 cursor-not-allowed"
               }`}
               disabled={!allValid || !match}
+              onClick={()=>ResetPassword(email,password,confirm )}
             >
               บันทึก
             </button>

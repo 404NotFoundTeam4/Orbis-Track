@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-
+import {verify} from "../hooks/Verify.js"
 export function Otppassword() {
+  const { Get_Otp,Set_Otp} = verify();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
 
@@ -99,6 +100,7 @@ export function Otppassword() {
                 />
                 <button
                   type="button"
+                 onClick={() => Get_Otp(email)}
                   className="bg-sky-500 hover:bg-sky-600 text-white text-[32px] font-medium px-5 
                     rounded-full transition w-[173px] h-[76px]"
                 >
@@ -125,7 +127,8 @@ export function Otppassword() {
 
             {/* ปุ่มยืนยัน */}
             <button
-              type="submit"
+              type="button"
+              onClick={() => Set_Otp(email,otp)}
               className="text-[32px] bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-full 
                 my-[42px] w-[596px] h-[76px]"
             >

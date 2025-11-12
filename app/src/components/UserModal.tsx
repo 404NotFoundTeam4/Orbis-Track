@@ -5,6 +5,7 @@ import DropDown from "./DropDown.js";
 import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 
+
 type Department = {
   dept_id: number;
   dept_name: string;
@@ -48,6 +49,23 @@ type UserModalProps = {
   keyvalue: (keyof UserApiData)[] | "all";
   departments: Department[];
   sections: Section[];
+  roles: DropDownItemType[];
+};
+const defaultFormData: UserApiData = {
+  us_id: 0,
+  us_emp_code: "",
+  us_firstname: "",
+  us_lastname: "",
+  us_username: "",
+  us_email: "",
+  us_phone: "",
+  us_images: null,
+  us_role: "", // default
+  us_dept_id: 0,
+  us_sec_id: 0,
+  us_is_active: true,
+  us_dept_name: "",
+  us_sec_name: "",
 };
 
 export default function UserModal({
@@ -58,25 +76,12 @@ export default function UserModal({
   keyvalue,
   departments,
   sections,
+  roles,
 }: UserModalProps) {
-  const [formData, setFormData] = useState<UserApiData>({
-    us_id: 0,
-    us_emp_code: "",
-    us_firstname: "",
-    us_lastname: "",
-    us_username: "",
-    us_email: "",
-    us_phone: "",
-    us_images: null,
-    us_role: "",
-    us_dept_id: 0,
-    us_sec_id: 0,
-    us_is_active: true,
-    us_dept_name: "",
-    us_sec_name: "",
-  });
+  const [formData, setFormData] = useState<UserApiData>(
+    user ? { ...defaultFormData, ...user } : defaultFormData
+  );
   
-
 
   const [formOutput, setFormOutput] = useState<Partial<UserApiData>>({});
 
@@ -107,13 +112,7 @@ export default function UserModal({
       });
     }
   };
-  //  preload user data เมื่อแก้ไข / ลบ
-  useEffect(() => {
-    if (user && (typeform === "edit" || typeform === "delete")) {
-      setFormData({ ...user });
-    }
-  }, [user, typeform]);
-
+  
   //  filter key ตามที่ส่งมาจาก props (keyvalue)
   useEffect(() => {
     let filtered: Partial<UserApiData> = {};
@@ -190,12 +189,7 @@ export default function UserModal({
     }));
   };
 
-  const roleOptions: DropDownItemType[] = [
-    { id: "Admin", label: "Admin", value: "Admin" },
-    { id: "Manager", label: "Manager", value: "Manager" },
-    { id: "HR", label: "HR", value: "HR" },
-    { id: "Staff", label: "Staff", value: "Staff" },
-  ];
+  
 
   // (Department Options)
   const departmentOptions = useMemo(() => {
@@ -223,7 +217,7 @@ export default function UserModal({
   }, [filteredSections]);
 
   const selectedRole =
-    roleOptions.find((option) => option.value === formData.us_role) || undefined;
+    roles.find((option) => option.value === formData.us_role) || undefined;
 
   const selectedDepartment =
     departmentOptions.find((option) => option.id === formData.us_dept_id) || undefined;
@@ -347,7 +341,7 @@ export default function UserModal({
             <div className="grid grid-cols-3 gap-y-4 gap-x-4">
               {/* ตำแหน่ง (Role) */}
               <DropDown
-                items={roleOptions}
+                items={roles}
                 value={selectedRole}
                 onChange={handleRoleChange}
                 placeholder="เลือกตำแหน่ง"

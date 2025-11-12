@@ -379,8 +379,9 @@ export const Users = () => {
               {/* <AddButton label="บัญชีผู้ใช้" /> */}
               <Button
                 size="md"
-                icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
+                icon={<Icon icon="ic:baseline-plus" width="20px" height="20px" />}
                 onClick={handleOpenAddModal}
+                className="w-[150px] h-[46px] text-[16px] font-medium flex items-center justify-center gap-2"
               >
                 เพิ่มบัญชีผู้ใช้
               </Button>
@@ -673,6 +674,7 @@ export const Users = () => {
           keyvalue="all"
           departments={departments} 
           sections={sections}
+          roles={roleOptions}
         />
       )}
     </div>

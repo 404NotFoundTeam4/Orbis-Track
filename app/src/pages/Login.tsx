@@ -4,7 +4,7 @@ import "../styles/css/Login.css";
 import { Icon } from "@iconify/react";
 import male from "../assets/images/login/male.png";
 import female from "../assets/images/login/female.png";
-import { useLogin } from "../hooks/useLogin"
+import { useLogin } from "../hooks/useLogin.ts"
 
 /** หน้าเข้าสู่ระบบตามภาพตัวอย่าง */
 export function Login() {
@@ -12,11 +12,13 @@ export function Login() {
   const { handleLogin } = useLogin();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isRemember, setIsRemember] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (a) => {
     a.preventDefault();
-    handleLogin(username, password, false);
+    handleLogin(username, password, isRemember);
   };
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden">
@@ -195,7 +197,10 @@ export function Login() {
               {/* Remember + Forgot */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center mb-4 gap-[15px]">
-                  <input id="default-checkbox" type="checkbox" value="" className="w-[29px] h-[29px] accent-[#BFBFBF] " />
+                  <input id="default-checkbox" type="checkbox" value=""
+                    checked={isRemember}
+                    onChange={(e) => setIsRemember(e.target.checked)}
+                    className="w-[29px] h-[29px] accent-[#BFBFBF] " />
                   <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
                 </div>
                 <a

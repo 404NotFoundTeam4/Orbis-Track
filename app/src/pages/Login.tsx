@@ -199,7 +199,7 @@ export function Login() {
                   <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
                 </div>
                 <a
-                  href="#"
+                  href="/otp"
                   className="text-sky-500 hover:underline font-roboto text-[32px]"
                 >
                   ลืมรหัสผ่าน

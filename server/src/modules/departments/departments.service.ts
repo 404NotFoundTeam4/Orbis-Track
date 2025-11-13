@@ -18,7 +18,7 @@ import {
  */
 async function getAllDepartment() {
   // ดึงข้อมูลแผนกทั้งหมด เลือกเฉพาะ id และชื่อ
-  const [departments] = await prisma.departments.findMany({
+  const departments = await prisma.departments.findMany({
     select: {
       dept_id: true,
       dept_name: true,

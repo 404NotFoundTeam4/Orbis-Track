@@ -54,6 +54,10 @@ export interface getDepartmentsWithSections {
   }[];
 }
 
+export interface AddDepartmentPayload {
+  dept_name: string;
+}
+
 // Department API
 export const departmentService = {
   // Get all departments
@@ -108,6 +112,17 @@ export const departmentService = {
    */
   deleteDepartment: async (id: number): Promise<{ message: string }> => {
     const { data } = await axios.delete(`/api/departments/${id}`);
+    return data;
+  },
+
+  /**
+   * Description: เพิ่มแผนก
+   * Author    : Sutaphat Thahin (Yeen) 66160378
+   */
+  addDepartment: async (
+    payload: AddDepartmentPayload
+  ): Promise<{ message: string }> => {
+    const { data } = await axios.post(`/api/departments`, payload);
     return data;
   },
 };

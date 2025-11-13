@@ -77,6 +77,20 @@ export const deleteSectionSchema = z.object({
 export type GetDeptSection = z.infer<typeof getDeptSection>;
 
 export type DeleteSectionPayload = z.infer<typeof deleteSectionSchema>;
+// Author: Sutaphat Thahin (Yeen) 66160378
+
+// ตรวจสอบข้อมูลที่ใช้ในการเพิ่มแผนกใหม่ (รับเข้ามา)
+export const addDepartmentsPayload = z.object({
+    dept_name: z.string()
+})
+
+// ตรวรสอบข้อมูลแผนกหลังเพิ่มแผนกสำเร็จ
+export const addDepartmentsSchema = z.object({
+    dept_id: z.coerce.number(),
+    dept_name: z.string(),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable()
+})
 
 export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
 
@@ -100,3 +114,7 @@ export type ParamEditSecSchema = z.infer<typeof paramEditSecSchema>;
 export type AddSecSchema = z.infer<typeof addSectionPayload>;
 
 export type DeptSectionSchema = z.infer<typeof deptSectionSchema>;
+
+export type AddDepartmentsPayload = z.infer<typeof addDepartmentsPayload>
+
+export type AddDepartmentsSchema = z.infer<typeof addDepartmentsSchema>

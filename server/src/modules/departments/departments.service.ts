@@ -4,6 +4,7 @@ import { prisma } from "../../infrastructure/database/client.js";
 
 import {
   DeleteSectionPayload,
+  AddDepartmentsPayload,
   EditDepartmentPayload,
   EditSectionPayload,
   IdParamDto,
@@ -314,6 +315,70 @@ async function deleteSection(params: DeleteSectionPayload) {
   return { message: "Section deleted successfully" };
 }
 
+/**
+ * Description: ตรวจสอบว่าข้อความเป็นเฉพาะตัวอักษรหรือไม่
+ * Input     : text (string) - ข้อความที่ต้องการตรวจสอบ
+ * Output    : boolean - true ถ้าเป็นเฉพาะตัวอักษร, false ถ้าไม่ใช่
+ * Note      : ใช้ regex เพื่อตรวจสอบว่ามีเฉพาะตัวอักษร a-z, A-Z, ก-ฮ, ะ-์ และช่องว่างเท่านั้น
+ * Author    : Sutaphat Thahin (Yeen) 66160378
+ */
+function isTextOnly(text: string): boolean {
+  return /^[a-zA-Zก-ฮะ-์\s]+$/.test(text);
+}
+
+/**
+ * Description: เพิ่มแผนก (Departments)
+ * Input     : dept_name ชื่อแผนก
+ * Output    : data: { dept_id, dept_name, created_at, updated_at } - ข้อมูลแผนกที่เพิ่มเข้ามา
+ * Logic     :
+ *    - ตรวจสอบว่าชื่อแผนกเป็นข้อความเท่านั้น (ไม่มีตัวเลขหรือตัวอักษรพิเศษ)
+ *    - จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
+ *    - ตรวจสอบว่าชื่อแผนกไม่ซ้ำกับที่มีอยู่ในระบบ
+ *    - บันทึกแผนกใหม่ลงฐานข้อมูล
+ * Author    : Sutaphat Thahin (Yeen) 66160378
+ */
+async function addDepartments(payload: AddDepartmentsPayload) {
+  const { dept_name } = payload;
+
+  //ตรวจสอบว่าชื่อแผนกไม่เป็นตัวเลขหรือตัวอักษรพิเศษ
+  if (!isTextOnly(dept_name)) throw new Error("Departments should be text only");
+
+  // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
+  const newDept = dept_name.includes("แผนก") //ตรวจสอบว่าชื่อแผนกมีคำว่า "แผนก"
+    ? (() => {
+      // มีคำว่า "แผนก" อยู่แล้ว ให้จัดการช่องว่าง
+      const afterDept = dept_name.split("แผนก")[1] || ""; //แยกข้อความหลังคำว่า "แผนก" ถ้าไม่มีให้เป็นค่าว่าง
+      const trimmedAfter = afterDept.trim(); //ตัดช่องว่างหัวท้ายหลังคำว่า "แผนก"
+
+      return isEnglishText(trimmedAfter) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
+        ? `แผนก ${trimmedAfter}` //ภาษาอังกฤษ เว้นวรรค
+        : `แผนก${trimmedAfter}`; //ภาษาไทย ไม่เว้นวรรค
+    })()
+    //ไม่มีคำว่า "แผนก"
+    : isEnglishText(dept_name) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
+      ? `แผนก ${dept_name}`
+      : `แผนก${dept_name}`;
+
+  //ตรวจสอบแผนกว่ามีอยู่แล้วหรือไม่
+  const existingDept = await prisma.departments.findFirst({
+    where: {
+      dept_name: { equals: newDept, mode: "insensitive", }, //ชื่อแผนกที่มีอยู่ตรงกับชื่อแผนกที่กรอกเข้ามาใหม่ (ภาษาอังกฤษไม่สนตัวเล็กตัวใหญ่)
+    },
+  });
+
+  //ถ้ามีแผนกอยู่แล้ว
+  if (existingDept) throw new Error("Department name already exists");
+
+  //เพิ่มแผนก
+  return await prisma.departments.create({
+    data: {
+      dept_name: newDept,
+      created_at: new Date(),
+      updated_at: new Date()
+    }
+  })
+}
+
 export const departmentService = {
   getAllDepartment,
   getSectionById,
@@ -322,5 +387,5 @@ export const departmentService = {
   addSection,
   getDeptSection,
   deleteSection,
+  addDepartments
 };
-

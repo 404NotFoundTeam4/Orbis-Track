@@ -5,6 +5,7 @@ import { BaseResponse } from "../../core/base.response.js";
 
 import {
   addSectionPayload,
+  AddDepartmentsSchema,
   editDepartmentPayload,
   editSectionPayload,
   GetAllDepartmentSchema,
@@ -13,6 +14,7 @@ import {
   paramEditSecSchema,
   DeptSectionSchema,
   deleteSectionSchema,
+  addDepartmentsPayload
 } from "./departments.schema.js";
 
 /**
@@ -146,4 +148,15 @@ export class DepartmentController extends BaseController {
     return { message: "Section deleted successfully" };
   }
 
+  /**
+   * Description: Controller สำหรับเพิ่มแผนก (Departments)
+   * Input     : req.body (ข้อมูลชื่อแผนก)
+   * Output    : { data: result } - ข้อมูลที่เพิ่มเข้ามา
+   * Author    : Sutaphat Thahin (Yeen) 66160378
+   */
+  async addDepartments(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<AddDepartmentsSchema>> {
+    const payload = addDepartmentsPayload.parse(req.body);
+    const result = await departmentService.addDepartments(payload);
+    return { data: result }
+  }
 }

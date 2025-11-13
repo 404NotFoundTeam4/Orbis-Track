@@ -130,6 +130,14 @@ const Departments = () => {
             message: "เพิ่มฝ่ายย่อยเสร็จสิ้น!",
           });
           break;
+        case "add-department":
+          await departmentService.addDepartment({ dept_name: data.department });
+          push({
+            tone: "success",
+            message: "เพิ่มแผนกเสร็จสิ้น!",
+          });
+          break;
+
         case "delete-section":
           await sectionService.deleteSection({ sec_id: data.sectionId });
           push({

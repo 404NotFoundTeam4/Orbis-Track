@@ -21,8 +21,7 @@ return res;
 }
 
 export const resetPassword = async (email, newPassword, confirmNewPassword) => {
-  const payload = { email, newPassword, confirmNewPassword };
-  const { data } = await api.post("/forgot-password", payload);
-
+  const  data  = await api.post("/forgot-password", {email, newPassword, confirmNewPassword});
+  
   return data;
-}
+} 

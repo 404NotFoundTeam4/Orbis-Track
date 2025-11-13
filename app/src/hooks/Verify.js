@@ -1,6 +1,6 @@
 import { data, useNavigate } from "react-router-dom";
-import { Send_Otp, Verify_Otp } from "../services/otpservices";
-import { resetpassword } from "../services/auth.account.service";
+import { Send_Otp, Verify_Otp } from "../services/OtpServices";
+import { resetPassword } from "../services/AccountService";
 
 export const verify = () => {
   const navigate = useNavigate();
@@ -10,14 +10,14 @@ export const verify = () => {
   }
   const Set_Otp  = async(email,otp) =>{
      const res = await Verify_Otp(email,otp);
-     console.log(res)
-     if(res){
-          navigate("/resetpassword", { state: { email } });
+     if(res.data.success){
+          navigate("/resetpassword", { state: { email } });   
      }
-     return res;
+     return res.data.success;
   }
   const ResetPassword  = async(email, newPassword,confirmNewPassword) =>{
-      const res = await resetpassword({ email, newPassword,confirmNewPassword})
+      const res = await resetPassword( email, newPassword,confirmNewPassword)
+      if(res){navigate("/login")}
      return res;
   }
   return {Get_Otp,Set_Otp,ResetPassword};

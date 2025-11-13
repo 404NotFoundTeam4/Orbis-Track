@@ -50,7 +50,7 @@ async function main() {
         key: keyof typeof sections
     ) => {
         for (const letter of ["A", "B", "C", "D"]) {
-            const secName = `${deptName}ฝ่ายย่อย ${letter}`;
+            const secName = `${deptName} ฝ่ายย่อย ${letter}`;
             const sec = await prisma.sections.upsert({
                 where: { sec_name: secName },
                 update: { sec_dept_id: deptId },
@@ -102,7 +102,7 @@ async function main() {
         where: { us_username: "admin" },
         update: {},
         create: {
-            us_emp_code: "EMP001",
+            us_emp_code: "EMP-0001",
             us_firstname: "Admin",
             us_lastname: "System",
             us_username: "admin",
@@ -122,7 +122,7 @@ async function main() {
         where: { us_username: "hod.media" },
         update: {},
         create: {
-            us_emp_code: "EMP002",
+            us_emp_code: "EMP-0002",
             us_firstname: "สมชาย",
             us_lastname: "มีดี",
             us_username: "hod.media",
@@ -141,7 +141,7 @@ async function main() {
         where: { us_username: "hod.it" },
         update: {},
         create: {
-            us_emp_code: "EMP003",
+            us_emp_code: "EMP-0003",
             us_firstname: "วิชัย",
             us_lastname: "เทคโนโลยี",
             us_username: "hod.it",
@@ -161,7 +161,7 @@ async function main() {
         where: { us_username: "hos.media.a" },
         update: {},
         create: {
-            us_emp_code: "EMP004",
+            us_emp_code: "EMP-0004",
             us_firstname: "สมหญิง",
             us_lastname: "สร้างสรรค์",
             us_username: "hos.media.a",
@@ -181,7 +181,7 @@ async function main() {
         where: { us_username: "tech.it" },
         update: {},
         create: {
-            us_emp_code: "EMP005",
+            us_emp_code: "EMP-0005",
             us_firstname: "เทคนิค",
             us_lastname: "ซ่อมดี",
             us_username: "tech.it",
@@ -201,7 +201,7 @@ async function main() {
         where: { us_username: "staff.media" },
         update: {},
         create: {
-            us_emp_code: "EMP006",
+            us_emp_code: "EMP-0006",
             us_firstname: "จัดการ",
             us_lastname: "อุปกรณ์",
             us_username: "staff.media",
@@ -221,7 +221,7 @@ async function main() {
         where: { us_username: "emp.media" },
         update: {},
         create: {
-            us_emp_code: "EMP007",
+            us_emp_code: "EMP-0007",
             us_firstname: "พนักงาน",
             us_lastname: "ทดสอบ",
             us_username: "emp.media",
@@ -239,7 +239,7 @@ async function main() {
         where: { us_username: "emp.it" },
         update: {},
         create: {
-            us_emp_code: "EMP008",
+            us_emp_code: "EMP-0008",
             us_firstname: "ไอที",
             us_lastname: "พนักงาน",
             us_username: "emp.it",

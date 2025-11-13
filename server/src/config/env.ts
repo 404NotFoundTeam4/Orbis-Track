@@ -50,7 +50,26 @@ const Env = z.object({
 
     // auth/jwt
     JWT_SECRET: z.string().min(8),
-    JWT_EXPIRES_IN: z.string().default("24h"),
+    JWT_EXPIRES_IN: z.string().default("2h"),
+
+    // email/smtp
+    SMTP_HOST: z.string().default("smtp.gmail.com"),
+    SMTP_PORT: z.coerce.number().default(587),
+    SMTP_SECURE: z.string()
+        .transform(v => v === 'true')
+        .default(false),
+    SMTP_REQUIRETLS: z.coerce.boolean().default(true),
+    SMTP_USER: z.string().default(""),
+    SMTP_PASS: z.string().default(""),
+    SMTP_FROM_NAME: z.string().default("Obis Track"),
+    SMTP_FROM_EMAIL: z.string().default(""),
+    APP_NAME: z.string().default("Obis Track"),
+    APP_URL: z.string().default("https://obistrack.com"),
+    SUPPORT_EMAIL: z.string().default("support@obistrack.com"),
+    FRONTEND_URL: z.string().default("http://localhost:4042"),
+    
+    // token/crypto
+    EXPIRE_TOKEN: z.string()
 });
 
 export type EnvType = z.infer<typeof Env>;

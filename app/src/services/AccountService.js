@@ -20,8 +20,8 @@ return res;
 
 }
 
-export const resetpassword = async (username,password,passwordconfrim) => {
-  const account = { username, passwords,isRemember};
-  const res = await api.post("/login", account);
-  return res.data; // ส่งต่อข้อมูลจาก backend
-};
+export const resetPassword = async (email, newPassword, confirmNewPassword) => {
+  const  data  = await api.post("/forgot-password", {email, newPassword, confirmNewPassword});
+  
+  return data;
+} 

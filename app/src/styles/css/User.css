@@ -1,0 +1,4 @@
+.table-user {
+  border-collapse: separate; /* border-separate */
+  border: 1px solid #d1d5db;
+}

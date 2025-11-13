@@ -4,25 +4,37 @@ import DropDown from "../components/DropDown";
 import SearchFilter from "../components/SearchFilter";
 import { useEffect, useMemo, useState } from "react";
 import DropdownArrow from "../components/DropdownArrow";
-import { type getDepartmentsWithSections } from "../service/DepartmentsService";
+import {
+  type getDepartmentsWithSections,
+  type Section,
+} from "../service/DepartmentsService";
 import { DepartmentModal } from "../components/DepartmentModal";
+import { useToast } from "../components/Toast";
 import {
   departmentService,
   sectionService,
 } from "../service/DepartmentsService";
-import { useToast } from "../components/Toast";
+import { AlertDialog } from "../components/AlertDialog";
 
 type ModalType =
   | "add-department"
   | "edit-department"
   | "add-section"
-  | "edit-section";
+  | "edit-section"
+  | "delete-section";
 
 const Departments = () => {
   // เก็บข้อมูลแผนกทั้งหมด
   const [departments, setDepartments] = useState<getDepartmentsWithSections[]>(
     []
   );
+  const { push } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>("add-department");
+  const [selectedData, setSelectedData] = useState<any>(null);
 
   // ตัวเลือกแผนกใน Dropdown
   const departmentOptions = [
@@ -34,15 +46,6 @@ const Departments = () => {
     })),
   ];
 
-  const { push } = useToast();
-  const [loading, setLoading] = useState(false);
-
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<ModalType>("add-department");
-  const [selectedData, setSelectedData] = useState<any>(null);
-
-  // ตัวกรองแผนก
   const [departmentFilter, setDepartmentFilter] = useState<{
     id: number | string;
     label: string;
@@ -61,7 +64,6 @@ const Departments = () => {
         : [...prev, id];
     });
   };
-
   // ดึงข้อมูล api จาก backend
   useEffect(() => {
     const fetchData = async () => {
@@ -73,9 +75,27 @@ const Departments = () => {
       setDepartmentFilter(
         (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
       );
-    };
+      // ตั้งข้อมูล section ไว้ใช้ใน filter
+      const [sections, setSections] = useState<Section[]>([]);
 
-    fetchData();
+      const [sectionFilter, setSectionFilter] = useState<{
+        id: number | string;
+        label: string;
+        value: string;
+      } | null>(null);
+
+      const [confirmOpen, setConfirmOpen] = useState(false);
+
+      // ลบฝ่ายย่อย
+      const [deleteTarget, setDeleteTarget] = useState<{
+        type: "section"; // ประเภทของสิ่งที่จะลบ
+        id: number; // รหัสของ section ที่จะลบ
+        name: string; // ชื่อ section (ใช้แสดงข้อความใน Alert)
+        deptId?: number; // id ของแผนกที่ section อยู่ (ใช้ตอนอัปเดต state)
+        deptName?: string; // ชื่อของแผนก (ใช้โชว์ข้อความ)
+      } | null>(null);
+      fetchData();
+    };
   }, []);
 
   const handleModalSubmit = async (data: any) => {
@@ -110,8 +130,14 @@ const Departments = () => {
             message: "เพิ่มฝ่ายย่อยเสร็จสิ้น!",
           });
           break;
+        case "delete-section":
+          await sectionService.deleteSection({ sec_id: data.sectionId });
+          push({
+            tone: "success",
+            message: "ลบฝ่ายย่อยเสร็จสิ้น!",
+          });
+          break;
       }
-      // await fetchData(); // Refresh data
     } catch (error: any) {
       push({
         tone: "danger",
@@ -143,6 +169,54 @@ const Departments = () => {
   >();
 
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "section"; // ประเภทของสิ่งที่จะลบ
+    id: number; // รหัสของ section ที่จะลบ
+    name: string; // ชื่อ section (ใช้แสดงข้อความใน Alert)
+    deptId?: number; // id ของแผนกที่ section อยู่ (ใช้ตอนอัปเดต state)
+    deptName?: string; // ชื่อของแผนก (ใช้โชว์ข้อความ)
+  } | null>(null);
+
+  const handleDelete = async () => {
+    //ถ้ายังไม่ได้เลือก section ที่จะลบ (deleteTarget = null) ให้ return ออกไปก่อน
+    if (!deleteTarget) return;
+
+    try {
+      //ตรวจสอบว่าประเภทที่ต้องลบคือ "section"
+      if (deleteTarget.type === "section") {
+        // ถ้าเป็น section ให้เรียกใช้ service เพื่อลบ section
+        await sectionService.deleteSection({ sec_id: deleteTarget.id });
+
+        //แสดงข้อความแจ้งเตือนว่าลบสำเร็จ
+        push({
+          tone: "success",
+          message: `ลบฝ่ายย่อย ${deleteTarget.name} เรียบร้อยแล้ว`,
+        });
+
+        // อัปเดต state เพื่อลบ section ออกจาก department
+        setDepartments((prev) =>
+          prev.map((dept) =>
+            dept.dept_id === deleteTarget.deptId
+              ? {
+                  ...dept,
+                  sections: dept.sections.filter(
+                    (sec) => sec.sec_id !== deleteTarget.id
+                  ),
+                }
+              : dept
+          )
+        );
+      }
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error(error);
+      push({
+        tone: "danger",
+        message: "เกิดข้อผิดพลาดในการลบ",
+      });
+    }
+  };
 
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
@@ -202,6 +276,10 @@ const Departments = () => {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
+  // const [openModalAsDepartments, setopenModalAsDepartments] = useState(false);
+
+  const [showModalDeleteSection, setShowModalDeleteSection] = useState(false);
+
   return (
     <div className="w-full min-h-screen flex flex-col p-4">
       <div className="flex-1">
@@ -229,6 +307,10 @@ const Departments = () => {
                 placeholder="แผนก"
               />
               <Button
+                onClick={() => {
+                  setModalType("add-department");
+                  setModalOpen(true);
+                }}
                 size="md"
                 icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
               >
@@ -386,9 +468,19 @@ const Departments = () => {
                               />
                             </button>
                             <button
+                              style={{ cursor: "pointer" }}
                               type="submit"
                               className="text-[#FF4D4F] hover:text-[#FF4D4F]"
                               title="ลบ"
+                              onClick={() =>
+                                setDeleteTarget({
+                                  type: "section", // ระบุเป็น section
+                                  id: section.sec_id, // id ของ section
+                                  name: section.sec_name, // ชื่อฝ่ายย่อย
+                                  deptId: dep.dept_id, // id ของ department สำหรับอัปเดต state
+                                  deptName: dep.dept_name, // ชื่อแผนก สำหรับแสดงใน alert
+                                })
+                              }
                             >
                               <Icon
                                 icon="solar:trash-bin-trash-outline"
@@ -501,6 +593,35 @@ const Departments = () => {
         initialData={selectedData}
         onSubmit={handleModalSubmit}
       />
+
+      {deleteTarget && (
+        <AlertDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+          className="border-[1px] border-[#858585] mgr-4 rounded-[42px] p-6 height-[400px]"
+          width={786}
+          onConfirm={handleDelete}
+          tone="danger"
+          title={`คุณแน่ใจหรือไม่ว่าต้องการลบ${deleteTarget.type === "section" ? "ฝ่ายย่อย" : "แผนก"}`}
+          description={
+            deleteTarget.type === "section" ? (
+              <>
+                {deleteTarget.name} ในแผนก{deleteTarget.deptName}จะถูกลบ
+                <br />
+                และการดำเนินการนี้ไม่สามารถกู้คืนได้
+              </>
+            ) : (
+              <>
+                แผนก {deleteTarget.name} และฝ่ายย่อยทั้งหมดจะถูกลบ
+                <br />
+                และการดำเนินการนี้ไม่สามารถกู้คืนได้
+              </>
+            )
+          }
+        />
+      )}
     </div>
   );
 };

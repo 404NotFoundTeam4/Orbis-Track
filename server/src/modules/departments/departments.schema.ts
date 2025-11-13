@@ -54,9 +54,8 @@ export const editSectionPayload = z.object({
  * Author    : Salsabeela Sa-e (San) 66160349
  */
 export const addSectionPayload = z.object({
-    sec_name: z.string(), 
+    sec_name: z.string(),
 });
-
 
 export const getDeptSection = z.object({
     dept_id: z.coerce.number().positive(),
@@ -69,7 +68,15 @@ export const deptSectionSchema = z.object({
     deptsection: z.array(departmentSectionSchema),
 });
 
+//Schema สำหรับ delete section
+export const deleteSectionSchema = z.object({
+    secId: z.coerce.number().positive(),
+});
+
+//Type สำหรับใช้ใน TypeScript
 export type GetDeptSection = z.infer<typeof getDeptSection>;
+
+export type DeleteSectionPayload = z.infer<typeof deleteSectionSchema>;
 
 export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
 

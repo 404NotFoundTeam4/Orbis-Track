@@ -1,7 +1,9 @@
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
+
 import {
+  DeleteSectionPayload,
   EditDepartmentPayload,
   EditSectionPayload,
   IdParamDto,
@@ -16,14 +18,12 @@ import {
  */
 async function getAllDepartment() {
   // ดึงข้อมูลแผนกทั้งหมด เลือกเฉพาะ id และชื่อ
-  const [departments] = await Promise.all([
-    prisma.departments.findMany({
-      select: {
-        dept_id: true,
-        dept_name: true,
-      },
-    }),
-  ]);
+  const [departments] = await prisma.departments.findMany({
+    select: {
+      dept_id: true,
+      dept_name: true,
+    },
+  });
 
   return {
     departments,
@@ -84,16 +84,16 @@ async function editDepartment(
 ) {
   const { id } = params;
   const { department } = payload;
-  
+
   // clean text: ตัดคำว่า "แผนก" ออกจากชื่อที่ผู้ใช้กรอก
   const cleanedName = department
-    .replace(/^แผนก\s*/g, "") // ลบคำว่า "แผนก" ต้นประโยค
+    .replaceAll(/^แผนก\s*/g, "") // ลบคำว่า "แผนก" ต้นประโยค
     .trim(); // ตัดช่องว่างหัวท้าย
 
   // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
   const newDept = isEnglishText(cleanedName)
-      ? `แผนก ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
-      : `แผนก${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
+    ? `แผนก ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+    : `แผนก${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
 
   await prisma.$transaction(async (tx) => {
     // ดึงข้อมูลแผนกเดิมเพื่อเอาชื่อเก่ามาใช้
@@ -161,17 +161,17 @@ async function editSection(
 
   // ตรวจสอบว่าแผนกมีอยู่หรือไม่
   if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
-  
+
   // clean text: ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
   const cleanedName = section
-    .replace(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
-    .replace(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
+    .replaceAll(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
+    .replaceAll(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
     .trim(); // ตัดช่องว่างหัวท้าย
 
   // จัดรูปแบบชื่อส่วนงานให้มีชื่อแผนกและคำว่า "ฝ่ายย่อย"
   const newSec = isEnglishText(cleanedName)
-      ? `${dept.dept_name} ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
-      : `${dept.dept_name} ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
+    ? `${dept.dept_name} ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+    : `${dept.dept_name} ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
 
   await prisma.sections.update({
     where: { sec_id: secId },
@@ -205,8 +205,8 @@ async function addSection(deptId: number, section: string) {
 
   // clean text: ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
   const cleanedName = section
-    .replace(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
-    .replace(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
+    .replaceAll(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
+    .replaceAll(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
     .trim(); // ตัดช่องว่างหัวท้าย
 
   // เพิ่มคำว่า "ฝ่ายย่อย" กลับเข้าไปตามรูปแบบที่ถูกต้อง
@@ -283,6 +283,37 @@ async function getDeptSection() {
   return { deptsection: cleanedDeptSection };
 }
 
+/**
+ * Description: ลบฝ่ายย่อย (Section) ตามรหัสฝ่ายย่อย
+ * Input     : params { secId } - รหัสฝ่ายย่อย
+ * Output    : { message: string } - ข้อความแจ้งผลการลบ
+ * Logic     :
+ *   - ตรวจสอบว่าฝ่ายย่อยมีอยู่หรือไม่ ถ้าไม่เจอ → โยน 404
+ *   - ถ้ามีอยู่ → ลบฝ่ายย่อยจาก database
+ * Author    : Niyada Butchan(Da) 66160361
+ */
+async function deleteSection(params: DeleteSectionPayload) {
+  // ดึงค่า sec_id จาก object params
+  const sec_id = params.secId;
+
+  // ค้นหา section จากฐานข้อมูลด้วย sec_id
+  const section = await prisma.sections.findUnique({
+    where: { sec_id },
+    select: { sec_name: true },
+  });
+
+  if (!section) {
+    throw new HttpError(HttpStatus.NOT_FOUND, "Section Not Found");
+  }
+
+  //ถ้าพบลบข้อมูล section ออกจากฐานข้อมูล
+  await prisma.sections.delete({
+    where: { sec_id },
+  });
+  //ส่งผลลัพธ์กลับไปให้ controller
+  return { message: "Section deleted successfully" };
+}
+
 export const departmentService = {
   getAllDepartment,
   getSectionById,
@@ -290,4 +321,6 @@ export const departmentService = {
   editSection,
   addSection,
   getDeptSection,
+  deleteSection,
 };
+

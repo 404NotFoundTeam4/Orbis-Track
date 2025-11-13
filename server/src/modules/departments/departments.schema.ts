@@ -22,10 +22,18 @@ export const departmentSchema = z.object({
     dept_name: z.string(),
 });
 
+export const sectionWithPeopleSchema = z.object({
+    sec_id: z.coerce.number(),
+    sec_name: z.string(),
+    sec_dept_id: z.coerce.number(),
+    people_count: z.number(),
+});
+
 export const departmentSectionSchema = z.object({
     dept_id: z.number(),
     dept_name: z.string(),
-    sections: z.array(sectionSchema), // nested sections
+    people_count: z.number().optional(),
+    sections: z.array(sectionWithPeopleSchema), // nested sections
 });
 
 export const getAllDepartmentSchema = z.object({

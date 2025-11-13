@@ -22,13 +22,15 @@ export interface UpdateSectionPayload {
 }
 
 // รูปแบบข้อมูลแผนกและฝ่ายย่อย
-export interface getDepartmentsWithSections {
+export interface GetDepartmentsWithSections {
   dept_id: number;
   dept_name: string;
+  people_count: number;
   sections: {
     sec_id: number;
     sec_name: string;
     sec_dept_id: number;
+    people_count: number;
   }[];
 }
 
@@ -54,7 +56,7 @@ export const departmentService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
 
-  getDepartmentsWithSections: async (): Promise<getDepartmentsWithSections[]> => {
+  getDepartmentsWithSections: async (): Promise<GetDepartmentsWithSections[]> => {
     const { data } = await axios.get(`/api/departments/section`);
     return data.data.deptsection;
   },

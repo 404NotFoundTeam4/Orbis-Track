@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import {  user_data } from "../services/auth.account.service";
+import {  user_data } from "../services/AccountService";
 interface User {
   us_id?: number;
   us_emp_code?: string;

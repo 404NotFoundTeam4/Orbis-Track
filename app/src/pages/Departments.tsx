@@ -4,12 +4,12 @@ import DropDown from "../components/DropDown";
 import SearchFilter from "../components/SearchFilter";
 import { useEffect, useMemo, useState } from "react";
 import DropdownArrow from "../components/DropdownArrow";
-import { type getDepartmentsWithSections } from "../service/DepartmentsService";
+import { type getDepartmentsWithSections } from "../services/DepartmentsService";
 import { DepartmentModal } from "../components/DepartmentModal";
 import {
   departmentService,
   sectionService,
-} from "../service/DepartmentsService";
+} from "../services/DepartmentsService";
 import { useToast } from "../components/Toast";
 
 type ModalType =

@@ -5,7 +5,6 @@ import DropDown from "./DropDown.js";
 import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 
-
 type Department = {
   dept_id: number;
   dept_name: string;
@@ -69,7 +68,7 @@ const defaultFormData: UserApiData = {
 };
 
 export default function UserModal({
- typeform = "add",
+  typeform = "add",
   user,
   onClose,
   onSubmit,
@@ -81,46 +80,87 @@ export default function UserModal({
   const [formData, setFormData] = useState<UserApiData>(
     user ? { ...defaultFormData, ...user } : defaultFormData
   );
-  
 
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [formOutput, setFormOutput] = useState<Partial<UserApiData>>({});
-
   const toast = useToast();
   const [isEditAlertOpen, setIsEditAlertOpen] = useState(false);
 
   const handleConfirmEdit = async () => {
-    const payload = keyvalue === "all" ? formData : formOutput;
+    const fd = new FormData();
+
+    fd.append("us_firstname", formData.us_firstname);
+    fd.append("us_lastname", formData.us_lastname);
+    fd.append("us_username", formData.us_username);
+    fd.append("us_email", formData.us_email);
+    fd.append("us_phone", formData.us_phone);
+    fd.append("us_role", formData.us_role);
+    fd.append("us_dept_id", String(formData.us_dept_id));
+    fd.append("us_sec_id", String(formData.us_sec_id));
+    fd.append("us_is_active", String(formData.us_is_active));
+    fd.append("us_emp_code", formData.us_emp_code);
+
+    if (newImageFile) {
+      fd.append("us_images", newImageFile);
+    } else if (formData.us_images && !newImageFile) {
+      if (!formData.us_images.startsWith("blob:")) {
+        fd.append("us_images", formData.us_images);
+      }
+    }
+
     try {
-      // 3.1 เรียก API PUT
-      await api.put(`/accounts/${payload.us_id}`, payload);
-      
-      // 3.2 แสดง Toast (ใช้ .push ตามไฟล์ Toast.tsx)
-      toast.push({
-        message: "การแก้ไขสำเร็จ!",
-        tone: "confirm", 
+      const res = await api.patch(`/accounts/${formData.us_id}`, fd, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      // 3.3 แจ้ง Parent (Users.tsx)
-      if (onSubmit) onSubmit(payload);
+      console.log("✅ PATCH Response:", res.data);
 
-    } catch (err) {
-      console.error("❌ Error:", err);
-      // 3.4 แสดง Toast เมื่อล้มเหลว
+      if (res.data?.success) {
+        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+       
+        if (onSubmit) onSubmit(formData);
+        return;
+      }
+
       toast.push({
         message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
         tone: "danger",
       });
+    } catch (err: any) {
+      console.error("❌ Error (catch):", err);
+
+      if (err.response?.data?.success) {
+        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+
+        if (onSubmit) onSubmit(formData);
+        return;
+      }
+      const apiErrorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "เกิดข้อผิดพลาดที่ไม่รู้จัก";
+
+      toast.push({
+        message: `บันทึกไม่สำเร็จ: ${apiErrorMessage}`,
+        tone: "danger",
+      });
     }
   };
-  
+
   //  filter key ตามที่ส่งมาจาก props (keyvalue)
   useEffect(() => {
     let filtered: Partial<UserApiData> = {};
 
     if (keyvalue === "all") {
-      //  ถ้าเป็น all → เอาทั้ง formData เลย
       filtered = { ...formData };
-    } 
+    } else {
+      // (เพิ่ม 'else' ที่หายไป)
+      keyvalue.forEach((key) => {
+        (filtered as any)[key] = formData[key];
+      });
+    }
     setFormOutput(filtered);
   }, [formData, keyvalue]);
 
@@ -150,8 +190,10 @@ export default function UserModal({
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, us_images: url }));
+      const previewUrl = URL.createObjectURL(file);
+      setFormData((prev) => ({ ...prev, us_images: previewUrl }));
+
+      setNewImageFile(file);
     }
   };
 
@@ -189,8 +231,6 @@ export default function UserModal({
     }));
   };
 
-  
-
   // (Department Options)
   const departmentOptions = useMemo(() => {
     return departments.map((dept) => ({
@@ -202,9 +242,7 @@ export default function UserModal({
 
   // (Section Options) - กรองก่อนแล้วค่อยแปลง
   const filteredSections = useMemo(() => {
-    if (!formData.us_dept_id) {
-      return [];
-    }
+    if (!formData.us_dept_id) return [];
     return sections.filter((sec) => sec.sec_dept_id === formData.us_dept_id);
   }, [formData.us_dept_id, sections]);
 
@@ -220,20 +258,28 @@ export default function UserModal({
     roles.find((option) => option.value === formData.us_role) || undefined;
 
   const selectedDepartment =
-    departmentOptions.find((option) => option.id === formData.us_dept_id) || undefined;
+    departmentOptions.find((option) => option.id === formData.us_dept_id) ||
+    undefined;
 
   const selectedSection =
-    sectionOptions.find((option) => option.id === formData.us_sec_id) || undefined;
+    sectionOptions.find((option) => option.id === formData.us_sec_id) ||
+    undefined;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
-      <div className="relative bg-white rounded-[24px] p-8 w-[804px] max-w-[95%] shadow-2xl border flex flex-col">
+      <div className="relative bg-white rounded-[24px] p-8 w-[804px] max-w-[95%] shadow-2xl border border-[#858585] flex flex-col">
         {/* ปุ่มปิด */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl w-8 h-8 rounded-full flex items-center justify-center border"
+          className="absolute top-4 right-4 text-black hover:text-black w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+          
         >
-          ×
+          <Icon
+            icon="ph:x-circle"
+            width="35px"
+            height="35px"
+            className="text-black hover:text-black" 
+          />
         </button>
 
         {/* หัวข้อ */}
@@ -398,7 +444,7 @@ export default function UserModal({
             <button
               type="button"
               onClick={handle}
-              className={`px-8 py-3 rounded-full shadow text-white ${
+              className={`px-8 py-3 rounded-full shadow text-white cursor-pointer ${
                 typeform === "delete"
                   ? "bg-red-500 hover:bg-red-600"
                   : "bg-blue-400 hover:bg-blue-500"
@@ -410,15 +456,15 @@ export default function UserModal({
         </form>
       </div>
       <AlertDialog
-      open={isEditAlertOpen}
-      onOpenChange={setIsEditAlertOpen}
-      title="ยืนยันการแก้ไข"
-      description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
-      tone="warning"
-      onConfirm={handleConfirmEdit}
-      confirmText="ยืนยัน"
-      cancelText="ยกเลิก"
-    />
+        open={isEditAlertOpen}
+        onOpenChange={setIsEditAlertOpen}
+        title="ยืนยันการแก้ไข"
+        description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
+        tone="warning"
+        onConfirm={handleConfirmEdit}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
     </div>
   );
 }

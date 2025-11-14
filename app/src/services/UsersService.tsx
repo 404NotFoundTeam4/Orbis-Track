@@ -11,7 +11,7 @@ export type SoftDeleteResp = {
 export const UsersService = {
   async softDelete(us_id: number): Promise<SoftDeleteResp> {
     // ใส่ generic ให้ axios: ApiEnvelope<SoftDeleteResp>
-    const res = await api.delete<ApiEnvelope<SoftDeleteResp>>(`/users/${us_id}`);
+    const res = await api.delete<ApiEnvelope<SoftDeleteResp>>(`/accounts/${us_id}`);
     return res.data.data; // <<< คืนเฉพาะ data ที่เป็น SoftDeleteResp
   },
 };

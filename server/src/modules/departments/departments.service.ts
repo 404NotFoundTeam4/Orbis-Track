@@ -261,6 +261,9 @@ async function getDeptSection() {
     select: {
       dept_id: true,
       dept_name: true,
+      _count: {
+        select: { users: true },
+      },
       sections: {
         select: {
           sec_id: true,
@@ -268,16 +271,29 @@ async function getDeptSection() {
           sec_dept_id: true,
         },
       },
+      users: {
+        select: {
+          us_id: true,
+          us_dept_id: true,
+          us_sec_id: true,
+        }
+      }
     },
   });
 
   // ตัดคำว่า "แผนก" และ "ฝ่ายย่อย" ออกจากชื่อ
   const cleanedDeptSection = deptsection.map((dept: any) => ({
-    ...dept,
+    dept_id: dept.dept_id,
     dept_name: dept.dept_name.replace(/แผนก/g, "").trim(), // เอา "แผนก" ออก
+    people_count: dept._count.users,
     sections: dept.sections.map((sec: any) => ({
-      ...sec,
+      sec_id: sec.sec_id,
       sec_name: sec.sec_name.replace(dept.dept_name, "").trim(),
+      sec_dept_id: sec.sec_dept_id,
+      // นับจำนวนจากการกรองเอาเฉพาะ user ที่อยู่ในแผนกนั้นๆ และอยู่ในฝ่ายย่อยนั้นๆ
+      people_count: dept.users.filter(
+        (u: any) => u.us_dept_id === dept.dept_id && u.us_sec_id === sec.sec_id
+      ).length,
     })),
   }));
 

@@ -5,8 +5,8 @@ import SearchFilter from "../components/SearchFilter";
 import { useEffect, useMemo, useState } from "react";
 import DropdownArrow from "../components/DropdownArrow";
 import {
-  type getDepartmentsWithSections,
   type Section,
+  type GetDepartmentsWithSections,
 } from "../service/DepartmentsService";
 import { DepartmentModal } from "../components/DepartmentModal";
 import { useToast } from "../components/Toast";
@@ -25,7 +25,7 @@ type ModalType =
 
 const Departments = () => {
   // เก็บข้อมูลแผนกทั้งหมด
-  const [departments, setDepartments] = useState<getDepartmentsWithSections[]>(
+  const [departments, setDepartments] = useState<GetDepartmentsWithSections[]>(
     []
   );
   const { push } = useToast();
@@ -159,7 +159,7 @@ const Departments = () => {
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const HandleSort = (
-    field: keyof getDepartmentsWithSections | "statusText"
+    field: keyof GetDepartmentsWithSections | "statusText"
   ) => {
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
@@ -173,7 +173,7 @@ const Departments = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<
-    keyof getDepartmentsWithSections | "statusText"
+    keyof GetDepartmentsWithSections | "statusText"
   >();
 
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -209,7 +209,7 @@ const Departments = () => {
               ? {
                   ...dept,
                   sections: dept.sections.filter(
-                    (sec) => sec.sec_id !== deleteTarget.id
+                    (sec: any) => sec.sec_id !== deleteTarget.id
                   ),
                 }
               : dept
@@ -254,6 +254,10 @@ const Departments = () => {
           valA = a.sections.length;
           valB = b.sections.length;
           break;
+        case "people_count":
+          valA = a.people_count;
+          valB = b.people_count;
+          break;
         default:
           valA = a.dept_id;
           valB = b.dept_id;
@@ -268,7 +272,7 @@ const Departments = () => {
       return sortDirection === "asc" ? valA - valB : valB - valA;
     });
     return result;
-  }, [searchFilter, departmentFilter, sortDirection]);
+  }, [searchFilter, departmentFilter, sortDirection, sortField]);
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
@@ -283,10 +287,6 @@ const Departments = () => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
-
-  // const [openModalAsDepartments, setopenModalAsDepartments] = useState(false);
-
-  const [showModalDeleteSection, setShowModalDeleteSection] = useState(false);
 
   return (
     <div className="w-full min-h-screen flex flex-col p-4">
@@ -341,8 +341,8 @@ const Departments = () => {
 
         <div className="w-full">
           <div
-            className="grid [grid-template-columns:150px_250px_1090px_80px]
-                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center gap-3"
+            className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px]
+                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center "
           >
             <div className="py-2 px-4 text-left flex items-center"></div>
             <div className="py-2 px-4 text-left flex items-center">
@@ -367,11 +367,28 @@ const Departments = () => {
               <button type="button" onClick={() => HandleSort("sections")}>
                 <Icon
                   icon={
-                    sortField === "dept_name"
+                    sortField === "sections"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
                       : "bx:sort-down" //default icon
+                  }
+                  width="28"
+                  height="28"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              จำนวนคน
+              <button type="button" onClick={() => HandleSort("people_count")}>
+                <Icon
+                  icon={
+                    sortField === "people_count"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down"
                   }
                   width="28"
                   height="28"
@@ -387,17 +404,25 @@ const Departments = () => {
               onClick={() => toggleOpen(dep.dept_id)}
               className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
             >
-              <div className="grid [grid-template-columns:150px_250px_1090px_80px] mt-[30px] mb-[30px] items-center text-[16px] gap-3">
+              <div className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] mt-[30px] mb-[30px] items-center text-[16px] ">
                 {/* Dropdown Arrow */}
                 <div className="py-2 px-4 flex justify-center items-center hover:cursor-pointer">
                   <DropdownArrow isOpen={openDeptId.includes(dep.dept_id)} />
                 </div>
                 {/* ชื่อแผนก */}
-                <div className="py-2 px-4">{dep.dept_name}</div>
+                <div className="py-2 px-4 flex flex-col gap-2">
+                  {dep.dept_name}
+                </div>
                 {/* จำนวนฝ่ายย่อย */}
                 <div className="py-2 px-4">
                   <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
                     {dep.sections.length} ฝ่ายย่อย
+                  </span>
+                </div>
+                {/* จำนวนคนในแผนก */}
+                <div className="py-2 px-4">
+                  <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
+                    {dep.people_count} คน
                   </span>
                 </div>
                 {/* จัดการ */}
@@ -419,8 +444,14 @@ const Departments = () => {
                       <Icon icon="prime:pen-to-square" width="28" height="28" />
                     </button>
                     <button
+                      disabled={dep.people_count > 0}
                       type="submit"
-                      className="text-[#FF4D4F] hover:text-[#FF4D4F]"
+                      className={`text-[#FF4D4F] 
+                                                    ${
+                                                      dep.people_count > 0
+                                                        ? "opacity-50 cursor-not-allowed"
+                                                        : "hover:text-[#FF4D4F]"
+                                                    }`}
                       title="ลบ"
                     >
                       <Icon
@@ -440,10 +471,10 @@ const Departments = () => {
                 openDeptId.includes(dep.dept_id) && (
                   <div className="flex flex-col gap-5 mt-[30px] mb-[30px]">
                     <hr className="border-t border-gray-200 mx-[60px]" />
-                    {dep.sections.map((section, index) => (
+                    {dep.sections.map((section: any, index: any) => (
                       <div
                         key={index}
-                        className="grid [grid-template-columns:150px_250px_1090px_80px] h-[35px] items-center hover:bg-gray-50 text-[16px] gap-3"
+                        className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] h-[35px] items-center hover:bg-gray-50 text-[16px]"
                       >
                         {/* พื้นที่ว่าง */}
                         <div className="py-2 px-4"></div>
@@ -451,6 +482,12 @@ const Departments = () => {
                         <div className="py-2 px-4">{section.sec_name}</div>
                         {/* พื้นที่ว่าง */}
                         <div className="py-2 px-4"></div>
+                        {/* จำนวนคนในแผนก */}
+                        <div className="py-2 px-4">
+                          <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
+                            {section.people_count} คน
+                          </span>
+                        </div>
                         {/* จัดการ */}
                         <div>
                           <div className="py-2 px-4 flex items-center gap-3">
@@ -477,8 +514,15 @@ const Departments = () => {
                             </button>
                             <button
                               style={{ cursor: "pointer" }}
+                              disabled={section.people_count > 0}
                               type="submit"
-                              className="text-[#FF4D4F] hover:text-[#FF4D4F]"
+                              className={`text-[#FF4D4F] 
+                                                                        ${
+                                                                          section.people_count >
+                                                                          0
+                                                                            ? "opacity-50 cursor-not-allowed"
+                                                                            : "hover:text-[#FF4D4F]"
+                                                                        }`}
                               title="ลบ"
                               onClick={() =>
                                 setDeleteTarget({
@@ -601,7 +645,6 @@ const Departments = () => {
         initialData={selectedData}
         onSubmit={handleModalSubmit}
       />
-
       {deleteTarget && (
         <AlertDialog
           open={true}

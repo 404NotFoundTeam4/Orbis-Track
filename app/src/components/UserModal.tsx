@@ -1,3 +1,10 @@
+/**
+ * Description: UserModal Component สำหรับแสดงฟอร์ม เพิ่ม/แก้ไข/ลบ ผู้ใช้ในระบบ
+ * Input     :
+ *   - typeform: กำหนดประเภทฟอร์ม ("add" | "edit" | "delete")
+ * Note      :  ประเภทฟอร์มแต่ละอันจะมีการแสดงข้อมูลหรือปุ่มที่ไม่เหมือนกัน
+ * Author    : Worrawat Namwat (Wave) 66160372,บูม(ใส่ชื่อด้วย),ตัง(ใส่ชื่อด้วย)
+ */
 import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import api from "../api/axios.js";
@@ -5,24 +12,24 @@ import DropDown from "./DropDown.js";
 import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 
-type Department = {
+type IDepartment = {
   dept_id: number;
   dept_name: string;
 };
 
-type Section = {
+type ISection = {
   sec_id: number;
   sec_name: string;
   sec_dept_id: number;
 };
 
-type DropDownItemType = {
+type IDropDownItemType = {
   id: string | number;
   label: string;
   value: any;
 };
 
-type UserApiData = {
+type IUserApiData = {
   us_id: number;
   us_emp_code: string;
   us_firstname: string;
@@ -39,18 +46,18 @@ type UserApiData = {
   us_sec_name: string;
 };
 
-type UserModalProps = {
+type IUserModalProps = {
   typeform?: "add" | "edit" | "delete";
-  user?: UserApiData | null;
+  user?: IUserApiData | null; //ข้อมูล user (สำหรับโหมด edit) ที่รับมาจาก props
   onClose?: () => void;
-  onSubmit?: (data: Partial<UserApiData>) => void;
+  onSubmit?: (data: Partial<IUserApiData>) => void;
 
-  keyvalue: (keyof UserApiData)[] | "all";
-  departments: Department[];
-  sections: Section[];
-  roles: DropDownItemType[];
+  keyvalue: (keyof IUserApiData)[] | "all";
+  departmentsList: IDepartment[];
+  sectionsList: ISection[];
+  rolesList: IDropDownItemType[];
 };
-const defaultFormData: UserApiData = {
+const defaultFormDataObject: IUserApiData = {
   us_id: 0,
   us_emp_code: "",
   us_firstname: "",
@@ -73,54 +80,73 @@ export default function UserModal({
   onClose,
   onSubmit,
   keyvalue,
-  departments,
-  sections,
-  roles,
-}: UserModalProps) {
-  const [formData, setFormData] = useState<UserApiData>(
-    user ? { ...defaultFormData, ...user } : defaultFormData
+  departmentsList,
+  sectionsList,
+  rolesList,
+}: IUserModalProps) {
+  // ถ้ามี 'user' (โหมด edit) ให้ใช้ข้อมูล 'user' นั้น
+  // ในการกำหนดค่าเริ่มต้นของ formDataObject
+  const [formDataObject, setFormDataObject] = useState<IUserApiData>(
+    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject
   );
 
-  const [newImageFile, setNewImageFile] = useState<File | null>(null);
-  const [formOutput, setFormOutput] = useState<Partial<UserApiData>>({});
+  const [newImageFile, setNewImageFile] = useState<File | null>(null); //State สำหรับเก็บ 'ไฟล์' รูปใหม่ กรณีมีการแก้ไขรูปภาพ
+  const [formOutput, setFormOutput] = useState<Partial<IUserApiData>>({});
   const toast = useToast();
-  const [isEditAlertOpen, setIsEditAlertOpen] = useState(false);
+  const [isEditAlertOpen, setIsEditAlertOpen] = useState(false); // State สำหรับควบคุม Dialog ยืนยัน 'การแก้ไข'
 
+  /**
+   * Description: (Handler) ยืนยันการแก้ไขข้อมูล (โหมด 'edit') สร้าง FormData และส่ง API (PATCH)
+   * Input: -
+   * Output: - (void, async)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   const handleConfirmEdit = async () => {
-    const fd = new FormData();
+    // ฟังก์ชันที่ทำงานหลังจากกดยืนยัน 'แก้ไข' ใน Dialog
+    const formDataPayload = new FormData();
 
-    fd.append("us_firstname", formData.us_firstname);
-    fd.append("us_lastname", formData.us_lastname);
-    fd.append("us_username", formData.us_username);
-    fd.append("us_email", formData.us_email);
-    fd.append("us_phone", formData.us_phone);
-    fd.append("us_role", formData.us_role);
-    fd.append("us_dept_id", String(formData.us_dept_id));
-    fd.append("us_sec_id", String(formData.us_sec_id));
-    fd.append("us_is_active", String(formData.us_is_active));
-    fd.append("us_emp_code", formData.us_emp_code);
-
+    // เพิ่มข้อมูล Text fields ลงใน FormData
+    formDataPayload.append("us_firstname", formDataObject.us_firstname);
+    formDataPayload.append("us_lastname", formDataObject.us_lastname);
+    formDataPayload.append("us_username", formDataObject.us_username);
+    formDataPayload.append("us_email", formDataObject.us_email);
+    formDataPayload.append("us_phone", formDataObject.us_phone);
+    formDataPayload.append("us_role", formDataObject.us_role);
+    formDataPayload.append("us_dept_id", String(formDataObject.us_dept_id));
+    formDataPayload.append("us_sec_id", String(formDataObject.us_sec_id));
+    formDataPayload.append("us_is_active", String(formDataObject.us_is_active));
+    formDataPayload.append("us_emp_code", formDataObject.us_emp_code); // Author:Worrawat Namwat (Wave) 66160372
+    // Logic การจัดการรูปภาพตอน 'แก้ไข' (ส่วนที่อาจทำให้สับสน)
     if (newImageFile) {
-      fd.append("us_images", newImageFile);
-    } else if (formData.us_images && !newImageFile) {
-      if (!formData.us_images.startsWith("blob:")) {
-        fd.append("us_images", formData.us_images);
+      //ถ้ามีไฟล์ใหม่ (อัปโหลดใหม่) ให้ใช้ไฟล์ใหม่
+      formDataPayload.append("us_images", newImageFile);
+    } else if (formDataObject.us_images && !newImageFile) {
+      //ถ้าไม่มีไฟล์ใหม่ แต่มี URL รูปภาพ (คือไม่ได้เปลี่ยนรูป) ให้ส่ง URL เดิมไป (เพื่อให้ backend รู้ว่ายังใช้รูปเดิม)
+      if (!formDataObject.us_images.startsWith("blob:")) {
+        //เช็คว่าไม่ใช่ URL ชั่วคราว (blob:) ที่สร้างจากการ preview
+        formDataPayload.append("us_images", formDataObject.us_images);
       }
     }
 
     try {
-      const res = await api.patch(`/accounts/${formData.us_id}`, fd, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      //ส่ง Request (PATCH)
+      const res = await api.patch(
+        `/accounts/${formDataObject.us_id}`,
+        formDataPayload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       console.log("✅ PATCH Response:", res.data);
-
+      // จัดการ Response
       if (res.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
-       
-        if (onSubmit) onSubmit(formData);
+
+        // เรียก onSubmit เพื่ออัปเดต UI
+        if (onSubmit) onSubmit(formDataObject);
         return;
       }
 
@@ -134,7 +160,7 @@ export default function UserModal({
       if (err.response?.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
 
-        if (onSubmit) onSubmit(formData);
+        if (onSubmit) onSubmit(formDataObject);
         return;
       }
       const apiErrorMessage =
@@ -148,104 +174,148 @@ export default function UserModal({
       });
     }
   };
-
-  //  filter key ตามที่ส่งมาจาก props (keyvalue)
+  /**
+   * useEffect: กรองข้อมูลใน formDataObject ตาม 'keysToProcess' ที่ได้รับแล้วเก็บผลลัพธ์ไว้ใน 'formOutputData'
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   useEffect(() => {
-    let filtered: Partial<UserApiData> = {};
+    let filteredDataObject: Partial<IUserApiData> = {};
 
     if (keyvalue === "all") {
-      filtered = { ...formData };
+      filteredDataObject = { ...formDataObject };
     } else {
       // (เพิ่ม 'else' ที่หายไป)
-      keyvalue.forEach((key) => {
-        (filtered as any)[key] = formData[key];
+      keyvalue.forEach((keyName) => {
+        (filteredDataObject as any)[keyName] = formDataObject[keyName];
       });
     }
-    setFormOutput(filtered);
-  }, [formData, keyvalue]);
+    setFormOutput(filteredDataObject);
+  }, [formDataObject, keyvalue]);
 
-  //  handle input
+  /**
+   * Description: (Handler) จัดการการเปลี่ยนแปลงค่าใน <input> และ <select>(มี logic พิเศษสำหรับ reset 'us_sec_id' เมื่อ 'us_dept_id' เปลี่ยน)
+   * Input: (changeEvent: React.ChangeEvent<...>) Event จากการเปลี่ยนแปลง
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value } = changeEvent.target;
 
     if (name === "us_dept_id") {
-      setFormData((prev) => ({
+      setFormDataObject((prev) => ({
         ...prev,
         us_dept_id: parseInt(value, 10) || 0,
         us_sec_id: 0, // รีเซ็ตฝ่ายย่อย เมื่อแผนกเปลี่ยน
       }));
     } else if (name === "us_sec_id") {
-      setFormData((prev) => ({
+      setFormDataObject((prev) => ({
         ...prev,
         us_sec_id: parseInt(value, 10) || 0,
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormDataObject((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  //  handle avatar upload
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  /**
+   * Description: (Handler) จัดการการอัปโหลดไฟล์รูปภาพ Avatar
+   *             สร้าง URL (blob) สำหรับ Preview และเก็บ File object ไว้ใน state
+   * Input: (fileChangeEvent: React.ChangeEvent<...>) Event จาก <input type="file">
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
+  const handleAvatarChange = (
+    changeEvent: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = changeEvent.target.files?.[0];
     if (file) {
       const previewUrl = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, us_images: previewUrl }));
+      setFormDataObject((prev) => ({ ...prev, us_images: previewUrl }));
 
       setNewImageFile(file);
     }
   };
 
-  //  handle main API call
+  /**
+   * Description: (Handler) ฟังก์ชันหลักเมื่อคลิกปุ่ม "บันทึก" หรือ "ปิดการใช้งาน"
+   *             - ถ้าเป็น 'edit' จะเปิด Dialog ยืนยัน (isEditAlertOpen)
+   *             - ถ้าเป็น 'add'/'delete' จะเรียก onSubmit ทันที
+   * Input: -
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   const handle = async () => {
     // ตรวจสอบ ถ้าเป็น 'edit' ให้เปิด Alert
     if (typeform === "edit") {
       setIsEditAlertOpen(true);
       return; // หยุดการทำงานตรงนี้
     }
-    const payload = keyvalue === "all" ? formData : formOutput;
+    const payload = keyvalue === "all" ? formDataObject : formOutput;
     console.log(formOutput);
     if (onSubmit) onSubmit(payload);
   };
 
-  const handleRoleChange = (selectedItem: DropDownItemType) => {
-    setFormData((prev) => ({
+  /**
+   * Description: (Handler) อัปเดต state เมื่อเลือก Role จาก DropDown
+   * Input: (selectedItemData: IDropDownItemData)
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
+  const handleRoleChange = (selectedItem: IDropDownItemType) => {
+    setFormDataObject((prev) => ({
       ...prev,
       us_role: selectedItem.value, // เก็บค่า string "Admin", "Staff" ฯลฯ
     }));
   };
 
-  const handleDepartmentChange = (selectedItem: DropDownItemType) => {
-    setFormData((prev) => ({
+  /**
+   * Description: (Handler) อัปเดต state เมื่อเลือก Department (พร้อม reset Section)
+   * Input: (selectedItemData: IDropDownItemData)
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
+  const handleDepartmentChange = (selectedItem: IDropDownItemType) => {
+    setFormDataObject((prev) => ({
       ...prev,
       us_dept_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
       us_sec_id: 0, // รีเซ็ตฝ่ายย่อย
     }));
   };
 
-  const handleSectionChange = (selectedItem: DropDownItemType) => {
-    setFormData((prev) => ({
+  /**
+   * Description: (Handler) อัปเดต state เมื่อเลือก Section
+   * Input: (selectedItemData: IDropDownItemData)
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 661603720
+   */
+  const handleSectionChange = (selectedItem: IDropDownItemType) => {
+    setFormDataObject((prev) => ({
       ...prev,
       us_sec_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
     }));
-  };
+  }; // Author:Worrawat Namwat (Wave) 661603720
 
-  // (Department Options)
+  // แปลง 'departmentsList' (array) ให้อยู่ในรูปแบบที่ DropDown ใช้ได้
   const departmentOptions = useMemo(() => {
-    return departments.map((dept) => ({
+    return departmentsList.map((dept) => ({
       id: dept.dept_id,
       label: dept.dept_name,
       value: dept.dept_id, // เราเก็บ ID ลงใน value
     }));
-  }, [departments]);
+  }, [departmentsList]);
 
   // (Section Options) - กรองก่อนแล้วค่อยแปลง
+  //  ใช้ useMemo กรอง 'sectionsList' ให้เหลือเฉพาะที่ตรงกับ 'us_dept_id' ที่เลือก
   const filteredSections = useMemo(() => {
-    if (!formData.us_dept_id) return [];
-    return sections.filter((sec) => sec.sec_dept_id === formData.us_dept_id);
-  }, [formData.us_dept_id, sections]);
+    if (!formDataObject.us_dept_id) return [];
+    return sectionsList.filter(
+      (sec) => sec.sec_dept_id === formDataObject.us_dept_id
+    );
+  }, [formDataObject.us_dept_id, sectionsList]);
 
+  //  ใช้ useMemo แปลง 'filteredSectionsList' ให้ DropDown ใช้ได้
   const sectionOptions = useMemo(() => {
     return filteredSections.map((sec) => ({
       id: sec.sec_id,
@@ -255,14 +325,16 @@ export default function UserModal({
   }, [filteredSections]);
 
   const selectedRole =
-    roles.find((option) => option.value === formData.us_role) || undefined;
-
-  const selectedDepartment =
-    departmentOptions.find((option) => option.id === formData.us_dept_id) ||
+    rolesList.find((option) => option.value === formDataObject.us_role) ||
     undefined;
 
+  const selectedDepartment =
+    departmentOptions.find(
+      (option) => option.id === formDataObject.us_dept_id
+    ) || undefined;
+
   const selectedSection =
-    sectionOptions.find((option) => option.id === formData.us_sec_id) ||
+    sectionOptions.find((option) => option.id === formDataObject.us_sec_id) ||
     undefined;
 
   return (
@@ -272,13 +344,12 @@ export default function UserModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-black hover:text-black w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-          
         >
           <Icon
             icon="ph:x-circle"
             width="35px"
             height="35px"
-            className="text-black hover:text-black" 
+            className="text-black hover:text-black"
           />
         </button>
 
@@ -290,9 +361,9 @@ export default function UserModal({
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-28 h-28 rounded-full border border-[#a2a2a2] flex items-center justify-center overflow-hidden bg-gray-50">
-            {formData.us_images ? (
+            {formDataObject.us_images ? (
               <img
-                src={formData.us_images}
+                src={formDataObject.us_images}
                 alt="avatar"
                 className="w-full h-full object-cover"
               />
@@ -319,7 +390,7 @@ export default function UserModal({
         {/* ฟอร์ม */}
         <form
           className="space-y-8 text-sm"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(changeEvent) => changeEvent.preventDefault()}
         >
           {/* โปรไฟล์ */}
           <div>
@@ -331,7 +402,7 @@ export default function UserModal({
               <input
                 name="us_firstname"
                 placeholder="ชื่อจริง"
-                value={formData.us_firstname}
+                value={formDataObject.us_firstname}
                 onChange={handleChange}
                 className="w-[221px] h-[46px] border rounded-[16px] px-4 
                text-[16px] font-normal text-black 
@@ -340,7 +411,7 @@ export default function UserModal({
               <input
                 name="us_lastname"
                 placeholder="นามสกุล"
-                value={formData.us_lastname}
+                value={formDataObject.us_lastname}
                 onChange={handleChange}
                 className="w-[221px] h-[46px] border rounded-[16px] px-4 
                text-[16px] font-normal text-black 
@@ -349,7 +420,7 @@ export default function UserModal({
               <input
                 name="us_emp_code"
                 placeholder="รหัสพนักงาน"
-                value={formData.us_emp_code}
+                value={formDataObject.us_emp_code}
                 onChange={handleChange}
                 className="w-[221px] h-[46px] border rounded-[16px] px-4 
                text-[16px] font-normal text-black 
@@ -358,7 +429,7 @@ export default function UserModal({
               <input
                 name="us_email"
                 placeholder="อีเมล"
-                value={formData.us_email}
+                value={formDataObject.us_email}
                 onChange={handleChange}
                 className="w-[221px] h-[46px] border rounded-[16px] px-4 
                text-[16px] font-normal text-black 
@@ -367,7 +438,7 @@ export default function UserModal({
               <input
                 name="us_phone"
                 placeholder="เบอร์โทรศัพท์"
-                value={formData.us_phone}
+                value={formDataObject.us_phone}
                 onChange={handleChange}
                 className="w-[221px] h-[46px] border rounded-[16px] px-4 
                text-[16px] font-normal text-black 
@@ -387,7 +458,7 @@ export default function UserModal({
             <div className="grid grid-cols-3 gap-y-4 gap-x-4">
               {/* ตำแหน่ง (Role) */}
               <DropDown
-                items={roles}
+                items={rolesList}
                 value={selectedRole}
                 onChange={handleRoleChange}
                 placeholder="เลือกตำแหน่ง"
@@ -432,7 +503,7 @@ export default function UserModal({
               <input
                 name="us_username"
                 placeholder="ชื่อผู้ใช้"
-                value={formData.us_username}
+                value={formDataObject.us_username}
                 onChange={handleChange}
                 className="flex-1 border-0 outline-none text-[16px]"
               />
@@ -455,7 +526,7 @@ export default function UserModal({
           </div>
         </form>
       </div>
-      <AlertDialog
+      <AlertDialog //Dialog ยืนยัน (สำหรับโหมด 'edit' เท่านั้น)จะแสดงเมื่อ isEditAlertOpen เป็น true
         open={isEditAlertOpen}
         onOpenChange={setIsEditAlertOpen}
         title="ยืนยันการแก้ไข"

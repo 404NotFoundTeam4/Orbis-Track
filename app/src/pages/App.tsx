@@ -26,22 +26,22 @@ function App() {
           <Route path="/" element={<Login />} />
 
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
-          {/* <Route element={<ProtectedRoute />}> */}
-          <Route element={<Navbar />}>
-            <Route
-              path="/administrator/account-management"
-              element={<Users />}
-            />
-            <Route path="/users" element={<Users />} />
-            <Route
-              path="/administrator/departments-management"
-              element={<Departments />}
-            />
-            <Route path="/example-component" element={<TestDropDown />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Navbar />}>
+              <Route
+                path="/administrator/account-management"
+                element={<Users />}
+              />
+              <Route path="/users" element={<Users />} />
+              <Route
+                path="/administrator/departments-management"
+                element={<Departments />}
+              />
+              <Route path="/example-component" element={<TestDropDown />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
           </Route>
-          {/* </Route> */}
         </Routes>
       </BrowserRouter>
     </ToastProvider>

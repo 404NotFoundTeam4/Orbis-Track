@@ -1,5 +1,5 @@
 services:
-  db:
+  database:
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -20,7 +20,7 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  redis:
+  caching:
     image: redis:7.4.5
     command: >
       sh -lc 'redis-server --appendonly yes --save 60 1000 --requirepass "$${REDIS_PASSWORD}"'
@@ -39,11 +39,13 @@ services:
       start_period: 5s
     restart: unless-stopped
 
-  server:
+  backend:
     build:
       context: .
       dockerfile: server/Dockerfile
       target: prod
+    env_file:
+      - server/.env
     environment:
       NODE_ENV: production
       PORT:
@@ -68,27 +70,27 @@ services:
       PRISMA_STRATEGY: migrate-deploy # ใช้ migrations แบบ production
       START_CMD: "node dist/main.js" # รันไฟล์ build แล้ว
     depends_on:
-      db:
+      database:
         condition: service_healthy
-      redis:
+      caching:
         condition: service_healthy
     ports:
-      - "4141:4044"
+      - "4141:4041"
     restart: unless-stopped
 
-  app:
+  frontend:
     build:
       context: .
       dockerfile: app/dockerfile
       target: run # ← ใช้ stage run จาก app/dockerfile (serve dist)
       # ถ้าต้องการ bake ค่า API ตอน build (แนะนำ):
-      # args:
-      #   - VITE_API_BASE=https://api.yourdomain.com   # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy
+      args:
+        - VITE_API_BASE=http://server:4141 # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy
     # ถ้า serve ที่พอร์ต 4173 ตาม Dockerfile
     ports:
-      - "4140:4173"
+      - "4140:5173"
     depends_on:
-      - server
+      - backend
     restart: unless-stopped
     # โปรดักชันไม่ต้อง mount volumes
 

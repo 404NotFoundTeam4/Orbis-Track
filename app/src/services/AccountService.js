@@ -1,9 +1,8 @@
 import api from "../api/axios";
 
 export const login = async (username, passwords,isRemember) => {
-  const account = { username, passwords,isRemember};
-  const res = await api.post("/login", account);
-  return res.data; // ส่งต่อข้อมูลจาก backend
+  const res = await api.post("/login", {username, passwords,isRemember});
+  return res.data;
 };
 export const user_data = async (token) => {
    const res = await api.get("/auth/fetch-me", {

@@ -79,7 +79,7 @@ export const Users = () => {
   const roleOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
+      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
       label: r,
@@ -103,7 +103,7 @@ export const Users = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
- // สร้างฟังก์ชันสำหรับจัดการ Modal
+  // สร้างฟังก์ชันสำหรับจัดการ Modal
   const handleOpenAddModal = () => {
     setSelectedUser(null);
     setModalType("add");
@@ -126,7 +126,7 @@ export const Users = () => {
     setIsModalOpen(false);
     setSelectedUser(null);
   };
-  const handleSaveUser = async (updatedData: Partial<User>) => { 
+  const handleSaveUser = async (updatedData: Partial<User>) => {
     // 1. ตรวจสอบ us_id
     if (!updatedData.us_id) {
       console.error("Cannot save user: missing us_id for update");
@@ -134,43 +134,49 @@ export const Users = () => {
     }
 
     try {
-        //  เรียก API PUT/PATCH เพื่อแก้ไขข้อมูล
-        const response = await axios.put(`/api/accounts/${updatedData.us_id}`, updatedData);
-        console.log(`User ID ${updatedData.us_id} updated successfully:`, response.data);
+      //  เรียก API PUT/PATCH เพื่อแก้ไขข้อมูล
+      const response = await axios.put(
+        `/api/accounts/${updatedData.us_id}`,
+        updatedData
+      );
+      console.log(
+        `User ID ${updatedData.us_id} updated successfully:`,
+        response.data
+      );
 
-        // 2. อัปเดต State 'users' ใน Frontend (แสดงผลทันที)
-        setusers((prevUsers) => {
-          return prevUsers.map((user) => {
-            if (user.us_id === updatedData.us_id) {
-              // ผสานข้อมูลที่แก้ไขเข้ามา
-              const mergedUser = { ...user, ...updatedData };
-              
-              // หาชื่อแผนกและฝ่ายย่อยใหม่
-              const dept = departments.find((d) => d.dept_id === mergedUser.us_dept_id);
-              const sec = sections.find((s) => s.sec_id === mergedUser.us_sec_id);
-              
-              // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
-              const newDeptName = dept ? dept.dept_name : user.us_dept_name; 
-              const newSecName = sec ? sec.sec_name : '-'; 
+      // 2. อัปเดต State 'users' ใน Frontend (แสดงผลทันที)
+      setusers((prevUsers) => {
+        return prevUsers.map((user) => {
+          if (user.us_id === updatedData.us_id) {
+            // ผสานข้อมูลที่แก้ไขเข้ามา
+            const mergedUser = { ...user, ...updatedData };
 
-              return {
-                ...mergedUser,
-                us_dept_name: newDeptName,
-                us_sec_name: newSecName,
-              };
-            }
-            return user;
-          });
+            // หาชื่อแผนกและฝ่ายย่อยใหม่
+            const dept = departments.find(
+              (d) => d.dept_id === mergedUser.us_dept_id
+            );
+            const sec = sections.find((s) => s.sec_id === mergedUser.us_sec_id);
+
+            // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
+            const newDeptName = dept ? dept.dept_name : user.us_dept_name;
+            const newSecName = sec ? sec.sec_name : "-";
+
+            return {
+              ...mergedUser,
+              us_dept_name: newDeptName,
+              us_sec_name: newSecName,
+            };
+          }
+          return user;
         });
-
+      });
     } catch (error) {
-        // จัดการข้อผิดพลาด
-        console.error("Error updating user via API:", error);
-        alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
-
+      // จัดการข้อผิดพลาด
+      console.error("Error updating user via API:", error);
+      alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
-        // 3. ปิด Modal เสมอ ไม่ว่า API จะสำเร็จหรือล้มเหลว
-        handleCloseModal(); 
+      // 3. ปิด Modal เสมอ ไม่ว่า API จะสำเร็จหรือล้มเหลว
+      handleCloseModal();
     }
   };
 
@@ -379,7 +385,9 @@ export const Users = () => {
               {/* <AddButton label="บัญชีผู้ใช้" /> */}
               <Button
                 size="md"
-                icon={<Icon icon="ic:baseline-plus" width="20px" height="20px" />}
+                icon={
+                  <Icon icon="ic:baseline-plus" width="20px" height="20px" />
+                }
                 onClick={handleOpenAddModal}
                 className="w-[150px] h-[46px] text-[16px] font-medium flex items-center justify-center gap-2"
               >
@@ -504,7 +512,7 @@ export const Users = () => {
             <div className="py-2 px-4 text-left flex items-center">จัดการ</div>
           </div>
 
-          <div className="border border-[#D9D9D9] rounded-[16px]">
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px]">
             {/* แถวข้อมูล */}
             {pageRows.map((u) => (
               <div
@@ -670,9 +678,9 @@ export const Users = () => {
           typeform={modalType}
           user={selectedUser}
           onClose={handleCloseModal}
-          onSubmit={modalType === 'edit' ? handleSaveUser : handleModalSubmit}
+          onSubmit={modalType === "edit" ? handleSaveUser : handleModalSubmit}
           keyvalue="all"
-          departments={departments} 
+          departments={departments}
           sections={sections}
           roles={roleOptions}
         />

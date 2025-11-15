@@ -1,37 +1,32 @@
-.background {
-    background-color: #F4F4F4;
-}
-
-
 /* CSS สำหรับ dropdown */
 .dropdown-menu {
-    display: block;
-    padding-left: 2px;
-    list-style-type: none;
-    margin: 0;
-    max-height: 0; /* ซ่อน dropdown */
-    overflow: hidden; /* ซ่อนเนื้อหาที่เกิน */
-    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
-    opacity: 0; /* ทำให้ dropdown หาย */
+  display: block;
+  list-style-type: none;
+  margin: 0;
+  max-height: 0;
+  /* ซ่อน dropdown */
+  overflow: hidden;
+  /* ซ่อนเนื้อหาที่เกิน */
+  transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+  opacity: 0;
+  /* ทำให้ dropdown หาย */
 }
 
 /* เมื่อเปิด dropdown */
 .dropdown-menu.open {
-    max-height: 200px; /* ปรับให้เหมาะสมกับเนื้อหาของคุณ */
-    opacity: 1;
+  max-height: 200px;
+  /* ปรับให้เหมาะสมกับเนื้อหาของคุณ */
+  opacity: 1;
 }
+
 .arrow {
   border: solid rgb(0, 0, 0);
   border-width: 0 3px 3px 0;
   display: inline-block;
   padding: 3px;
 }
+
 .down {
   transform: rotate(45deg);
   -webkit-transform: rotate(45deg);
-}
-.menu-item:hover .icon,
-.menu-item:hover  ,
-.dropdown-item:hover{
-  color: #008CFF;
 }

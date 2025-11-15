@@ -9,8 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -130,9 +130,9 @@ model approval_positions {
   created_at DateTime? @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
 
-  users                   users[]
-  approval_flow_steps     approval_flow_steps[]
-  borrow_return_stages    borrow_return_ticket_stages[]
+  users                users[]
+  approval_flow_steps  approval_flow_steps[]
+  borrow_return_stages borrow_return_ticket_stages[]
 }
 
 model sections {
@@ -143,7 +143,7 @@ model sections {
   created_at  DateTime? @db.Timestamptz(6)
   updated_at  DateTime? @db.Timestamptz(6)
 
-  department departments @relation(fields: [sec_dept_id], references: [dept_id])
+  department departments @relation(fields: [sec_dept_id], references: [dept_id], onDelete: Cascade)
   users      users[]
   devices    devices[]
 
@@ -170,24 +170,24 @@ model users {
   updated_at   DateTime? @db.Timestamptz(6)
 
   approval_position approval_positions? @relation(fields: [us_pa_id], references: [ap_id])
-  department        departments?        @relation(fields: [us_dept_id], references: [dept_id])
-  section           sections?           @relation(fields: [us_sec_id], references: [sec_id])
+  department        departments?        @relation(fields: [us_dept_id], references: [dept_id], onDelete: SetNull)
+  section           sections?           @relation(fields: [us_sec_id], references: [sec_id], onDelete: SetNull)
 
   // Relations (backrefs)
-  devices_added         devices[]                       @relation("devices_added_by")
-  approval_flows        approval_flows[]                @relation("approval_flow_creator")
-  brt_requested         borrow_return_tickets[]         @relation("brt_requester")
-  brt_staffed           borrow_return_tickets[]         @relation("brt_staff")
-  brt_stages_approved   borrow_return_ticket_stages[]   @relation("brts_approver")
-  issues_reported       ticket_issues[]                 @relation("ti_reporter")
-  issues_assigned       ticket_issues[]                 @relation("ti_assignee")
-  issue_attachments     issue_attachments[]
-  notification_targets  notification_recipients[]
-  logs_borrow_returns   log_borrow_returns[]            @relation("lbr_actor")
-  logs_issues           log_issues[]                    @relation("li_actor")
-  chat_rooms            chat_rooms[]
-  carts                 carts[]
-  refresh_tokens        refresh_tokens[]
+  devices_added        devices[]                     @relation("devices_added_by")
+  approval_flows       approval_flows[]              @relation("approval_flow_creator")
+  brt_requested        borrow_return_tickets[]       @relation("brt_requester")
+  brt_staffed          borrow_return_tickets[]       @relation("brt_staff")
+  brt_stages_approved  borrow_return_ticket_stages[] @relation("brts_approver")
+  issues_reported      ticket_issues[]               @relation("ti_reporter")
+  issues_assigned      ticket_issues[]               @relation("ti_assignee")
+  issue_attachments    issue_attachments[]
+  notification_targets notification_recipients[]
+  logs_borrow_returns  log_borrow_returns[]          @relation("lbr_actor")
+  logs_issues          log_issues[]                  @relation("li_actor")
+  chat_rooms           chat_rooms[]
+  carts                carts[]
+  refresh_tokens       refresh_tokens[]
 
   @@index([us_pa_id], map: "idx_users_position")
   @@index([us_dept_id, us_sec_id], map: "idx_users_dept_sec")
@@ -195,21 +195,21 @@ model users {
 }
 
 model devices {
-  de_id            Int       @id @default(autoincrement())
-  de_serial_number String    @unique @db.VarChar(100)
-  de_name          String    @db.VarChar(200)
-  de_description   String?   @db.VarChar(250)
-  de_location      String    @db.VarChar(200)
+  de_id              Int       @id @default(autoincrement())
+  de_serial_number   String    @unique @db.VarChar(100)
+  de_name            String    @db.VarChar(200)
+  de_description     String?   @db.VarChar(250)
+  de_location        String    @db.VarChar(200)
   de_max_borrow_days Int
-  de_images        String?   @db.VarChar(200)
-  de_af_id         Int
-  de_ca_id         Int
-  de_us_id         Int
-  de_sec_id        Int
-  de_acc_id        Int?
-  deleted_at       DateTime? @db.Timestamptz(6)
-  created_at       DateTime? @db.Timestamptz(6)
-  updated_at       DateTime? @db.Timestamptz(6)
+  de_images          String?   @db.VarChar(200)
+  de_af_id           Int
+  de_ca_id           Int
+  de_us_id           Int
+  de_sec_id          Int
+  de_acc_id          Int?
+  deleted_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime? @db.Timestamptz(6)
+  updated_at         DateTime? @db.Timestamptz(6)
 
   approval_flow approval_flows @relation(fields: [de_af_id], references: [af_id])
   category      categories     @relation(fields: [de_ca_id], references: [ca_id])
@@ -224,15 +224,15 @@ model devices {
 }
 
 model device_childs {
-  dec_id              Int                 @id @default(autoincrement())
-  dec_serial_number   String?             @unique @db.VarChar(250)
-  dec_asset_code      String              @unique @db.VarChar(200)
-  dec_has_serial_number Boolean           @default(false)
-  dec_status          DEVICE_CHILD_STATUS
-  dec_de_id           Int
-  deleted_at          DateTime?           @db.Timestamptz(6)
-  created_at          DateTime?           @db.Timestamptz(6)
-  updated_at          DateTime?           @db.Timestamptz(6)
+  dec_id                Int                 @id @default(autoincrement())
+  dec_serial_number     String?             @unique @db.VarChar(250)
+  dec_asset_code        String              @unique @db.VarChar(200)
+  dec_has_serial_number Boolean             @default(false)
+  dec_status            DEVICE_CHILD_STATUS
+  dec_de_id             Int
+  deleted_at            DateTime?           @db.Timestamptz(6)
+  created_at            DateTime?           @db.Timestamptz(6)
+  updated_at            DateTime?           @db.Timestamptz(6)
 
   device devices @relation(fields: [dec_de_id], references: [de_id])
 
@@ -252,26 +252,26 @@ model carts {
   created_at  DateTime? @db.Timestamptz(6)
   updated_at  DateTime? @db.Timestamptz(6)
 
-  owner      users      @relation(fields: [ct_us_id], references: [us_id])
+  owner      users        @relation(fields: [ct_us_id], references: [us_id])
   cart_items cart_items[]
 
   @@index([ct_us_id], map: "idx_cart_user_status")
 }
 
 model cart_items {
-  cti_id            Int       @id @default(autoincrement())
-  cti_us_name       String?   @db.VarChar(255)
-  cti_phone         String?   @db.VarChar(20)
-  cti_note          String?   @db.VarChar(255)
-  cti_usage_location String?  @db.VarChar(255)
-  cti_quantity      Int       @default(1)
-  cti_start_date    DateTime? @db.Timestamptz(6)
-  cti_end_date      DateTime? @db.Timestamptz(6)
-  cti_ct_id         Int
-  cti_dec_id        Int
-  deleted_at        DateTime? @db.Timestamptz(6)
-  created_at        DateTime? @db.Timestamptz(6)
-  updated_at        DateTime? @db.Timestamptz(6)
+  cti_id             Int       @id @default(autoincrement())
+  cti_us_name        String?   @db.VarChar(255)
+  cti_phone          String?   @db.VarChar(20)
+  cti_note           String?   @db.VarChar(255)
+  cti_usage_location String?   @db.VarChar(255)
+  cti_quantity       Int       @default(1)
+  cti_start_date     DateTime? @db.Timestamptz(6)
+  cti_end_date       DateTime? @db.Timestamptz(6)
+  cti_ct_id          Int
+  cti_dec_id         Int
+  deleted_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime? @db.Timestamptz(6)
+  updated_at         DateTime? @db.Timestamptz(6)
 
   cart         carts         @relation(fields: [cti_ct_id], references: [ct_id])
   device_child device_childs @relation(fields: [cti_dec_id], references: [dec_id])
@@ -296,12 +296,12 @@ model refresh_tokens {
 }
 
 model accessories {
-  acc_id     Int       @id @default(autoincrement())
-  acc_name   String    @db.VarChar(100)
+  acc_id       Int       @id @default(autoincrement())
+  acc_name     String    @db.VarChar(100)
   acc_quantity Int
-  deleted_at DateTime? @db.Timestamptz(6)
-  created_at DateTime? @db.Timestamptz(6)
-  updated_at DateTime? @db.Timestamptz(6)
+  deleted_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime? @db.Timestamptz(6)
+  updated_at   DateTime? @db.Timestamptz(6)
 
   devices devices[]
 }
@@ -333,13 +333,13 @@ model approval_flows {
 }
 
 model approval_flow_steps {
-  afs_id            Int       @id @default(autoincrement())
-  afs_step_approve  Int
-  afs_pa_id         Int
-  afs_af_id         Int
-  deleted_at        DateTime? @db.Timestamptz(6)
-  created_at        DateTime? @db.Timestamptz(6)
-  updated_at        DateTime? @db.Timestamptz(6)
+  afs_id           Int       @id @default(autoincrement())
+  afs_step_approve Int
+  afs_pa_id        Int
+  afs_af_id        Int
+  deleted_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @db.Timestamptz(6)
+  updated_at       DateTime? @db.Timestamptz(6)
 
   position approval_positions @relation(fields: [afs_pa_id], references: [ap_id])
   flow     approval_flows     @relation(fields: [afs_af_id], references: [af_id])
@@ -348,16 +348,16 @@ model approval_flow_steps {
 }
 
 model device_availabilities {
-  da_id     Int        @id @default(autoincrement())
-  da_dec_id Int
-  da_brt_id Int
-  da_start  DateTime   @db.Timestamptz(6)
-  da_end    DateTime   @db.Timestamptz(6)
-  da_status DA_STATUS  @default(ACTIVE)
+  da_id      Int       @id @default(autoincrement())
+  da_dec_id  Int
+  da_brt_id  Int
+  da_start   DateTime  @db.Timestamptz(6)
+  da_end     DateTime  @db.Timestamptz(6)
+  da_status  DA_STATUS @default(ACTIVE)
   created_at DateTime  @default(now()) @db.Timestamptz(6)
   updated_at DateTime  @default(now()) @db.Timestamptz(6)
 
-  device_child device_childs        @relation(fields: [da_dec_id], references: [dec_id])
+  device_child device_childs         @relation(fields: [da_dec_id], references: [dec_id])
   ticket       borrow_return_tickets @relation(fields: [da_brt_id], references: [brt_id])
 
   @@index([da_dec_id, da_start, da_end], map: "idx_avail_device_period")
@@ -365,36 +365,36 @@ model device_availabilities {
 }
 
 model borrow_return_tickets {
-  brt_id            Int         @id @default(autoincrement())
-  brt_status        BRT_STATUS
-  brt_usage_location String     @db.VarChar(255)
-  brt_borrow_purpose String     @db.VarChar(255)
-  brt_start_date    DateTime    @db.Timestamptz(6)
-  brt_end_date      DateTime    @db.Timestamptz(6)
-  brt_quantity      Int         @default(1)
-  brt_current_stage Int?
-  brt_reject_reason String?     @db.VarChar(255)
-  brt_pickup_location String?   @db.VarChar(255)
-  brt_pickup_datetime DateTime? @db.Timestamptz(6)
-  brt_return_location String?   @db.VarChar(255)
-  brt_return_datetime DateTime? @db.Timestamptz(6)
-  brt_af_id         Int?
-  brt_user_id       Int
-  brt_staff_id      Int?
-  deleted_at        DateTime?   @db.Timestamptz(6)
-  created_at        DateTime?   @db.Timestamptz(6)
-  updated_at        DateTime?   @db.Timestamptz(6)
+  brt_id              Int        @id @default(autoincrement())
+  brt_status          BRT_STATUS
+  brt_usage_location  String     @db.VarChar(255)
+  brt_borrow_purpose  String     @db.VarChar(255)
+  brt_start_date      DateTime   @db.Timestamptz(6)
+  brt_end_date        DateTime   @db.Timestamptz(6)
+  brt_quantity        Int        @default(1)
+  brt_current_stage   Int?
+  brt_reject_reason   String?    @db.VarChar(255)
+  brt_pickup_location String?    @db.VarChar(255)
+  brt_pickup_datetime DateTime?  @db.Timestamptz(6)
+  brt_return_location String?    @db.VarChar(255)
+  brt_return_datetime DateTime?  @db.Timestamptz(6)
+  brt_af_id           Int?
+  brt_user_id         Int
+  brt_staff_id        Int?
+  deleted_at          DateTime?  @db.Timestamptz(6)
+  created_at          DateTime?  @db.Timestamptz(6)
+  updated_at          DateTime?  @db.Timestamptz(6)
 
-  flow     approval_flows? @relation(fields: [brt_af_id], references: [af_id])
-  requester users          @relation("brt_requester", fields: [brt_user_id], references: [us_id])
-  staffer   users?         @relation("brt_staff", fields: [brt_staff_id], references: [us_id])
+  flow      approval_flows? @relation(fields: [brt_af_id], references: [af_id])
+  requester users           @relation("brt_requester", fields: [brt_user_id], references: [us_id])
+  staffer   users?          @relation("brt_staff", fields: [brt_staff_id], references: [us_id])
 
-  stages          borrow_return_ticket_stages[]
-  ticket_devices  ticket_devices[]
-  notifications   notifications[]
-  logs_borrow     log_borrow_returns[]
-  ticket_issues   ticket_issues[]
-  availabilities  device_availabilities[]
+  stages         borrow_return_ticket_stages[]
+  ticket_devices ticket_devices[]
+  notifications  notifications[]
+  logs_borrow    log_borrow_returns[]
+  ticket_issues  ticket_issues[]
+  availabilities device_availabilities[]
 
   @@index([brt_user_id, brt_staff_id, brt_status, created_at], map: "idx_brt_user_status_created")
   @@index([brt_af_id], map: "idx_brt_flow")
@@ -402,20 +402,20 @@ model borrow_return_tickets {
 }
 
 model borrow_return_ticket_stages {
-  brts_id          Int         @id @default(autoincrement())
-  brts_status      BRTS_STATUS
-  brts_name        String      @db.VarChar(191)
+  brts_id           Int         @id @default(autoincrement())
+  brts_status       BRTS_STATUS
+  brts_name         String      @db.VarChar(191)
   brts_step_approve Int
-  brts_brt_id      Int
-  brts_pa_id       Int
-  brts_us_id       Int?
-  deleted_at       DateTime?   @db.Timestamptz(6)
-  created_at       DateTime?   @db.Timestamptz(6)
-  updated_at       DateTime?   @db.Timestamptz(6)
+  brts_brt_id       Int
+  brts_pa_id        Int
+  brts_us_id        Int?
+  deleted_at        DateTime?   @db.Timestamptz(6)
+  created_at        DateTime?   @db.Timestamptz(6)
+  updated_at        DateTime?   @db.Timestamptz(6)
 
-  ticket    borrow_return_tickets @relation(fields: [brts_brt_id], references: [brt_id])
-  position  approval_positions    @relation(fields: [brts_pa_id], references: [ap_id])
-  approver  users?                @relation("brts_approver", fields: [brts_us_id], references: [us_id])
+  ticket   borrow_return_tickets @relation(fields: [brts_brt_id], references: [brt_id])
+  position approval_positions    @relation(fields: [brts_pa_id], references: [ap_id])
+  approver users?                @relation("brts_approver", fields: [brts_us_id], references: [us_id])
 
   notifications notifications[]
 
@@ -424,9 +424,9 @@ model borrow_return_ticket_stages {
 }
 
 model ticket_devices {
-  td_id    Int       @id @default(autoincrement())
-  td_brt_id Int
-  td_dec_id Int
+  td_id      Int       @id @default(autoincrement())
+  td_brt_id  Int
+  td_dec_id  Int
   deleted_at DateTime? @db.Timestamptz(6)
   created_at DateTime? @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
@@ -440,22 +440,22 @@ model ticket_devices {
 }
 
 model ticket_issues {
-  ti_id            Int        @id @default(autoincrement())
-  ti_de_id         Int
-  ti_brt_id        Int?
-  ti_title         String     @db.VarChar(200)
-  ti_description   String?
-  ti_reported_by   Int
-  ti_assigned_to   Int?
-  ti_status        TI_STATUS
-  ti_result        TI_RESULT
+  ti_id             Int       @id @default(autoincrement())
+  ti_de_id          Int
+  ti_brt_id         Int?
+  ti_title          String    @db.VarChar(200)
+  ti_description    String?
+  ti_reported_by    Int
+  ti_assigned_to    Int?
+  ti_status         TI_STATUS
+  ti_result         TI_RESULT
   ti_damaged_reason String?   @db.VarChar(255)
-  ti_resolved_note String?
-  recive_at        DateTime?  @db.Timestamptz(6)
-  success_at       DateTime?  @db.Timestamptz(6)
-  deleted_at       DateTime?  @db.Timestamptz(6)
-  created_at       DateTime   @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime   @default(now()) @db.Timestamptz(6)
+  ti_resolved_note  String?
+  recive_at         DateTime? @db.Timestamptz(6)
+  success_at        DateTime? @db.Timestamptz(6)
+  deleted_at        DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
 
   device   devices                @relation(fields: [ti_de_id], references: [de_id])
   ticket   borrow_return_tickets? @relation(fields: [ti_brt_id], references: [brt_id])
@@ -485,21 +485,21 @@ model issue_attachments {
 }
 
 model notifications {
-  n_id           Int        @id @default(autoincrement())
-  n_title        String     @db.VarChar(200)
+  n_id           Int         @id @default(autoincrement())
+  n_title        String      @db.VarChar(200)
   n_message      String
-  n_data         Json?      @db.JsonB
-  n_target_route String?    @db.VarChar(255)
+  n_data         Json?       @db.JsonB
+  n_target_route String?     @db.VarChar(255)
   n_base_event   BASE_EVENT?
   n_brt_id       Int?
   n_brts_id      Int?
   n_ti_id        Int?
-  created_at     DateTime   @default(now()) @db.Timestamptz(6)
-  send_at        DateTime?  @default(now()) @db.Timestamptz(6)
+  created_at     DateTime    @default(now()) @db.Timestamptz(6)
+  send_at        DateTime?   @default(now()) @db.Timestamptz(6)
 
-  brt   borrow_return_tickets?       @relation(fields: [n_brt_id], references: [brt_id])
-  brts  borrow_return_ticket_stages? @relation(fields: [n_brts_id], references: [brts_id])
-  ti    ticket_issues?               @relation(fields: [n_ti_id], references: [ti_id])
+  brt  borrow_return_tickets?       @relation(fields: [n_brt_id], references: [brt_id])
+  brts borrow_return_ticket_stages? @relation(fields: [n_brts_id], references: [brts_id])
+  ti   ticket_issues?               @relation(fields: [n_ti_id], references: [ti_id])
 
   recipients notification_recipients[]
 
@@ -510,13 +510,13 @@ model notifications {
 }
 
 model notification_recipients {
-  nr_id        Int        @id @default(autoincrement())
+  nr_id        Int       @id @default(autoincrement())
   nr_status    NR_STATUS
   nr_event     NR_EVENT
   nr_n_id      Int
   nr_us_id     Int
-  read_at      DateTime?  @db.Timestamptz(6)
-  dismissed_at DateTime?  @db.Timestamptz(6)
+  read_at      DateTime? @db.Timestamptz(6)
+  dismissed_at DateTime? @db.Timestamptz(6)
 
   notification notifications @relation(fields: [nr_n_id], references: [n_id])
   user         users         @relation(fields: [nr_us_id], references: [us_id])
@@ -525,10 +525,10 @@ model notification_recipients {
 }
 
 model log_borrow_returns {
-  lbr_id        Int      @id @default(autoincrement())
-  lbr_action    String   @db.VarChar(50) // enum in DBML; store as text or create enum if needed
-  lbr_old_status String? @db.VarChar(50)
-  lbr_new_status String? @db.VarChar(50)
+  lbr_id         Int      @id @default(autoincrement())
+  lbr_action     String   @db.VarChar(50) // enum in DBML; store as text or create enum if needed
+  lbr_old_status String?  @db.VarChar(50)
+  lbr_new_status String?  @db.VarChar(50)
   lbr_note       String?
   lbr_actor_id   Int?
   lbr_brt_id     Int
@@ -541,14 +541,14 @@ model log_borrow_returns {
 }
 
 model log_issues {
-  li_id       Int       @id @default(autoincrement())
-  li_action   String    @db.VarChar(50) // enum in DBML; store as text or create enum if needed
-  li_old_status String? @db.VarChar(50)
-  li_new_status String? @db.VarChar(50)
-  li_note      String?
-  li_actor_id  Int?
-  li_ti_id     Int
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  li_id         Int      @id @default(autoincrement())
+  li_action     String   @db.VarChar(50) // enum in DBML; store as text or create enum if needed
+  li_old_status String?  @db.VarChar(50)
+  li_new_status String?  @db.VarChar(50)
+  li_note       String?
+  li_actor_id   Int?
+  li_ti_id      Int
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
 
   issue ticket_issues @relation(fields: [li_ti_id], references: [ti_id])
   actor users?        @relation("li_actor", fields: [li_actor_id], references: [us_id])
@@ -564,7 +564,7 @@ model chat_rooms {
   updated_at  DateTime? @db.Timestamptz(6)
   last_msg_at DateTime? @db.Timestamptz(6)
 
-  owner    users         @relation(fields: [cr_us_id], references: [us_id])
+  owner    users           @relation(fields: [cr_us_id], references: [us_id])
   messages chat_messages[]
 
   @@index([cr_us_id, last_msg_at])
@@ -572,18 +572,18 @@ model chat_rooms {
 }
 
 model chat_messages {
-  cm_id          Int       @id @default(autoincrement())
-  cm_role        CM_ROLE
-  cm_content     String
+  cm_id           Int       @id @default(autoincrement())
+  cm_role         CM_ROLE
+  cm_content      String
   cm_content_json Json?
-  cm_status      CM_STATUS @default(ok)
-  cm_parent_id   Int?
-  cm_cr_id       Int
-  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  cm_status       CM_STATUS @default(ok)
+  cm_parent_id    Int?
+  cm_cr_id        Int
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
 
-  room   chat_rooms    @relation(fields: [cm_cr_id], references: [cr_id], onDelete: Cascade)
-  parent chat_messages? @relation("cm_parent", fields: [cm_parent_id], references: [cm_id])
-  replies chat_messages[] @relation("cm_parent")
+  room        chat_rooms         @relation(fields: [cm_cr_id], references: [cr_id], onDelete: Cascade)
+  parent      chat_messages?     @relation("cm_parent", fields: [cm_parent_id], references: [cm_id])
+  replies     chat_messages[]    @relation("cm_parent")
   attachments chat_attachments[]
 
   @@index([cm_cr_id, created_at])

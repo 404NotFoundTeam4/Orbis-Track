@@ -4,6 +4,8 @@ import { UserRole } from "../../core/roles.enum.js";
 
 // Author: Pakkapon Chomchoey (Tonnam) 66160080
 
+// ==================== Login Schemas ====================
+
 // login schema ต้องมี username และ passwords (non-empty)
 export const loginPayload = z.object({
     username: z.string().min(1),
@@ -23,6 +25,8 @@ export const accessTokenPayload = z.object({
 export const tokenDto = z.object({
     accessToken: z.string().min(1),
 }).strict();
+
+// ==================== User Info Schemas ====================
 
 // User DTO สำหรับข้อมูลผู้ใช้ที่ครบถ้วน (ใช้ใน /me endpoint)
 export const meDto = z.object({
@@ -46,8 +50,84 @@ export interface AuthRequest extends Request {
     user?: AccessTokenPayload;
 }
 
+// ==================== OTP Schemas ====================
+
+export const sendOtpPayload = z.object({
+    email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง'),
+});
+
+export const verifyOtpPayload = z.object({
+    email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง'),
+    otp: z.string().length(6, 'OTP ต้องมี 6 หลัก'),
+});
+
+export const otpSchema = z.object({
+    otp: z.string().length(6, 'OTP ต้องมี 6 หลัก'),
+    userId: z.coerce.number().int().positive(),
+    attempts: z.coerce.number().int(),
+});
+
+// ==================== Password Validation ====================
+
+/**
+ * Schema: Validation สำหรับรหัสผ่าน (ใช้ร่วมกับ forgot/reset password)
+ * Rules : 
+ *   - ความยาว 12-16 ตัวอักษร
+ *   - ต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว (A-Z)
+ *   - ต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว (a-z)
+ *   - ต้องมีตัวเลขอย่างน้อย 1 ตัว (0-9)
+ *   - ต้องมีอักขระพิเศษอย่างน้อย 1 ตัว (&*()-_=+{};)
+ *   - ห้ามมีช่องว่าง (whitespace)
+ */
+const passwordValidation = z
+    .string()
+    .min(12, 'อักขระดิบท่า 12 - 16 ตัวอักษร')
+    .max(16, 'อักขระดิบท่า 12 - 16 ตัวอักษร')
+    .refine((val) => /[A-Z]/.test(val), {
+        message: 'อักขระตัวใหญ่อย่างน้อย 1 ตัว'
+    })
+    .refine((val) => /[a-z]/.test(val), {
+        message: 'อักขระตัวเล็กอย่างน้อย 1 ตัว'
+    })
+    .refine((val) => /\d/.test(val), {
+        message: 'เลขอย่างน้อยน้อย 1 ตัว'
+    })
+    .refine((val) => /[&*()\-_=+{};]/.test(val), {
+        message: 'อักขระพิเศษอย่างน้อย 1 ตัว & * ( ) - _ = + { } ;'
+    })
+    .refine((val) => !/\s/.test(val), {
+        message: 'ห้ามมีการเว้นวรรค'
+    });
+
+// ==================== Forgot/Reset Password Schemas ====================
+
+export const forgotPasswordPayload = z.object({
+    email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง'),
+    newPassword: passwordValidation,
+    confirmNewPassword: passwordValidation,
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: 'รหัสผ่านไม่ตรงกัน',
+    path: ['confirmNewPassword'],
+});
+
+export const resetPasswordPayload = z.object({
+  token: z.string().min(1),
+  newPassword: passwordValidation,
+  confirmNewPassword: passwordValidation,
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: 'รหัสผ่านไม่ตรงกัน',
+    path: ['confirmNewPassword'],
+});
+
+// ==================== TypeScript Types ====================
 // TS types inferred from zod schemas (ใช้ใน controller/service)
+
 export type TokenDto = z.infer<typeof tokenDto>;
 export type LoginPayload = z.infer<typeof loginPayload>;
 export type AccessTokenPayload = z.infer<typeof accessTokenPayload>;
 export type MeDto = z.infer<typeof meDto>;
+export type SendOtpPayload = z.infer<typeof sendOtpPayload>;
+export type VerifyOtpPayload = z.infer<typeof verifyOtpPayload>;
+export type OtpSchema = z.infer<typeof otpSchema>;
+export type ForgotPasswordPayload = z.infer<typeof forgotPasswordPayload>;
+export type ResetPasswordPayload = z.infer<typeof resetPasswordPayload>;

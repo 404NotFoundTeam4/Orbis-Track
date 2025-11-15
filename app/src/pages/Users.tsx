@@ -666,9 +666,9 @@ export const Users = () => {
           onClose={handleCloseModal}
           onSubmit={modalType === 'edit' ? handleSaveUser : handleModalSubmit}
           keyvalue="all"
-          departments={departments} 
-          sections={sections}
-          roles={roleOptions} 
+          departmentsList={departments}
+          sectionsList={sections}
+          rolesList={roleOptions} 
         />
       )}
     </div>

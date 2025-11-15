@@ -221,7 +221,7 @@ export default function UserModal({
 
   /**
    * Description: (Handler) จัดการการอัปโหลดไฟล์รูปภาพ Avatar
-   *             สร้าง URL (blob) สำหรับ Preview และเก็บ File object ไว้ใน state
+   * สร้าง URL (blob) สำหรับ Preview และเก็บ File object ไว้ใน state
    * Input: (fileChangeEvent: React.ChangeEvent<...>) Event จาก <input type="file">
    * Output: - (void)
    * Author:Worrawat Namwat (Wave) 66160372
@@ -240,8 +240,8 @@ export default function UserModal({
 
   /**
    * Description: (Handler) ฟังก์ชันหลักเมื่อคลิกปุ่ม "บันทึก" หรือ "ปิดการใช้งาน"
-   *             - ถ้าเป็น 'edit' จะเปิด Dialog ยืนยัน (isEditAlertOpen)
-   *             - ถ้าเป็น 'add'/'delete' จะเรียก onSubmit ทันที
+   * - ถ้าเป็น 'edit' จะเปิด Dialog ยืนยัน (isEditAlertOpen)
+   * - ถ้าเป็น 'add'/'delete' จะเรียก onSubmit ทันที
    * Input: -
    * Output: - (void)
    * Author:Worrawat Namwat (Wave) 66160372
@@ -307,7 +307,7 @@ export default function UserModal({
   }, [departmentsList]);
 
   // (Section Options) - กรองก่อนแล้วค่อยแปลง
-  //  ใช้ useMemo กรอง 'sectionsList' ให้เหลือเฉพาะที่ตรงกับ 'us_dept_id' ที่เลือก
+  // ใช้ useMemo กรอง 'sectionsList' ให้เหลือเฉพาะที่ตรงกับ 'us_dept_id' ที่เลือก
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
     return sectionsList.filter(
@@ -315,7 +315,7 @@ export default function UserModal({
     );
   }, [formDataObject.us_dept_id, sectionsList]);
 
-  //  ใช้ useMemo แปลง 'filteredSectionsList' ให้ DropDown ใช้ได้
+  // ใช้ useMemo แปลง 'filteredSectionsList' ให้ DropDown ใช้ได้
   const sectionOptions = useMemo(() => {
     return filteredSections.map((sec) => ({
       id: sec.sec_id,

@@ -81,10 +81,6 @@ export const deleteSectionSchema = z.object({
     secId: z.coerce.number().positive(),
 });
 
-//Type สำหรับใช้ใน TypeScript
-export type GetDeptSection = z.infer<typeof getDeptSection>;
-
-export type DeleteSectionPayload = z.infer<typeof deleteSectionSchema>;
 // Author: Sutaphat Thahin (Yeen) 66160378
 
 // ตรวจสอบข้อมูลที่ใช้ในการเพิ่มแผนกใหม่ (รับเข้ามา)
@@ -99,6 +95,11 @@ export const addDepartmentsSchema = z.object({
     created_at: z.date().nullable(),
     updated_at: z.date().nullable()
 })
+
+//Type สำหรับใช้ใน TypeScript
+export type GetDeptSection = z.infer<typeof getDeptSection>;
+
+export type DeleteSectionPayload = z.infer<typeof deleteSectionSchema>;
 
 export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
 

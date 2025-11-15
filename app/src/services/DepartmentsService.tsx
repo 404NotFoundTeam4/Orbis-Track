@@ -1,5 +1,5 @@
 // services/api/department.service.ts
-import axios from "axios";
+import api from "../api/axios";
 
 // Types
 export interface Department {
@@ -20,8 +20,13 @@ export interface UpdateDepartmentPayload {
 export interface UpdateSectionPayload {
   section: string;
 }
+
 export interface DeleteSectionPayload {
   sec_id: number;
+}
+
+export interface DeleteDepartmentPayload {
+  dept_id: number;
 }
 
 /**
@@ -64,13 +69,13 @@ export interface AddDepartmentPayload {
 export const departmentService = {
   // Get all departments
   getAllDepartments: async (): Promise<{ departments: Department[] }> => {
-    const { data } = await axios.get(`/api/departments`);
+    const { data } = await api.get(`/departments`);
     return data;
   },
 
   // Get department by ID
   getDepartmentById: async (id: number): Promise<Department> => {
-    const { data } = await axios.get(`/api/departments/${id}`);
+    const { data } = await api.get(`/departments/${id}`);
     return data;
   },
 
@@ -85,7 +90,7 @@ export const departmentService = {
   getDepartmentsWithSections: async (): Promise<
     GetDepartmentsWithSections[]
   > => {
-    const { data } = await axios.get(`/api/departments/section`);
+    const { data } = await api.get(`/departments/section`);
     return data.data.deptsection;
   },
 
@@ -98,9 +103,9 @@ export const departmentService = {
    */
   updateDepartment: async (
     id: number,
-    payload: UpdateDepartmentPayload
+    payload: UpdateDepartmentPayload,
   ): Promise<{ message: string }> => {
-    const { data } = await axios.put(`/api/departments/${id}`, payload);
+    const { data } = await api.put(`/departments/${id}`, payload);
     return data;
   },
 
@@ -112,8 +117,12 @@ export const departmentService = {
    * Endpoint  : DELETE /api/departments/:id
    * Author    : Niyada Butchan (Da) 66160361
    */
-  deleteDepartment: async (id: number): Promise<{ message: string }> => {
-    const { data } = await axios.delete(`/api/departments/${id}`);
+  deleteDepartment: async (
+    payload: DeleteDepartmentPayload,
+  ): Promise<{ message: string }> => {
+    const { dept_id } = payload;
+    const id = dept_id;
+    const { data } = await api.delete(`/departments/${id}`);
     return data;
   },
 
@@ -122,9 +131,9 @@ export const departmentService = {
    * Author    : Sutaphat Thahin (Yeen) 66160378
    */
   addDepartment: async (
-    payload: AddDepartmentPayload
+    payload: AddDepartmentPayload,
   ): Promise<{ message: string }> => {
-    const { data } = await axios.post(`/api/departments`, payload);
+    const { data } = await api.post(`/departments`, payload);
     return data;
   },
 };
@@ -144,11 +153,11 @@ export const sectionService = {
   updateSection: async (
     secId: number,
     deptId: number,
-    payload: UpdateSectionPayload
+    payload: UpdateSectionPayload,
   ): Promise<{ message: string }> => {
-    const { data } = await axios.put(
-      `/api/departments/${deptId}/section/${secId}`,
-      payload
+    const { data } = await api.put(
+      `/departments/${deptId}/section/${secId}`,
+      payload,
     );
     return data;
   },
@@ -167,10 +176,10 @@ export const sectionService = {
    * Author    : Salsabeela Sa-e (San) 66160349
    */
   addSection: async (
-    payload: AddSectionPayload
+    payload: AddSectionPayload,
   ): Promise<{ message: string }> => {
     const { dept_id, sec_name } = payload;
-    const { data } = await axios.post(`/api/departments/${dept_id}/section`, {
+    const { data } = await api.post(`/departments/${dept_id}/section`, {
       dept_id,
       sec_name,
     });
@@ -187,9 +196,11 @@ export const sectionService = {
    */
   // ลบ section ด้วย sec_id
   deleteSection: async (
-    sec_id: DeleteSectionPayload
+    payload: DeleteSectionPayload,
   ): Promise<{ message: string }> => {
-    const { data } = await axios.delete(`/api/department/section/${sec_id}`);
+    const { sec_id } = payload;
+    const secId = sec_id;
+    const { data } = await api.delete(`/departments/section/${secId}`);
     return data;
   },
 };

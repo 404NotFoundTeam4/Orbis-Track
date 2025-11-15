@@ -13,6 +13,7 @@ router.putDoc("/:deptId/section/:secId", { tag: "Departments", params: paramEdit
 router.postDoc("/:id/section", { tag: "Departments", params: idParamSchema, body: addSectionPayload, auth: true }, departmentController.addSection);
 router.getDoc("/section", { tag: "Departments", res: deptSectionSchema, auth: true }, departmentController.getdeptsection)
 
-router.deleteDoc("/section/:secId", { tag: "Departments", params: deleteSectionSchema, auth: true }, departmentController.deleteSection)
+router.deleteDoc("/section/:secId", { tag: "Departments", params: idParamSchema, auth: true }, departmentController.deleteDepartment)
+router.deleteDoc("/:id", { tag: "Departments", params: deleteSectionSchema, auth: true }, departmentController.deleteSection)
 router.postDoc("/", { tag: "Departments", body: addDepartmentsPayload, res: addDepartmentsSchema, auth: true }, departmentController.addDepartments)
 export default router.instance;

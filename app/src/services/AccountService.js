@@ -8,8 +8,8 @@ import api from "../api/axios";
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export const Login = async (username, passwords,isRemember) => {
-  const res = await api.post("/login", {username, passwords,isRemember});
+export const Login = async (username, passwords, isRemember) => {
+  const res = await api.post("/login", { username, passwords, isRemember });
   return res.data;
 };
 /**
@@ -20,7 +20,7 @@ export const Login = async (username, passwords,isRemember) => {
  * Author: Panyapon Phollert (Ton) 66160086
  */
 export const UserData = async (token) => {
-   const res = await api.get("/auth/fetch-me", {
+  const res = await api.get("/auth/fetch-me", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -35,7 +35,6 @@ export const UserData = async (token) => {
  * Author: Panyapon Phollert (Ton) 66160086
  */
 export const ResetPassword = async (email, newPassword, confirmNewPassword) => {
-  const  data  = await api.post("/forgot-password", {email, newPassword, confirmNewPassword});
-  
+  const data = await api.post("/forgot-password", { email, newPassword, confirmNewPassword });
   return data;
 } 

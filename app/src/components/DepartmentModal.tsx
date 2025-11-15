@@ -5,7 +5,6 @@
  */
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
-import { Icon } from "@iconify/react";
 import Input from "./Input";
 import DropDown from "./DropDown";
 import { AlertDialog } from "./AlertDialog";
@@ -15,7 +14,8 @@ type ModalType =
   | "edit-department"
   | "add-section"
   | "edit-section"
-  | "delete-section";
+  | "delete-section"
+  | "delete-department";
 
 interface Department {
   id: number;
@@ -112,14 +112,14 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
       if (initialData?.departmentId && type === "add-section") {
         const foundDept = departmentItems.find(
-          (item) => item.id === initialData.departmentId
+          (item) => item.id === initialData.departmentId,
         );
         setSelectedDepartment(foundDept || null);
       } else {
         setSelectedDepartment(null);
       }
     }
-  }, [isOpen, initialData, type]);
+  }, [isOpen, initialData, type, departmentItems]);
 
   // Title ของแต่ละ modal
   const getTitle = () => {
@@ -185,7 +185,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     setLoading(true);
     try {
       await onSubmit(pendingPayload);
-      handleClose();
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");

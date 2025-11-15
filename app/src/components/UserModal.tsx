@@ -41,7 +41,7 @@ type IUserApiData = {
   us_images: string | null;
   us_role: string;
   us_dept_id: number;
-  us_sec_id: number;
+  us_sec_id: number | null;
   us_is_active: boolean;
   us_dept_name: string;
   us_sec_name: string;
@@ -69,7 +69,7 @@ const defaultFormDataObject: IUserApiData = {
   us_images: null,
   us_role: "", // default
   us_dept_id: 0,
-  us_sec_id: 0,
+  us_sec_id: null,
   us_is_active: true,
   us_dept_name: "",
   us_sec_name: "",
@@ -88,7 +88,7 @@ export default function UserModal({
   // ถ้ามี 'user' (โหมด edit) ให้ใช้ข้อมูล 'user' นั้น
   // ในการกำหนดค่าเริ่มต้นของ formDataObject
   const [formDataObject, setFormDataObject] = useState<IUserApiData>(
-    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject
+    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject,
   );
 
   {
@@ -337,7 +337,7 @@ export default function UserModal({
         us_images: null,
         us_role: "",
         us_dept_id: 0,
-        us_sec_id: 0,
+        us_sec_id: null,
         us_is_active: true,
         us_dept_name: "",
         us_sec_name: "",
@@ -371,7 +371,7 @@ export default function UserModal({
    * Author:Worrawat Namwat (Wave) 66160372
    */
   const handleChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = changeEvent.target;
 
@@ -379,12 +379,12 @@ export default function UserModal({
       setFormDataObject((prev) => ({
         ...prev,
         us_dept_id: parseInt(value, 10) || 0,
-        us_sec_id: 0, // รีเซ็ตฝ่ายย่อย เมื่อแผนกเปลี่ยน
+        us_sec_id: null, // รีเซ็ตฝ่ายย่อย เมื่อแผนกเปลี่ยน
       }));
     } else if (name === "us_sec_id") {
       setFormDataObject((prev) => ({
         ...prev,
-        us_sec_id: parseInt(value, 10) || 0,
+        us_sec_id: parseInt(value, 10) || null,
       }));
     } else {
       setFormDataObject((prev) => ({ ...prev, [name]: value }));
@@ -399,7 +399,7 @@ export default function UserModal({
    * Author:Worrawat Namwat (Wave) 66160372
    */
   const handleAvatarChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = changeEvent.target.files?.[0];
     if (file) {
@@ -471,7 +471,7 @@ export default function UserModal({
     setFormDataObject((prev) => ({
       ...prev,
       us_dept_id: selectedItem.value,
-      us_sec_id: 0, // รีเซ็ตฝ่ายย่อย
+      us_sec_id: null, // รีเซ็ตฝ่ายย่อย
     }));
   };
 
@@ -512,7 +512,7 @@ export default function UserModal({
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
     return sectionsList?.filter(
-      (sec) => sec.sec_dept_id === formDataObject.us_dept_id
+      (sec) => sec.sec_dept_id === formDataObject.us_dept_id,
     );
   }, [formDataObject.us_dept_id, sectionsList]);
 
@@ -531,7 +531,7 @@ export default function UserModal({
 
   const selectedDepartment =
     departmentOptions?.find(
-      (option) => option.id === formDataObject.us_dept_id
+      (option) => option.id === formDataObject.us_dept_id,
     ) || undefined;
 
   const selectedSection =

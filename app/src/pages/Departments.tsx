@@ -21,15 +21,37 @@ type ModalType =
   | "edit-department"
   | "add-section"
   | "edit-section"
-  | "delete-section";
+  | "delete-section"
+  | "delete-department";
 
 const Departments = () => {
   // เก็บข้อมูลแผนกทั้งหมด
   const [departments, setDepartments] = useState<GetDepartmentsWithSections[]>(
-    []
+    [],
   );
   const { push } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const refreshData = async () => {
+    setLoading(true); // เริ่มโหลด
+    try {
+      const departmentsData =
+        await departmentService.getDepartmentsWithSections();
+      setDepartments(departmentsData);
+      setDepartmentFilter(
+        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" },
+      );
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      push({ tone: "danger", message: "ไม่สามารถโหลดข้อมูลได้" });
+    } finally {
+      setLoading(false); // โหลดเสร็จ
+    }
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -65,38 +87,20 @@ const Departments = () => {
     });
   };
   // ดึงข้อมูล api จาก backend
-  useEffect(() => {
-    const fetchData = async () => {
-      // เรียกใช้ API ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
-      const departments = await departmentService.getDepartmentsWithSections();
-      // เก็บข้อมูลแผนก
-      setDepartments(departments);
-      // ตั้งค่า filter แผนกเริ่มต้นเป็น "ทั้งหมด"
-      setDepartmentFilter(
-        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
-      );
-      // ตั้งข้อมูล section ไว้ใช้ใน filter
-      const [sections, setSections] = useState<Section[]>([]);
-
-      const [sectionFilter, setSectionFilter] = useState<{
-        id: number | string;
-        label: string;
-        value: string;
-      } | null>(null);
-
-      const [confirmOpen, setConfirmOpen] = useState(false);
-
-      // ลบฝ่ายย่อย
-      const [deleteTarget, setDeleteTarget] = useState<{
-        type: "section"; // ประเภทของสิ่งที่จะลบ
-        id: number; // รหัสของ section ที่จะลบ
-        name: string; // ชื่อ section (ใช้แสดงข้อความใน Alert)
-        deptId?: number; // id ของแผนกที่ section อยู่ (ใช้ตอนอัปเดต state)
-        deptName?: string; // ชื่อของแผนก (ใช้โชว์ข้อความ)
-      } | null>(null);
-      fetchData();
-    };
-  }, []);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     // เรียกใช้ API ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
+  //     const departments = await departmentService.getDepartmentsWithSections();
+  //     console.log(departments);
+  //     // เก็บข้อมูลแผนก
+  //     setDepartments(departments);
+  //     // ตั้งค่า filter แผนกเริ่มต้นเป็น "ทั้งหมด"
+  //     setDepartmentFilter(
+  //       (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
+  //     );
+  //   };
+  //   fetchData();
+  // }, []);
 
   const handleModalSubmit = async (data: any) => {
     setLoading(true);
@@ -145,6 +149,16 @@ const Departments = () => {
             message: "ลบฝ่ายย่อยเสร็จสิ้น!",
           });
           break;
+
+        case "delete-department":
+          await departmentService.deleteDepartment({
+            dept_id: data.departmentId,
+          });
+          push({
+            tone: "success",
+            message: "ลบแผนกเสร็จสิ้น!",
+          });
+          break;
       }
     } catch (error: any) {
       push({
@@ -153,13 +167,15 @@ const Departments = () => {
       });
     } finally {
       setLoading(false);
+      setModalOpen(false);
+      refreshData();
     }
   };
 
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const HandleSort = (
-    field: keyof GetDepartmentsWithSections | "statusText"
+    field: keyof GetDepartmentsWithSections | "statusText",
   ) => {
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
@@ -179,7 +195,7 @@ const Departments = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const [deleteTarget, setDeleteTarget] = useState<{
-    type: "section"; // ประเภทของสิ่งที่จะลบ
+    type: string; // ประเภทของสิ่งที่จะลบ
     id: number; // รหัสของ section ที่จะลบ
     name: string; // ชื่อ section (ใช้แสดงข้อความใน Alert)
     deptId?: number; // id ของแผนกที่ section อยู่ (ใช้ตอนอัปเดต state)
@@ -201,28 +217,25 @@ const Departments = () => {
           tone: "success",
           message: `ลบฝ่ายย่อย ${deleteTarget.name} เรียบร้อยแล้ว`,
         });
+      } else if (deleteTarget.type === "department") {
+        // ถ้าเป็น section ให้เรียกใช้ service เพื่อลบ section
+        await departmentService.deleteDepartment({ dept_id: deleteTarget.id });
 
-        // อัปเดต state เพื่อลบ section ออกจาก department
-        setDepartments((prev) =>
-          prev.map((dept) =>
-            dept.dept_id === deleteTarget.deptId
-              ? {
-                  ...dept,
-                  sections: dept.sections.filter(
-                    (sec: any) => sec.sec_id !== deleteTarget.id
-                  ),
-                }
-              : dept
-          )
-        );
+        //แสดงข้อความแจ้งเตือนว่าลบสำเร็จ
+        push({
+          tone: "success",
+          message: `ลบแผนก ${deleteTarget.name} เรียบร้อยแล้ว`,
+        });
       }
-      setDeleteTarget(null);
     } catch (error) {
       console.error(error);
       push({
         tone: "danger",
         message: "เกิดข้อผิดพลาดในการลบ",
       });
+    } finally {
+      setDeleteTarget(null);
+      refreshData();
     }
   };
 
@@ -272,7 +285,7 @@ const Departments = () => {
       return sortDirection === "asc" ? valA - valB : valB - valA;
     });
     return result;
-  }, [searchFilter, departmentFilter, sortDirection, sortField]);
+  }, [departments, searchFilter, departmentFilter, sortDirection, sortField]);
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
@@ -332,6 +345,7 @@ const Departments = () => {
                   setModalType("add-section"); //เปิด modal หลักแบบเดียวกับเพิ่มแผนก
                   setModalOpen(true); // เปิด modal หลัก
                 }}
+                className="w-[125px]"
               >
                 เพิ่มฝ่ายย่อย
               </Button>
@@ -446,18 +460,22 @@ const Departments = () => {
                     <button
                       disabled={dep.people_count > 0}
                       type="submit"
-                      className={`text-[#FF4D4F] 
+                      className={`text-[#FF4D4F]
                                                     ${
                                                       dep.people_count > 0
                                                         ? "opacity-50 cursor-not-allowed"
                                                         : "hover:text-[#FF4D4F]"
                                                     }`}
                       title="ลบ"
+                      onClick={() =>
+                        setDeleteTarget({
+                          type: "department", // ระบุเป็น department
+                          id: dep.dept_id, // id ของ department
+                          name: dep.dept_name, // ชื่อ department
+                        })
+                      }
                     >
                       <Icon
-                        onClick={() =>
-                          alert(`Delete Department ${dep.dept_id}`)
-                        }
                         icon="solar:trash-bin-trash-outline"
                         width="28"
                         height="28"
@@ -516,7 +534,7 @@ const Departments = () => {
                               style={{ cursor: "pointer" }}
                               disabled={section.people_count > 0}
                               type="submit"
-                              className={`text-[#FF4D4F] 
+                              className={`text-[#FF4D4F]
                                                                         ${
                                                                           section.people_count >
                                                                           0
@@ -659,7 +677,7 @@ const Departments = () => {
           description={
             deleteTarget.type === "section" ? (
               <>
-                {deleteTarget.name} ในแผนก{deleteTarget.deptName}จะถูกลบ
+                {deleteTarget.name} ในแผนก {deleteTarget.deptName} จะถูกลบ
                 <br />
                 และการดำเนินการนี้ไม่สามารถกู้คืนได้
               </>

@@ -119,7 +119,7 @@ export const Users = () => {
   const roleOptions = [
     { id: "", label: "ประเภทตำแหน่ง", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
+      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
       label: roleTranslation[r] || r,
@@ -207,7 +207,7 @@ export const Users = () => {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       console.log("✅ PATCH Response:", res.data);
       // จัดการ Response
@@ -221,10 +221,10 @@ export const Users = () => {
 
               // หาชื่อแผนกและฝ่ายย่อยใหม่
               const dept = departments.find(
-                (d) => d.dept_id === mergedUser.us_dept_id
+                (d) => d.dept_id === mergedUser.us_dept_id,
               );
               const sec = sections.find(
-                (s) => s.sec_id === mergedUser.us_sec_id
+                (s) => s.sec_id === mergedUser.us_sec_id,
               );
 
               // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
@@ -422,7 +422,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "created_at"
+    "created_at",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 

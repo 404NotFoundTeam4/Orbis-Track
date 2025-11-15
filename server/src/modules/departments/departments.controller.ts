@@ -147,6 +147,21 @@ export class DepartmentController extends BaseController {
     //return response message
     return { message: "Section deleted successfully" };
   }
+  
+  async deleteDepartment(
+    req: Request,
+    _res: Response,
+    _next: NextFunction) {
+
+    // deleteSectionSchema จะช่วย validate ให้แน่ใจว่า secId เป็น string ที่ไม่ว่าง
+    const params = idParamSchema.parse(req.params);
+
+    //สั่งให้ service ลบ section ที่มีเลขไอดี = secId ในฐานข้อมูล
+    await departmentService.deleteDepartment(params);
+
+    //return response message
+    return { message: "Section deleted successfully" };
+  }
 
   /**
    * Description: Controller สำหรับเพิ่มแผนก (Departments)

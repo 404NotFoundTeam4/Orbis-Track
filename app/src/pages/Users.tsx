@@ -6,7 +6,7 @@ import Dropdown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import axios from "axios";
 import UserModal from "../components/UserModal";
-
+import { useToast } from "../components/Toast";
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -29,6 +29,9 @@ type Section = {
   sec_id: number;
   sec_name: string;
   sec_dept_id: number;
+};
+type NewUserPayload = Partial<User> & {
+  us_password?: string;
 };
 
 type Department = {
@@ -95,7 +98,6 @@ export const Users = () => {
       value: r,
     })),
   ];
-  // const [roleFilter, setRoleFilters] = useState({ option: "" });
   const [roleFilter, setRoleFilter] = useState<{
     id: number | string;
     label: string;
@@ -107,11 +109,12 @@ export const Users = () => {
     search: "",
   });
 
-  //  เพิ่ม State สำหรับ Modal และการ Refresh
+  // เพิ่ม State สำหรับ Modal และการ Refresh
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const toast = useToast();
   // สร้างฟังก์ชันสำหรับจัดการ Modal
   const handleOpenAddModal = () => {
     setSelectedUser(null);
@@ -194,6 +197,112 @@ export const Users = () => {
     }
   };
 
+  // ฟังก์ชันเพิ่มผู้ใช้ใหม่
+  const handleAddUser = async (newUserData: NewUserPayload) => {
+    // เรียก API POST เพื่อเพิ่มผู้ใช้ใหม่
+    const {
+      us_emp_code,
+      us_firstname,
+      us_lastname,
+      us_username,
+      us_password,
+      us_email,
+      us_phone,
+      us_images,
+      us_role,
+      us_dept_id,
+      us_sec_id,
+      us_is_active,
+    } = newUserData;
+    const newUser = {
+      us_emp_code,
+      us_firstname,
+      us_lastname,
+      us_username,
+      us_password,
+      us_email,
+      us_phone,
+      us_images,
+      us_role,
+      us_dept_id,
+      us_sec_id,
+      us_is_active,
+    };
+
+    try {
+      const response = await axios.post(`/api/accounts`, newUser);
+
+      setusers((prevUsers) => {
+        const newUser = {
+          ...newUserData,
+          us_id: response.data.id || Date.now(), // ใช้ ID จาก response หรือใช้ temporary ID
+          us_dept_name:
+            departments.find((d) => d.dept_id === newUserData.us_dept_id)
+              ?.dept_name || "",
+          us_sec_name:
+            sections.find((s) => s.sec_id === newUserData.us_sec_id)
+              ?.sec_name || "-",
+          created_at: new Date(),
+          us_is_active: true,
+          us_images: newUserData.us_images || null,
+        } as User;
+
+        return [...prevUsers, newUser];
+      });
+      // แสดงข้อความสำเร็จ
+
+      toast.push({
+        message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
+        tone: "confirm",
+      });
+      handleCloseModal();
+    } catch {
+      // จัดการข้อผิดพลาด
+      toast.push({
+        message: "เกิดข้อผิดพลาด ไม่สามารถเพิ่มบัญชีผู้ใช้ได้",
+        tone: "danger",
+      });
+      handleCloseModal();
+    } finally {
+      // ปิด Modal
+      handleCloseModal();
+    }
+  };
+
+  // ฟังก์ชันลบผู้ใช้
+  const handleDeleteUser = async (userData: Partial<User>) => {
+    try {
+      if (!userData.us_id) {
+        console.error("Cannot delete user: missing us_id");
+        return;
+      }
+
+      // เรียก API DELETE เพื่อลบผู้ใช้
+      await axios.delete(`/api/accounts/${userData.us_id}`);
+      console.log(`User ID ${userData.us_id} deleted successfully`);
+
+      // อัปเดต State 'users' ใน Frontend (แสดงผลทันที)
+      setusers((prevUsers) => {
+        return prevUsers.map((user) => {
+          if (user.us_id === userData.us_id) {
+            return {
+              ...user,
+              us_is_active: false, // ตั้งค่าเป็นไม่ใช้งาน
+            };
+          }
+          return user;
+        });
+      });
+    } catch (error) {
+      // จัดการข้อผิดพลาด
+      console.error("Error deleting user via API:", error);
+      alert("ไม่สามารถลบบัญชีผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      // ปิด Modal
+      handleCloseModal();
+    }
+  };
+
   const handleModalSubmit = () => {
     handleCloseModal();
     setRefreshTrigger((prev) => prev + 1);
@@ -205,12 +314,16 @@ export const Users = () => {
    */
   useEffect(() => {
     const fetchData = async () => {
-      const res = await axios.get("/api/accounts");
-      const data = res.data;
+      try {
+        const res = await axios.get("/api/accounts");
+        const data = res.data;
 
-      setSections(data.data.sections || []);
-      setDepartments(data.data.departments || []);
-      setusers(data.data.accountsWithDetails || []);
+        setSections(data.data.sections || []);
+        setDepartments(data.data.departments || []);
+        setusers(data.data.accountsWithDetails || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
     };
 
     fetchData();
@@ -231,12 +344,13 @@ export const Users = () => {
   };
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
-  const [sortField, setSortField] = useState<keyof User | "statusText">();
-  ("created_at");
+  const [sortField, setSortField] = useState<keyof User | "statusText">(
+    "created_at"
+  );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   /**
-   * Description: เปลี่ยน field ที่ต้องการจะเรีบง หรือ เปลี่ยนลักษณะการเรียง
+   * Description: เปลี่ยน field ที่ต้องการจะเรียง หรือ เปลี่ยนลักษณะการเรียง
    * Input : field: keyof User | "statusText"
    * Output :
    * Author : Nontapat Sinhum (Guitar) 66160104
@@ -331,6 +445,7 @@ export const Users = () => {
     roleFilter,
     departmentFilter,
     sectionFilter,
+    sortField,
     sortDirection,
   ]);
 
@@ -395,7 +510,6 @@ export const Users = () => {
                 onChange={setSectionFilter}
                 placeholder="ฝ่ายย่อย"
               />
-              {/* <AddButton label="บัญชีผู้ใช้" /> */}
               <Button
                 size="md"
                 icon={
@@ -530,7 +644,6 @@ export const Users = () => {
             {pageRows.map((u) => (
               <div
                 key={u.us_id}
-                // 400px_100px_203px_230px_188px_179px_166px_81px
                 className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
                  items-center hover:bg-gray-50 text-[16px] gap-3"
               >
@@ -541,6 +654,11 @@ export const Users = () => {
                       src={u.us_images}
                       alt={u.us_firstname}
                       className="w-10 h-10 rounded-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).onerror = null;
+                        (e.target as HTMLImageElement).src =
+                          `https://placehold.co/40x40/E0E7FF/3B82F6?text=${u.us_firstname.charAt(0)}`;
+                      }}
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
@@ -699,11 +817,19 @@ export const Users = () => {
           typeform={modalType}
           user={selectedUser}
           onClose={handleCloseModal}
-          onSubmit={modalType === "edit" ? handleSaveUser : handleModalSubmit}
+          onSubmit={
+            modalType === "edit"
+              ? handleSaveUser
+              : modalType === "add"
+                ? handleAddUser
+                : modalType === "delete"
+                  ? handleDeleteUser
+                  : handleModalSubmit
+          }
           keyvalue="all"
-          departments={departments}
-          sections={sections}
-          roles={roleOptions}
+          departmentsList={departments}
+          sectionsList={sections}
+          rolesList={roleOptions}
         />
       )}
     </div>

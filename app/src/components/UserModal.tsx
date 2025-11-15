@@ -110,7 +110,64 @@ export default function UserModal({
   const [newImageFile, setNewImageFile] = useState<File | null>(null); //State สำหรับเก็บ 'ไฟล์' รูปใหม่ กรณีมีการแก้ไขรูปภาพ
   const [formOutput, setFormOutput] = useState<Partial<IUserApiData>>({});
   const toast = useToast();
-  const [isEditAlertOpen, setIsEditAlertOpen] = useState(false); // State สำหรับควบคุม Dialog ยืนยัน 'การแก้ไข'
+  const [isEditAlertOpen, setIsEditAlertOpen] = useState(false);
+  const [isAddAlertOpen, setIsAddAlertOpen] = useState(false);
+  // length อย่างน้อย 12 ตัว
+  function generatePassword(length: number = 12): string {
+    if (length < 12) {
+      throw new Error("ความยาวต้องอย่างน้อย 12 ตัวขึ้นไป");
+    }
+
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const digits = "0123456789";
+    const special = "!@#$%^&*()-_=+[]{};:,.<>?/";
+
+    const allChars = lower + upper + digits + special;
+
+    // ฟังก์ชันสุ่ม index
+    const randomIndex = (max: number) => {
+      return Math.floor(Math.random() * max);
+    };
+
+    const result: string[] = [];
+
+    // บังคับให้มีครบทุกแบบอย่างน้อย 1 ตัว
+    result.push(lower[randomIndex(lower.length)]);
+    result.push(upper[randomIndex(upper.length)]);
+    result.push(digits[randomIndex(digits.length)]);
+    result.push(special[randomIndex(special.length)]);
+
+    // ที่เหลือสุ่มจากทุกตัว
+    for (let i = result.length; i < length; i++) {
+      result.push(allChars[randomIndex(allChars.length)]);
+    }
+
+    // สลับลำดับให้ดูสุ่มจริง ๆ
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = randomIndex(i + 1);
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result.join("");
+  }
+
+  // ฟังก์ชันตรวจสอบข้อมูล
+  const validateForm = () => {
+    const requiredFields = [
+      "us_username",
+      "us_email",
+      "us_firstname",
+      "us_lastname",
+      "us_role",
+    ];
+    for (const field of requiredFields) {
+      if (!formDataObject[field as keyof IUserApiData]) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   {
     /* State สำหรับ flow การลบ */
@@ -229,6 +286,47 @@ export default function UserModal({
       setDeleting(false);
     }
   };
+  const handleConfirmAdd = async () => {
+    const raw = keyvalue === "all" ? formDataObject : formOutput;
+
+    const payload: any = { ...raw };
+
+    delete payload.us_id;
+
+    payload.us_password = generatePassword(12);
+
+    toast.push({
+      message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
+      tone: "confirm",
+    });
+
+    if (onSubmit) onSubmit(payload);
+  };
+
+  // preload user data เมื่อแก้ไข / ลบ
+  useEffect(() => {
+    if (user && (typeform === "edit" || typeform === "delete")) {
+      setFormDataObject({ ...user });
+    } else if (typeform === "add") {
+      // รีเซ็ตฟอร์มเมื่อเพิ่มผู้ใช้ใหม่
+      setFormDataObject({
+        us_id: 0,
+        us_emp_code: "",
+        us_firstname: "",
+        us_lastname: "",
+        us_username: "",
+        us_email: "",
+        us_phone: "",
+        us_images: null,
+        us_role: "",
+        us_dept_id: 0,
+        us_sec_id: 0,
+        us_is_active: true,
+        us_dept_name: "",
+        us_sec_name: "",
+      });
+    }
+  }, [user, typeform]);
 
   //  filter key ตามที่ส่งมาจาก props (keyvalue)
   /**
@@ -304,14 +402,27 @@ export default function UserModal({
    * Author:Worrawat Namwat (Wave) 66160372
    */
   const handle = async () => {
-    // ตรวจสอบ ถ้าเป็น 'edit' ให้เปิด Alert
+    // ตรวจสอบถ้าเป็น 'edit' ให้เปิด Alert
     if (typeform === "edit") {
       setIsEditAlertOpen(true);
-      return; // หยุดการทำงานตรงนี้
+      return;
     }
 
     if (typeform === "delete") {
       setIsDeleteAlertOpen(true); // เปิด Alert ยืนยัน
+      return;
+    }
+
+    // ตรวจสอบถ้าเป็น 'add' ให้เปิด Alert
+    if (typeform === "add") {
+      if (!validateForm()) {
+        toast.push({
+          message: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน",
+          tone: "danger",
+        });
+        return;
+      }
+      setIsAddAlertOpen(true);
       return;
     }
 
@@ -329,7 +440,7 @@ export default function UserModal({
   const handleRoleChange = (selectedItem: IDropDownItemType) => {
     setFormDataObject((prev) => ({
       ...prev,
-      us_role: selectedItem.value, // เก็บค่า string "Admin", "Staff" ฯลฯ
+      us_role: selectedItem.value,
     }));
   };
 
@@ -342,7 +453,7 @@ export default function UserModal({
   const handleDepartmentChange = (selectedItem: IDropDownItemType) => {
     setFormDataObject((prev) => ({
       ...prev,
-      us_dept_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
+      us_dept_id: selectedItem.value,
       us_sec_id: 0, // รีเซ็ตฝ่ายย่อย
     }));
   };
@@ -356,16 +467,26 @@ export default function UserModal({
   const handleSectionChange = (selectedItem: IDropDownItemType) => {
     setFormDataObject((prev) => ({
       ...prev,
-      us_sec_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
+      us_sec_id: selectedItem.value,
     }));
   }; // Author:Worrawat Namwat (Wave) 661603720
 
   // แปลง 'departmentsList' (array) ให้อยู่ในรูปแบบที่ DropDown ใช้ได้
+  const roleOptions: IDropDownItemType[] = [
+    { id: "ADMIN", label: "ADMIN", value: "ADMIN" },
+    { id: "HOD", label: "HOD", value: "HOD" },
+    { id: "HOS", label: "HOS", value: "HOS" },
+    { id: "TECHNICAL", label: "TECHNICAL", value: "TECHNICAL" },
+    { id: "STAFF", label: "STAFF", value: "STAFF" },
+    { id: "EMPLOYEE", label: "EMPLOYEE", value: "EMPLOYEE" },
+  ];
+
+  // (Department Options)
   const departmentOptions = useMemo(() => {
     return departmentsList?.map((dept) => ({
       id: dept.dept_id,
       label: dept.dept_name,
-      value: dept.dept_id, // เราเก็บ ID ลงใน value
+      value: dept.dept_id,
     }));
   }, [departmentsList]);
 
@@ -383,7 +504,7 @@ export default function UserModal({
     return filteredSections.map((sec) => ({
       id: sec.sec_id,
       label: sec.sec_name,
-      value: sec.sec_id, // เราเก็บ ID ลงใน value
+      value: sec.sec_id,
     }));
   }, [filteredSections]);
 
@@ -465,6 +586,14 @@ export default function UserModal({
             </svg>
           </button>
         </div>
+        {/* หัวข้อ */}
+        <h2 className="text-center mb-6 text-[32px] font-bold font-roboto">
+          {typeform === "edit"
+            ? "แก้ไขบัญชีผู้ใช้"
+            : typeform === "add"
+              ? "เพิ่มบัญชีผู้ใช้"
+              : "ปิดการใช้งานบัญชีผู้ใช้"}
+        </h2>
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
@@ -556,6 +685,47 @@ export default function UserModal({
                       (isDelete ? DISABLED_CLS : "")
                     }
                   />
+                </div>
+                {/* ตำแหน่งงาน */}
+                <div>
+                  <h3 className="text-[000000] font-medium text-[18px]">
+                    ตำแหน่งงาน
+                  </h3>
+                  <div className="font-medium text-[#858585] mb-3 text-[16px]">
+                    รายละเอียดตำแหน่งงานของผู้ใช้
+                  </div>
+                  <div className="grid grid-cols-3 gap-y-4 gap-x-4">
+                    {/* ตำแหน่ง (Role) */}
+                    <DropDown
+                      items={roleOptions}
+                      value={selectedRole}
+                      onChange={handleRoleChange}
+                      placeholder="เลือกตำแหน่ง"
+                      className="w-[221px]"
+                      searchable={true}
+                    />
+
+                    {/* แผนก (Department) */}
+                    <DropDown
+                      items={departmentOptions}
+                      value={selectedDepartment}
+                      onChange={handleDepartmentChange}
+                      placeholder="เลือกแผนก"
+                      className="w-[221px]"
+                      searchable={true}
+                    />
+
+                    {/* ฝ่ายย่อย (Section) */}
+                    <DropDown
+                      items={sectionOptions}
+                      value={selectedSection}
+                      onChange={handleSectionChange}
+                      placeholder="เลือกฝ่ายย่อย"
+                      className="w-[221px]"
+                      searchable={true}
+                      disabled={filteredSections.length === 0}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -683,11 +853,17 @@ export default function UserModal({
                   : "bg-blue-400 hover:bg-blue-500"
               }`}
             >
-              {typeform === "delete" ? "ปิดการใช้งาน" : "บันทึก"}
+              {typeform === "delete"
+                ? "ปิดการใช้งาน"
+                : typeform === "add"
+                  ? "เพิ่มบัญชีผู้ใช้"
+                  : "บันทึก"}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Alert สำหรับการแก้ไข */}
       <AlertDialog
         open={isEditAlertOpen}
         onOpenChange={setIsEditAlertOpen}
@@ -706,6 +882,18 @@ export default function UserModal({
         description="คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานบัญชีผู้ใช้นี้"
         tone="danger"
         onConfirm={handleConfirmDelete}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
+
+      {/* Alert สำหรับการเพิ่ม */}
+      <AlertDialog
+        open={isAddAlertOpen}
+        onOpenChange={setIsAddAlertOpen}
+        title="ยืนยันการเพิ่มบัญชีผู้ใช้"
+        description="คุณแน่ใจหรือไม่ว่าต้องการเพิ่มบัญชีผู้ใช้ใหม่"
+        tone="warning"
+        onConfirm={handleConfirmAdd}
         confirmText="ยืนยัน"
         cancelText="ยกเลิก"
       />

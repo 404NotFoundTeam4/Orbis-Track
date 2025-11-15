@@ -111,6 +111,33 @@ enum CM_STATUS {
   blocked
 }
 
+enum LDC_ACTION {
+  BORROWED
+  RETURNED
+  CHANGED
+  RESOLVED
+  MARK_DAMAGED
+}
+
+enum LBR_ACTION {
+  CREATED
+  UPDATED
+  APPROVED
+  REJECTED
+  RETURNED
+  MARK_DAMAGED
+  MARK_LOST
+}
+
+enum LI_ACTION {
+  REPORTED
+  ASSIGNED
+  UPDATED
+  RESOLVED
+  MARK_DAMAGED
+  CANCELLED
+}
+
 // ---------- Models ----------
 model departments {
   dept_id    Int       @id @default(autoincrement())
@@ -119,21 +146,22 @@ model departments {
   created_at DateTime? @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
 
-  sections sections[]
-  users    users[]
+  sections            sections[]
+  users               users[]
+  approval_flow_steps approval_flow_steps[]
 }
 
-model approval_positions {
-  ap_id      Int       @id @default(autoincrement())
-  ap_name    String    @unique @db.VarChar(200)
-  deleted_at DateTime? @db.Timestamptz(6)
-  created_at DateTime? @db.Timestamptz(6)
-  updated_at DateTime? @db.Timestamptz(6)
+// model approval_positions {
+//   ap_id      Int       @id @default(autoincrement())
+//   ap_name    String    @unique @db.VarChar(200)
+//   deleted_at DateTime? @db.Timestamptz(6)
+//   created_at DateTime? @db.Timestamptz(6)
+//   updated_at DateTime? @db.Timestamptz(6)
 
-  users                users[]
-  approval_flow_steps  approval_flow_steps[]
-  borrow_return_stages borrow_return_ticket_stages[]
-}
+//   users                users[]
+//   approval_flow_steps  approval_flow_steps[]
+//   borrow_return_stages borrow_return_ticket_stages[]
+// }
 
 model sections {
   sec_id      Int       @id @default(autoincrement())
@@ -146,6 +174,8 @@ model sections {
   department departments @relation(fields: [sec_dept_id], references: [dept_id], onDelete: Cascade)
   users      users[]
   devices    devices[]
+
+  approval_flow_steps approval_flow_steps[]
 
   @@index([sec_dept_id], map: "idx_sections_dept")
 }
@@ -161,7 +191,7 @@ model users {
   us_phone     String    @db.VarChar(20)
   us_role      US_ROLE
   us_images    String?   @db.VarChar(200)
-  us_pa_id     Int?
+  // us_pa_id     Int?
   us_dept_id   Int?
   us_sec_id    Int?
   us_is_active Boolean   @default(true)
@@ -169,9 +199,9 @@ model users {
   created_at   DateTime? @db.Timestamptz(6)
   updated_at   DateTime? @db.Timestamptz(6)
 
-  approval_position approval_positions? @relation(fields: [us_pa_id], references: [ap_id])
-  department        departments?        @relation(fields: [us_dept_id], references: [dept_id], onDelete: SetNull)
-  section           sections?           @relation(fields: [us_sec_id], references: [sec_id], onDelete: SetNull)
+  // approval_position approval_positions? @relation(fields: [us_pa_id], references: [ap_id])
+  department departments? @relation(fields: [us_dept_id], references: [dept_id], onDelete: SetNull)
+  section    sections?    @relation(fields: [us_sec_id], references: [sec_id], onDelete: SetNull)
 
   // Relations (backrefs)
   devices_added        devices[]                     @relation("devices_added_by")
@@ -188,8 +218,9 @@ model users {
   chat_rooms           chat_rooms[]
   carts                carts[]
   refresh_tokens       refresh_tokens[]
+  logDeviceChilds      log_device_childs[]
 
-  @@index([us_pa_id], map: "idx_users_position")
+  // @@index([us_pa_id], map: "idx_users_position")
   @@index([us_dept_id, us_sec_id], map: "idx_users_dept_sec")
   @@index([us_is_active], map: "idx_users_active")
 }
@@ -205,7 +236,7 @@ model devices {
   de_af_id           Int
   de_ca_id           Int
   de_us_id           Int
-  de_sec_id          Int
+  de_sec_id          Int?
   de_acc_id          Int?
   deleted_at         DateTime? @db.Timestamptz(6)
   created_at         DateTime? @db.Timestamptz(6)
@@ -214,7 +245,7 @@ model devices {
   approval_flow approval_flows @relation(fields: [de_af_id], references: [af_id])
   category      categories     @relation(fields: [de_ca_id], references: [ca_id])
   added_by      users          @relation("devices_added_by", fields: [de_us_id], references: [us_id])
-  section       sections       @relation(fields: [de_sec_id], references: [sec_id])
+  section       sections?      @relation(fields: [de_sec_id], references: [sec_id], onDelete: SetNull)
   accessory     accessories?   @relation(fields: [de_acc_id], references: [acc_id])
 
   device_childs device_childs[]
@@ -236,9 +267,10 @@ model device_childs {
 
   device devices @relation(fields: [dec_de_id], references: [de_id])
 
-  cart_items     cart_items[]
-  ticket_devices ticket_devices[]
-  availabilities device_availabilities[]
+  cart_items      cart_items[]
+  ticket_devices  ticket_devices[]
+  availabilities  device_availabilities[]
+  logDeviceChilds log_device_childs[]
 
   @@index([dec_de_id], map: "idx_child_device")
   @@index([dec_status], map: "idx_child_status")
@@ -335,16 +367,22 @@ model approval_flows {
 model approval_flow_steps {
   afs_id           Int       @id @default(autoincrement())
   afs_step_approve Int
-  afs_pa_id        Int
+  // afs_pa_id        Int
+  afs_dept_id      Int?
+  afs_sec_id       Int?
+  afs_role         US_ROLE
   afs_af_id        Int
   deleted_at       DateTime? @db.Timestamptz(6)
   created_at       DateTime? @db.Timestamptz(6)
   updated_at       DateTime? @db.Timestamptz(6)
 
-  position approval_positions @relation(fields: [afs_pa_id], references: [ap_id])
-  flow     approval_flows     @relation(fields: [afs_af_id], references: [af_id])
+  // position approval_positions @relation(fields: [afs_pa_id], references: [ap_id])
+  flow       approval_flows @relation(fields: [afs_af_id], references: [af_id])
+  department departments?   @relation(fields: [afs_dept_id], references: [dept_id])
+  section    sections?      @relation(fields: [afs_sec_id], references: [sec_id])
 
-  @@index([afs_af_id, afs_pa_id, afs_step_approve], map: "idx_steps_flow_step")
+  // @@index([afs_af_id, afs_pa_id, afs_step_approve], map: "idx_steps_flow_step")
+  @@index([afs_af_id, afs_step_approve], map: "idx_steps_flow_step")
 }
 
 model device_availabilities {
@@ -389,12 +427,13 @@ model borrow_return_tickets {
   requester users           @relation("brt_requester", fields: [brt_user_id], references: [us_id])
   staffer   users?          @relation("brt_staff", fields: [brt_staff_id], references: [us_id])
 
-  stages         borrow_return_ticket_stages[]
-  ticket_devices ticket_devices[]
-  notifications  notifications[]
-  logs_borrow    log_borrow_returns[]
-  ticket_issues  ticket_issues[]
-  availabilities device_availabilities[]
+  stages          borrow_return_ticket_stages[]
+  ticket_devices  ticket_devices[]
+  notifications   notifications[]
+  logs_borrow     log_borrow_returns[]
+  ticket_issues   ticket_issues[]
+  availabilities  device_availabilities[]
+  logDeviceChilds log_device_childs[]
 
   @@index([brt_user_id, brt_staff_id, brt_status, created_at], map: "idx_brt_user_status_created")
   @@index([brt_af_id], map: "idx_brt_flow")
@@ -407,14 +446,14 @@ model borrow_return_ticket_stages {
   brts_name         String      @db.VarChar(191)
   brts_step_approve Int
   brts_brt_id       Int
-  brts_pa_id        Int
+  // brts_pa_id        Int
   brts_us_id        Int?
   deleted_at        DateTime?   @db.Timestamptz(6)
   created_at        DateTime?   @db.Timestamptz(6)
   updated_at        DateTime?   @db.Timestamptz(6)
 
   ticket   borrow_return_tickets @relation(fields: [brts_brt_id], references: [brt_id])
-  position approval_positions    @relation(fields: [brts_pa_id], references: [ap_id])
+  // position approval_positions    @relation(fields: [brts_pa_id], references: [ap_id])
   approver users?                @relation("brts_approver", fields: [brts_us_id], references: [us_id])
 
   notifications notifications[]
@@ -444,7 +483,7 @@ model ticket_issues {
   ti_de_id          Int
   ti_brt_id         Int?
   ti_title          String    @db.VarChar(200)
-  ti_description    String?
+  ti_description    String
   ti_reported_by    Int
   ti_assigned_to    Int?
   ti_status         TI_STATUS
@@ -462,9 +501,10 @@ model ticket_issues {
   reporter users                  @relation("ti_reporter", fields: [ti_reported_by], references: [us_id])
   assignee users?                 @relation("ti_assignee", fields: [ti_assigned_to], references: [us_id])
 
-  attachments   issue_attachments[]
-  notifications notifications[]
-  logs          log_issues[]
+  attachments     issue_attachments[]
+  notifications   notifications[]
+  logs            log_issues[]
+  logDeviceChilds log_device_childs[]
 
   @@index([ti_de_id, ti_status, created_at], map: "idx_issue_device_status")
   @@index([ti_assigned_to, ti_status], map: "idx_issue_assignee")
@@ -525,14 +565,14 @@ model notification_recipients {
 }
 
 model log_borrow_returns {
-  lbr_id         Int      @id @default(autoincrement())
-  lbr_action     String   @db.VarChar(50) // enum in DBML; store as text or create enum if needed
-  lbr_old_status String?  @db.VarChar(50)
-  lbr_new_status String?  @db.VarChar(50)
+  lbr_id         Int        @id @default(autoincrement())
+  lbr_action     LBR_ACTION // enum in DBML; store as text or create enum if needed
+  lbr_old_status String?    @db.VarChar(50)
+  lbr_new_status String?    @db.VarChar(50)
   lbr_note       String?
   lbr_actor_id   Int?
   lbr_brt_id     Int
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  created_at     DateTime   @default(now()) @db.Timestamptz(6)
 
   brt   borrow_return_tickets @relation(fields: [lbr_brt_id], references: [brt_id])
   actor users?                @relation("lbr_actor", fields: [lbr_actor_id], references: [us_id])
@@ -541,19 +581,42 @@ model log_borrow_returns {
 }
 
 model log_issues {
-  li_id         Int      @id @default(autoincrement())
-  li_action     String   @db.VarChar(50) // enum in DBML; store as text or create enum if needed
-  li_old_status String?  @db.VarChar(50)
-  li_new_status String?  @db.VarChar(50)
+  li_id         Int       @id @default(autoincrement())
+  li_action     LI_ACTION // enum in DBML; store as text or create enum if needed
+  li_old_status String?   @db.VarChar(50)
+  li_new_status String?   @db.VarChar(50)
   li_note       String?
   li_actor_id   Int?
   li_ti_id      Int
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
 
   issue ticket_issues @relation(fields: [li_ti_id], references: [ti_id])
   actor users?        @relation("li_actor", fields: [li_actor_id], references: [us_id])
 
   @@index([li_ti_id, created_at], map: "idx_log_issue")
+}
+
+model log_device_childs {
+  ldc_id         Int        @id @default(autoincrement())
+  ldc_action     LDC_ACTION // ใช้ Enum ที่เพิ่งสร้าง
+  ldc_old_status String?    @db.VarChar(50)
+  ldc_new_status String?    @db.VarChar(50)
+  ldc_note       String?
+  ldc_actor_id   Int?
+  ldc_ti_id      Int?
+  ldc_brt_id     Int?
+  ldc_dec_id     Int?
+  created_at     DateTime   @default(now()) @db.Timestamptz(6)
+
+  // Relations
+  actor        users?                 @relation(fields: [ldc_actor_id], references: [us_id])
+  ticket_issue ticket_issues?         @relation(fields: [ldc_ti_id], references: [ti_id])
+  ticket_brt   borrow_return_tickets? @relation(fields: [ldc_brt_id], references: [brt_id])
+  device_child device_childs?         @relation(fields: [ldc_dec_id], references: [dec_id])
+
+  // @@index([ldc_ti_id, created_at], map: "idx_log_issue") // หมายเหตุ: "idx_log_issue" ซ้ำกับใน model log_issues
+  @@index([ldc_ti_id, created_at], map: "idx_ldc_log_issue") // แนะนำให้เปลี่ยนชื่อ map
+  @@index([ldc_dec_id, created_at], map: "idx_log_device_history")
 }
 
 model chat_rooms {

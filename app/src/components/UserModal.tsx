@@ -404,7 +404,7 @@ export default function UserModal({
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
       <div className="relative bg-white rounded-[24px] p-8 w-[804px] max-w-[95%] shadow-2xl border border-[#858585] flex flex-col">
         {/* ปุ่มปิด */}
-        <button
+        {/* <button
           onClick={onClose}
           className="absolute top-4 right-4 text-black hover:text-black w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
         >
@@ -414,7 +414,7 @@ export default function UserModal({
             height="35px"
             className="text-black hover:text-black"
           />
-        </button>
+        </button> */}
 
         {/* Header */}
         <div className="mb-6 grid grid-cols-[1fr_auto_1fr] items-center">

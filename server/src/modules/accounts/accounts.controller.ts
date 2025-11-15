@@ -105,6 +105,13 @@ export class AccountsController extends BaseController {
     };
   }
 
+  /**
+   * Description: ปิดการใช้งานข้อมูลผู้ใช้ตาม id
+   * Input : req.params.id 
+   * Output : user_id ที่ถูกลบ พร้อมระบุวันเวลา
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+
   async softDelete(
     req: Request,
     res: Response,

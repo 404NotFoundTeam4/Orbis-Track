@@ -3,7 +3,7 @@
  * Input     :
  *   - typeform: กำหนดประเภทฟอร์ม ("add" | "edit" | "delete")
  * Note      :  ประเภทฟอร์มแต่ละอันจะมีการแสดงข้อมูลหรือปุ่มที่ไม่เหมือนกัน
- * Author    : Worrawat Namwat (Wave) 66160372,บูม(ใส่ชื่อด้วย),ตัง(ใส่ชื่อด้วย)
+ * Author    : Worrawat Namwat (Wave) 66160372,Chanwit Muangma (Boom) 66160224,ตัง(ใส่ชื่อด้วย)
  */
 import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@iconify/react";
@@ -280,6 +280,12 @@ export default function UserModal({
   {
     /* Funtion การปิดบัญชี */
   }
+  /**
+   * Description: (Handler) ยืนยันการลบ(โหมด 'delete') เรียกใช้ API จาก Service
+   * Input: -
+   * Output: - (void, async)
+   * Author:Chanwit Muangma (Boom) 66160224
+   */
   const handleConfirmDelete = async () => {
     if (!user?.us_id) return;
 
@@ -307,7 +313,8 @@ export default function UserModal({
     } finally {
       setDeleting(false);
     }
-  };
+  }; // Author:Chanwit Muangma (Boom) 66160224
+
   const handleConfirmAdd = async () => {
     const raw = keyvalue === "all" ? formDataObject : formOutput;
 

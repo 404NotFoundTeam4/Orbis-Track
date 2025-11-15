@@ -272,7 +272,12 @@ async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
     });
     return { message: "User updated successfully" };
 }
-
+/**
+ * Description: ปิดการใช้งานบัญชีผู้ใช้
+ * Input: user_id
+ * Output: date (วัน-เวลาที่ถูกปิด) เปลี่ยนสถานะ is_active เป็น false
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
 export async function softDeleteAccount(us_id: number) {
     //เช็คตัว UserId ว่าเจอไหม
     const user = await prisma.users.findUnique({ where: { us_id } });

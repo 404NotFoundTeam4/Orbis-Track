@@ -6,7 +6,7 @@ import Dropdown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import axios from "axios";
 import UserModal from "../components/UserModal";
-
+import { useToast } from "../components/Toast";
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -29,6 +29,9 @@ type Section = {
   sec_id: number;
   sec_name: string;
   sec_dept_id: number;
+};
+type NewUserPayload = Partial<User> & {
+  us_password?: string;
 };
 
 type Department = {
@@ -102,7 +105,7 @@ export const Users = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
+    const toast = useToast();
   // สร้างฟังก์ชันสำหรับจัดการ Modal
   const handleOpenAddModal = () => {
     setSelectedUser(null);
@@ -114,6 +117,7 @@ export const Users = () => {
     setSelectedUser(user);
     setModalType("edit");
     setIsModalOpen(true);
+   
   };
 
   const handleOpenDeleteModal = (user: User) => {
@@ -177,13 +181,39 @@ export const Users = () => {
   };
 
   // ฟังก์ชันเพิ่มผู้ใช้ใหม่
-  const handleAddUser = async (newUserData: Partial<User>) => {
-    try {
-      // เรียก API POST เพื่อเพิ่มผู้ใช้ใหม่
-      const response = await axios.post(`/api/accounts`, newUserData);
-      console.log('User added successfully:', response.data);
-
-      // อัปเดต State 'users' ใน Frontend (แสดงผลทันที)
+  const handleAddUser = async (newUserData : NewUserPayload) => {
+    
+    // เรียก API POST เพื่อเพิ่มผู้ใช้ใหม่
+    const {  us_emp_code,
+      us_firstname,
+      us_lastname,
+      us_username,
+      us_password,
+      us_email,
+        us_phone,
+        us_images,
+        us_role,
+        us_dept_id,
+        us_sec_id,
+        us_is_active} =newUserData
+        const newUser = { 
+        us_emp_code,
+        us_firstname,
+        us_lastname,
+        us_username,
+        us_password,
+        us_email,
+        us_phone,
+        us_images,
+        us_role,
+        us_dept_id,
+        us_sec_id,
+        us_is_active}
+        
+        
+        try {
+      const response = await axios.post(`/api/accounts`, newUser);
+      
       setusers((prevUsers) => {
         const newUser = {
           ...newUserData,
@@ -197,14 +227,20 @@ export const Users = () => {
         
         return [...prevUsers, newUser];
       });
-
       // แสดงข้อความสำเร็จ
-      console.log("เพิ่มบัญชีผู้ใช้สำเร็จ!");
-
-    } catch (error) {
+    
+         toast.push({
+        message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
+        tone: "confirm",
+      });
+      handleCloseModal()
+    } catch  {
       // จัดการข้อผิดพลาด
-      console.error("Error adding user via API:", error);
-      alert("ไม่สามารถเพิ่มบัญชีผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง");
+      toast.push({
+      message: "เกิดข้อผิดพลาด ไม่สามารถเพิ่มบัญชีผู้ใช้ได้",
+        tone: "danger",
+      });
+      handleCloseModal()
     } finally {
       // ปิด Modal
       handleCloseModal();

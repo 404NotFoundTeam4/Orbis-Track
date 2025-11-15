@@ -81,6 +81,45 @@ export default function UserModal({
   const toast = useToast();
   const [isEditAlertOpen, setIsEditAlertOpen] = useState(false);
   const [isAddAlertOpen, setIsAddAlertOpen] = useState(false);
+  // length อย่างน้อย 12 ตัว
+  function generatePassword (length: number = 12): string {
+    if (length < 12) {
+      throw new Error("ความยาวต้องอย่างน้อย 12 ตัวขึ้นไป");
+    }
+
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const digits = "0123456789";
+    const special = "!@#$%^&*()-_=+[]{};:,.<>?/";
+
+    const allChars = lower + upper + digits + special;
+
+    // ฟังก์ชันสุ่ม index
+    const randomIndex = (max: number) => {
+      return Math.floor(Math.random() * max);
+    };
+
+    const result: string[] = [];
+
+    // บังคับให้มีครบทุกแบบอย่างน้อย 1 ตัว
+    result.push(lower[randomIndex(lower.length)]);
+    result.push(upper[randomIndex(upper.length)]);
+    result.push(digits[randomIndex(digits.length)]);
+    result.push(special[randomIndex(special.length)]);
+
+    // ที่เหลือสุ่มจากทุกตัว
+    for (let i = result.length; i < length; i++) {
+      result.push(allChars[randomIndex(allChars.length)]);
+    }
+
+    // สลับลำดับให้ดูสุ่มจริง ๆ
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = randomIndex(i + 1);
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result.join("");
+  }
 
   // ฟังก์ชันตรวจสอบข้อมูล
   const validateForm = () => {
@@ -116,33 +155,22 @@ export default function UserModal({
       });
     }
   };
+const handleConfirmAdd = async () => {
+  const raw = keyvalue === "all" ? formData : formOutput;
 
-  const handleConfirmAdd = async () => {
-    const payload = keyvalue === "all" ? formData : formOutput;
-    try {
-      // เรียก API POST สำหรับเพิ่มผู้ใช้ใหม่
-      const response = await api.post(`/accounts`, payload);
+  const payload: any = { ...raw };
 
-      // แสดง Toast สำเร็จ
-      toast.push({
-        message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
-        tone: "confirm",
-      });
+  delete payload.us_id;
 
-      // แจ้ง Parent (Users.tsx)
-      if (onSubmit) onSubmit({
-        ...payload,
-        us_id: response.data.id || Date.now() // ใช้ ID จาก response หรือใช้ temporary ID
-      });
-    } catch (err) {
-      console.error("❌ Error:", err);
-      // แสดง Toast เมื่อล้มเหลว
-      toast.push({
-        message: "เกิดข้อผิดพลาด ไม่สามารถเพิ่มผู้ใช้ได้",
-        tone: "danger",
-      });
-    }
-  };
+  payload.us_password = generatePassword(12); 
+
+  toast.push({
+    message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
+    tone: "confirm",
+  });
+
+  if (onSubmit) onSubmit(payload);
+};
 
   // preload user data เมื่อแก้ไข / ลบ
   useEffect(() => {
@@ -218,7 +246,7 @@ export default function UserModal({
       setIsEditAlertOpen(true);
       return;
     }
-    
+
     // ตรวจสอบถ้าเป็น 'add' ให้เปิด Alert
     if (typeform === "add") {
       if (!validateForm()) {
@@ -318,8 +346,8 @@ export default function UserModal({
 
         {/* หัวข้อ */}
         <h2 className="text-center mb-6 text-[32px] font-bold font-roboto">
-          {typeform === "edit" ? "แก้ไขบัญชีผู้ใช้" : 
-           typeform === "add" ? "เพิ่มบัญชีผู้ใช้" : "ปิดการใช้งานบัญชีผู้ใช้"}
+          {typeform === "edit" ? "แก้ไขบัญชีผู้ใช้" :
+            typeform === "add" ? "เพิ่มบัญชีผู้ใช้" : "ปิดการใช้งานบัญชีผู้ใช้"}
         </h2>
 
         {/* Avatar */}
@@ -479,14 +507,13 @@ export default function UserModal({
             <button
               type="button"
               onClick={handle}
-              className={`px-8 py-3 rounded-full shadow text-white ${
-                typeform === "delete"
+              className={`px-8 py-3 rounded-full shadow text-white ${typeform === "delete"
                   ? "bg-red-500 hover:bg-red-600"
                   : "bg-blue-400 hover:bg-blue-500"
-              }`}
+                }`}
             >
-              {typeform === "delete" ? "ปิดการใช้งาน" : 
-               typeform === "add" ? "เพิ่มบัญชีผู้ใช้" : "บันทึก"}
+              {typeform === "delete" ? "ปิดการใช้งาน" :
+                typeform === "add" ? "เพิ่มบัญชีผู้ใช้" : "บันทึก"}
             </button>
           </div>
         </form>

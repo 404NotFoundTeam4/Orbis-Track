@@ -4,7 +4,7 @@ ARG PRISMA_SCHEMA_PATH=./src/infrastructure/database/prisma/schema.prisma
 FROM node:22-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache openssl
-COPY package.json package-lock.json ./
+COPY package.json package.json ./
 COPY server/package.json ./server/package.json
 RUN npm ci --workspaces --include-workspace-root=false
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma

@@ -2,8 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 import { departmentService } from "./departments.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
+
 import {
   addSectionPayload,
+  AddDepartmentsSchema,
   editDepartmentPayload,
   editSectionPayload,
   GetAllDepartmentSchema,
@@ -11,6 +13,8 @@ import {
   idParamSchema,
   paramEditSecSchema,
   DeptSectionSchema,
+  deleteSectionSchema,
+  addDepartmentsPayload
 } from "./departments.schema.js";
 
 /**
@@ -114,12 +118,45 @@ export class DepartmentController extends BaseController {
 
   }
 
-    async getdeptsection(
+  async getdeptsection(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<BaseResponse<DeptSectionSchema>> {
     const deptSection = await departmentService.getDeptSection();
     return { data: deptSection };
+  }
+
+  /**
+   * Description: Controller สำหรับลบฝ่ายย่อย (Section)
+   * Input     : req.params (ไอดีฝ่ายย่อย)
+   * Output    : { message: string } - ข้อความแจ้งผลการลบ
+   * Author    : Niyada Butchan (Da) 66160361
+   */
+  async deleteSection(
+    req: Request,
+    _res: Response,
+    _next: NextFunction) {
+
+    // deleteSectionSchema จะช่วย validate ให้แน่ใจว่า secId เป็น string ที่ไม่ว่าง
+    const params = deleteSectionSchema.parse(req.params);
+
+    //สั่งให้ service ลบ section ที่มีเลขไอดี = secId ในฐานข้อมูล
+    await departmentService.deleteSection(params);
+
+    //return response message
+    return { message: "Section deleted successfully" };
+  }
+
+  /**
+   * Description: Controller สำหรับเพิ่มแผนก (Departments)
+   * Input     : req.body (ข้อมูลชื่อแผนก)
+   * Output    : { data: result } - ข้อมูลที่เพิ่มเข้ามา
+   * Author    : Sutaphat Thahin (Yeen) 66160378
+   */
+  async addDepartments(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<AddDepartmentsSchema>> {
+    const payload = addDepartmentsPayload.parse(req.body);
+    const result = await departmentService.addDepartments(payload);
+    return { data: result }
   }
 }

@@ -20,6 +20,9 @@ export interface UpdateDepartmentPayload {
 export interface UpdateSectionPayload {
   section: string;
 }
+export interface DeleteSectionPayload {
+  sec_id: number;
+}
 
 /**
  * Description: โครงสร้างข้อมูล (Payload) สำหรับการเพิ่มฝ่ายย่อย (Section) ใหม่
@@ -41,14 +44,20 @@ export interface AddSectionPayload {
 }
 
 // รูปแบบข้อมูลแผนกและฝ่ายย่อย
-export interface getDepartmentsWithSections {
+export interface GetDepartmentsWithSections {
   dept_id: number;
   dept_name: string;
+  people_count: number;
   sections: {
     sec_id: number;
     sec_name: string;
     sec_dept_id: number;
+    people_count: number;
   }[];
+}
+
+export interface AddDepartmentPayload {
+  dept_name: string;
 }
 
 // Department API
@@ -64,8 +73,8 @@ export const departmentService = {
     const { data } = await axios.get(`/api/departments/${id}`);
     return data;
   },
-  
-   /**
+
+  /**
    * Description: ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
    * Input     : -
    * Output    : Promise<DepartmentsWithSectionsResponse> - ข้อมูลแผนกพร้อมฝ่ายย่อย
@@ -73,7 +82,9 @@ export const departmentService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
 
-  getDepartmentsWithSections: async (): Promise<getDepartmentsWithSections[]> => {
+  getDepartmentsWithSections: async (): Promise<
+    GetDepartmentsWithSections[]
+  > => {
     const { data } = await axios.get(`/api/departments/section`);
     return data.data.deptsection;
   },
@@ -87,9 +98,33 @@ export const departmentService = {
    */
   updateDepartment: async (
     id: number,
-    payload: UpdateDepartmentPayload,
+    payload: UpdateDepartmentPayload
   ): Promise<{ message: string }> => {
     const { data } = await axios.put(`/api/departments/${id}`, payload);
+    return data;
+  },
+
+  /**
+   * Description: ลบข้อมูลแผนก (Department) ตามรหัสที่ระบุ
+   * Input     :
+   *   - id (number) - รหัสแผนกที่ต้องการลบ
+   * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการลบ
+   * Endpoint  : DELETE /api/departments/:id
+   * Author    : Niyada Butchan (Da) 66160361
+   */
+  deleteDepartment: async (id: number): Promise<{ message: string }> => {
+    const { data } = await axios.delete(`/api/departments/${id}`);
+    return data;
+  },
+
+  /**
+   * Description: เพิ่มแผนก
+   * Author    : Sutaphat Thahin (Yeen) 66160378
+   */
+  addDepartment: async (
+    payload: AddDepartmentPayload
+  ): Promise<{ message: string }> => {
+    const { data } = await axios.post(`/api/departments`, payload);
     return data;
   },
 };
@@ -109,33 +144,52 @@ export const sectionService = {
   updateSection: async (
     secId: number,
     deptId: number,
-    payload: UpdateSectionPayload,
+    payload: UpdateSectionPayload
   ): Promise<{ message: string }> => {
     const { data } = await axios.put(
       `/api/departments/${deptId}/section/${secId}`,
-      payload,
+      payload
     );
     return data;
   },
-  
+
   /**
-  * Description: เรียกใช้งาน API สำหรับเพิ่มฝ่ายย่อย (Section) ใหม่ภายใต้แผนกที่เลือก
-  * Input     :
-  *   - payload (AddSecSchema): ข้อมูลที่ต้องใช้ในการเพิ่มฝ่ายย่อย ประกอบด้วย
-  *       • dept_id (number)   - รหัสแผนก
-  *       • sec_name (string)  - ชื่อฝ่ายย่อยที่ต้องการเพิ่ม
-  * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการเพิ่มฝ่ายย่อย
-  * Endpoint  : POST /api/departments/:deptId/section
-  * Logic     :
-  *   - ส่งคำขอแบบ POST ไปยัง endpoint พร้อมข้อมูล dept_id และ sec_name
-  *   - เมื่อเพิ่มสำเร็จ จะได้รับข้อความตอบกลับจากเซิร์ฟเวอร์
-  * Author    : Salsabeela Sa-e (San) 66160349
-  */
+   * Description: เรียกใช้งาน API สำหรับเพิ่มฝ่ายย่อย (Section) ใหม่ภายใต้แผนกที่เลือก
+   * Input     :
+   *   - payload (AddSecSchema): ข้อมูลที่ต้องใช้ในการเพิ่มฝ่ายย่อย ประกอบด้วย
+   *       • dept_id (number)   - รหัสแผนก
+   *       • sec_name (string)  - ชื่อฝ่ายย่อยที่ต้องการเพิ่ม
+   * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการเพิ่มฝ่ายย่อย
+   * Endpoint  : POST /api/departments/:deptId/section
+   * Logic     :
+   *   - ส่งคำขอแบบ POST ไปยัง endpoint พร้อมข้อมูล dept_id และ sec_name
+   *   - เมื่อเพิ่มสำเร็จ จะได้รับข้อความตอบกลับจากเซิร์ฟเวอร์
+   * Author    : Salsabeela Sa-e (San) 66160349
+   */
   addSection: async (
-    payload: AddSectionPayload) : Promise<{ message: string }> => {
+    payload: AddSectionPayload
+  ): Promise<{ message: string }> => {
     const { dept_id, sec_name } = payload;
-    const { data } = await axios.post(
-      `/api/departments/${dept_id}/section`, {dept_id, sec_name});
+    const { data } = await axios.post(`/api/departments/${dept_id}/section`, {
+      dept_id,
+      sec_name,
+    });
+    return data;
+  },
+
+  /**
+   * Description: ลบข้อมูลฝ่ายย่อย (Section) ตามรหัสที่ระบุ
+   * Input     :
+   *   - sec_id (DeleteSectionPayload) - รหัสฝ่ายย่อยที่ต้องการลบ
+   * Output    : Promise<{ message: string }> - ข้อความแจ้งผลการลบ
+   * Endpoint  : DELETE /api/department/section/:sec_id
+   * Author    : Niyada Butchan(Da) 66160361
+   */
+  // ลบ section ด้วย sec_id
+  deleteSection: async (
+    sec_id: DeleteSectionPayload
+  ): Promise<{ message: string }> => {
+    const { data } = await axios.delete(`/api/department/section/${sec_id}`);
     return data;
   },
 };

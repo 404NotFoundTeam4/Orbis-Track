@@ -14,7 +14,8 @@ type ModalType =
   | "add-department"
   | "edit-department"
   | "add-section"
-  | "edit-section";
+  | "edit-section"
+  | "delete-section";
 
 interface Department {
   id: number;
@@ -63,17 +64,23 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
   const isSection = type.includes("section");
 
   // ไอคอนกากบาทวงกลมจาก Radix Icons (ใช้แทนไอคอนปิด)
-const CrossCircledIcon = (props: any) => (
-  <svg
-    {...props}
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
+  const CrossCircledIcon = (props: any) => (
+    <svg
+      {...props}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M8 8l8 8M16 8l-8 8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 
   const titleText = isEdit
     ? isSection
@@ -105,7 +112,7 @@ const CrossCircledIcon = (props: any) => (
 
       if (initialData?.departmentId && type === "add-section") {
         const foundDept = departmentItems.find(
-          (item) => item.id === initialData.departmentId,
+          (item) => item.id === initialData.departmentId
         );
         setSelectedDepartment(foundDept || null);
       } else {
@@ -306,7 +313,6 @@ const CrossCircledIcon = (props: any) => (
         tone={dialogTone}
         title={titleText}
         description={descText}
-        
         // (optionally) ใส่สัดส่วนตามสเปค
         onConfirm={doSubmit}
       />

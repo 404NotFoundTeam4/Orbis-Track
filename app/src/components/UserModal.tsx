@@ -51,7 +51,7 @@ type UserModalProps = {
 };
 
 export default function UserModal({
- typeform = "add",
+  typeform = "add",
   user,
   onClose,
   onSubmit,
@@ -75,57 +75,112 @@ export default function UserModal({
     us_dept_name: "",
     us_sec_name: "",
   });
-  
-
 
   const [formOutput, setFormOutput] = useState<Partial<UserApiData>>({});
 
   const toast = useToast();
   const [isEditAlertOpen, setIsEditAlertOpen] = useState(false);
+  const [isAddAlertOpen, setIsAddAlertOpen] = useState(false);
+
+  // ฟังก์ชันตรวจสอบข้อมูล
+  const validateForm = () => {
+    const requiredFields = ['us_username', 'us_email', 'us_firstname', 'us_lastname', 'us_role'];
+    for (const field of requiredFields) {
+      if (!formData[field as keyof UserApiData]) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   const handleConfirmEdit = async () => {
     const payload = keyvalue === "all" ? formData : formOutput;
     try {
-      // 3.1 เรียก API PUT
+      // เรียก API PUT
       await api.put(`/accounts/${payload.us_id}`, payload);
-      
-      // 3.2 แสดง Toast (ใช้ .push ตามไฟล์ Toast.tsx)
+
+      // แสดง Toast
       toast.push({
         message: "การแก้ไขสำเร็จ!",
-        tone: "confirm", 
+        tone: "confirm",
       });
 
-      // 3.3 แจ้ง Parent (Users.tsx)
+      // แจ้ง Parent (Users.tsx)
       if (onSubmit) onSubmit(payload);
-
     } catch (err) {
       console.error("❌ Error:", err);
-      // 3.4 แสดง Toast เมื่อล้มเหลว
+      // แสดง Toast เมื่อล้มเหลว
       toast.push({
         message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
         tone: "danger",
       });
     }
   };
-  //  preload user data เมื่อแก้ไข / ลบ
+
+  const handleConfirmAdd = async () => {
+    const payload = keyvalue === "all" ? formData : formOutput;
+    try {
+      // เรียก API POST สำหรับเพิ่มผู้ใช้ใหม่
+      const response = await api.post(`/accounts`, payload);
+
+      // แสดง Toast สำเร็จ
+      toast.push({
+        message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
+        tone: "confirm",
+      });
+
+      // แจ้ง Parent (Users.tsx)
+      if (onSubmit) onSubmit({
+        ...payload,
+        us_id: response.data.id || Date.now() // ใช้ ID จาก response หรือใช้ temporary ID
+      });
+    } catch (err) {
+      console.error("❌ Error:", err);
+      // แสดง Toast เมื่อล้มเหลว
+      toast.push({
+        message: "เกิดข้อผิดพลาด ไม่สามารถเพิ่มผู้ใช้ได้",
+        tone: "danger",
+      });
+    }
+  };
+
+  // preload user data เมื่อแก้ไข / ลบ
   useEffect(() => {
     if (user && (typeform === "edit" || typeform === "delete")) {
       setFormData({ ...user });
+    } else if (typeform === "add") {
+      // รีเซ็ตฟอร์มเมื่อเพิ่มผู้ใช้ใหม่
+      setFormData({
+        us_id: 0,
+        us_emp_code: "",
+        us_firstname: "",
+        us_lastname: "",
+        us_username: "",
+        us_email: "",
+        us_phone: "",
+        us_images: null,
+        us_role: "",
+        us_dept_id: 0,
+        us_sec_id: 0,
+        us_is_active: true,
+        us_dept_name: "",
+        us_sec_name: "",
+      });
     }
   }, [user, typeform]);
 
-  //  filter key ตามที่ส่งมาจาก props (keyvalue)
+  // filter key ตามที่ส่งมาจาก props (keyvalue)
   useEffect(() => {
     let filtered: Partial<UserApiData> = {};
 
     if (keyvalue === "all") {
-      //  ถ้าเป็น all → เอาทั้ง formData เลย
+      // ถ้าเป็น all → เอาทั้ง formData เลย
       filtered = { ...formData };
-    } 
+    }
     setFormOutput(filtered);
   }, [formData, keyvalue]);
 
-  //  handle input
+  // handle input
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -147,7 +202,7 @@ export default function UserModal({
     }
   };
 
-  //  handle avatar upload
+  // handle avatar upload
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -156,13 +211,27 @@ export default function UserModal({
     }
   };
 
-  //  handle main API call
+  // handle main API call
   const handle = async () => {
-    // ตรวจสอบ ถ้าเป็น 'edit' ให้เปิด Alert
+    // ตรวจสอบถ้าเป็น 'edit' ให้เปิด Alert
     if (typeform === "edit") {
       setIsEditAlertOpen(true);
-      return; // หยุดการทำงานตรงนี้
+      return;
     }
+    
+    // ตรวจสอบถ้าเป็น 'add' ให้เปิด Alert
+    if (typeform === "add") {
+      if (!validateForm()) {
+        toast.push({
+          message: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน",
+          tone: "danger",
+        });
+        return;
+      }
+      setIsAddAlertOpen(true);
+      return;
+    }
+
     const payload = keyvalue === "all" ? formData : formOutput;
     console.log(formOutput);
     if (onSubmit) onSubmit(payload);
@@ -171,14 +240,14 @@ export default function UserModal({
   const handleRoleChange = (selectedItem: DropDownItemType) => {
     setFormData((prev) => ({
       ...prev,
-      us_role: selectedItem.value, // เก็บค่า string "Admin", "Staff" ฯลฯ
+      us_role: selectedItem.value,
     }));
   };
 
   const handleDepartmentChange = (selectedItem: DropDownItemType) => {
     setFormData((prev) => ({
       ...prev,
-      us_dept_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
+      us_dept_id: selectedItem.value,
       us_sec_id: 0, // รีเซ็ตฝ่ายย่อย
     }));
   };
@@ -186,15 +255,17 @@ export default function UserModal({
   const handleSectionChange = (selectedItem: DropDownItemType) => {
     setFormData((prev) => ({
       ...prev,
-      us_sec_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
+      us_sec_id: selectedItem.value,
     }));
   };
 
   const roleOptions: DropDownItemType[] = [
-    { id: "Admin", label: "Admin", value: "Admin" },
-    { id: "Manager", label: "Manager", value: "Manager" },
-    { id: "HR", label: "HR", value: "HR" },
-    { id: "Staff", label: "Staff", value: "Staff" },
+    { id: "ADMIN", label: "ADMIN", value: "ADMIN" },
+    { id: "HOD", label: "HOD", value: "HOD" },
+    { id: "HOS", label: "HOS", value: "HOS" },
+    { id: "TECHNICAL", label: "TECHNICAL", value: "TECHNICAL" },
+    { id: "STAFF", label: "STAFF", value: "STAFF" },
+    { id: "EMPLOYEE", label: "EMPLOYEE", value: "EMPLOYEE" },
   ];
 
   // (Department Options)
@@ -202,7 +273,7 @@ export default function UserModal({
     return departments.map((dept) => ({
       id: dept.dept_id,
       label: dept.dept_name,
-      value: dept.dept_id, // เราเก็บ ID ลงใน value
+      value: dept.dept_id,
     }));
   }, [departments]);
 
@@ -218,18 +289,21 @@ export default function UserModal({
     return filteredSections.map((sec) => ({
       id: sec.sec_id,
       label: sec.sec_name,
-      value: sec.sec_id, // เราเก็บ ID ลงใน value
+      value: sec.sec_id,
     }));
   }, [filteredSections]);
 
   const selectedRole =
-    roleOptions.find((option) => option.value === formData.us_role) || undefined;
+    roleOptions.find((option) => option.value === formData.us_role) ||
+    undefined;
 
   const selectedDepartment =
-    departmentOptions.find((option) => option.id === formData.us_dept_id) || undefined;
+    departmentOptions.find((option) => option.id === formData.us_dept_id) ||
+    undefined;
 
   const selectedSection =
-    sectionOptions.find((option) => option.id === formData.us_sec_id) || undefined;
+    sectionOptions.find((option) => option.id === formData.us_sec_id) ||
+    undefined;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
@@ -244,7 +318,8 @@ export default function UserModal({
 
         {/* หัวข้อ */}
         <h2 className="text-center mb-6 text-[32px] font-bold font-roboto">
-          {typeform === "edit" ? "แก้ไขบัญชีผู้ใช้" : "เพิ่มบัญชีผู้ใช้"}
+          {typeform === "edit" ? "แก้ไขบัญชีผู้ใช้" : 
+           typeform === "add" ? "เพิ่มบัญชีผู้ใช้" : "ปิดการใช้งานบัญชีผู้ใช้"}
         </h2>
 
         {/* Avatar */}
@@ -351,8 +426,8 @@ export default function UserModal({
                 value={selectedRole}
                 onChange={handleRoleChange}
                 placeholder="เลือกตำแหน่ง"
-                className="w-[221px]" // กำหนดขนาดให้เท่า input
-                searchable={true} // ปิด search bar (เพราะมีแค่ 4 ตัวเลือก)
+                className="w-[221px]"
+                searchable={true}
               />
 
               {/* แผนก (Department) */}
@@ -361,8 +436,8 @@ export default function UserModal({
                 value={selectedDepartment}
                 onChange={handleDepartmentChange}
                 placeholder="เลือกแผนก"
-                className="w-[221px]" // กำหนดขนาดให้เท่า input
-                searchable={true} // เปิด search bar
+                className="w-[221px]"
+                searchable={true}
               />
 
               {/* ฝ่ายย่อย (Section) */}
@@ -371,8 +446,8 @@ export default function UserModal({
                 value={selectedSection}
                 onChange={handleSectionChange}
                 placeholder="เลือกฝ่ายย่อย"
-                className="w-[221px]" // กำหนดขนาดให้เท่า input
-                searchable={true} // เปิด search bar
+                className="w-[221px]"
+                searchable={true}
                 disabled={filteredSections.length === 0}
               />
             </div>
@@ -410,21 +485,36 @@ export default function UserModal({
                   : "bg-blue-400 hover:bg-blue-500"
               }`}
             >
-              {typeform === "delete" ? "ปิดการใช้งาน" : "บันทึก"}
+              {typeform === "delete" ? "ปิดการใช้งาน" : 
+               typeform === "add" ? "เพิ่มบัญชีผู้ใช้" : "บันทึก"}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Alert สำหรับการแก้ไข */}
       <AlertDialog
-      open={isEditAlertOpen}
-      onOpenChange={setIsEditAlertOpen}
-      title="ยืนยันการแก้ไข"
-      description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
-      tone="warning"
-      onConfirm={handleConfirmEdit}
-      confirmText="ยืนยัน"
-      cancelText="ยกเลิก"
-    />
+        open={isEditAlertOpen}
+        onOpenChange={setIsEditAlertOpen}
+        title="ยืนยันการแก้ไข"
+        description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
+        tone="warning"
+        onConfirm={handleConfirmEdit}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
+
+      {/* Alert สำหรับการเพิ่ม */}
+      <AlertDialog
+        open={isAddAlertOpen}
+        onOpenChange={setIsAddAlertOpen}
+        title="ยืนยันการเพิ่มบัญชีผู้ใช้"
+        description="คุณแน่ใจหรือไม่ว่าต้องการเพิ่มบัญชีผู้ใช้ใหม่"
+        tone="warning"
+        onConfirm={handleConfirmAdd}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
     </div>
   );
 }

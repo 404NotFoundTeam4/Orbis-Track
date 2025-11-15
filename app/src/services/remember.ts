@@ -1,9 +1,17 @@
-// services/auth.storage.ts
 
-const ACCESS_TOKEN_KEY = "token";
+const accessTokenKey = "token";
 
-/** decode payload จาก JWT แบบง่าย ๆ */
-function decodeJwtPayload(token: string): any | null {
+/**
+ * Function: DecodeJwtPayload
+ * Features:
+ *  - แปลงข้อมูลส่วน payload ของ JWT (Base64URL → JSON)
+ *  - แยก token เป็น 3 ส่วน (header,payload,signature)
+ *  - decode เฉพาะ payload
+ *  - คืนค่าเป็น object หรือ null หากไม่ถูกต้อง
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+function DecodeJwtPayload(token: string): any | null {
   try {
     const [, payloadBase64] = token.split(".");
     if (!payloadBase64) return null;
@@ -17,47 +25,71 @@ function decodeJwtPayload(token: string): any | null {
   }
 }
 
-/** ตรวจ token หมดอายุจาก exp (วินาที) */
-export function isTokenExpired(token: string): boolean {
-  const payload = decodeJwtPayload(token);
-  if (!payload || !payload.exp) return true; // ไม่มี exp ถือว่าหมดอายุ/ไม่ใช้
+/**
+ * Function: IsTokenExpired
+ * Features:
+ *  - ตรวจสอบว่า JWT token หมดอายุหรือไม่ จากค่า exp (วินาที)
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+export function IsTokenExpired(token: string): boolean {
+  const payload = DecodeJwtPayload(token);
+  if (!payload || !payload.exp) return true;
 
   const nowInSec = Math.floor(Date.now() / 1000);
   
   return payload.exp <= nowInSec;
 }
 
-/** บันทึก token ตาม remember */
-export const saveToken = (token: string, isRemember: boolean) => {
-  if (isTokenExpired(token)) {
-    clearToken();
+/**
+ * Function: SaveToken
+ * Features:
+ *  - บันทึก Token ลง storage ตามตัวเลือก จำฉันไว้ (Remember me)
+ * 
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+export const SaveToken = (token: string, isRemember: boolean) => {
+  if (IsTokenExpired(token)) {
+    ClearToken();
     return;
   }
 
   if (isRemember) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
-    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.setItem(accessTokenKey, token);
+    sessionStorage.removeItem(accessTokenKey);
   } else {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    sessionStorage.setItem(accessTokenKey, token);
+    localStorage.removeItem(accessTokenKey);
   }
 };
 
-/** ดึง token ที่ยังไม่หมดอายุ (ไม่งั้นคืน null) */
-export const getValidToken = (): string | null => {
-  let token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
-  if (!token) token = localStorage.getItem(ACCESS_TOKEN_KEY);
+/**
+ * Function: GetValidToken
+ * Features:
+ *  - ดึง token ที่ยังไม่หมดอายุจาก sessionStorage หรือ localStorage
+ * 
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+export const GetValidToken = (): string | null => {
+  let token = sessionStorage.getItem(accessTokenKey);
+  if (!token) token = localStorage.getItem(accessTokenKey);
   if (!token) return null;
 
-  if (isTokenExpired(token)) {
-    clearToken();
+  if (IsTokenExpired(token)) {
+    ClearToken();
     return null;
   }
 
   return token;
 };
-
-export const clearToken = () => {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+/**
+ * Function: ClearToken
+ * Features:
+ *  - ลบ token ออกจากทั้ง sessionStorage และ localStorage
+ * 
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+export const ClearToken = () => {
+  localStorage.removeItem(accessTokenKey);
+  sessionStorage.removeItem(accessTokenKey);
 };

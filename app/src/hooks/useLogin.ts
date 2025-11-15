@@ -1,40 +1,51 @@
-// hooks/useLogin.ts
 import { useNavigate } from "react-router-dom";
-import { useUserStore } from "../stores/userStore";
-import { login, user_data } from "../services/AccountService.js";
-import { saveToken, getValidToken, clearToken } from "../services/remember";
+import { useUserStore } from "../stores/UserStore.js";
+import { Login, UserData } from "../services/accountService.js";
+import { SaveToken, GetValidToken, ClearToken } from "../services/remember.js";
 
+/**
+ * Class: useLogin สำหรับนำไปเรียกใช้
+ * Features:
+ *   - ฟังก์ชั่น Login
+ *   - ฟังก์ชั่น ReloadUser
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 export const useLogin = () => {
   const setUser = useUserStore((s) => s.setUser);
   const navigate = useNavigate();
-
-  const handleLogin = async (
+  /**
+ * Class: HandleLogin สำหรับตรวจสอบข้อมูล Login
+ * Features:
+ *   - ฟังก์ชั่น ตรวจสอบข้อมูลเมื่อมีการขอ Login
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+  const HandleLogin = async (
     username: string,
     password: string,
     isRemember: boolean
   ) => {
     try {
-      const res = await login(username, password, isRemember);
+      const res = await Login(username, password, isRemember);
 
       if (res?.success && res?.data?.accessToken) {
         const token = res.data.accessToken;
 
 
-        saveToken(token, isRemember);
+        SaveToken(token, isRemember);
 
         // ถ้า token หมดอายุ saveToken จะเคลียร์ให้ เราเช็คอีกรอบ
-        const validToken = getValidToken();
+        const validToken = GetValidToken();
         if (!validToken) {
           return;
         }
-        const users = await user_data(validToken);
+        const User = await UserData(validToken);
         if (isRemember) {
-          localStorage.setItem("rememberUser", JSON.stringify(users));
+          localStorage.setItem("rememberUser", JSON.stringify(User));
         } else {
           localStorage.removeItem("rememberUser");
         }
 
-        navigate("/users", { state: { user: users } });
+        navigate("/users", { state: { user: User } });
         return res?.success
       }
     }
@@ -42,11 +53,16 @@ export const useLogin = () => {
      return false;
     }
   };
-
-  const reloaduser = async () => {
-    const token = getValidToken(); // เช็คทั้ง sessionStorage/localStorage + exp
+ /**
+ * Class: ReloadUser สำหรับตรวจสอบ อายุของ Token ว่า หมดอายุหรือยัง
+ * Features:
+ *   - ฟังก์ชั่น ตรวจสอบข้อมูล Token ใน sessionStorage/localStorage ว่าหมดอายุไหม
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+  const ReloadUser = async () => {
+    const token = GetValidToken(); 
     if (!token) {
-      clearToken();
+      ClearToken();
       navigate("/login");
 
       return;
@@ -55,5 +71,5 @@ export const useLogin = () => {
   };
 
 
-  return { handleLogin, reloaduser };
+  return { HandleLogin, ReloadUser };
 };

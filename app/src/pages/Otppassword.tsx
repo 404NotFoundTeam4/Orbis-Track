@@ -1,27 +1,34 @@
+/**
+ * Page: OtpPassword.
+ * Features:
+ *  - UI หน้าขอ OTP สำหรับผู้ใช้งาน
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import { verify } from "../hooks/Verify.js"
+import { verifyEmail } from "../hooks/verifyEmail.js"
 export function Otppassword() {
-  const { Get_Otp, Set_Otp } = verify();
+  const {GetOtp, SetOtp } = verifyEmail();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [ErrorOtp, SetErrorOtp] = useState(false)
-  const [ErrorEmail, SetErrorEmail] = useState(false)
+  const [errorOtp, setErrorOtp] = useState(false)
+  const [errorEmail, setErrorEmail] = useState(false)
   const [timer, setTimer] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
-  const handleGetOtp = async () => {
+  const HandleGetOtp = async () => {
     // เคลียร์ error ก่อน
-    SetErrorEmail(false);
-    SetErrorOtp(false);
+    setErrorEmail(false);
+    setErrorOtp(false);
 
     // validate email
     if (!email.trim()) {
-      SetErrorEmail(true);
+      setErrorEmail(true);
       return;
     }
 
     try {
-      const res = await Get_Otp(email)
+      const res = await GetOtp(email)
       setTimer(60);
       setIsCounting(true);
 
@@ -37,29 +44,29 @@ export function Otppassword() {
       }, 1000);
     } catch (err) {
       console.error(err);
-      SetErrorEmail(true);
+      setErrorEmail(true);
     }
   };
   const Sumbit_Otp = async () => {
-    SetErrorEmail(false)
-    SetErrorOtp(false)
+    setErrorEmail(false)
+    setErrorOtp(false)
     let FindError = false
     if (!email.trim()) {
-      SetErrorEmail(true)
+      setErrorEmail(true)
       FindError = true;
     }
     if (!otp.trim() || otp.trim().length != 6) {
-      SetErrorOtp(true)
+      setErrorOtp(true)
       FindError = true
     }
     if (FindError) return;
 
     try {
-      const res = await Set_Otp(email, otp)
-      SetErrorOtp(!res)
+      const res = await SetOtp(email, otp)
+      setErrorOtp(!res)
     }
     catch {
-      SetErrorOtp(true)
+      setErrorOtp(true)
     }
   }
 
@@ -145,11 +152,11 @@ export function Otppassword() {
               <label className="block text-gray-700 text-sm font-regular text-[32px] mb-[12px]">
                 อีเมล
               </label>
-              <div className="flex gap-[10px]">
+              <div className="flex gap-2.5">
                 <input
                   type="email"
                   placeholder="example@gmail.com"
-                  className={`text-[32px] rounded-full border ${ErrorEmail?"border-[#F74E57]": "border-gray-300"} bg-white/60 backdrop-blur-sm 
+                  className={`text-[32px] rounded-full border ${errorEmail?"border-[#F74E57]": "border-gray-300"} bg-white/60 backdrop-blur-sm 
                     px-4 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 
                     w-[413px] h-[76px]`}
                   value={email}
@@ -158,14 +165,14 @@ export function Otppassword() {
                 <button
                   type="button"
                   disabled={isCounting}
-                  onClick={() => handleGetOtp()}
+                  onClick={() => HandleGetOtp()}
                   className={`${isCounting ? "bg-gray-400 cursor-not-allowed" : "bg-sky-500 hover:bg-sky-600"} text-white text-[32px] font-medium px-5 
                     rounded-full transition w-[173px] h-[76px]`}
                 >
                   {isCounting ? `${timer}s` : "ขอ OTP"}
                 </button>
               </div>
-              {(ErrorEmail) &&
+              {(errorEmail) &&
                 <span className="text-[#F74E57] text-[32px] pt-4" >
                   กรุณากรอกอีเมล
                 </span>}
@@ -173,19 +180,19 @@ export function Otppassword() {
 
             {/* ช่องกรอก OTP */}
             <div className="mb-4">
-              <label className="block text-gray-700 font-regular text-[32px] mb-[12px]">
+              <label className="block text-gray-700 font-regular text-[32px] mb-3">
                 กรอก OTP
               </label>
               <input
                 type="text"
                 placeholder="OTP"
-                className={`w-full border ${ErrorOtp ?"border-[#F74E57]": "border-gray-300"} rounded-full px-4 py-2 bg-white/60 backdrop-blur-sm 
+                className={`w-full border ${errorOtp ?"border-[#F74E57]": "border-gray-300"} rounded-full px-4 py-2 bg-white/60 backdrop-blur-sm 
                   focus:outline-none focus:ring-2 focus:ring-sky-400 text-gray-800 placeholder-gray-400 
                   h-[76px] text-[32px]`}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
               />
-              {(ErrorOtp) &&
+              {(errorOtp) &&
                 <span className="text-[#F74E57] text-[32px] pt-4" >
                   OTP ไม่ถูกต้อง
                 </span>}

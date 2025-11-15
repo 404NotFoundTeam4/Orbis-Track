@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 COPY package.json package.json ./
 COPY server/package.json ./server/package.json
-RUN npm ci --workspaces --include-workspace-root=false
+RUN npm install --workspaces --include-workspace-root=false
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma
 ARG PRISMA_SCHEMA_PATH
 RUN npx prisma generate --schema $PRISMA_SCHEMA_PATH

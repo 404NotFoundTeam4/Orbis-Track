@@ -362,7 +362,7 @@ export default function UserModal({
 
   // แปลง 'departmentsList' (array) ให้อยู่ในรูปแบบที่ DropDown ใช้ได้
   const departmentOptions = useMemo(() => {
-    return departmentsList.map((dept) => ({
+    return departmentsList?.map((dept) => ({
       id: dept.dept_id,
       label: dept.dept_name,
       value: dept.dept_id, // เราเก็บ ID ลงใน value
@@ -373,7 +373,7 @@ export default function UserModal({
   //  ใช้ useMemo กรอง 'sectionsList' ให้เหลือเฉพาะที่ตรงกับ 'us_dept_id' ที่เลือก
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
-    return sectionsList.filter(
+    return sectionsList?.filter(
       (sec) => sec.sec_dept_id === formDataObject.us_dept_id
     );
   }, [formDataObject.us_dept_id, sectionsList]);
@@ -388,16 +388,16 @@ export default function UserModal({
   }, [filteredSections]);
 
   const selectedRole =
-    rolesList.find((option) => option.value === formDataObject.us_role) ||
+    rolesList?.find((option) => option.value === formDataObject.us_role) ||
     undefined;
 
   const selectedDepartment =
-    departmentOptions.find(
+    departmentOptions?.find(
       (option) => option.id === formDataObject.us_dept_id
     ) || undefined;
 
   const selectedSection =
-    sectionOptions.find((option) => option.id === formDataObject.us_sec_id) ||
+    sectionOptions?.find((option) => option.id === formDataObject.us_sec_id) ||
     undefined;
 
   return (
@@ -602,7 +602,7 @@ export default function UserModal({
                 {/* ตำแหน่ง (Role) */}
                 <DropDown
                   label="ตำแหน่ง"
-                  items={rolesList}
+                  items={rolesList || []}
                   value={selectedRole}
                   onChange={handleRoleChange}
                   placeholder="เลือกตำแหน่ง"
@@ -615,7 +615,7 @@ export default function UserModal({
                 {/* แผนก (Department) */}
                 <DropDown
                   label="แผนก"
-                  items={departmentOptions}
+                  items={departmentOptions || []}
                   value={selectedDepartment}
                   onChange={handleDepartmentChange}
                   placeholder="เลือกแผนก"
@@ -628,7 +628,7 @@ export default function UserModal({
                 {/* ฝ่ายย่อย (Section) */}
                 <DropDown
                   label="ฝ่ายย่อย"
-                  items={sectionOptions}
+                  items={sectionOptions || []}
                   value={selectedSection}
                   onChange={handleSectionChange}
                   placeholder="เลือกฝ่ายย่อย"

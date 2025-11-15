@@ -559,9 +559,9 @@ export const Users = () => {
                 <div className="py-2 px-4">
                   {roleTranslation[u.us_role] || u.us_role}
                 </div>
-                <div className="py-2 px-4">{u.us_dept_name}</div>
-                <div className="py-2 px-4">{u.us_sec_name}</div>
-                <div className="py-2 px-4">{u.us_phone}</div>
+                <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
+                <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
+                <div className="py-2 px-4">{u.us_phone ?? "-"}</div>
                 <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
 
                 <div className="py-2 px-4">
@@ -701,9 +701,9 @@ export const Users = () => {
           onClose={handleCloseModal}
           onSubmit={modalType === "edit" ? handleSaveUser : handleModalSubmit}
           keyvalue="all"
-          departmentsList={departments}
-          sectionsList={sections}
-          rolesList={roleOptions}
+          departments={departments}
+          sections={sections}
+          roles={roleOptions}
         />
       )}
     </div>

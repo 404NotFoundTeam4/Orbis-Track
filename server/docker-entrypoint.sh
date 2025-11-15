@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -euo pipefail
 
 # ---- config ----
 : "${PRISMA_SCHEMA_PATH:=./src/infrastructure/database/prisma/schema.prisma}"
@@ -13,8 +13,6 @@ export PGPASSWORD
 
 PRISMA_DEV_APPLY=migrate
 PRISMA_MIGRATION_NAME=init
-
-psql_admin() { psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -v ON_ERROR_STOP=1 "$@"; }
 
 SCHEMA_DIR="$(dirname "$PRISMA_SCHEMA_PATH")"
 MIGRATIONS_DIR="$SCHEMA_DIR/migrations"
@@ -31,22 +29,6 @@ if [ ! -f "$PRISMA_SCHEMA_PATH" ]; then
   echo "❌ Prisma schema not found at $PRISMA_SCHEMA_PATH"
   exit 1
 fi
-
-# ติดตั้ง dev deps ถ้ายังไม่มี (กรณีถูกทับด้วย volume)
-ensure_dev_deps() {
-if ! command -v nodemon >/dev/null 2>&1; then
-  if [ -f ../package-lock.json ]; then
-    echo "📦 npm ci (workspaces at repo root)..."
-    (cd .. && npm ci --workspaces --include-workspace-root)
-  elif [ -f package-lock.json ]; then
-    echo "📦 npm ci (local)..."
-    npm ci
-  else
-    echo "📦 package-lock.json ไม่เจอ → ใช้ npm i แทน"
-    npm i
-  fi
-fi
-}
 
 # ---- wait for DB (ลองเชื่อมต่อด้วย prisma; ลูปจนกว่าจะได้) ----
 wait_for_db() {
@@ -166,12 +148,18 @@ psql_admin() {
 }
 
 # ---- run ----
-ensure_dev_deps
+# ensure_dev_deps
 wait_for_db
-ensure_shadow_db
-ensure_pgvector
-ensure_prisma_client
-verify_pgvector
+# ใน production ตัดขั้นตอน dev-only ออกเพื่อไม่พึ่งพา psql/เครื่องมือที่ไม่จำเป็น
+if [ "$NODE_ENV" = "production" ]; then
+  ensure_pgvector
+  ensure_prisma_client
+else
+  ensure_shadow_db
+  ensure_pgvector
+  ensure_prisma_client
+  verify_pgvector
+fi
 
 # echo "log_statement = 'ddl'" >> "$PGDATA/postgresql.conf" && pg_ctl -D "$PGDATA" reload
 

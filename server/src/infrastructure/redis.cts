@@ -1,3 +1,9 @@
+/**
+ * Description: ตัวช่วยคุยกับ Redis ด้วย ioredis แบบครบเครื่อง
+ * Input : ใช้ค่า REDIS_URL จาก env, ใช้ logger กลางของโปรเจกต์
+ * Output : ฟังก์ชันสำหรับ Redis + การจัดการ client
+ * Author : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 // src/infrastructure/redis.ts
 import Redis, { type Redis as RedisClient, type RedisOptions } from "ioredis";
 import { env } from "../config/env.js";
@@ -29,6 +35,7 @@ function createClient(): RedisClient {
     return c;
 }
 
+// ดึง client (มีแล้วใช้เลย / ยังไม่มีค่อยสร้าง + connect)
 export async function getRedis(): Promise<RedisClient> {
     if (!client) {
         client = createClient();
@@ -37,14 +44,16 @@ export async function getRedis(): Promise<RedisClient> {
     return client;
 }
 
+// ปิดคอนเนกชัน (พยายาม quit ก่อน ไม่ได้ค่อย disconnect)
 export async function closeRedis(): Promise<void> {
     if (client) {
-        try { await client.quit(); } catch { await client.disconnect(); }
+        try { await client.quit(); } catch { client.disconnect(); }
         client = null;
     }
 }
 
-// ---- BASIC KEYS ----
+
+/* -------------------------- BASIC KEYS -------------------------- */
 export async function redisSet(
     key: string,
     value: string,

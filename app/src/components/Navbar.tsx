@@ -4,7 +4,7 @@ import "../styles/css/icon.css";
 import "../styles/css/Navbar.css";
 import { Outlet } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useUserStore } from "../stores/userStore";
+import { useUserStore } from "../stores/UserStore";
 import {
   faHome,
   faBell,

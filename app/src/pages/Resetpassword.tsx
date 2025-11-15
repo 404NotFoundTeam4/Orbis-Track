@@ -1,9 +1,16 @@
+/**
+ * Page: ResetPassword
+ * Features:
+ *  - UI หน้าเปลี่ยนรหัสผ่านสำหรับผู้ใช้งาน
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 import  { useState } from "react";
 import { Link ,useLocation } from "react-router-dom";
-import {verify} from "../hooks/Verify.js"
+import {verifyEmail} from "../hooks/verifyEmail.js"
 import { Icon } from "@iconify/react";
 export function Resetpassword() {
-  const { ResetPassword} = verify();
+  const {ResetPW} = verifyEmail();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -223,7 +230,7 @@ export function Resetpassword() {
                 onChange={(e) => setConfirm(e.target.value)}
               />
 
-              {/* 👁 ปุ่มแสดงรหัส */}
+              {/*  ปุ่มแสดงรหัส */}
               <button
                 type="button"
                 onClick={() => setConfrimPassword(!showConfrimPassword)}
@@ -247,7 +254,7 @@ export function Resetpassword() {
                   : "bg-gray-300 cursor-not-allowed"
               }`}
               disabled={!allValid || !match}
-              onClick={()=>ResetPassword(email,password,confirm )}
+              onClick={()=>ResetPW(email,password,confirm )}
             >
               บันทึก
             </button>

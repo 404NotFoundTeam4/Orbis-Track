@@ -1,4 +1,10 @@
-// ถ้า Login.tsx อยู่ใน pages/
+/**
+ * Page: Login
+ * Features:
+ *  - UI หน้า Login สำหรับผู้ใช้งาน
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 import { useState } from "react";
 import "../styles/css/Login.css";
 import { Icon } from "@iconify/react";
@@ -9,30 +15,30 @@ import { useLogin } from "../hooks/useLogin.ts"
 /** หน้าเข้าสู่ระบบตามภาพตัวอย่าง */
 export function Login() {
 
-  const { handleLogin } = useLogin();
+  const { HandleLogin } = useLogin();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isRemember, setIsRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [ErrorUS, SetErrorUS] = useState(false)
-  const [ErrorPS, SetErrorPS] = useState(false)
+  const [errorUS, setErrorUS] = useState(false)
+  const [errorPS, setErrorPS] = useState(false)
   const onSubmit = async (a) => {
-    SetErrorUS(false)
-    SetErrorPS(false)
+    setErrorUS(false)
+    setErrorPS(false)
     a.preventDefault();
     let FindError = false
     if (!username) {
-      SetErrorUS(true)
+      setErrorUS(true)
       FindError = true
     }
     if (!password) {
-      SetErrorPS(true)
+      setErrorPS(true)
       FindError = true
     }
     if (FindError) return;
-    const res = await handleLogin(username, password, isRemember);
-    SetErrorUS(!res)
-    SetErrorPS(!res)  
+    const res = await HandleLogin(username, password, isRemember);
+    setErrorUS(!res)
+    setErrorPS(!res)  
   };
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden">
@@ -158,12 +164,12 @@ export function Login() {
                 <label className="block font-roboto text-[32px]">
                   ชื่อผู้ใช้
                 </label>
-                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${ErrorUS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4`}>
+                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${errorUS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4`}>
                   <Icon
                     icon="icon-park-solid:people"
                     width="25"
                     height="25"
-                    className={`${ErrorUS ? "text-[#F74E57]" : "text-sky-500"}`}
+                    className={`${errorUS ? "text-[#F74E57]" : "text-sky-500"}`}
                   />
                   <input
                     type="text"
@@ -174,7 +180,7 @@ export function Login() {
                   />
                 </div>
                 {
-                  (ErrorUS) &&
+                  (errorUS) &&
                   <span className="pt-3 text-[#F74E57] text-[32px]">
                     กรุณากรอกชื่อผู้ใช้งาน
                   </span>
@@ -186,13 +192,13 @@ export function Login() {
                 <label className="block font-roboto text-[32px]">
                   รหัสผ่าน
                 </label>
-                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${ErrorPS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4 `}>
+                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${errorPS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4 `}>
                   <Icon
                     icon="ph:key-duotone"
                     width="25"
                     height="25"
 
-                    className={`${ErrorPS ? "text-[#F74E57]" : "text-sky-500"}`}
+                    className={`${errorPS ? "text-[#F74E57]" : "text-sky-500"}`}
                   />
                   <input
                     type={showPassword ? "text" : "password"}
@@ -214,7 +220,7 @@ export function Login() {
                   </button>
                 </div>
                 {
-                  (ErrorPS) &&
+                  (errorPS) &&
                   <span className="pt-3 text-[#F74E57] text-[32px]">
                     กรุณากรอกรหัสผ่านให้ถูกต้อง
                   </span>

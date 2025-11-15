@@ -27,7 +27,7 @@ export function App(): Express {
     app.set("trust proxy", 1);
     app.use(httpLogger);
     app.use(helmet());
-    app.use(cors({ origin: true, credentials: true }));
+    app.use(cors({ origin: 'http://localhost:4140', credentials: true }));
     app.use(compression());
     app.use(express.json({ limit: "1mb" }));
     app.use(express.urlencoded({ extended: true }));

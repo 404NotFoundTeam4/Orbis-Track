@@ -1,3 +1,10 @@
+/**
+ * Description: UserModal Component สำหรับแสดงฟอร์ม เพิ่ม/แก้ไข/ลบ ผู้ใช้ในระบบ
+ * Input     :
+ *   - typeform: กำหนดประเภทฟอร์ม ("add" | "edit" | "delete")
+ * Note      :  ประเภทฟอร์มแต่ละอันจะมีการแสดงข้อมูลหรือปุ่มที่ไม่เหมือนกัน
+ * Author    : Worrawat Namwat (Wave) 66160372,บูม(ใส่ชื่อด้วย),ตัง(ใส่ชื่อด้วย)
+ */
 import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import api from "../api/axios.js";
@@ -6,25 +13,24 @@ import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 import UsersService from "../services/UsersService.js";
 
-
-type Department = {
+type IDepartment = {
   dept_id: number;
   dept_name: string;
 };
 
-type Section = {
+type ISection = {
   sec_id: number;
   sec_name: string;
   sec_dept_id: number;
 };
 
-type DropDownItemType = {
+type IDropDownItemType = {
   id: string | number;
   label: string;
   value: any;
 };
 
-type UserApiData = {
+type IUserApiData = {
   us_id: number;
   us_emp_code: string;
   us_firstname: string;
@@ -41,18 +47,18 @@ type UserApiData = {
   us_sec_name: string;
 };
 
-type UserModalProps = {
+type IUserModalProps = {
   typeform?: "add" | "edit" | "delete";
-  user?: UserApiData | null;
+  user?: IUserApiData | null; //ข้อมูล user (สำหรับโหมด edit) ที่รับมาจาก props
   onClose?: () => void;
-  onSubmit?: (data: Partial<UserApiData>) => void;
+  onSubmit?: (data: Partial<IUserApiData>) => void;
 
-  keyvalue: (keyof UserApiData)[] | "all";
-  departments: Department[];
-  sections: Section[];
-  roles: DropDownItemType[];
+  keyvalue: (keyof IUserApiData)[] | "all";
+  departmentsList: IDepartment[];
+  sectionsList: ISection[];
+  rolesList: IDropDownItemType[];
 };
-const defaultFormData: UserApiData = {
+const defaultFormDataObject: IUserApiData = {
   us_id: 0,
   us_emp_code: "",
   us_firstname: "",
@@ -70,92 +76,149 @@ const defaultFormData: UserApiData = {
 };
 
 export default function UserModal({
- typeform = "add",
+  typeform = "add",
   user,
   onClose,
   onSubmit,
   keyvalue,
-  departments,
-  sections,
-  roles,
-}: UserModalProps) {
-  const [formData, setFormData] = useState<UserApiData>(
-    user ? { ...defaultFormData, ...user } : defaultFormData
+  departmentsList,
+  sectionsList,
+  rolesList,
+}: IUserModalProps) {
+  // ถ้ามี 'user' (โหมด edit) ให้ใช้ข้อมูล 'user' นั้น
+  // ในการกำหนดค่าเริ่มต้นของ formDataObject
+  const [formDataObject, setFormDataObject] = useState<IUserApiData>(
+    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject
   );
 
- {/* เอาไว้ใส่ label ช่องกรอกข้อมูล*/}
+  {
+    /* เอาไว้ใส่ label ช่องกรอกข้อมูล*/
+  }
   const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-  <label className=" w-[221px] block text-[16px] font-medium text-[#000000] mb-2">
-    {children}
-  </label>
-);
+    <label className=" w-[221px] block text-[16px] font-medium text-[#000000] mb-2">
+      {children}
+    </label>
+  );
 
-{/* รูปแบบช่องกรอกข้อมูลเมื่อ Disable */}
-  const DISABLED_CLS = [
-    "disabled:opacity-50",
-    "cursor-not-allowed"
-  ].join(" ");     
+  {
+    /* รูปแบบช่องกรอกข้อมูลเมื่อ Disable */
+  }
+  const DISABLED_CLS = ["disabled:opacity-50", "cursor-not-allowed"].join(" ");
 
   const isDelete = typeform === "delete";
-  
 
-  const [formOutput, setFormOutput] = useState<Partial<UserApiData>>({});
-
+  const [newImageFile, setNewImageFile] = useState<File | null>(null); //State สำหรับเก็บ 'ไฟล์' รูปใหม่ กรณีมีการแก้ไขรูปภาพ
+  const [formOutput, setFormOutput] = useState<Partial<IUserApiData>>({});
   const toast = useToast();
-  const [isEditAlertOpen, setIsEditAlertOpen] = useState(false);
+  const [isEditAlertOpen, setIsEditAlertOpen] = useState(false); // State สำหรับควบคุม Dialog ยืนยัน 'การแก้ไข'
 
-  {/* State สำหรับ flow การลบ */}
-  const [isDeleteAlertOpen , setIsDeleteAlertOpen] = useState(false);
+  {
+    /* State สำหรับ flow การลบ */
+  }
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-
- 
-
-
+  /**
+   * Description: (Handler) ยืนยันการแก้ไขข้อมูล (โหมด 'edit') สร้าง FormData และส่ง API (PATCH)
+   * Input: -
+   * Output: - (void, async)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   const handleConfirmEdit = async () => {
-    const payload = keyvalue === "all" ? formData : formOutput;
+    // ฟังก์ชันที่ทำงานหลังจากกดยืนยัน 'แก้ไข' ใน Dialog
+    const formDataPayload = new FormData();
+
+    // เพิ่มข้อมูล Text fields ลงใน FormData
+    formDataPayload.append("us_firstname", formDataObject.us_firstname);
+    formDataPayload.append("us_lastname", formDataObject.us_lastname);
+    formDataPayload.append("us_username", formDataObject.us_username);
+    formDataPayload.append("us_email", formDataObject.us_email);
+    formDataPayload.append("us_phone", formDataObject.us_phone);
+    formDataPayload.append("us_role", formDataObject.us_role);
+    formDataPayload.append("us_dept_id", String(formDataObject.us_dept_id));
+    formDataPayload.append("us_sec_id", String(formDataObject.us_sec_id));
+    formDataPayload.append("us_is_active", String(formDataObject.us_is_active));
+    formDataPayload.append("us_emp_code", formDataObject.us_emp_code); // Author:Worrawat Namwat (Wave) 66160372
+    // Logic การจัดการรูปภาพตอน 'แก้ไข' (ส่วนที่อาจทำให้สับสน)
+    if (newImageFile) {
+      //ถ้ามีไฟล์ใหม่ (อัปโหลดใหม่) ให้ใช้ไฟล์ใหม่
+      formDataPayload.append("us_images", newImageFile);
+    } else if (formDataObject.us_images && !newImageFile) {
+      //ถ้าไม่มีไฟล์ใหม่ แต่มี URL รูปภาพ (คือไม่ได้เปลี่ยนรูป) ให้ส่ง URL เดิมไป (เพื่อให้ backend รู้ว่ายังใช้รูปเดิม)
+      if (!formDataObject.us_images.startsWith("blob:")) {
+        //เช็คว่าไม่ใช่ URL ชั่วคราว (blob:) ที่สร้างจากการ preview
+        formDataPayload.append("us_images", formDataObject.us_images);
+      }
+    }
+
     try {
-      // 3.1 เรียก API PUT
-      await api.put(`/accounts/${payload.us_id}`, payload);
-      
-      // 3.2 แสดง Toast (ใช้ .push ตามไฟล์ Toast.tsx)
-      toast.push({
-        message: "การแก้ไขสำเร็จ!",
-        tone: "confirm", 
-      });
+      //ส่ง Request (PATCH)
+      const res = await api.patch(
+        `/accounts/${formDataObject.us_id}`,
+        formDataPayload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      // 3.3 แจ้ง Parent (Users.tsx)
-      if (onSubmit) onSubmit(payload);
+      console.log("✅ PATCH Response:", res.data);
+      // จัดการ Response
+      if (res.data?.success) {
+        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
 
-    } catch (err) {
-      console.error("❌ Error:", err);
-      // 3.4 แสดง Toast เมื่อล้มเหลว
+        // เรียก onSubmit เพื่ออัปเดต UI
+        if (onSubmit) onSubmit(formDataObject);
+        return;
+      }
+
       toast.push({
         message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
+        tone: "danger",
+      });
+    } catch (err: any) {
+      console.error("❌ Error (catch):", err);
+
+      if (err.response?.data?.success) {
+        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+
+        if (onSubmit) onSubmit(formDataObject);
+        return;
+      }
+      const apiErrorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "เกิดข้อผิดพลาดที่ไม่รู้จัก";
+
+      toast.push({
+        message: `บันทึกไม่สำเร็จ: ${apiErrorMessage}`,
         tone: "danger",
       });
     }
   };
 
-  {/* Funtion การปิดบัญชี */}
+  {
+    /* Funtion การปิดบัญชี */
+  }
   const handleConfirmDelete = async () => {
-    if(!user?.us_id) return;
+    if (!user?.us_id) return;
 
-    try{
+    try {
       setDeleting(true);
       await UsersService.softDelete(user.us_id); // เรียกตัว service
 
-      {/* Toast สำเร็จ */}
+      {
+        /* Toast สำเร็จ */
+      }
       toast.push({
         tone: "confirm",
-        message : `ปิดการใช้งานบัญชีสำเร็จ`,
+        message: `ปิดการใช้งานบัญชีสำเร็จ`,
       });
 
       onSubmit?.({ us_id: user.us_id });
       onClose?.();
-    
-    } catch (err: any){
-
+    } catch (err: any) {
       toast.push({
         tone: "danger",
         message: "ล้มเหลว: ไม่สามารถปิดการใช้งานผู้ใช้ได้",
@@ -165,53 +228,81 @@ export default function UserModal({
     } finally {
       setDeleting(false);
     }
-  }
+  };
 
-
-  
   //  filter key ตามที่ส่งมาจาก props (keyvalue)
+  /**
+   * useEffect: กรองข้อมูลใน formDataObject ตาม 'keysToProcess' ที่ได้รับแล้วเก็บผลลัพธ์ไว้ใน 'formOutputData'
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   useEffect(() => {
-    let filtered: Partial<UserApiData> = {};
+    let filteredDataObject: Partial<IUserApiData> = {};
 
     if (keyvalue === "all") {
-      //  ถ้าเป็น all → เอาทั้ง formData เลย
-      filtered = { ...formData };
-    } 
-    setFormOutput(filtered);
-  }, [formData, keyvalue]);
+      filteredDataObject = { ...formDataObject };
+    } else {
+      // (เพิ่ม 'else' ที่หายไป)
+      keyvalue.forEach((keyName) => {
+        (filteredDataObject as any)[keyName] = formDataObject[keyName];
+      });
+    }
+    setFormOutput(filteredDataObject);
+  }, [formDataObject, keyvalue]);
 
-  //  handle input
+  /**
+   * Description: (Handler) จัดการการเปลี่ยนแปลงค่าใน <input> และ <select>(มี logic พิเศษสำหรับ reset 'us_sec_id' เมื่อ 'us_dept_id' เปลี่ยน)
+   * Input: (changeEvent: React.ChangeEvent<...>) Event จากการเปลี่ยนแปลง
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value } = changeEvent.target;
 
     if (name === "us_dept_id") {
-      setFormData((prev) => ({
+      setFormDataObject((prev) => ({
         ...prev,
         us_dept_id: parseInt(value, 10) || 0,
         us_sec_id: 0, // รีเซ็ตฝ่ายย่อย เมื่อแผนกเปลี่ยน
       }));
     } else if (name === "us_sec_id") {
-      setFormData((prev) => ({
+      setFormDataObject((prev) => ({
         ...prev,
         us_sec_id: parseInt(value, 10) || 0,
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormDataObject((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  //  handle avatar upload
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  /**
+   * Description: (Handler) จัดการการอัปโหลดไฟล์รูปภาพ Avatar
+   *             สร้าง URL (blob) สำหรับ Preview และเก็บ File object ไว้ใน state
+   * Input: (fileChangeEvent: React.ChangeEvent<...>) Event จาก <input type="file">
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
+  const handleAvatarChange = (
+    changeEvent: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = changeEvent.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, us_images: url }));
+      const previewUrl = URL.createObjectURL(file);
+      setFormDataObject((prev) => ({ ...prev, us_images: previewUrl }));
+
+      setNewImageFile(file);
     }
   };
 
-  //  handle main API call
+  /**
+   * Description: (Handler) ฟังก์ชันหลักเมื่อคลิกปุ่ม "บันทึก" หรือ "ปิดการใช้งาน"
+   *             - ถ้าเป็น 'edit' จะเปิด Dialog ยืนยัน (isEditAlertOpen)
+   *             - ถ้าเป็น 'add'/'delete' จะเรียก onSubmit ทันที
+   * Input: -
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
   const handle = async () => {
     // ตรวจสอบ ถ้าเป็น 'edit' ให้เปิด Alert
     if (typeform === "edit") {
@@ -219,57 +310,75 @@ export default function UserModal({
       return; // หยุดการทำงานตรงนี้
     }
 
-    if (typeform === "delete"){
+    if (typeform === "delete") {
       setIsDeleteAlertOpen(true); // เปิด Alert ยืนยัน
-      return
-
+      return;
     }
-    const payload = keyvalue === "all" ? formData : formOutput;
+
+    const payload = keyvalue === "all" ? formDataObject : formOutput;
     console.log(formOutput);
     if (onSubmit) onSubmit(payload);
   };
 
-  const handleRoleChange = (selectedItem: DropDownItemType) => {
-    setFormData((prev) => ({
+  /**
+   * Description: (Handler) อัปเดต state เมื่อเลือก Role จาก DropDown
+   * Input: (selectedItemData: IDropDownItemData)
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
+  const handleRoleChange = (selectedItem: IDropDownItemType) => {
+    setFormDataObject((prev) => ({
       ...prev,
       us_role: selectedItem.value, // เก็บค่า string "Admin", "Staff" ฯลฯ
     }));
   };
 
-  const handleDepartmentChange = (selectedItem: DropDownItemType) => {
-    setFormData((prev) => ({
+  /**
+   * Description: (Handler) อัปเดต state เมื่อเลือก Department (พร้อม reset Section)
+   * Input: (selectedItemData: IDropDownItemData)
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 66160372
+   */
+  const handleDepartmentChange = (selectedItem: IDropDownItemType) => {
+    setFormDataObject((prev) => ({
       ...prev,
       us_dept_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
       us_sec_id: 0, // รีเซ็ตฝ่ายย่อย
     }));
   };
 
-  const handleSectionChange = (selectedItem: DropDownItemType) => {
-    setFormData((prev) => ({
+  /**
+   * Description: (Handler) อัปเดต state เมื่อเลือก Section
+   * Input: (selectedItemData: IDropDownItemData)
+   * Output: - (void)
+   * Author:Worrawat Namwat (Wave) 661603720
+   */
+  const handleSectionChange = (selectedItem: IDropDownItemType) => {
+    setFormDataObject((prev) => ({
       ...prev,
       us_sec_id: selectedItem.value, // เก็บค่า ID (ตัวเลข)
     }));
-  };
+  }; // Author:Worrawat Namwat (Wave) 661603720
 
-  
-
-  // (Department Options)
+  // แปลง 'departmentsList' (array) ให้อยู่ในรูปแบบที่ DropDown ใช้ได้
   const departmentOptions = useMemo(() => {
-    return departments.map((dept) => ({
+    return departmentsList.map((dept) => ({
       id: dept.dept_id,
       label: dept.dept_name,
       value: dept.dept_id, // เราเก็บ ID ลงใน value
     }));
-  }, [departments]);
+  }, [departmentsList]);
 
   // (Section Options) - กรองก่อนแล้วค่อยแปลง
+  //  ใช้ useMemo กรอง 'sectionsList' ให้เหลือเฉพาะที่ตรงกับ 'us_dept_id' ที่เลือก
   const filteredSections = useMemo(() => {
-    if (!formData.us_dept_id) {
-      return [];
-    }
-    return sections.filter((sec) => sec.sec_dept_id === formData.us_dept_id);
-  }, [formData.us_dept_id, sections]);
+    if (!formDataObject.us_dept_id) return [];
+    return sectionsList.filter(
+      (sec) => sec.sec_dept_id === formDataObject.us_dept_id
+    );
+  }, [formDataObject.us_dept_id, sectionsList]);
 
+  //  ใช้ useMemo แปลง 'filteredSectionsList' ให้ DropDown ใช้ได้
   const sectionOptions = useMemo(() => {
     return filteredSections.map((sec) => ({
       id: sec.sec_id,
@@ -279,17 +388,33 @@ export default function UserModal({
   }, [filteredSections]);
 
   const selectedRole =
-    roles.find((option) => option.value === formData.us_role) || undefined;
+    rolesList.find((option) => option.value === formDataObject.us_role) ||
+    undefined;
 
   const selectedDepartment =
-    departmentOptions.find((option) => option.id === formData.us_dept_id) || undefined;
+    departmentOptions.find(
+      (option) => option.id === formDataObject.us_dept_id
+    ) || undefined;
 
   const selectedSection =
-    sectionOptions.find((option) => option.id === formData.us_sec_id) || undefined;
+    sectionOptions.find((option) => option.id === formDataObject.us_sec_id) ||
+    undefined;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
-      <div className="relative bg-white rounded-[24px] p-8 w-[804px] max-w-[95%] shadow-2xl border flex flex-col">
+      <div className="relative bg-white rounded-[24px] p-8 w-[804px] max-w-[95%] shadow-2xl border border-[#858585] flex flex-col">
+        {/* ปุ่มปิด */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-black hover:text-black w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+        >
+          <Icon
+            icon="ph:x-circle"
+            width="35px"
+            height="35px"
+            className="text-black hover:text-black"
+          />
+        </button>
 
         {/* Header */}
         <div className="mb-6 grid grid-cols-[1fr_auto_1fr] items-center">
@@ -301,8 +426,8 @@ export default function UserModal({
             {typeform === "delete"
               ? "ปิดการใช้งานบัญชีผู้ใช้"
               : typeform === "edit"
-              ? "แก้ไขบัญชีผู้ใช้"
-              : "เพิ่มบัญชีผู้ใช้"}
+                ? "แก้ไขบัญชีผู้ใช้"
+                : "เพิ่มบัญชีผู้ใช้"}
           </h2>
 
           <button
@@ -322,11 +447,21 @@ export default function UserModal({
               width="19"
               height="19"
               viewBox="0 0 24 24"
-              className="text-inherit"                   /* ใช้สีจากปุ่ม (currentColor) */
+              className="text-inherit" /* ใช้สีจากปุ่ม (currentColor) */
               aria-hidden="true"
             >
-              <path d="M6 6 L18 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M18 6 L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              <path
+                d="M6 6 L18 18"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M18 6 L6 18"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -334,9 +469,9 @@ export default function UserModal({
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-28 h-28 rounded-full border border-[#a2a2a2] flex items-center justify-center overflow-hidden bg-gray-50">
-            {formData.us_images ? (
+            {formDataObject.us_images ? (
               <img
-                src={formData.us_images}
+                src={formDataObject.us_images}
                 alt="avatar"
                 className="w-full h-full object-cover"
               />
@@ -348,8 +483,8 @@ export default function UserModal({
                 className="text-gray-300"
               />
             )}
-            
-          {/* เพิ่มเงื่อนไขหากเป็น รูปแบบลบ ไม่แสดงปุ่มเพิ่มรูป */}
+
+            {/* เพิ่มเงื่อนไขหากเป็น รูปแบบลบ ไม่แสดงปุ่มเพิ่มรูป */}
           </div>
           {!isDelete && (
             <label className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#a2a2a2] text-[16px] font-normal text-gray-600 cursor-pointer">
@@ -367,156 +502,173 @@ export default function UserModal({
         {/* ฟอร์ม */}
         <form
           className="space-y-8 text-sm"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(changeEvent) => changeEvent.preventDefault()}
         >
-          
           <fieldset disabled={isDelete} aria-readonly={isDelete}>
-          {/* โปรไฟล์ */}
-          <div className=" mb-[30px]">
-            <h3 className="text-[000000] font-medium text-[18px]">โปรไฟล์</h3>
-            <div className="font-medium text-[#858585] mb-3 text-[16px] ">
-              รายละเอียดโปรไฟล์ผู้ใช้
+            {/* โปรไฟล์ */}
+            <div className=" mb-[30px]">
+              <h3 className="text-[000000] font-medium text-[18px]">โปรไฟล์</h3>
+              <div className="font-medium text-[#858585] mb-3 text-[16px] ">
+                รายละเอียดโปรไฟล์ผู้ใช้
+              </div>
+
+              <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-3">
+                <div>
+                  <FieldLabel>ชื่อ</FieldLabel>
+                  <input
+                    name="us_firstname"
+                    placeholder="ชื่อจริง"
+                    value={formDataObject.us_firstname}
+                    onChange={handleChange}
+                    readOnly={isDelete}
+                    className={
+                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
+                      (isDelete ? DISABLED_CLS : "")
+                    }
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel>นามสกุล</FieldLabel>
+                  <input
+                    name="us_lastname"
+                    placeholder="นามสกุล"
+                    value={formDataObject.us_lastname}
+                    onChange={handleChange}
+                    readOnly={isDelete}
+                    className={
+                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
+                      (isDelete ? DISABLED_CLS : "")
+                    }
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel>รหัสพนักงาน</FieldLabel>
+                  <input
+                    name="us_emp_code"
+                    placeholder="รหัสพนักงาน"
+                    value={formDataObject.us_emp_code}
+                    onChange={handleChange}
+                    readOnly={isDelete}
+                    className={
+                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
+                      (isDelete ? DISABLED_CLS : "")
+                    }
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel>อีเมล</FieldLabel>
+                  <input
+                    name="us_email"
+                    placeholder="อีเมล"
+                    value={formDataObject.us_email}
+                    onChange={handleChange}
+                    readOnly={isDelete}
+                    className={
+                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
+                      (isDelete ? DISABLED_CLS : "")
+                    }
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel>เบอร์โทรศัพท์</FieldLabel>
+                  <input
+                    name="us_phone"
+                    placeholder="เบอร์โทรศัพท์"
+                    value={formDataObject.us_phone}
+                    onChange={handleChange}
+                    readOnly={isDelete}
+                    className={
+                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
+                      (isDelete ? DISABLED_CLS : "")
+                    }
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* ตำแหน่งงาน */}
+            <div className="mb-[30px]">
+              <h3 className="text-[000000] font-medium text-[18px]">
+                ตำแหน่งงาน
+              </h3>
+              <div className="font-medium text-[#858585] mb-3 text-[16px]">
+                รายละเอียดตำแหน่งงานของผู้ใช้
+              </div>
+              <div className="grid grid-cols-3 gap-y-4 gap-x-4">
+                {/* ตำแหน่ง (Role) */}
+                <DropDown
+                  label="ตำแหน่ง"
+                  items={rolesList}
+                  value={selectedRole}
+                  onChange={handleRoleChange}
+                  placeholder="เลือกตำแหน่ง"
+                  disabled={isDelete}
+                  className={"!w-[221px]"} // กำหนดขนาดให้เท่า input
+                  triggerClassName="!border-[#a2a2a2]"
+                  searchable={true} // ปิด search bar (เพราะมีแค่ 4 ตัวเลือก)
+                />
 
-            <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-3">
-              <div >
-                <FieldLabel>ชื่อ</FieldLabel>
-                <input
-                  name="us_firstname"
-                  placeholder="ชื่อจริง"
-                  value={formData.us_firstname}
-                  onChange={handleChange}
-                  readOnly={isDelete}
-                  className={"w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " + (isDelete ? DISABLED_CLS : "")}
+                {/* แผนก (Department) */}
+                <DropDown
+                  label="แผนก"
+                  items={departmentOptions}
+                  value={selectedDepartment}
+                  onChange={handleDepartmentChange}
+                  placeholder="เลือกแผนก"
+                  disabled={isDelete}
+                  className="!w-[221px]" // กำหนดขนาดให้เท่า input
+                  triggerClassName="!border-[#a2a2a2]"
+                  searchable={true} // เปิด search bar
+                />
+
+                {/* ฝ่ายย่อย (Section) */}
+                <DropDown
+                  label="ฝ่ายย่อย"
+                  items={sectionOptions}
+                  value={selectedSection}
+                  onChange={handleSectionChange}
+                  placeholder="เลือกฝ่ายย่อย"
+                  className="!w-[221px]" // กำหนดขนาดให้เท่า input
+                  triggerClassName="!border-[#a2a2a2]"
+                  searchable={true} // เปิด search bar
+                  disabled={filteredSections.length === 0 || isDelete}
                 />
               </div>
+            </div>
 
-              <div>
-                <FieldLabel>นามสกุล</FieldLabel>
+            {/* บัญชี */}
+            <div>
+              <h3 className="text-[000000] font-medium text-[18px]">บัญชี</h3>
+              <div className="font-medium text-[#858585] mb-3 text-[16px]">
+                รายละเอียดบัญชีของผู้ใช้
+              </div>
+              <div className="font-medium text-[000000] mb-2 text-[16px]">
+                ชื่อผู้ใช้ (ล็อกอิน)
+              </div>
+              <div
+                className={
+                  "w-[221px] h-[46px] border rounded-[16px] px-4 flex items-center gap-2 border-[#a2a2a2] " +
+                  (isDelete ? "opacity-50 cursor-not-allowed" : "")
+                }
+              >
+                <span className="text-gray-500">👤</span>
                 <input
-                  name="us_lastname"
-                  placeholder="นามสกุล"
-                  value={formData.us_lastname}
+                  name="us_username"
+                  placeholder="ชื่อผู้ใช้"
+                  value={formDataObject.us_username}
                   onChange={handleChange}
                   readOnly={isDelete}
-                  className={"w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " + (isDelete ? DISABLED_CLS : "")}
-                />
-              </div>
-
-              <div>
-              <FieldLabel>รหัสพนักงาน</FieldLabel>
-              <input
-                name="us_emp_code"
-                placeholder="รหัสพนักงาน"
-                value={formData.us_emp_code}
-                onChange={handleChange}
-                readOnly={isDelete}
-                className={"w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " + (isDelete ? DISABLED_CLS : "")}
-              />
-              </div>
-
-              <div>
-                <FieldLabel>อีเมล</FieldLabel>
-              <input
-                name="us_email"
-                placeholder="อีเมล"
-                value={formData.us_email}
-                onChange={handleChange}
-                readOnly={isDelete}
-                className={"w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " + (isDelete ? DISABLED_CLS : "")}
-              />
-              </div>
-
-              <div>
-                <FieldLabel>เบอร์โทรศัพท์</FieldLabel>
-              <input
-                name="us_phone"
-                placeholder="เบอร์โทรศัพท์"
-                value={formData.us_phone}
-                onChange={handleChange}
-                readOnly={isDelete}
-                className={"w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " + (isDelete ? DISABLED_CLS : "")}
-              />
-              </div>
-            </div>
-          </div>
-
-          {/* ตำแหน่งงาน */}
-          <div className="mb-[30px]">
-            <h3 className="text-[000000] font-medium text-[18px]">
-              ตำแหน่งงาน
-            </h3>
-            <div className="font-medium text-[#858585] mb-3 text-[16px]">
-              รายละเอียดตำแหน่งงานของผู้ใช้
-            </div>
-            <div className="grid grid-cols-3 gap-y-4 gap-x-4">
-              {/* ตำแหน่ง (Role) */}
-              <DropDown
-                label="ตำแหน่ง"
-                items={roles}
-                value={selectedRole}
-                onChange={handleRoleChange}
-                placeholder="เลือกตำแหน่ง"
-                disabled={isDelete}
-                className={"!w-[221px]"} // กำหนดขนาดให้เท่า input
-                triggerClassName="!border-[#a2a2a2]"
-                searchable={true} // ปิด search bar (เพราะมีแค่ 4 ตัวเลือก)
-              />
-
-              {/* แผนก (Department) */}
-              <DropDown
-                label="แผนก"
-                items={departmentOptions}
-                value={selectedDepartment}
-                onChange={handleDepartmentChange}
-                placeholder="เลือกแผนก"
-                disabled={isDelete}
-                className="!w-[221px]" // กำหนดขนาดให้เท่า input
-                triggerClassName="!border-[#a2a2a2]"
-                searchable={true} // เปิด search bar
-              />
-
-              {/* ฝ่ายย่อย (Section) */}
-              <DropDown
-                label="ฝ่ายย่อย"
-                items={sectionOptions}
-                value={selectedSection}
-                onChange={handleSectionChange}
-                placeholder="เลือกฝ่ายย่อย"
-                
-                className="!w-[221px]" // กำหนดขนาดให้เท่า input
-                triggerClassName="!border-[#a2a2a2]"
-                searchable={true} // เปิด search bar
-                disabled={filteredSections.length === 0 || isDelete}
-              />
-            </div>
-          </div>
-
-          {/* บัญชี */}
-          <div>
-            <h3 className="text-[000000] font-medium text-[18px]">บัญชี</h3>
-            <div className="font-medium text-[#858585] mb-3 text-[16px]">
-              รายละเอียดบัญชีของผู้ใช้
-            </div>
-            <div className="font-medium text-[000000] mb-2 text-[16px]">
-              ชื่อผู้ใช้ (ล็อกอิน)
-            </div>
-            <div className={"w-[221px] h-[46px] border rounded-[16px] px-4 flex items-center gap-2 border-[#a2a2a2] " + (isDelete ? "opacity-50 cursor-not-allowed" : "")}>
-              <span className="text-gray-500">👤</span>
-              <input
-                name="us_username"
-                placeholder="ชื่อผู้ใช้"
-                value={formData.us_username}
-                onChange={handleChange}
-                readOnly={isDelete}
-                 className={
+                  className={
                     "flex-1 text-[16px] font-normal text-black " +
                     "placeholder:text-[#CDCDCD] bg-transparent outline-none"
                   }
-              />
+                />
+              </div>
             </div>
-          </div>
           </fieldset>
 
           {/* ปุ่มบันทึก */}
@@ -525,7 +677,7 @@ export default function UserModal({
               type="button"
               onClick={handle}
               disabled={deleting}
-              className={`px-8 py-3 rounded-full shadow text-white ${
+              className={`px-8 py-3 rounded-full shadow text-white cursor-pointer ${
                 typeform === "delete"
                   ? "bg-red-500 hover:bg-red-600"
                   : "bg-blue-400 hover:bg-blue-500"
@@ -537,15 +689,15 @@ export default function UserModal({
         </form>
       </div>
       <AlertDialog
-      open={isEditAlertOpen}
-      onOpenChange={setIsEditAlertOpen}
-      title="ยืนยันการแก้ไข"
-      description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
-      tone="warning"
-      onConfirm={handleConfirmEdit}
-      confirmText="ยืนยัน"
-      cancelText="ยกเลิก"
-    />
+        open={isEditAlertOpen}
+        onOpenChange={setIsEditAlertOpen}
+        title="ยืนยันการแก้ไข"
+        description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
+        tone="warning"
+        onConfirm={handleConfirmEdit}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
       {/* ===== Alert ยืนยันลบ ===== */}
       <AlertDialog
         open={isDeleteAlertOpen}
@@ -556,8 +708,7 @@ export default function UserModal({
         onConfirm={handleConfirmDelete}
         confirmText="ยืนยัน"
         cancelText="ยกเลิก"
-
-    />
+      />
     </div>
   );
 }

@@ -74,6 +74,15 @@ export const Users = () => {
     value: string;
   } | null>(null);
 
+  const roleTranslation: { [key: string]: string } = {
+    ADMIN: "ผู้ดูแลระบบ",
+    HOD: "หัวหน้าแผนก",
+    HOS: "หัวหน้าฝ่าย",
+    TECHNICAL: "ช่างเทคนิค",
+    STAFF: "เจ้าหน้าที่คลัง",
+    EMPLOYEE: "พนักงานทั่วไป",
+  };
+
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
   const roleOptions = [
@@ -82,7 +91,7 @@ export const Users = () => {
       new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
-      label: r,
+      label: roleTranslation[r] || r,
       value: r,
     })),
   ];
@@ -159,7 +168,11 @@ export const Users = () => {
 
             // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
             const newDeptName = dept ? dept.dept_name : user.us_dept_name;
-            const newSecName = sec ? sec.sec_name : "-";
+            const newSecName = sec
+              ? sec.sec_name
+              : updatedData.us_sec_id === 0 || !updatedData.us_sec_id
+                ? "-"
+                : user.us_sec_name;
 
             return {
               ...mergedUser,
@@ -177,12 +190,12 @@ export const Users = () => {
     } finally {
       // 3. ปิด Modal เสมอ ไม่ว่า API จะสำเร็จหรือล้มเหลว
       handleCloseModal();
+      setRefreshTrigger((prev) => prev + 1);
     }
   };
 
   const handleModalSubmit = () => {
     handleCloseModal();
-    // สั่งให้ refresh ข้อมูลใหม่
     setRefreshTrigger((prev) => prev + 1);
   };
 
@@ -389,7 +402,7 @@ export const Users = () => {
                   <Icon icon="ic:baseline-plus" width="20px" height="20px" />
                 }
                 onClick={handleOpenAddModal}
-                className="w-[150px] h-[46px] text-[16px] font-medium flex items-center justify-center gap-2"
+                className="w-[150px] h-[46px] text-[16px] font-medium flex items-center justify-center gap-2 cursor-pointer"
               >
                 เพิ่มบัญชีผู้ใช้
               </Button>
@@ -523,11 +536,17 @@ export const Users = () => {
               >
                 {/* ชื่อผู้ใช้ */}
                 <div className="py-2 px-4 flex items-center">
-                  <img
-                    src={u.us_images}
-                    alt={u.us_firstname}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
+                  {u.us_images ? (
+                    <img
+                      src={u.us_images}
+                      alt={u.us_firstname}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                      <Icon icon="ph:user" width="24" />
+                    </div>
+                  )}
                   <div className="ml-3">
                     <div>{`${u.us_firstname} ${u.us_lastname}`}</div>
                     <div>
@@ -537,7 +556,9 @@ export const Users = () => {
                   </div>
                 </div>
 
-                <div className="py-2 px-4">{u.us_role}</div>
+                <div className="py-2 px-4">
+                  {roleTranslation[u.us_role] || u.us_role}
+                </div>
                 <div className="py-2 px-4">{u.us_dept_name}</div>
                 <div className="py-2 px-4">{u.us_sec_name}</div>
                 <div className="py-2 px-4">{u.us_phone}</div>
@@ -560,7 +581,7 @@ export const Users = () => {
                     <div className="py-2 px-4 flex items-center gap-3">
                       <button
                         onClick={() => handleOpenEditModal(u)}
-                        className="text-[#1890FF] hover:text-[#1890FF]"
+                        className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
                         title="แก้ไข"
                       >
                         <Icon
@@ -571,7 +592,7 @@ export const Users = () => {
                       </button>
                       <button
                         onClick={() => handleOpenDeleteModal(u)}
-                        className="text-[#FF4D4F] hover:text-[#FF4D4F]"
+                        className="text-[#FF4D4F] hover:text-[#FF4D4F] cursor-pointer"
                         title="ลบ"
                       >
                         <Icon
@@ -680,9 +701,9 @@ export const Users = () => {
           onClose={handleCloseModal}
           onSubmit={modalType === "edit" ? handleSaveUser : handleModalSubmit}
           keyvalue="all"
-          departments={departments}
-          sections={sections}
-          roles={roleOptions}
+          departmentsList={departments}
+          sectionsList={sections}
+          rolesList={roleOptions}
         />
       )}
     </div>

@@ -9,7 +9,7 @@ const router = new Router(undefined, '/accounts');
 router.getDoc("/:id", { tag: "Accounts", res: getAllAccountsResponseSchema, auth: true, params: idParamSchema }, accountsController.get);
 router.getDoc("/", { tag: "Accounts", res: getAllAccountsResponseSchema, auth: true }, accountsController.getAll);
 router.postDoc("/", { tag: "Accounts", body: createAccountsPayload, res: createAccountsSchema, auth: true }, upload.single("us_images"), accountsController.create);
-router.patchDoc("/:id", { tag: "Accounts", auth: true, params: idParamSchema, body: editAccountSchema }, accountsController.update);
+router.patchDoc("/:id", { tag: "Accounts", auth: true, params: idParamSchema, body: editAccountSchema }, upload.single("us_images"), accountsController.update);
 router.deleteDoc("/:id", { tag: "Accounts", auth: true, params: idParamSchema, res: softDeleteResponseSchema }, accountsController.softDelete);
 
 export default router.instance;

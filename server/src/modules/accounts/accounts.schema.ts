@@ -87,8 +87,8 @@ export const editAccountSchema = z.object({
   us_phone: z.string().optional(),
   us_images: z.string().optional(),
   us_role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
-  us_dept_id: z.string().optional().nullable(),
-  us_sec_id: z.string().optional().nullable(),
+  us_dept_id: z.coerce.number().optional().nullable(),
+  us_sec_id: z.coerce.number().optional().nullable(),
 });
 
 

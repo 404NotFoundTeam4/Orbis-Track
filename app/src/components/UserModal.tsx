@@ -207,52 +207,52 @@ export default function UserModal({
         formDataPayload.append("us_images", formDataObject.us_images);
       }
     }
-
-    try {
-      //ส่ง Request (PATCH)
-      const res = await api.patch(
-        `/accounts/${formDataObject.us_id}`,
-        formDataPayload,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      console.log("✅ PATCH Response:", res.data);
-      // จัดการ Response
-      if (res.data?.success) {
-        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
-
-        // เรียก onSubmit เพื่ออัปเดต UI
-        if (onSubmit) onSubmit(formDataObject);
+     if (onSubmit) onSubmit(formDataObject);
         return;
-      }
+    // try {
+    //   //ส่ง Request (PATCH)
+    //   const res = await api.patch(
+    //     `/accounts/${formDataObject.us_id}`,
+    //     formDataPayload,
+    //     {
+    //       headers: {
+    //         "Content-Type": "multipart/form-data",
+    //       },
+    //     }
+    //   );
 
-      toast.push({
-        message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
-        tone: "danger",
-      });
-    } catch (err: any) {
-      console.error("❌ Error (catch):", err);
+    //   console.log("✅ PATCH Response:", res.data);
+    //   // จัดการ Response
+    //   if (res.data?.success) {
+    //     toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
 
-      if (err.response?.data?.success) {
-        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+    //     // เรียก onSubmit เพื่ออัปเดต UI
+      
+    //   }
+       
+    //   toast.push({
+    //     message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
+    //     tone: "danger",
+    //   });
+    // } catch (err: any) {
+    //   console.error("❌ Error (catch):", err);
 
-        if (onSubmit) onSubmit(formDataObject);
-        return;
-      }
-      const apiErrorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "เกิดข้อผิดพลาดที่ไม่รู้จัก";
+    //   if (err.response?.data?.success) {
+    //     toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
 
-      toast.push({
-        message: `บันทึกไม่สำเร็จ: ${apiErrorMessage}`,
-        tone: "danger",
-      });
-    }
+    //     if (onSubmit) onSubmit(formDataObject);
+    //     return;
+    //   }
+    //   const apiErrorMessage =
+    //     err.response?.data?.message ||
+    //     err.message ||
+    //     "เกิดข้อผิดพลาดที่ไม่รู้จัก";
+
+    //   toast.push({
+    //     message: `บันทึกไม่สำเร็จ: ${apiErrorMessage}`,
+    //     tone: "danger",
+    //   });
+    // }
   };
 
   {
@@ -295,10 +295,6 @@ export default function UserModal({
 
     payload.us_password = generatePassword(12);
 
-    toast.push({
-      message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
-      tone: "confirm",
-    });
 
     if (onSubmit) onSubmit(payload);
   };
@@ -586,14 +582,7 @@ export default function UserModal({
             </svg>
           </button>
         </div>
-        {/* หัวข้อ */}
-        <h2 className="text-center mb-6 text-[32px] font-bold font-roboto">
-          {typeform === "edit"
-            ? "แก้ไขบัญชีผู้ใช้"
-            : typeform === "add"
-              ? "เพิ่มบัญชีผู้ใช้"
-              : "ปิดการใช้งานบัญชีผู้ใช้"}
-        </h2>
+    
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
@@ -687,46 +676,7 @@ export default function UserModal({
                   />
                 </div>
                 {/* ตำแหน่งงาน */}
-                <div>
-                  <h3 className="text-[000000] font-medium text-[18px]">
-                    ตำแหน่งงาน
-                  </h3>
-                  <div className="font-medium text-[#858585] mb-3 text-[16px]">
-                    รายละเอียดตำแหน่งงานของผู้ใช้
-                  </div>
-                  <div className="grid grid-cols-3 gap-y-4 gap-x-4">
-                    {/* ตำแหน่ง (Role) */}
-                    <DropDown
-                      items={roleOptions}
-                      value={selectedRole}
-                      onChange={handleRoleChange}
-                      placeholder="เลือกตำแหน่ง"
-                      className="w-[221px]"
-                      searchable={true}
-                    />
-
-                    {/* แผนก (Department) */}
-                    <DropDown
-                      items={departmentOptions}
-                      value={selectedDepartment}
-                      onChange={handleDepartmentChange}
-                      placeholder="เลือกแผนก"
-                      className="w-[221px]"
-                      searchable={true}
-                    />
-
-                    {/* ฝ่ายย่อย (Section) */}
-                    <DropDown
-                      items={sectionOptions}
-                      value={selectedSection}
-                      onChange={handleSectionChange}
-                      placeholder="เลือกฝ่ายย่อย"
-                      className="w-[221px]"
-                      searchable={true}
-                      disabled={filteredSections.length === 0}
-                    />
-                  </div>
-                </div>
+                
 
                 <div>
                   <FieldLabel>อีเมล</FieldLabel>

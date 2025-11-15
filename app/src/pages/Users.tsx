@@ -4,6 +4,7 @@ import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
 import { Icon } from "@iconify/react";
+import api from "../api/axios.js";
 import axios from "axios";
 import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
@@ -139,25 +140,51 @@ export const Users = () => {
     setSelectedUser(null);
   };
   const handleSaveUser = async (updatedData: Partial<User>) => {
+    console.log(updatedData)
     // 1. ตรวจสอบ us_id
     if (!updatedData.us_id) {
       console.error("Cannot save user: missing us_id for update");
       return;
     }
-
+      const { us_emp_code,
+      us_firstname,
+      us_lastname,
+      us_username,
+      us_email,
+      us_phone,
+      us_images,
+      us_role,
+      us_dept_id,
+      us_sec_id,
+      } = updatedData
+      const updateNewData = {us_emp_code,
+      us_firstname,
+      us_lastname,
+      us_username,
+      us_email,
+      us_phone,
+      us_images,
+      us_role,
+      us_dept_id,
+      us_sec_id,}
+     
     try {
-      //  เรียก API PUT/PATCH เพื่อแก้ไขข้อมูล
-      const response = await axios.put(
-        `/api/accounts/${updatedData.us_id}`,
-        updatedData
-      );
-      console.log(
-        `User ID ${updatedData.us_id} updated successfully:`,
-        response.data
-      );
-
-      // 2. อัปเดต State 'users' ใน Frontend (แสดงผลทันที)
-      setusers((prevUsers) => {
+      
+      //ส่ง Request (PATCH)
+     const res = await api.patch(
+        `/accounts/${updatedData.us_id}`,
+        updateNewData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      ); 
+      console.log("✅ PATCH Response:", res.data);
+      // จัดการ Response
+      if (res.data?.success) {
+        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+            setusers((prevUsers) => {
         return prevUsers.map((user) => {
           if (user.us_id === updatedData.us_id) {
             // ผสานข้อมูลที่แก้ไขเข้ามา
@@ -186,11 +213,32 @@ export const Users = () => {
           return user;
         });
       });
-    } catch (error) {
-      // จัดการข้อผิดพลาด
-      console.error("Error updating user via API:", error);
-      alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
-    } finally {
+        return;
+      }
+       
+      toast.push({
+        message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
+        tone: "danger",
+      });
+    } catch (err: any) {
+      console.error("❌ Error (catch):", err);
+
+      if (err.response?.data?.success) {
+        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+
+        
+      }
+      const apiErrorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "เกิดข้อผิดพลาดที่ไม่รู้จัก";
+
+      toast.push({
+        message: `บันทึกไม่สำเร็จ: ${apiErrorMessage}`,
+        tone: "danger",
+      });
+    }
+     finally {
       // 3. ปิด Modal เสมอ ไม่ว่า API จะสำเร็จหรือล้มเหลว
       handleCloseModal();
       setRefreshTrigger((prev) => prev + 1);
@@ -199,6 +247,7 @@ export const Users = () => {
 
   // ฟังก์ชันเพิ่มผู้ใช้ใหม่
   const handleAddUser = async (newUserData: NewUserPayload) => {
+    console.log(newUserData)
     // เรียก API POST เพื่อเพิ่มผู้ใช้ใหม่
     const {
       us_emp_code,
@@ -230,7 +279,7 @@ export const Users = () => {
     };
 
     try {
-      const response = await axios.post(`/api/accounts`, newUser);
+      const response = await api.post(`/accounts`, newUser);
 
       setusers((prevUsers) => {
         const newUser = {

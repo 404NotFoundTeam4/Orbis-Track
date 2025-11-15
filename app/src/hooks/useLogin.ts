@@ -30,7 +30,6 @@ export const useLogin = () => {
       if (res?.success && res?.data?.accessToken) {
         const token = res.data.accessToken;
 
-
         SaveToken(token, isRemember);
 
         // ถ้า token หมดอายุ saveToken จะเคลียร์ให้ เราเช็คอีกรอบ
@@ -49,18 +48,18 @@ export const useLogin = () => {
         return res?.success
       }
     }
-    catch  {
-     return false;
+    catch {
+      return false;
     }
   };
- /**
- * Class: ReloadUser สำหรับตรวจสอบ อายุของ Token ว่า หมดอายุหรือยัง
- * Features:
- *   - ฟังก์ชั่น ตรวจสอบข้อมูล Token ใน sessionStorage/localStorage ว่าหมดอายุไหม
- * Author: Panyapon Phollert (Ton) 66160086
- */
+  /**
+  * Class: ReloadUser สำหรับตรวจสอบ อายุของ Token ว่า หมดอายุหรือยัง
+  * Features:
+  *   - ฟังก์ชั่น ตรวจสอบข้อมูล Token ใน sessionStorage/localStorage ว่าหมดอายุไหม
+  * Author: Panyapon Phollert (Ton) 66160086
+  */
   const ReloadUser = async () => {
-    const token = GetValidToken(); 
+    const token = GetValidToken();
     if (!token) {
       ClearToken();
       navigate("/login");

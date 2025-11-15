@@ -169,9 +169,31 @@ export default function UserModal({
     return true;
   };
 
-  {
-    /* State สำหรับ flow การลบ */
-  }
+  useEffect(() => {
+    const fetchNextCode = async () => {
+      try {
+        // 2. ใช้ await ในนี้ได้เลย
+        const res = await api.post("/accounts/next-employee-code", {
+          role: formDataObject.us_role,
+        });
+
+        if (res.data?.success) {
+          // 3. (สำคัญ) เอาค่าที่ได้ไปใช้งาน (เช่น set state)
+          // สมมติว่าคุณต้องการตั้งค่านี้ในฟอร์ม
+          setFormDataObject((prev) => ({
+            ...prev,
+            us_emp_code: res.data.data.us_emp_code,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch next code:", error);
+      }
+    };
+
+    // 4. เรียกใช้ฟังก์ชัน
+    fetchNextCode();
+  }, [formDataObject.us_role]);
+
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -207,8 +229,8 @@ export default function UserModal({
         formDataPayload.append("us_images", formDataObject.us_images);
       }
     }
-     if (onSubmit) onSubmit(formDataObject);
-        return;
+    if (onSubmit) onSubmit(formDataObject);
+    // return;
     // try {
     //   //ส่ง Request (PATCH)
     //   const res = await api.patch(
@@ -227,9 +249,9 @@ export default function UserModal({
     //     toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
 
     //     // เรียก onSubmit เพื่ออัปเดต UI
-      
+
     //   }
-       
+
     //   toast.push({
     //     message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
     //     tone: "danger",
@@ -294,7 +316,6 @@ export default function UserModal({
     delete payload.us_id;
 
     payload.us_password = generatePassword(12);
-
 
     if (onSubmit) onSubmit(payload);
   };
@@ -582,7 +603,6 @@ export default function UserModal({
             </svg>
           </button>
         </div>
-    
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-6">
@@ -635,7 +655,7 @@ export default function UserModal({
                   <FieldLabel>ชื่อ</FieldLabel>
                   <input
                     name="us_firstname"
-                    placeholder="ชื่อจริง"
+                    placeholder="ชื่อจริงของผู้ใช้งาน"
                     value={formDataObject.us_firstname}
                     onChange={handleChange}
                     readOnly={isDelete}
@@ -650,7 +670,7 @@ export default function UserModal({
                   <FieldLabel>นามสกุล</FieldLabel>
                   <input
                     name="us_lastname"
-                    placeholder="นามสกุล"
+                    placeholder="นามสกุลของผู้ใช้งาน"
                     value={formDataObject.us_lastname}
                     onChange={handleChange}
                     readOnly={isDelete}
@@ -665,24 +685,24 @@ export default function UserModal({
                   <FieldLabel>รหัสพนักงาน</FieldLabel>
                   <input
                     name="us_emp_code"
-                    placeholder="รหัสพนักงาน"
+                    placeholder="รหัสพนักงานของผู้ใช้งาน"
                     value={formDataObject.us_emp_code}
                     onChange={handleChange}
+                    disabled={true}
                     readOnly={isDelete}
                     className={
-                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
+                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black opacity-50 cursor-not-allowed placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
                       (isDelete ? DISABLED_CLS : "")
                     }
                   />
                 </div>
                 {/* ตำแหน่งงาน */}
-                
 
                 <div>
                   <FieldLabel>อีเมล</FieldLabel>
                   <input
                     name="us_email"
-                    placeholder="อีเมล"
+                    placeholder="อีเมลของผู้ใช้งาน"
                     value={formDataObject.us_email}
                     onChange={handleChange}
                     readOnly={isDelete}
@@ -697,7 +717,7 @@ export default function UserModal({
                   <FieldLabel>เบอร์โทรศัพท์</FieldLabel>
                   <input
                     name="us_phone"
-                    placeholder="เบอร์โทรศัพท์"
+                    placeholder="เบอร์โทรศัพท์ของผู้ใช้งาน"
                     value={formDataObject.us_phone}
                     onChange={handleChange}
                     readOnly={isDelete}
@@ -725,7 +745,7 @@ export default function UserModal({
                   items={rolesList || []}
                   value={selectedRole}
                   onChange={handleRoleChange}
-                  placeholder="เลือกตำแหน่ง"
+                  placeholder="ประเภทตำแหน่ง"
                   disabled={isDelete}
                   className={"!w-[221px]"} // กำหนดขนาดให้เท่า input
                   triggerClassName="!border-[#a2a2a2]"
@@ -738,7 +758,7 @@ export default function UserModal({
                   items={departmentOptions || []}
                   value={selectedDepartment}
                   onChange={handleDepartmentChange}
-                  placeholder="เลือกแผนก"
+                  placeholder="ประเภทแผนก"
                   disabled={isDelete}
                   className="!w-[221px]" // กำหนดขนาดให้เท่า input
                   triggerClassName="!border-[#a2a2a2]"
@@ -751,7 +771,7 @@ export default function UserModal({
                   items={sectionOptions || []}
                   value={selectedSection}
                   onChange={handleSectionChange}
-                  placeholder="เลือกฝ่ายย่อย"
+                  placeholder="ประเภทฝ่ายย่อย"
                   className="!w-[221px]" // กำหนดขนาดให้เท่า input
                   triggerClassName="!border-[#a2a2a2]"
                   searchable={true} // เปิด search bar
@@ -771,11 +791,13 @@ export default function UserModal({
               </div>
               <div
                 className={
-                  "w-[221px] h-[46px] border rounded-[16px] px-4 flex items-center gap-2 border-[#a2a2a2] " +
+                  "w-[221px] h-[46px] border rounded-[16px] px-2 flex items-center gap-2 border-[#a2a2a2] " +
                   (isDelete ? "opacity-50 cursor-not-allowed" : "")
                 }
               >
-                <span className="text-gray-500">👤</span>
+                <span className="text-black">
+                  <Icon icon="mdi:user" width="28" height="28" />
+                </span>
                 <input
                   name="us_username"
                   placeholder="ชื่อผู้ใช้"

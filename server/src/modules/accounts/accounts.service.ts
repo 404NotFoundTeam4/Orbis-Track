@@ -11,6 +11,64 @@ import emailService from "../../utils/email/email.service.js";
 const { redisSet } = redisUtils;
 
 /**
+ * Description: ค้นหารหัสพนักงานล่าสุด (เช่น E000123) และสร้างรหัสถัดไป (E000124)
+ * Input: role - UserRole (ตำแหน่งของพนักงาน)
+ * Output: string (รหัสพนักงานใหม่)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function generateNextEmployeeCode(role: UserRole): Promise<string> {
+    let PREFIX = "";
+    const PADDING = 4;
+    const START_NUM = 1;
+
+    if (role === UserRole.ADMIN) {
+        PREFIX = "ADM";
+    } else if (role === UserRole.HEADDEPT) {
+        PREFIX = "HOD";
+    } else if (role === UserRole.HEADSEC) {
+        PREFIX = "HOS";
+    } else if (role === UserRole.TECHNICAL) {
+        PREFIX = "TEC";
+    } else if (role === UserRole.STAFF) {
+        PREFIX = "STA";
+    } else if (role === UserRole.USER) {
+        PREFIX = "EMP";
+    }
+
+    const latestUser = await prisma.users.findFirst({
+        where: {
+            us_emp_code: {
+                startsWith: `${PREFIX}-`,
+            },
+        },
+        orderBy: {
+            us_emp_code: 'desc',
+        },
+        select: {
+            us_emp_code: true,
+        },
+    });
+
+    let nextNum = START_NUM;
+
+    if (latestUser) {
+        try {
+            const numPart = latestUser.us_emp_code?.replace(`${PREFIX}-`, "").trim();
+            const currentNum = Number(numPart || "0");
+
+            if (!Number.isNaN(currentNum)) {
+                nextNum = currentNum + 1;
+            }
+        } catch (e) {
+            console.warn("Could not parse latest employee code, starting from 1.", latestUser.us_emp_code, e);
+        }
+    }
+
+    const nextCode = `${PREFIX}-${String(nextNum).padStart(PADDING, '0')}`;
+    return nextCode;
+}
+
+/**
  * ดึงข้อมูลผู้ใช้ตาม id
  * Input: params - object { id: number }
  * Output: ข้อมูลผู้ใช้ (select fields)
@@ -114,7 +172,6 @@ async function getAllAccounts() {
 */
 async function createAccounts(payload: CreateAccountsPayload, images: any) {
     const {
-        us_emp_code,
         us_firstname,
         us_lastname,
         us_username,
@@ -133,10 +190,12 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
     // Hash Password
     const hashedPassword = await hashPassword(us_password);
 
+    const newEmployeeCode = await generateNextEmployeeCode(us_role as UserRole);
+
     // เพิ่มข้อมูลผู้ใช้ใหม่ลงในตาราง users
     const newUser = await prisma.users.create({
         data: {
-            us_emp_code,
+            us_emp_code: newEmployeeCode,
             us_firstname,
             us_lastname,
             us_username,
@@ -214,7 +273,6 @@ async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
     return { message: "User updated successfully" };
 }
 
-
 export async function softDeleteAccount(us_id: number) {
     //เช็คตัว UserId ว่าเจอไหม
     const user = await prisma.users.findUnique({ where: { us_id } });
@@ -236,4 +294,4 @@ export async function softDeleteAccount(us_id: number) {
     }
 }
 
-export const accountsService = { getAccountById, getAllAccounts, createAccounts, updateAccount, softDeleteAccount };
+export const accountsService = { getAccountById, getAllAccounts, createAccounts, updateAccount, softDeleteAccount, generateNextEmployeeCode };

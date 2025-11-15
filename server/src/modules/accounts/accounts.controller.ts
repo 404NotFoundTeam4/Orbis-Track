@@ -8,12 +8,27 @@ import {
   GetAllAccountsResponseSchema,
   editAccountSchema,
   idParamSchema,
+  genCodeEmpPayload,
+  GenCodeEmpSchema,
 } from "./accounts.schema.js";
 import { ValidationError } from "../../errors/errors.js";
+import { UserRole } from "../../core/roles.enum.js";
 
 export class AccountsController extends BaseController {
   constructor() {
     super();
+  }
+
+  /**
+ * Description: ค้นหารหัสพนักงานล่าสุด (เช่น E000123) และสร้างรหัสถัดไป (E000124)
+ * Input: role - UserRole (ตำแหน่งของพนักงาน)
+ * Output: string (รหัสพนักงานใหม่)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
+  async getNextEmployeeCodeHandler(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GenCodeEmpSchema>> {
+    const { role } = genCodeEmpPayload.parse(req.body);
+    const nextCode = await accountsService.generateNextEmployeeCode(role as UserRole);
+    return { data: { us_emp_code: nextCode } }
   }
 
   /**
@@ -87,7 +102,6 @@ export class AccountsController extends BaseController {
 
     return {
       message: result.message,
-     
     };
   }
 

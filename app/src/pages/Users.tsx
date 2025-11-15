@@ -5,7 +5,6 @@ import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import api from "../api/axios.js";
-import axios from "axios";
 import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
 type User = {
@@ -38,6 +37,34 @@ type NewUserPayload = Partial<User> & {
 type Department = {
   dept_id: number;
   dept_name: string;
+};
+
+/**
+ * Description: แปลงเบอร์โทร 10 หลัก (0812345678) เป็น 081-234-5678
+ * Input : phone: string | null
+ * Output : "081-234-5678" หรือ "-"
+ * Author : Pakkapon Chomchoey 66160080
+ */
+const FormatPhone = (phone: string | null | undefined): string => {
+  if (!phone) {
+    return "-"; // ถ้าไม่มีเบอร์
+  }
+
+  // ลบตัวอักษรที่ไม่ใช่ตัวเลขออก (เผื่อมีขีดกลางอยู่แล้ว)
+  const digits = phone.replace(/\D/g, "");
+
+  // ถ้าเป็นเบอร์มือถือ 10 หลัก
+  if (digits.length === 10) {
+    return `${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}`;
+  }
+
+  // ถ้าเป็นเบอร์บ้าน 9 หลัก (เช่น 02)
+  if (digits.length === 9) {
+    return `${digits.substring(0, 2)}-${digits.substring(2, 5)}-${digits.substring(5)}`;
+  }
+
+  // ถ้าไม่ใช่ 9 หรือ 10 หลัก ให้คืนค่าเดิม
+  return phone;
 };
 
 /**
@@ -81,7 +108,7 @@ export const Users = () => {
   const roleTranslation: { [key: string]: string } = {
     ADMIN: "ผู้ดูแลระบบ",
     HOD: "หัวหน้าแผนก",
-    HOS: "หัวหน้าฝ่าย",
+    HOS: "หัวหน้าฝ่ายย่อย",
     TECHNICAL: "ช่างเทคนิค",
     STAFF: "เจ้าหน้าที่คลัง",
     EMPLOYEE: "พนักงานทั่วไป",
@@ -90,7 +117,7 @@ export const Users = () => {
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
   const roleOptions = [
-    { id: "", label: "ทั้งหมด", value: "" },
+    { id: "", label: "ประเภทตำแหน่ง", value: "" },
     ...Array.from(
       new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
     ).map((r, index) => ({
@@ -140,13 +167,14 @@ export const Users = () => {
     setSelectedUser(null);
   };
   const handleSaveUser = async (updatedData: Partial<User>) => {
-    console.log(updatedData)
+    console.log(updatedData);
     // 1. ตรวจสอบ us_id
     if (!updatedData.us_id) {
       console.error("Cannot save user: missing us_id for update");
       return;
     }
-      const { us_emp_code,
+    const {
+      us_emp_code,
       us_firstname,
       us_lastname,
       us_username,
@@ -156,8 +184,9 @@ export const Users = () => {
       us_role,
       us_dept_id,
       us_sec_id,
-      } = updatedData
-      const updateNewData = {us_emp_code,
+    } = updatedData;
+    const updateNewData = {
+      us_emp_code,
       us_firstname,
       us_lastname,
       us_username,
@@ -166,12 +195,12 @@ export const Users = () => {
       us_images,
       us_role,
       us_dept_id,
-      us_sec_id,}
-     
+      us_sec_id,
+    };
+
     try {
-      
       //ส่ง Request (PATCH)
-     const res = await api.patch(
+      const res = await api.patch(
         `/accounts/${updatedData.us_id}`,
         updateNewData,
         {
@@ -179,43 +208,45 @@ export const Users = () => {
             "Content-Type": "multipart/form-data",
           },
         }
-      ); 
+      );
       console.log("✅ PATCH Response:", res.data);
       // จัดการ Response
       if (res.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
-            setusers((prevUsers) => {
-        return prevUsers.map((user) => {
-          if (user.us_id === updatedData.us_id) {
-            // ผสานข้อมูลที่แก้ไขเข้ามา
-            const mergedUser = { ...user, ...updatedData };
+        setusers((prevUsers) => {
+          return prevUsers.map((user) => {
+            if (user.us_id === updatedData.us_id) {
+              // ผสานข้อมูลที่แก้ไขเข้ามา
+              const mergedUser = { ...user, ...updatedData };
 
-            // หาชื่อแผนกและฝ่ายย่อยใหม่
-            const dept = departments.find(
-              (d) => d.dept_id === mergedUser.us_dept_id
-            );
-            const sec = sections.find((s) => s.sec_id === mergedUser.us_sec_id);
+              // หาชื่อแผนกและฝ่ายย่อยใหม่
+              const dept = departments.find(
+                (d) => d.dept_id === mergedUser.us_dept_id
+              );
+              const sec = sections.find(
+                (s) => s.sec_id === mergedUser.us_sec_id
+              );
 
-            // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
-            const newDeptName = dept ? dept.dept_name : user.us_dept_name;
-            const newSecName = sec
-              ? sec.sec_name
-              : updatedData.us_sec_id === 0 || !updatedData.us_sec_id
-                ? "-"
-                : user.us_sec_name;
+              // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
+              const newDeptName = dept ? dept.dept_name : user.us_dept_name;
+              const newSecName = sec
+                ? sec.sec_name
+                : updatedData.us_sec_id === 0 || !updatedData.us_sec_id
+                  ? "-"
+                  : user.us_sec_name;
 
-            return {
-              ...mergedUser,
-              us_dept_name: newDeptName,
-              us_sec_name: newSecName,
-            };
-          }
-          return user;
+              return {
+                ...mergedUser,
+                us_dept_name: newDeptName,
+                us_sec_name: newSecName,
+              };
+            }
+            return user;
+          });
         });
-      });
         return;
       }
-       
+
       toast.push({
         message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
         tone: "danger",
@@ -225,8 +256,6 @@ export const Users = () => {
 
       if (err.response?.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
-
-        
       }
       const apiErrorMessage =
         err.response?.data?.message ||
@@ -237,8 +266,7 @@ export const Users = () => {
         message: `บันทึกไม่สำเร็จ: ${apiErrorMessage}`,
         tone: "danger",
       });
-    }
-     finally {
+    } finally {
       // 3. ปิด Modal เสมอ ไม่ว่า API จะสำเร็จหรือล้มเหลว
       handleCloseModal();
       setRefreshTrigger((prev) => prev + 1);
@@ -247,7 +275,7 @@ export const Users = () => {
 
   // ฟังก์ชันเพิ่มผู้ใช้ใหม่
   const handleAddUser = async (newUserData: NewUserPayload) => {
-    console.log(newUserData)
+    console.log(newUserData);
     // เรียก API POST เพื่อเพิ่มผู้ใช้ใหม่
     const {
       us_emp_code,
@@ -327,7 +355,7 @@ export const Users = () => {
       }
 
       // เรียก API DELETE เพื่อลบผู้ใช้
-      await axios.delete(`/api/accounts/${userData.us_id}`);
+      await api.delete(`/accounts/${userData.us_id}`);
       console.log(`User ID ${userData.us_id} deleted successfully`);
 
       // อัปเดต State 'users' ใน Frontend (แสดงผลทันที)
@@ -364,7 +392,7 @@ export const Users = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get("/api/accounts");
+        const res = await api.get("/accounts");
         const data = res.data;
 
         setSections(data.data.sections || []);
@@ -389,7 +417,7 @@ export const Users = () => {
     const day = d.getDate(); // วัน
     const month = d.toLocaleString("th-TH", { month: "short" }); // เดือนแบบย่อ
     const year = d.getFullYear() + 543; // แปลง ค.ศ. → พ.ศ.
-    return `${day} ${month} ${year}`;
+    return `${day} / ${month} / ${year}`;
   };
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
@@ -728,7 +756,9 @@ export const Users = () => {
                 </div>
                 <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
                 <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
-                <div className="py-2 px-4">{u.us_phone ?? "-"}</div>
+                <div className="py-2 px-4">
+                  {FormatPhone(u.us_phone) ?? "-"}
+                </div>
                 <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
 
                 <div className="py-2 px-4">

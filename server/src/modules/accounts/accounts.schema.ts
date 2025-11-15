@@ -5,6 +5,14 @@ export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+export const genCodeEmpSchema = z.object({
+  us_emp_code: z.string(),
+});
+
+export const genCodeEmpPayload = z.object({
+  role: z.string(),
+});
+
 // สำหรับตรวจสอบข้อมูลที่ใช้ในการสร้างบัญชีผู้ใช้ใหม่
 export const createAccountsPayload = z.object({
   us_emp_code: z.string().min(1).max(50).nullable().optional(),
@@ -106,6 +114,9 @@ export type GetAllAccountsResponseSchema = z.infer<
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
 
+export type GenCodeEmpSchema = z.infer<typeof genCodeEmpSchema>;
+
+export type GenCodeEmpPayload = z.infer<typeof genCodeEmpPayload>;
 
 export type CreateAccountsPayload = z.infer<typeof createAccountsPayload>;
 

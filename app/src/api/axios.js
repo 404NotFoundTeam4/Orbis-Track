@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/api", // backend port
+  baseURL: import.meta.env.VITE_API_BASE || "/api", // backend port
   withCredentials: true, // ถ้าใช้ cookie auth
 });
 

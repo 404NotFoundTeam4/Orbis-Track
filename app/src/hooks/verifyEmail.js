@@ -1,6 +1,6 @@
 import {  useNavigate } from "react-router-dom";
-import { SendOtp, VerifyOtp } from "../services/otpServices";
-import { ResetPassword } from "../services/accountService";
+import { SendOtp, VerifyOtp } from "../services/otpservices";
+import { ResetPassword } from "../services/AccountService";
 
 export const verifyEmail = () => {
   const navigate = useNavigate();

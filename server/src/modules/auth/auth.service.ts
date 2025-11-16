@@ -105,7 +105,6 @@ async function fetchMe(user: AccessTokenPayload) {
             us_phone: true,
             us_role: true,
             us_images: true,
-            us_pa_id: true,
             us_dept_id: true,
             us_sec_id: true,
             us_is_active: true,

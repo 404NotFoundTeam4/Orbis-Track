@@ -4,9 +4,9 @@ ARG PRISMA_SCHEMA_PATH=./src/infrastructure/database/prisma/schema.prisma
 FROM node:22-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache openssl
-COPY package.json package-lock.json ./
+COPY package.json package.json ./
 COPY server/package.json ./server/package.json
-RUN npm ci --workspaces --include-workspace-root=false
+RUN npm install --workspaces --include-workspace-root=false
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma
 ARG PRISMA_SCHEMA_PATH
 RUN npx prisma generate --schema $PRISMA_SCHEMA_PATH
@@ -25,9 +25,9 @@ ENV NODE_ENV=production
 ENV PORT=4041
 ENV PRISMA_SCHEMA_PATH=./src/infrastructure/database/prisma/schema.prisma
 RUN apk add --no-cache openssl postgresql-client
-COPY package.json package-lock.json ./
+COPY package.json package.json ./
 COPY server/package.json ./server/package.json
-RUN npm ci --omit=dev --workspaces --include-workspace-root=false && \
+RUN npm install --omit=dev --workspaces --include-workspace-root=false && \
     npm install -g prisma
 COPY --from=builder /app/dist ./dist
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma

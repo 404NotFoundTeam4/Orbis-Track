@@ -84,7 +84,7 @@ services:
     working_dir: /app/server
     entrypoint: ["/bin/sh", "-lc", "/bin/sh ./docker-entrypoint.sh"]
     env_file:
-      - .env
+      - .env.dev
     environment:
       PORT: 4041
       NODE_ENV: development

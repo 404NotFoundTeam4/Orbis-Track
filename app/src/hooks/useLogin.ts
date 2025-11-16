@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { useUserStore } from "../stores/UserStore.js";
-import { Login, UserData } from "../services/accountService.js";
+import { useUserStore } from "../stores/userStore";
+import { Login, UserData } from "../services/AccountService.js";
 import { SaveToken, GetValidToken, ClearToken } from "../services/remember.js";
 
 /**
@@ -14,15 +14,15 @@ export const useLogin = () => {
   const setUser = useUserStore((s) => s.setUser);
   const navigate = useNavigate();
   /**
- * Class: HandleLogin สำหรับตรวจสอบข้อมูล Login
- * Features:
- *   - ฟังก์ชั่น ตรวจสอบข้อมูลเมื่อมีการขอ Login
- * Author: Panyapon Phollert (Ton) 66160086
- */
+   * Class: HandleLogin สำหรับตรวจสอบข้อมูล Login
+   * Features:
+   *   - ฟังก์ชั่น ตรวจสอบข้อมูลเมื่อมีการขอ Login
+   * Author: Panyapon Phollert (Ton) 66160086
+   */
   const HandleLogin = async (
     username: string,
     password: string,
-    isRemember: boolean
+    isRemember: boolean,
   ) => {
     try {
       const res = await Login(username, password, isRemember);
@@ -45,19 +45,18 @@ export const useLogin = () => {
         }
 
         navigate("/users", { state: { user: User } });
-        return res?.success
+        return res?.success;
       }
-    }
-    catch {
+    } catch {
       return false;
     }
   };
   /**
-  * Class: ReloadUser สำหรับตรวจสอบ อายุของ Token ว่า หมดอายุหรือยัง
-  * Features:
-  *   - ฟังก์ชั่น ตรวจสอบข้อมูล Token ใน sessionStorage/localStorage ว่าหมดอายุไหม
-  * Author: Panyapon Phollert (Ton) 66160086
-  */
+   * Class: ReloadUser สำหรับตรวจสอบ อายุของ Token ว่า หมดอายุหรือยัง
+   * Features:
+   *   - ฟังก์ชั่น ตรวจสอบข้อมูล Token ใน sessionStorage/localStorage ว่าหมดอายุไหม
+   * Author: Panyapon Phollert (Ton) 66160086
+   */
   const ReloadUser = async () => {
     const token = GetValidToken();
     if (!token) {
@@ -66,9 +65,7 @@ export const useLogin = () => {
 
       return;
     }
-
   };
-
 
   return { HandleLogin, ReloadUser };
 };

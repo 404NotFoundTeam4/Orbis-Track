@@ -9,7 +9,7 @@ export default defineConfig({
     port: 4040,
     proxy: {
       '/api': {
-        target: 'http:/backend:4041',
+        target: 'http://backend:4041',
         changeOrigin: true,
         ws: true,
         rewrite: (p) => p.replace(/^\/api/, '/api/v1'),

@@ -68,7 +68,7 @@ services:
       target: run # ← ใช้ stage run จาก app/dockerfile (serve dist)
       # ถ้าต้องการ bake ค่า API ตอน build (แนะนำ):
       args:
-        - VITE_API_BASE=http://seteam.bsospace.com:4141/api/v1 # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy
+        - VITE_API_BASE=https://404notfound-back.bsospace.com/api/v1 # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy
     # ถ้า serve ที่พอร์ต 4173 ตาม Dockerfile
     ports:
       - "4140:5173"

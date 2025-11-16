@@ -48,23 +48,6 @@ services:
       - server/.env
     environment:
       NODE_ENV: production
-      PORT:
-        ${PORT}
-        # DB (อย่าใช้ localhost ใช้ชื่อ service)
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DATABASE_URL: ${DATABASE_URL}
-
-      # Redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-404Redis}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-404Redis}@${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
-
-      PRISMA_SCHEMA_PATH: ./src/infrastructure/database/prisma/schema.prisma
       PRISMA_GENERATE: "false" # generate ตอน build แล้ว
       RUN_MIGRATIONS: "true" # ให้ entrypoint รัน Prisma
       PRISMA_STRATEGY: migrate-deploy # ใช้ migrations แบบ production

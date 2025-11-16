@@ -37,7 +37,7 @@ export function App(): Express {
         "http://localhost:4140",
         "https://404notfound-front.bsospace.com",
         "https://404notfound-back.bsospace.com",
-        "https://obistrack.bsospace.com",
+        "https://orbistrack.bsospace.com",
       ],
       credentials: true,
     }),

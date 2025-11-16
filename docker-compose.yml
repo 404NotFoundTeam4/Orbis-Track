@@ -10,7 +10,7 @@ services:
     ports:
       - "4142:5432" # เปิดถ้าต้องเข้า psql จากข้างนอก, ไม่จำเป็นก็เอาออกได้
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdbdata:/var/lib/postgresql/data
       - ./docker/db-init:/docker-entrypoint-initdb.d:ro # มีสคริปต์ init/extension อยู่แล้ว
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -30,7 +30,7 @@ services:
     ports:
       - "4143:6379"
     volumes:
-      - redis_data:/data
+      - caching_data:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
@@ -95,5 +95,5 @@ services:
     # โปรดักชันไม่ต้อง mount volumes
 
 volumes:
-  pgdata:
-  redis_data:
+  pgdbdata:
+  caching_data:

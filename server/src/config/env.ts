@@ -47,9 +47,9 @@ const Env = z.object({
     .default("development"),
 
   // database
-  DB_USER: z.string().min(1),
-  DB_PASSWORD: z.string().min(1),
-  DB_NAME: z.string().min(1),
+  POSTGRES_USER: z.string().min(1),
+  POSTGRES_PASSWORD: z.string().min(1),
+  POSTGRES_DB: z.string().min(1),
   DB_HOST: z.string().min(1),
   DB_PORT: z.coerce.number().default(5432),
   DATABASE_URL: z.string().min(1),

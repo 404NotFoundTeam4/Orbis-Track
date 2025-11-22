@@ -45,7 +45,7 @@ services:
       dockerfile: server/Dockerfile
       target: prod
     env_file:
-      - server/.env
+      - .env
     environment:
       NODE_ENV: production
       PRISMA_GENERATE: "false" # generate ตอน build แล้ว
@@ -67,14 +67,28 @@ services:
       dockerfile: app/dockerfile
       target: run # ← ใช้ stage run จาก app/dockerfile (serve dist)
       # ถ้าต้องการ bake ค่า API ตอน build (แนะนำ):
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
     env_file:
-      - app/.env
+      - .env
     ports:
-      - "4140:5173"
+      - "4144:5173"
     depends_on:
       - backend
     restart: unless-stopped
     # โปรดักชันไม่ต้อง mount volumes
+
+  proxy:
+    image: nginx:1.27-alpine # ใช้ image Nginx (alpine-slim)
+    ports:
+      - "4140:80" # นี่คือ port เดียวที่จะเปิดสู่ภายนอก (คุณเปลี่ยนเป็น 4140:80 ก็ได้)
+    volumes:
+      # Mount config Nginx ที่เราจะสร้างขึ้น
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
 
 volumes:
   pgdbdata:

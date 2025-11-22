@@ -13,6 +13,11 @@ RUN npm install -w app --include-workspace-root=false
 # คัดลอกโค้ดทั้ง repo แล้ว build ที่โฟลเดอร์ app
 COPY . .
 WORKDIR /repo/app
+
+ARG VITE_API_BASE
+# 2. ประกาศเป็น ENV ชั่วคราวเพื่อให้คำสั่ง npx vite build มองเห็น
+ENV VITE_API_BASE=$VITE_API_BASE
+
 RUN npx vite build
 
 # ===== run (prod) =====

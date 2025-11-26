@@ -119,7 +119,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         setSelectedDepartment(null);
       }
     }
-  }, [isOpen, initialData, type, departmentItems]);
+  }, [isOpen]);
 
   // Title ของแต่ละ modal
   const getTitle = () => {
@@ -242,7 +242,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   label="แผนก"
                   placeholder="ประเภทแผนก"
                   value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
+                  onChange={(e: any) => setDepartment(e?.target?.value ?? e)}
                   autoFocus
                   required
                 />

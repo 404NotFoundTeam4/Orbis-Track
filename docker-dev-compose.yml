@@ -84,31 +84,16 @@ services:
     working_dir: /app/server
     entrypoint: ["/bin/sh", "-lc", "/bin/sh ./docker-entrypoint.sh"]
     env_file:
-      - .env
+      - .env.dev
     environment:
       PORT: 4041
       NODE_ENV: development
       PRISMA_DEV_APPLY: migrate
       PRISMA_MIGRATION_NAME: init
-      PRISMA_SCHEMA_PATH: ./src/infrastructure/database/prisma/schema.prisma
-      DATABASE_URL: "${DATABASE_URL}"
-      SHADOW_DATABASE_URL: "${SHADOW_DATABASE_URL}"
-      DB_ADMIN_URL: "${DB_ADMIN_URL}"
       PRISMA_GENERATE: "true"
       RUN_MIGRATIONS: "true"
       PRISMA_STRATEGY: auto
       START_CMD: auto
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_SECURE: ${SMTP_SECURE}
-      SMTP_REQUIRETLS: ${SMTP_REQUIRETLS}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
-      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
-      APP_NAME: ${APP_NAME}
-      APP_URL: ${APP_URL}
-      SUPPORT_EMAIL: ${SUPPORT_EMAIL}
     ports: ["4041:4041"]
     volumes:
       - ./:/app
@@ -122,6 +107,8 @@ services:
       context: .
       dockerfile: app/dockerfile
       target: dev
+    env_file:
+      - .env.dev
     ports: ["4040:5173"]
     volumes:
       - ./app:/app

@@ -1,22 +1,44 @@
-// ถ้า Login.tsx อยู่ใน pages/
+/**
+ * Page: Login
+ * Features:
+ *  - UI หน้า Login สำหรับผู้ใช้งาน
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 import { useState } from "react";
 import "../styles/css/Login.css";
 import { Icon } from "@iconify/react";
 import male from "../assets/images/login/male.png";
 import female from "../assets/images/login/female.png";
-import { useLogin } from "../hooks/useLogin"
+import { useLogin } from "../hooks/useLogin.ts"
 
 /** หน้าเข้าสู่ระบบตามภาพตัวอย่าง */
 export function Login() {
 
-  const { handleLogin } = useLogin();
+  const { HandleLogin } = useLogin();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isRemember, setIsRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
+  const [errorUS, setErrorUS] = useState(false)
+  const [errorPS, setErrorPS] = useState(false)
   const onSubmit = async (a) => {
+    setErrorUS(false)
+    setErrorPS(false)
     a.preventDefault();
-    handleLogin(username, password, false);
+    let FindError = false
+    if (!username) {
+      setErrorUS(true)
+      FindError = true
+    }
+    if (!password) {
+      setErrorPS(true)
+      FindError = true
+    }
+    if (FindError) return;
+    const res = await HandleLogin(username, password, isRemember);
+    setErrorUS(!res)
+    setErrorPS(!res)  
   };
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden">
@@ -138,16 +160,16 @@ export function Login() {
           <form onSubmit={onSubmit}>
             <div className="space-y-[27px] mb-12">
               {/* Username */}
-              <div className="space-y-[10px]">
+              <div className="space-y-2.5">
                 <label className="block font-roboto text-[32px]">
                   ชื่อผู้ใช้
                 </label>
-                <div className="flex items-center w-[557px] h-[76px] rounded-full border border-[#40A9FF] shadow-sm px-6 space-x-4">
+                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${errorUS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4`}>
                   <Icon
                     icon="icon-park-solid:people"
                     width="25"
                     height="25"
-                    className="text-sky-500"
+                    className={`${errorUS ? "text-[#F74E57]" : "text-sky-500"}`}
                   />
                   <input
                     type="text"
@@ -157,6 +179,12 @@ export function Login() {
                     className=" flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
                   />
                 </div>
+                {
+                  (errorUS) &&
+                  <span className="pt-3 text-[#F74E57] text-[32px]">
+                    กรุณากรอกชื่อผู้ใช้งาน
+                  </span>
+                }
               </div>
 
               {/* Password */}
@@ -164,13 +192,13 @@ export function Login() {
                 <label className="block font-roboto text-[32px]">
                   รหัสผ่าน
                 </label>
-                <div className="flex items-center w-[557px] h-[76px] rounded-full border border-[#40A9FF] shadow-sm px-6 space-x-4 focus-within:ring-2 focus-within:ring-sky-400">
+                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${errorPS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4 `}>
                   <Icon
                     icon="ph:key-duotone"
                     width="25"
                     height="25"
 
-                    className="text-sky-500"
+                    className={`${errorPS ? "text-[#F74E57]" : "text-sky-500"}`}
                   />
                   <input
                     type={showPassword ? "text" : "password"}
@@ -191,11 +219,20 @@ export function Login() {
                     />
                   </button>
                 </div>
+                {
+                  (errorPS) &&
+                  <span className="pt-3 text-[#F74E57] text-[32px]">
+                    กรุณากรอกรหัสผ่านให้ถูกต้อง
+                  </span>
+                }
               </div>
               {/* Remember + Forgot */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center mb-4 gap-[15px]">
-                  <input id="default-checkbox" type="checkbox" value="" className="w-[29px] h-[29px] accent-[#BFBFBF] " />
+                  <input id="default-checkbox" type="checkbox" value=""
+                    checked={isRemember}
+                    onChange={(e) => setIsRemember(e.target.checked)}
+                    className="w-[29px] h-[29px] accent-[#BFBFBF] " />
                   <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
                 </div>
                 <a

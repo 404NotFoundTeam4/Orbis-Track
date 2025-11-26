@@ -22,10 +22,18 @@ export const departmentSchema = z.object({
     dept_name: z.string(),
 });
 
+export const sectionWithPeopleSchema = z.object({
+    sec_id: z.coerce.number(),
+    sec_name: z.string(),
+    sec_dept_id: z.coerce.number(),
+    people_count: z.number(),
+});
+
 export const departmentSectionSchema = z.object({
     dept_id: z.number(),
     dept_name: z.string(),
-    sections: z.array(sectionSchema), // nested sections
+    people_count: z.number().optional(),
+    sections: z.array(sectionWithPeopleSchema), // nested sections
 });
 
 export const getAllDepartmentSchema = z.object({
@@ -57,7 +65,6 @@ export const addSectionPayload = z.object({
     sec_name: z.string(),
 });
 
-
 export const getDeptSection = z.object({
     dept_id: z.coerce.number().positive(),
     dept_name: z.string(),
@@ -69,7 +76,30 @@ export const deptSectionSchema = z.object({
     deptsection: z.array(departmentSectionSchema),
 });
 
+//Schema สำหรับ delete section
+export const deleteSectionSchema = z.object({
+    secId: z.coerce.number().positive(),
+});
+
+// Author: Sutaphat Thahin (Yeen) 66160378
+
+// ตรวจสอบข้อมูลที่ใช้ในการเพิ่มแผนกใหม่ (รับเข้ามา)
+export const addDepartmentsPayload = z.object({
+    dept_name: z.string()
+})
+
+// ตรวรสอบข้อมูลแผนกหลังเพิ่มแผนกสำเร็จ
+export const addDepartmentsSchema = z.object({
+    dept_id: z.coerce.number(),
+    dept_name: z.string(),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable()
+})
+
+//Type สำหรับใช้ใน TypeScript
 export type GetDeptSection = z.infer<typeof getDeptSection>;
+
+export type DeleteSectionPayload = z.infer<typeof deleteSectionSchema>;
 
 export type EditDepartmentPayload = z.infer<typeof editDepartmentPayload>;
 
@@ -93,3 +123,7 @@ export type ParamEditSecSchema = z.infer<typeof paramEditSecSchema>;
 export type AddSecSchema = z.infer<typeof addSectionPayload>;
 
 export type DeptSectionSchema = z.infer<typeof deptSectionSchema>;
+
+export type AddDepartmentsPayload = z.infer<typeof addDepartmentsPayload>
+
+export type AddDepartmentsSchema = z.infer<typeof addDepartmentsSchema>

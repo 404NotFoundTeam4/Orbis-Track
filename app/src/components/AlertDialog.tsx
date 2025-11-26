@@ -6,7 +6,6 @@
  */
 import React, { useEffect, useId } from "react";
 import Button from "./Button";
-import { Icon } from "@iconify/react";
 
 export type AlertTone = "success" | "warning" | "danger";
 
@@ -49,9 +48,9 @@ export type AlertDialogProps = {
 };
 
 const TONE_HEX: Record<AlertTone, string> = {
-  success: "#FFC107",
-  warning: "#FFC107",
-  danger: "#FFC107",
+  success: "#FFC53D",
+  warning: "#FFC53D",
+  danger: "#FF4D4F",
 };
 
 const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
@@ -136,7 +135,7 @@ export function AlertDialog({
         className={cx(
           "relative mx-auto select-none bg-white shadow-2xl",
           "animate-in fade-in zoom-in-95 ",
-          className,
+          className
         )}
         style={{
           width,
@@ -211,7 +210,7 @@ export function AlertDialog({
               className={cx(
                 "rounded-full",
                 confirmCls,
-                `!text-[${buttonTextPx}px]`,
+                `!text-[${buttonTextPx}px]`
               )}
               onClick={async () => {
                 await onConfirm?.();

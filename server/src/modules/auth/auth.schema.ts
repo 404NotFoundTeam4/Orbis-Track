@@ -39,7 +39,6 @@ export const meDto = z.object({
     us_phone: z.string().nullable(),
     us_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
     us_images: z.string().nullable(),
-    us_pa_id: z.coerce.number().int().positive().nullable(),
     us_dept_id: z.coerce.number().int().positive().nullable(),
     us_sec_id: z.coerce.number().int().positive().nullable(),
     us_is_active: z.boolean(),

@@ -10,7 +10,6 @@ import {
   faBell,
   faChevronUp,
   faCartShopping,
-  faCircleUser,
   faServer,
   faBoxArchive,
   faBoxesStacked,
@@ -134,7 +133,7 @@ export const Navbar = () => {
                 </Link>
 
                 <Link
-                  to="/users"
+                  to="/administrator/departments-management"
                   className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                 >
                   แผนกและฝ่ายย่อย
@@ -213,7 +212,7 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <main className="flex-1 p-6 bg-[#FAFAFA] ">
+        <main className="flex-1 bg-[#FAFAFA] ">
           <div className=" w-full min-h-[calc(100vh-150px)]  ">
             <Outlet />
           </div>

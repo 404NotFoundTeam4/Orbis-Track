@@ -1,11 +1,22 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+/**
+ * Page: ResetPassword
+ * Features:
+ *  - UI หน้าเปลี่ยนรหัสผ่านสำหรับผู้ใช้งาน
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+import  { useState } from "react";
+import { Link ,useLocation } from "react-router-dom";
+import {verifyEmail} from "../hooks/verifyEmail.js"
 import { Icon } from "@iconify/react";
 export function Resetpassword() {
+  const {ResetPW} = verifyEmail();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfrimPassword, setConfrimPassword] = useState(false);
+   const location = useLocation();
+  const email = location.state?.email || ""; 
   // ตรวจเงื่อนไขความปลอดภัย
   const validations = {
     length: password.length >= 12 && password.length <= 16,
@@ -78,18 +89,18 @@ export function Resetpassword() {
       {/* ==== กล่องฟอร์มอยู่กลางจอ ==== */}
       <div className="flex flex-1 justify-center items-center mt-16">
         <div className="">
-          {/* Back link */}
+        
           <Link
             to="/login"
-            className="text-sky-500 text-sm mb-5 hover:underline flex gap-5 text-[24px] items-center cursor-pointer z-10"
+            className="text-[#8C8C8C] text-sm mb-5 hover:underline flex gap-3 text-[24px] items-center cursor-pointer z-10"
           >
-            {" "}
             <Icon
               icon="weui:arrow-outlined"
-              width="12"
-              height="32"
+              width="20"
+              height="44"
               className="rotate-180 mt-1"
             />
+            <p className="text-[32px] ">กลับไปสู่หน้าเข้าสู่ระบบ</p>
           </Link>
 
           {/* Info box */}
@@ -116,7 +127,7 @@ export function Resetpassword() {
             <label className="block text-gray-700 text-[32px] mb-1">
               รหัสผ่านใหม่
             </label>
-            <div className="relative flex items-center w-full h-[76px] rounded-full border border-[#A2A2A2] px-6">
+            <div className="relative flex items-center w-full h-[76px] rounded-full bg-white border border-[#A2A2A2] px-6">
               <Icon
                 icon="solar:key-bold"
                 width="27"
@@ -149,48 +160,48 @@ export function Resetpassword() {
 
           {/* Validation rules */}
           <div className="text-[32px] text-gray-600 mb-5">
-            <p className="text-red-500 font-medium mb-2">
+            <p className={`${ allValid && match?"text-[#73D13D]":"text-[#40A9FF]"} font-medium mb-2`}>
               กรุณาเพิ่มอักขระที่จำเป็นทั้งหมดเพื่อสร้างรหัสผ่านที่ปลอดภัย
             </p>
             <ul className="space-y-1">
               <li
                 className={
-                  validations.length ? "text-green-500" : "text-red-500"
+                  validations.length ? "text-[#73D13D]" : "text-[#CDCDCD]"
                 }
               >
                 • อักษรขั้นต่ำ 12 – 16 ตัวอักษร
               </li>
               <li
                 className={
-                  validations.upper ? "text-green-500" : "text-red-500"
+                  validations.upper ?"text-[#73D13D]" : "text-[#CDCDCD]"
                 }
               >
                 • อักษรตัวใหญ่อย่างน้อย 1 ตัว
               </li>
               <li
                 className={
-                  validations.lower ? "text-green-500" : "text-red-500"
+                  validations.lower ? "text-[#73D13D]" : "text-[#CDCDCD]"
                 }
               >
                 • อักษรตัวเล็กอย่างน้อย 1 ตัว
               </li>
               <li
                 className={
-                  validations.special ? "text-green-500" : "text-red-500"
+                  validations.special ? "text-[#73D13D]" : "text-[#CDCDCD]"
                 }
               >
                 • อักษรพิเศษอย่างน้อย 1 ตัว เช่น *()_-=+{}
               </li>
               <li
                 className={
-                  validations.number ? "text-green-500" : "text-red-500"
+                  validations.number ? "text-[#73D13D]" : "text-[#CDCDCD]"
                 }
               >
                 • ตัวเลขอย่างน้อย 1 ตัว
               </li>
               <li
                 className={
-                  validations.noThai ? "text-green-500" : "text-red-500"
+                  validations.noThai ? "text-[#73D13D]" : "text-[#CDCDCD]"
                 }
               >
                 • ห้ามมีการเว้นวรรค
@@ -203,19 +214,27 @@ export function Resetpassword() {
             <label className="block text-gray-700 text-[32px] mb-1 ">
               ยืนยันรหัสผ่านใหม่
             </label>
-            <div className="flex items-center w-full h-[76px] rounded-full border border-[#A2A2A2]  px-6 space-x-4 ">
-              <Icon icon="solar:key-bold" width="27" height="27" />
+             <div className="relative flex items-center w-full h-[76px] rounded-full bg-white border border-[#A2A2A2] px-6">
+              <Icon
+                icon="solar:key-bold"
+                width="27"
+                height="27"
+                className="mr-3"
+              />
+
               <input
                 type={showConfrimPassword ? "text" : "password"}
                 placeholder=" "
-                className="w-full focus:ring-sky-400 focus:outline-none text-[32px] h-full"
+                className="w-full focus:ring-sky-400 focus:outline-none text-[32px] h-full pr-[50px]"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
               />
+
+              {/*  ปุ่มแสดงรหัส */}
               <button
                 type="button"
                 onClick={() => setConfrimPassword(!showConfrimPassword)}
-                className="text-gray-500 hover:text-sky-500 transition-colors"
+                className="absolute right-6 text-gray-500  z-10 cursor-pointer"
               >
                 <Icon
                   icon={showConfrimPassword ? "mdi:eye-off" : "mdi:eye"}
@@ -235,6 +254,7 @@ export function Resetpassword() {
                   : "bg-gray-300 cursor-not-allowed"
               }`}
               disabled={!allValid || !match}
+              onClick={()=>ResetPW(email,password,confirm )}
             >
               บันทึก
             </button>

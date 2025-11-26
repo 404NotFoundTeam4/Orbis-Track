@@ -5,6 +5,14 @@ export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+export const genCodeEmpSchema = z.object({
+  us_emp_code: z.string(),
+});
+
+export const genCodeEmpPayload = z.object({
+  role: z.string(),
+});
+
 // สำหรับตรวจสอบข้อมูลที่ใช้ในการสร้างบัญชีผู้ใช้ใหม่
 export const createAccountsPayload = z.object({
   us_emp_code: z.string().min(1).max(50).nullable().optional(),
@@ -91,10 +99,8 @@ export const editAccountSchema = z.object({
   us_sec_id: z.coerce.number().optional().nullable(),
 });
 
-export const SoftDeleteAccountSchema = z.object({
-  Param: idParamSchema
-});
 
+// Author: Chanwit Muangma (Boom) 66160224
 export const softDeleteResponseSchema = z.object({
   us_id: z.number().int(),
   deletedAt: z.date(),
@@ -108,7 +114,9 @@ export type GetAllAccountsResponseSchema = z.infer<
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
 
-export type SoftDeleteParams = z.infer<typeof idParamSchema>;
+export type GenCodeEmpSchema = z.infer<typeof genCodeEmpSchema>;
+
+export type GenCodeEmpPayload = z.infer<typeof genCodeEmpPayload>;
 
 export type CreateAccountsPayload = z.infer<typeof createAccountsPayload>;
 

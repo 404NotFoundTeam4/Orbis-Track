@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import {  user_data } from "../services/auth.account.service";
+import { UserData } from "../services/AccountService.js";
 interface User {
   us_id?: number;
   us_emp_code?: string;
@@ -16,27 +16,41 @@ interface UserStore {
   logout: () => void;
 }
 
-// ✅ ใช้ persist เพื่อให้ Zustand เก็บข้อมูลใน localStorage
 export const useUserStore = create<UserStore>()(
   persist(
     (set) => ({
       user: null,
       setUser: (user) => set({ user }),
+      /**
+       * Function: fetchUserFromServer
+       * Features:
+       *  - โหลดข้อมูลผู้ใช้จาก backend โดยใช้ token
+       *
+       * Author: Panyapon Phollert (Ton) 66160086
+       */
       fetchUserFromServer: async () => {
         const token = localStorage.getItem("token");
         if (!token) return;
-         const users = await user_data(token);
-            set({ user: users });
+        const users = await UserData(token);
+        set({ user: users });
       },
+      /**
+       * Function: logout
+       * Features:
+       *  - ลบ token และข้อมูลผู้ใช้ทั้งหมด
+       *  - ออกจาก localStorage และ Zustand
+       *
+       * Author: Panyapon Phollert (Ton) 66160086
+       */
       logout: () => {
         localStorage.removeItem("token");
         localStorage.removeItem("rememberUser");
         set({ user: null });
       },
     }),
-    
+
     {
-      name: "user-storage", // 🔑 key ที่จะใช้ใน localStorage
-    }
-  )
+      name: "user-storage", //
+    },
+  ),
 );

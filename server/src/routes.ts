@@ -5,6 +5,8 @@ import { authMiddleware } from "./middlewares/auth.middleware.js";
 import { accountsRouter } from "./modules/accounts/index.js";
 import { departmentRouter } from "./modules/departments/index.js";
 import { roleRouter } from "./modules/roles/index.js";
+import { UserRole } from "./core/roles.enum.js";
+import { requireRole } from "./middlewares/role.middleware.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1
@@ -23,15 +25,13 @@ export function routes(app: Express) {
 
   api.use("/auth", authMiddleware, fetchMeRouter);
 
-  api.use("/departments", departmentRouter);
+  api.use("/departments", authMiddleware, requireRole([UserRole.ADMIN]), departmentRouter);
 
   api.get("/health", (_req, res) => res.json({ ok: true }));
 
-  api.use("/accounts", accountsRouter);
+  api.use("/accounts", authMiddleware, requireRole([UserRole.ADMIN]), accountsRouter);
 
-  api.use("/departments", departmentRouter);
-
-  api.use("/roles", roleRouter);
+  api.use("/roles", authMiddleware, roleRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

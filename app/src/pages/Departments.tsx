@@ -4,25 +4,56 @@ import DropDown from "../components/DropDown";
 import SearchFilter from "../components/SearchFilter";
 import { useEffect, useMemo, useState } from "react";
 import DropdownArrow from "../components/DropdownArrow";
-import { type getDepartmentsWithSections } from "../service/DepartmentsService";
+import { type GetDepartmentsWithSections } from "../services/DepartmentsService";
 import { DepartmentModal } from "../components/DepartmentModal";
+import { useToast } from "../components/Toast";
 import {
   departmentService,
   sectionService,
-} from "../service/DepartmentsService";
-import { useToast } from "../components/Toast";
+} from "../services/DepartmentsService";
+import { AlertDialog } from "../components/AlertDialog";
 
 type ModalType =
   | "add-department"
   | "edit-department"
   | "add-section"
-  | "edit-section";
+  | "edit-section"
+  | "delete-section"
+  | "delete-department";
 
 const Departments = () => {
   // เก็บข้อมูลแผนกทั้งหมด
-  const [departments, setDepartments] = useState<getDepartmentsWithSections[]>(
-    []
+  const [departments, setDepartments] = useState<GetDepartmentsWithSections[]>(
+    [],
   );
+  const { push } = useToast();
+  const [loading, setLoading] = useState(true);
+
+  const refreshData = async () => {
+    setLoading(true); // เริ่มโหลด
+    try {
+      const departmentsData =
+        await departmentService.getDepartmentsWithSections();
+      setDepartments(departmentsData);
+      setDepartmentFilter(
+        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" },
+      );
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      push({ tone: "danger", message: "ไม่สามารถโหลดข้อมูลได้" });
+    } finally {
+      setLoading(false); // โหลดเสร็จ
+    }
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, []);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<ModalType>("add-department");
+  const [selectedData, setSelectedData] = useState<any>(null);
 
   // ตัวเลือกแผนกใน Dropdown
   const departmentOptions = [
@@ -34,15 +65,6 @@ const Departments = () => {
     })),
   ];
 
-  const { push } = useToast();
-  const [loading, setLoading] = useState(false);
-
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<ModalType>("add-department");
-  const [selectedData, setSelectedData] = useState<any>(null);
-
-  // ตัวกรองแผนก
   const [departmentFilter, setDepartmentFilter] = useState<{
     id: number | string;
     label: string;
@@ -61,22 +83,21 @@ const Departments = () => {
         : [...prev, id];
     });
   };
-
   // ดึงข้อมูล api จาก backend
-  useEffect(() => {
-    const fetchData = async () => {
-      // เรียกใช้ API ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
-      const departments = await departmentService.getDepartmentsWithSections();
-      // เก็บข้อมูลแผนก
-      setDepartments(departments);
-      // ตั้งค่า filter แผนกเริ่มต้นเป็น "ทั้งหมด"
-      setDepartmentFilter(
-        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
-      );
-    };
-
-    fetchData();
-  }, []);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     // เรียกใช้ API ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
+  //     const departments = await departmentService.getDepartmentsWithSections();
+  //     console.log(departments);
+  //     // เก็บข้อมูลแผนก
+  //     setDepartments(departments);
+  //     // ตั้งค่า filter แผนกเริ่มต้นเป็น "ทั้งหมด"
+  //     setDepartmentFilter(
+  //       (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
+  //     );
+  //   };
+  //   fetchData();
+  // }, []);
 
   const handleModalSubmit = async (data: any) => {
     setLoading(true);
@@ -110,8 +131,32 @@ const Departments = () => {
             message: "เพิ่มฝ่ายย่อยเสร็จสิ้น!",
           });
           break;
+        case "add-department":
+          await departmentService.addDepartment({ dept_name: data.department });
+          push({
+            tone: "success",
+            message: "เพิ่มแผนกเสร็จสิ้น!",
+          });
+          break;
+
+        case "delete-section":
+          await sectionService.deleteSection({ sec_id: data.sectionId });
+          push({
+            tone: "success",
+            message: "ลบฝ่ายย่อยเสร็จสิ้น!",
+          });
+          break;
+
+        case "delete-department":
+          await departmentService.deleteDepartment({
+            dept_id: data.departmentId,
+          });
+          push({
+            tone: "success",
+            message: "ลบแผนกเสร็จสิ้น!",
+          });
+          break;
       }
-      // await fetchData(); // Refresh data
     } catch (error: any) {
       push({
         tone: "danger",
@@ -119,13 +164,15 @@ const Departments = () => {
       });
     } finally {
       setLoading(false);
+      setModalOpen(false);
+      refreshData();
     }
   };
 
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const HandleSort = (
-    field: keyof getDepartmentsWithSections | "statusText"
+    field: keyof GetDepartmentsWithSections | "statusText",
   ) => {
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
@@ -139,10 +186,55 @@ const Departments = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<
-    keyof getDepartmentsWithSections | "statusText"
+    keyof GetDepartmentsWithSections | "statusText"
   >();
 
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: string; // ประเภทของสิ่งที่จะลบ
+    id: number; // รหัสของ section ที่จะลบ
+    name: string; // ชื่อ section (ใช้แสดงข้อความใน Alert)
+    deptId?: number; // id ของแผนกที่ section อยู่ (ใช้ตอนอัปเดต state)
+    deptName?: string; // ชื่อของแผนก (ใช้โชว์ข้อความ)
+  } | null>(null);
+
+  const handleDelete = async () => {
+    //ถ้ายังไม่ได้เลือก section ที่จะลบ (deleteTarget = null) ให้ return ออกไปก่อน
+    if (!deleteTarget) return;
+
+    try {
+      //ตรวจสอบว่าประเภทที่ต้องลบคือ "section"
+      if (deleteTarget.type === "section") {
+        // ถ้าเป็น section ให้เรียกใช้ service เพื่อลบ section
+        await sectionService.deleteSection({ sec_id: deleteTarget.id });
+
+        //แสดงข้อความแจ้งเตือนว่าลบสำเร็จ
+        push({
+          tone: "success",
+          message: `ลบฝ่ายย่อย ${deleteTarget.name} เรียบร้อยแล้ว`,
+        });
+      } else if (deleteTarget.type === "department") {
+        // ถ้าเป็น section ให้เรียกใช้ service เพื่อลบ section
+        await departmentService.deleteDepartment({ dept_id: deleteTarget.id });
+
+        //แสดงข้อความแจ้งเตือนว่าลบสำเร็จ
+        push({
+          tone: "success",
+          message: `ลบแผนก ${deleteTarget.name} เรียบร้อยแล้ว`,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      push({
+        tone: "danger",
+        message: "เกิดข้อผิดพลาดในการลบ",
+      });
+    } finally {
+      setDeleteTarget(null);
+      refreshData();
+    }
+  };
 
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
@@ -172,6 +264,10 @@ const Departments = () => {
           valA = a.sections.length;
           valB = b.sections.length;
           break;
+        case "people_count":
+          valA = a.people_count;
+          valB = b.people_count;
+          break;
         default:
           valA = a.dept_id;
           valB = b.dept_id;
@@ -186,7 +282,7 @@ const Departments = () => {
       return sortDirection === "asc" ? valA - valB : valB - valA;
     });
     return result;
-  }, [searchFilter, departmentFilter, sortDirection]);
+  }, [departments, searchFilter, departmentFilter, sortDirection, sortField]);
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
@@ -229,6 +325,10 @@ const Departments = () => {
                 placeholder="แผนก"
               />
               <Button
+                onClick={() => {
+                  setModalType("add-department");
+                  setModalOpen(true);
+                }}
                 size="md"
                 icon={<Icon icon="ic:baseline-plus" width="22" height="22" />}
               >
@@ -242,6 +342,7 @@ const Departments = () => {
                   setModalType("add-section"); //เปิด modal หลักแบบเดียวกับเพิ่มแผนก
                   setModalOpen(true); // เปิด modal หลัก
                 }}
+                className="w-[125px]"
               >
                 เพิ่มฝ่ายย่อย
               </Button>
@@ -251,8 +352,8 @@ const Departments = () => {
 
         <div className="w-full">
           <div
-            className="grid [grid-template-columns:150px_250px_1090px_80px]
-                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center gap-3"
+            className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px]
+                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center "
           >
             <div className="py-2 px-4 text-left flex items-center"></div>
             <div className="py-2 px-4 text-left flex items-center">
@@ -277,11 +378,28 @@ const Departments = () => {
               <button type="button" onClick={() => HandleSort("sections")}>
                 <Icon
                   icon={
-                    sortField === "dept_name"
+                    sortField === "sections"
                       ? sortDirection === "asc"
                         ? "bx:sort-down"
                         : "bx:sort-up"
                       : "bx:sort-down" //default icon
+                  }
+                  width="28"
+                  height="28"
+                  className="ml-1"
+                />
+              </button>
+            </div>
+            <div className="py-2 px-4 text-left flex items-center">
+              จำนวนคน
+              <button type="button" onClick={() => HandleSort("people_count")}>
+                <Icon
+                  icon={
+                    sortField === "people_count"
+                      ? sortDirection === "asc"
+                        ? "bx:sort-down"
+                        : "bx:sort-up"
+                      : "bx:sort-down"
                   }
                   width="28"
                   height="28"
@@ -297,17 +415,25 @@ const Departments = () => {
               onClick={() => toggleOpen(dep.dept_id)}
               className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
             >
-              <div className="grid [grid-template-columns:150px_250px_1090px_80px] mt-[30px] mb-[30px] items-center text-[16px] gap-3">
+              <div className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] mt-[30px] mb-[30px] items-center text-[16px] ">
                 {/* Dropdown Arrow */}
                 <div className="py-2 px-4 flex justify-center items-center hover:cursor-pointer">
                   <DropdownArrow isOpen={openDeptId.includes(dep.dept_id)} />
                 </div>
                 {/* ชื่อแผนก */}
-                <div className="py-2 px-4">{dep.dept_name}</div>
+                <div className="py-2 px-4 flex flex-col gap-2">
+                  {dep.dept_name}
+                </div>
                 {/* จำนวนฝ่ายย่อย */}
                 <div className="py-2 px-4">
                   <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
                     {dep.sections.length} ฝ่ายย่อย
+                  </span>
+                </div>
+                {/* จำนวนคนในแผนก */}
+                <div className="py-2 px-4">
+                  <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
+                    {dep.people_count} คน
                   </span>
                 </div>
                 {/* จัดการ */}
@@ -326,21 +452,27 @@ const Departments = () => {
                         setModalOpen(true);
                       }}
                     >
-                      <Icon
-                        icon="prime:pen-to-square"
-                        width="28"
-                        height="28"
-                      />
+                      <Icon icon="prime:pen-to-square" width="28" height="28" />
                     </button>
                     <button
+                      disabled={dep.people_count > 0}
                       type="submit"
-                      className="text-[#FF4D4F] hover:text-[#FF4D4F]"
+                      className={`text-[#FF4D4F]
+                                                    ${
+                                                      dep.people_count > 0
+                                                        ? "opacity-50 cursor-not-allowed"
+                                                        : "hover:text-[#FF4D4F]"
+                                                    }`}
                       title="ลบ"
+                      onClick={() =>
+                        setDeleteTarget({
+                          type: "department", // ระบุเป็น department
+                          id: dep.dept_id, // id ของ department
+                          name: dep.dept_name, // ชื่อ department
+                        })
+                      }
                     >
                       <Icon
-                        onClick={() =>
-                          alert(`Delete Department ${dep.dept_id}`)
-                        }
                         icon="solar:trash-bin-trash-outline"
                         width="28"
                         height="28"
@@ -354,10 +486,10 @@ const Departments = () => {
                 openDeptId.includes(dep.dept_id) && (
                   <div className="flex flex-col gap-5 mt-[30px] mb-[30px]">
                     <hr className="border-t border-gray-200 mx-[60px]" />
-                    {dep.sections.map((section, index) => (
+                    {dep.sections.map((section: any, index: any) => (
                       <div
                         key={index}
-                        className="grid [grid-template-columns:150px_250px_1090px_80px] h-[35px] items-center hover:bg-gray-50 text-[16px] gap-3"
+                        className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] h-[35px] items-center hover:bg-gray-50 text-[16px]"
                       >
                         {/* พื้นที่ว่าง */}
                         <div className="py-2 px-4"></div>
@@ -365,6 +497,12 @@ const Departments = () => {
                         <div className="py-2 px-4">{section.sec_name}</div>
                         {/* พื้นที่ว่าง */}
                         <div className="py-2 px-4"></div>
+                        {/* จำนวนคนในแผนก */}
+                        <div className="py-2 px-4">
+                          <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
+                            {section.people_count} คน
+                          </span>
+                        </div>
                         {/* จัดการ */}
                         <div>
                           <div className="py-2 px-4 flex items-center gap-3">
@@ -384,23 +522,34 @@ const Departments = () => {
                               }}
                             >
                               <Icon
-                                onClick={() =>
-                                  alert(`Edit Section ${section.sec_id}`)
-                                }
                                 icon="prime:pen-to-square"
                                 width="28"
                                 height="28"
                               />
                             </button>
                             <button
+                              style={{ cursor: "pointer" }}
+                              disabled={section.people_count > 0}
                               type="submit"
-                              className="text-[#FF4D4F] hover:text-[#FF4D4F]"
+                              className={`text-[#FF4D4F]
+                                                                        ${
+                                                                          section.people_count >
+                                                                          0
+                                                                            ? "opacity-50 cursor-not-allowed"
+                                                                            : "hover:text-[#FF4D4F]"
+                                                                        }`}
                               title="ลบ"
+                              onClick={() =>
+                                setDeleteTarget({
+                                  type: "section", // ระบุเป็น section
+                                  id: section.sec_id, // id ของ section
+                                  name: section.sec_name, // ชื่อฝ่ายย่อย
+                                  deptId: dep.dept_id, // id ของ department สำหรับอัปเดต state
+                                  deptName: dep.dept_name, // ชื่อแผนก สำหรับแสดงใน alert
+                                })
+                              }
                             >
                               <Icon
-                                onClick={() =>
-                                  alert(`Delete Section ${section.sec_id}`)
-                                }
                                 icon="solar:trash-bin-trash-outline"
                                 width="28"
                                 height="28"
@@ -511,6 +660,34 @@ const Departments = () => {
         initialData={selectedData}
         onSubmit={handleModalSubmit}
       />
+      {deleteTarget && (
+        <AlertDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+          className="border-[1px] border-[#858585] mgr-4 rounded-[42px] p-6 height-[400px]"
+          width={786}
+          onConfirm={handleDelete}
+          tone="danger"
+          title={`คุณแน่ใจหรือไม่ว่าต้องการลบ${deleteTarget.type === "section" ? "ฝ่ายย่อย" : "แผนก"}`}
+          description={
+            deleteTarget.type === "section" ? (
+              <>
+                {deleteTarget.name} ในแผนก {deleteTarget.deptName} จะถูกลบ
+                <br />
+                และการดำเนินการนี้ไม่สามารถกู้คืนได้
+              </>
+            ) : (
+              <>
+                แผนก {deleteTarget.name} และฝ่ายย่อยทั้งหมดจะถูกลบ
+                <br />
+                และการดำเนินการนี้ไม่สามารถกู้คืนได้
+              </>
+            )
+          }
+        />
+      )}
     </div>
   );
 };

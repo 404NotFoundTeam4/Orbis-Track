@@ -1,5 +1,5 @@
 services:
-  db:
+  database:
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -10,7 +10,7 @@ services:
     ports:
       - "4142:5432" # เปิดถ้าต้องเข้า psql จากข้างนอก, ไม่จำเป็นก็เอาออกได้
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdbdata:/var/lib/postgresql/data
       - ./docker/db-init:/docker-entrypoint-initdb.d:ro # มีสคริปต์ init/extension อยู่แล้ว
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -20,7 +20,7 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  redis:
+  caching:
     image: redis:7.4.5
     command: >
       sh -lc 'redis-server --appendonly yes --save 60 1000 --requirepass "$${REDIS_PASSWORD}"'
@@ -30,7 +30,7 @@ services:
     ports:
       - "4143:6379"
     volumes:
-      - redis_data:/data
+      - caching_data:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
@@ -39,59 +39,57 @@ services:
       start_period: 5s
     restart: unless-stopped
 
-  server:
+  backend:
     build:
       context: .
       dockerfile: server/Dockerfile
       target: prod
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
-      PORT:
-        ${PORT}
-        # DB (อย่าใช้ localhost ใช้ชื่อ service)
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_NAME: ${POSTGRES_DB}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DATABASE_URL: ${DATABASE_URL}
-
-      # Redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-404Redis}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      REDIS_URL: redis://default:${REDIS_PASSWORD:-404Redis}@${REDIS_HOST:-redis}:${REDIS_PORT:-6379}
-
-      PRISMA_SCHEMA_PATH: ./src/infrastructure/database/prisma/schema.prisma
       PRISMA_GENERATE: "false" # generate ตอน build แล้ว
       RUN_MIGRATIONS: "true" # ให้ entrypoint รัน Prisma
       PRISMA_STRATEGY: migrate-deploy # ใช้ migrations แบบ production
       START_CMD: "node dist/main.js" # รันไฟล์ build แล้ว
     depends_on:
-      db:
+      database:
         condition: service_healthy
-      redis:
+      caching:
         condition: service_healthy
     ports:
-      - "4141:4044"
+      - "4141:4041"
     restart: unless-stopped
 
-  app:
+  frontend:
     build:
       context: .
       dockerfile: app/dockerfile
       target: run # ← ใช้ stage run จาก app/dockerfile (serve dist)
       # ถ้าต้องการ bake ค่า API ตอน build (แนะนำ):
-      # args:
-      #   - VITE_API_BASE=https://api.yourdomain.com   # หรือ http://server:4044 ถ้าจะเข้าผ่าน overlay/proxy
-    # ถ้า serve ที่พอร์ต 4173 ตาม Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+    env_file:
+      - .env
     ports:
-      - "4140:4173"
+      - "4144:5173"
     depends_on:
-      - server
+      - backend
     restart: unless-stopped
     # โปรดักชันไม่ต้อง mount volumes
 
+  proxy:
+    image: nginx:1.27-alpine # ใช้ image Nginx (alpine-slim)
+    ports:
+      - "4140:80" # นี่คือ port เดียวที่จะเปิดสู่ภายนอก (คุณเปลี่ยนเป็น 4140:80 ก็ได้)
+    volumes:
+      # Mount config Nginx ที่เราจะสร้างขึ้น
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
 volumes:
-  pgdata:
-  redis_data:
+  pgdbdata:
+  caching_data:

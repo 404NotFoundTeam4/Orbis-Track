@@ -1,7 +1,10 @@
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
+
 import {
+  DeleteSectionPayload,
+  AddDepartmentsPayload,
   EditDepartmentPayload,
   EditSectionPayload,
   IdParamDto,
@@ -16,14 +19,12 @@ import {
  */
 async function getAllDepartment() {
   // ดึงข้อมูลแผนกทั้งหมด เลือกเฉพาะ id และชื่อ
-  const [departments] = await Promise.all([
-    prisma.departments.findMany({
-      select: {
-        dept_id: true,
-        dept_name: true,
-      },
-    }),
-  ]);
+  const departments = await prisma.departments.findMany({
+    select: {
+      dept_id: true,
+      dept_name: true,
+    },
+  });
 
   return {
     departments,
@@ -80,17 +81,20 @@ function isEnglishText(text: string): boolean {
  */
 async function editDepartment(
   params: IdParamDto,
-  payload: EditDepartmentPayload
+  payload: EditDepartmentPayload,
 ) {
   const { id } = params;
   const { department } = payload;
 
+  // clean text: ตัดคำว่า "แผนก" ออกจากชื่อที่ผู้ใช้กรอก
+  const cleanedName = department
+    .replaceAll(/^แผนก\s*/g, "") // ลบคำว่า "แผนก" ต้นประโยค
+    .trim(); // ตัดช่องว่างหัวท้าย
+
   // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
-  const newDept = department.includes("แผนก")
-    ? department // มี "แผนก" อยู่แล้ว ใช้ตามที่กรอกมา
-    : isEnglishText(department)
-      ? `แผนก ${department}` // ภาษาอังกฤษ เว้นวรรค
-      : `แผนก${department}`; // ภาษาไทย ไม่เว้นวรรค
+  const newDept = isEnglishText(cleanedName)
+    ? `แผนก ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+    : `แผนก${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
 
   await prisma.$transaction(async (tx) => {
     // ดึงข้อมูลแผนกเดิมเพื่อเอาชื่อเก่ามาใช้
@@ -145,7 +149,7 @@ async function editDepartment(
  */
 async function editSection(
   params: ParamEditSecSchema,
-  payload: EditSectionPayload
+  payload: EditSectionPayload,
 ) {
   const { deptId, secId } = params;
   const { section } = payload;
@@ -159,12 +163,16 @@ async function editSection(
   // ตรวจสอบว่าแผนกมีอยู่หรือไม่
   if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
 
+  // clean text: ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
+  const cleanedName = section
+    .replaceAll(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
+    .replaceAll(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
+    .trim(); // ตัดช่องว่างหัวท้าย
+
   // จัดรูปแบบชื่อส่วนงานให้มีชื่อแผนกและคำว่า "ฝ่ายย่อย"
-  const newSec = section.includes("ฝ่ายย่อย")
-    ? `${dept.dept_name} ${section}` // มี "ฝ่ายย่อย" อยู่แล้ว
-    : isEnglishText(section)
-      ? `${dept.dept_name} ฝ่ายย่อย ${section}` // ภาษาอังกฤษ เว้นวรรค
-      : `${dept.dept_name} ฝ่ายย่อย${section}`; // ภาษาไทย ไม่เว้นวรรค
+  const newSec = isEnglishText(cleanedName)
+    ? `${dept.dept_name} ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+    : `${dept.dept_name} ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
 
   await prisma.sections.update({
     where: { sec_id: secId },
@@ -196,13 +204,10 @@ async function addSection(deptId: number, section: string) {
   });
   if (!dept) throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
 
-  // ฟังก์ชันช่วยตรวจสอบว่าข้อความเป็นภาษาอังกฤษหรือไม่
-  const isEnglishText = (text: string) => /^[A-Za-z\s]+$/.test(text);
-
   // clean text: ตัดคำว่า "ฝ่าย" หรือ "ฝ่ายย่อย" ออกจากชื่อที่ผู้ใช้กรอก
   const cleanedName = section
-    .replace(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
-    .replace(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
+    .replaceAll(/^ฝ่ายย่อย\s*/g, "") // ลบคำว่า "ฝ่ายย่อย" ต้นประโยค
+    .replaceAll(/^ฝ่าย\s*/g, "") // ลบคำว่า "ฝ่าย" ต้นประโยค
     .trim(); // ตัดช่องว่างหัวท้าย
 
   // เพิ่มคำว่า "ฝ่ายย่อย" กลับเข้าไปตามรูปแบบที่ถูกต้อง
@@ -220,7 +225,7 @@ async function addSection(deptId: number, section: string) {
   if (existingSection)
     throw new HttpError(
       HttpStatus.CONFLICT,
-      "Section name already exists in this department"
+      "Section name already exists in this department",
     );
 
   // เพิ่มข้อมูลฝ่ายใหม่ลงในฐานข้อมูล
@@ -240,7 +245,6 @@ async function addSection(deptId: number, section: string) {
   return createdSection;
 }
 
-
 //    * Description: ดึงข้อมูลแผนก (Department) พร้อมข้อมูลฝ่ายย่อย (Section) ที่อยู่ภายใต้แต่ละแผนก
 //  * Input     : None - ไม่ต้องรับพารามิเตอร์ (ดึงทั้งหมด)
 //  * Output    : { deptsection: Array } - รายการแผนกแต่ละรายการ พร้อมข้อมูลฝ่ายย่อยภายใน
@@ -256,6 +260,13 @@ async function getDeptSection() {
     select: {
       dept_id: true,
       dept_name: true,
+      _count: {
+        select: {
+          users: {
+            where: { us_is_active: true },
+          },
+        },
+      },
       sections: {
         select: {
           sec_id: true,
@@ -263,20 +274,160 @@ async function getDeptSection() {
           sec_dept_id: true,
         },
       },
+      users: {
+        select: {
+          us_id: true,
+          us_dept_id: true,
+          us_sec_id: true,
+          us_is_active: true,
+        },
+      },
     },
   });
 
   // ตัดคำว่า "แผนก" และ "ฝ่ายย่อย" ออกจากชื่อ
   const cleanedDeptSection = deptsection.map((dept: any) => ({
-    ...dept,
+    dept_id: dept.dept_id,
     dept_name: dept.dept_name.replace(/แผนก/g, "").trim(), // เอา "แผนก" ออก
+    people_count: dept._count.users,
     sections: dept.sections.map((sec: any) => ({
-      ...sec,
+      sec_id: sec.sec_id,
       sec_name: sec.sec_name.replace(dept.dept_name, "").trim(),
+      sec_dept_id: sec.sec_dept_id,
+      // นับจำนวนจากการกรองเอาเฉพาะ user ที่อยู่ในแผนกนั้นๆ และอยู่ในฝ่ายย่อยนั้นๆ
+      people_count: dept.users.filter(
+        (u: any) =>
+          u.us_dept_id === dept.dept_id &&
+          u.us_sec_id === sec.sec_id &&
+          u.us_is_active,
+      ).length,
     })),
   }));
 
   return { deptsection: cleanedDeptSection };
+}
+
+/**
+ * Description: ลบฝ่ายย่อย (Section) ตามรหัสฝ่ายย่อย
+ * Input     : params { secId } - รหัสฝ่ายย่อย
+ * Output    : { message: string } - ข้อความแจ้งผลการลบ
+ * Logic     :
+ *   - ตรวจสอบว่าฝ่ายย่อยมีอยู่หรือไม่ ถ้าไม่เจอ → โยน 404
+ *   - ถ้ามีอยู่ → ลบฝ่ายย่อยจาก database
+ * Author    : Niyada Butchan(Da) 66160361
+ */
+async function deleteSection(params: DeleteSectionPayload) {
+  // ดึงค่า sec_id จาก object params
+  const sec_id = params.secId;
+
+  // ค้นหา section จากฐานข้อมูลด้วย sec_id
+  const section = await prisma.sections.findUnique({
+    where: { sec_id },
+    select: { sec_name: true },
+  });
+
+  if (!section) {
+    throw new HttpError(HttpStatus.NOT_FOUND, "Section Not Found");
+  }
+
+  //ถ้าพบลบข้อมูล section ออกจากฐานข้อมูล
+  await prisma.sections.delete({
+    where: { sec_id },
+  });
+  //ส่งผลลัพธ์กลับไปให้ controller
+  return { message: "Section deleted successfully" };
+}
+
+async function deleteDepartment(params: IdParamDto) {
+  // ดึงค่า dept_id จาก object params
+  const dept_id = params.id;
+
+  // ค้นหา department จากฐานข้อมูลด้วย sec_id
+  const dept = await prisma.departments.findUnique({
+    where: { dept_id },
+    select: { dept_name: true },
+  });
+
+  if (!dept) {
+    throw new HttpError(HttpStatus.NOT_FOUND, "Department Not Found");
+  }
+
+  await prisma.sections.deleteMany({
+    where: { sec_dept_id: dept_id },
+  });
+
+  //ถ้าพบลบข้อมูล department ออกจากฐานข้อมูล
+  await prisma.departments.delete({
+    where: { dept_id },
+  });
+
+  //ส่งผลลัพธ์กลับไปให้ controller
+  return { message: "Department deleted successfully" };
+}
+
+/**
+ * Description: ตรวจสอบว่าข้อความเป็นเฉพาะตัวอักษรหรือไม่
+ * Input     : text (string) - ข้อความที่ต้องการตรวจสอบ
+ * Output    : boolean - true ถ้าเป็นเฉพาะตัวอักษร, false ถ้าไม่ใช่
+ * Note      : ใช้ regex เพื่อตรวจสอบว่ามีเฉพาะตัวอักษร a-z, A-Z, ก-ฮ, ะ-์ และช่องว่างเท่านั้น
+ * Author    : Sutaphat Thahin (Yeen) 66160378
+ */
+function isTextOnly(text: string): boolean {
+  return /^[a-zA-Zก-ฮะ-์\s]+$/.test(text);
+}
+
+/**
+ * Description: เพิ่มแผนก (Departments)
+ * Input     : dept_name ชื่อแผนก
+ * Output    : data: { dept_id, dept_name, created_at, updated_at } - ข้อมูลแผนกที่เพิ่มเข้ามา
+ * Logic     :
+ *    - ตรวจสอบว่าชื่อแผนกเป็นข้อความเท่านั้น (ไม่มีตัวเลขหรือตัวอักษรพิเศษ)
+ *    - จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
+ *    - ตรวจสอบว่าชื่อแผนกไม่ซ้ำกับที่มีอยู่ในระบบ
+ *    - บันทึกแผนกใหม่ลงฐานข้อมูล
+ * Author    : Sutaphat Thahin (Yeen) 66160378
+ */
+async function addDepartments(payload: AddDepartmentsPayload) {
+  const { dept_name } = payload;
+
+  //ตรวจสอบว่าชื่อแผนกไม่เป็นตัวเลขหรือตัวอักษรพิเศษ
+  if (!isTextOnly(dept_name))
+    throw new Error("Departments should be text only");
+
+  // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
+  const newDept = dept_name.includes("แผนก") //ตรวจสอบว่าชื่อแผนกมีคำว่า "แผนก"
+    ? (() => {
+        // มีคำว่า "แผนก" อยู่แล้ว ให้จัดการช่องว่าง
+        const afterDept = dept_name.split("แผนก")[1] || ""; //แยกข้อความหลังคำว่า "แผนก" ถ้าไม่มีให้เป็นค่าว่าง
+        const trimmedAfter = afterDept.trim(); //ตัดช่องว่างหัวท้ายหลังคำว่า "แผนก"
+
+        return isEnglishText(trimmedAfter) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
+          ? `แผนก ${trimmedAfter}` //ภาษาอังกฤษ เว้นวรรค
+          : `แผนก${trimmedAfter}`; //ภาษาไทย ไม่เว้นวรรค
+      })()
+    : //ไม่มีคำว่า "แผนก"
+      isEnglishText(dept_name) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
+      ? `แผนก ${dept_name}`
+      : `แผนก${dept_name}`;
+
+  //ตรวจสอบแผนกว่ามีอยู่แล้วหรือไม่
+  const existingDept = await prisma.departments.findFirst({
+    where: {
+      dept_name: { equals: newDept, mode: "insensitive" }, //ชื่อแผนกที่มีอยู่ตรงกับชื่อแผนกที่กรอกเข้ามาใหม่ (ภาษาอังกฤษไม่สนตัวเล็กตัวใหญ่)
+    },
+  });
+
+  //ถ้ามีแผนกอยู่แล้ว
+  if (existingDept) throw new Error("Department name already exists");
+
+  //เพิ่มแผนก
+  return await prisma.departments.create({
+    data: {
+      dept_name: newDept,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
 }
 
 export const departmentService = {
@@ -286,4 +437,7 @@ export const departmentService = {
   editSection,
   addSection,
   getDeptSection,
+  deleteSection,
+  addDepartments,
+  deleteDepartment,
 };

@@ -8,7 +8,8 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // 1. ดึง Token ที่คุณเก็บไว้ (เช่น ใน localStorage)
-    const token = localStorage.getItem("token"); // <-- เปลี่ยน "accessToken" เป็น key ที่คุณใช้
+    const token =   localStorage.getItem("token") ||
+  sessionStorage.getItem("token");; // <-- เปลี่ยน "accessToken" เป็น key ที่คุณใช้
 
     // 2. ถ้ามี Token, ให้แนบไปใน Header
     if (token) {

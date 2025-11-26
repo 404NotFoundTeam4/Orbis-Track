@@ -5,25 +5,25 @@
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-import  { useState } from "react";
-import { Link ,useLocation } from "react-router-dom";
-import {verifyEmail} from "../hooks/verifyEmail.js"
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { verifyEmail } from "../hooks/verifyEmail.js"
 import { Icon } from "@iconify/react";
 export function Resetpassword() {
-  const {ResetPW} = verifyEmail();
+  const { ResetPW } = verifyEmail();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfrimPassword, setConfrimPassword] = useState(false);
-   const location = useLocation();
-  const email = location.state?.email || ""; 
+  const location = useLocation();
+  const email = location.state?.email || "";
   // ตรวจเงื่อนไขความปลอดภัย
   const validations = {
-    length: password.length >= 12 && password.length <= 16,
+    length: password.length >= 12,
     upper: /[A-Z]/.test(password),
     lower: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
-    special: /[!@#$%^&*()_\-+=<>?{}]/.test(password),
+    special:  /^(?=.*[!@#$%^&*()_\-+=<>?{}])\S+$/.test(password),
     noThai: !/[ก-๙]/.test(password),
   };
 
@@ -72,7 +72,7 @@ export function Resetpassword() {
       <div className="absolute bottom-20 left-3/5 top-5 w-[450px] h-[450px] bg-[#5292FF]/40 rounded-full blur-[200px]"></div>
 
       {/* ==== ส่วนหัวโลโก้ ==== */}
-      <div className="z-10 ml-[66px] mt-[67px] relative flex gap-[29px] items-center">
+      <div className="z-10 ml-[66px] mt-[27px] relative flex gap-[29px] items-center">
         <Icon
           icon="streamline-plump-color:wrench-circle-flat"
           width="96"
@@ -87,177 +87,179 @@ export function Resetpassword() {
       </div>
 
       {/* ==== กล่องฟอร์มอยู่กลางจอ ==== */}
-      <div className="flex flex-1 justify-center items-center mt-16">
-        <div className="">
-        
-          <Link
-            to="/login"
-            className="text-[#8C8C8C] text-sm mb-5 hover:underline flex gap-3 text-[24px] items-center cursor-pointer z-10"
-          >
-            <Icon
-              icon="weui:arrow-outlined"
-              width="20"
-              height="44"
-              className="rotate-180 mt-1"
-            />
-            <p className="text-[32px] ">กลับไปสู่หน้าเข้าสู่ระบบ</p>
-          </Link>
+      <div className="flex justify-center items-center mt-10  z-100 text-[28px]">
+        <div>
 
-          {/* Info box */}
-          <div className="border border-gray-300 bg-white/60 rounded-lg p-4 mb-6">
-            <p className="text-[32px] text-gray-700 mb-1">คำอธิบาย</p>
-            <p className="text-[32px] text-gray-600">
-              เพื่อความปลอดภัยของบัญชี
-              กรุณาตั้งรหัสผ่านใหม่ที่แตกต่างจากรหัสผ่านเดิม
-            </p>
-            <p className="mt-3 text-[32px] text-gray-500">
-              คำแนะนำเพิ่มเติม (Optional):
-            </p>
-            <ul className="text-[32px] text-gray-500 list-disc list-inside">
-              <li>
-                หลีกเลี่ยงการใช้ข้อมูลส่วนตัว เช่น วันเกิด หรือเบอร์โทรศัพท์
-              </li>
-              <li>ใช้รหัสผ่านที่ไม่ซ้ำกับระบบอื่น</li>
-              <li>จดรหัสผ่านไว้เป็นความลับ และไม่บอกผู้อื่น</li>
-            </ul>
-          </div>
 
-          {/* Input password */}
-          <div className="mb-5">
-            <label className="block text-gray-700 text-[32px] mb-1">
-              รหัสผ่านใหม่
-            </label>
-            <div className="relative flex items-center w-full h-[76px] rounded-full bg-white border border-[#A2A2A2] px-6">
-              <Icon
-                icon="solar:key-bold"
-                width="27"
-                height="27"
-                className="mr-3"
-              />
-
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder=" "
-                className="w-full focus:ring-sky-400 focus:outline-none text-[32px] h-full pr-[50px]"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-
-              {/* 👁 ปุ่มแสดงรหัส */}
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-6 text-gray-500  z-10 cursor-pointer"
-              >
-                <Icon
-                  icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
-                  width="32"
-                  height="32"
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* Validation rules */}
-          <div className="text-[32px] text-gray-600 mb-5">
-            <p className={`${ allValid && match?"text-[#73D13D]":"text-[#40A9FF]"} font-medium mb-2`}>
-              กรุณาเพิ่มอักขระที่จำเป็นทั้งหมดเพื่อสร้างรหัสผ่านที่ปลอดภัย
-            </p>
-            <ul className="space-y-1">
-              <li
-                className={
-                  validations.length ? "text-[#73D13D]" : "text-[#CDCDCD]"
-                }
-              >
-                • อักษรขั้นต่ำ 12 – 16 ตัวอักษร
-              </li>
-              <li
-                className={
-                  validations.upper ?"text-[#73D13D]" : "text-[#CDCDCD]"
-                }
-              >
-                • อักษรตัวใหญ่อย่างน้อย 1 ตัว
-              </li>
-              <li
-                className={
-                  validations.lower ? "text-[#73D13D]" : "text-[#CDCDCD]"
-                }
-              >
-                • อักษรตัวเล็กอย่างน้อย 1 ตัว
-              </li>
-              <li
-                className={
-                  validations.special ? "text-[#73D13D]" : "text-[#CDCDCD]"
-                }
-              >
-                • อักษรพิเศษอย่างน้อย 1 ตัว เช่น *()_-=+{}
-              </li>
-              <li
-                className={
-                  validations.number ? "text-[#73D13D]" : "text-[#CDCDCD]"
-                }
-              >
-                • ตัวเลขอย่างน้อย 1 ตัว
-              </li>
-              <li
-                className={
-                  validations.noThai ? "text-[#73D13D]" : "text-[#CDCDCD]"
-                }
-              >
-                • ห้ามมีการเว้นวรรค
-              </li>
-            </ul>
-          </div>
-
-          {/* Confirm password */}
-          <div className="mb-8">
-            <label className="block text-gray-700 text-[32px] mb-1 ">
-              ยืนยันรหัสผ่านใหม่
-            </label>
-             <div className="relative flex items-center w-full h-[76px] rounded-full bg-white border border-[#A2A2A2] px-6">
-              <Icon
-                icon="solar:key-bold"
-                width="27"
-                height="27"
-                className="mr-3"
-              />
-
-              <input
-                type={showConfrimPassword ? "text" : "password"}
-                placeholder=" "
-                className="w-full focus:ring-sky-400 focus:outline-none text-[32px] h-full pr-[50px]"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-              />
-
-              {/*  ปุ่มแสดงรหัส */}
-              <button
-                type="button"
-                onClick={() => setConfrimPassword(!showConfrimPassword)}
-                className="absolute right-6 text-gray-500  z-10 cursor-pointer"
-              >
-                <Icon
-                  icon={showConfrimPassword ? "mdi:eye-off" : "mdi:eye"}
-                  width="32"
-                  height="32"
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* Submit button */}
-          <div className="flex items-center justify-center">
-            <button
-              className={`w-[225px] h-[76px] py-2 rounded-full text-white font-bold text-[32px]  transition ${
-                allValid && match
-                  ? "bg-sky-500 hover:bg-sky-600"
-                  : "bg-gray-300 cursor-not-allowed"
-              }`}
-              disabled={!allValid || !match}
-              onClick={()=>ResetPW(email,password,confirm )}
+          <div className="border border-gray-200 rounded-[40px] px-18 py-7 bg-white ">
+            <Link
+              to="/login"
+              className="text-[#8C8C8C]  mb-5 hover:underline hover:text-[#40A9FF] flex gap-3  items-center cursor-pointer z-10"
             >
-              บันทึก
-            </button>
+              <Icon
+                icon="weui:arrow-outlined"
+                width="20"
+                height="44"
+                className="rotate-180 mt-1"
+              />
+              <p className=" ">กลับไปสู่หน้าเข้าสู่ระบบ</p>
+            </Link>
+
+            {/* Info box */}
+            <div className="border border-gray-300 bg-white/60 rounded-lg p-10 mb-6">
+              <p className=" text-gray-700 mb-1">คำอธิบาย</p>
+              <p className=" text-gray-600">
+                เพื่อความปลอดภัยของบัญชี
+                กรุณาตั้งรหัสผ่านใหม่ที่แตกต่างจากรหัสผ่านเดิม
+              </p>
+              <p className="mt-3  text-gray-500">
+                คำแนะนำเพิ่มเติม (Optional):
+              </p>
+              <ul className=" text-gray-500 list-disc list-inside">
+                <li>
+                  หลีกเลี่ยงการใช้ข้อมูลส่วนตัว เช่น วันเกิด หรือเบอร์โทรศัพท์
+                </li>
+                <li>ใช้รหัสผ่านที่ไม่ซ้ำกับระบบอื่น</li>
+                <li>จดรหัสผ่านไว้เป็นความลับ และไม่บอกผู้อื่น</li>
+              </ul>
+            </div>
+
+            {/* Input password */}
+            <div className="mb-5">
+              <label className="block text-gray-700  mb-1">
+                รหัสผ่านใหม่
+              </label>
+              <div className="relative flex items-center w-full h-[76px] rounded-full bg-white border border-[#A2A2A2] px-6">
+                <Icon
+                  icon="solar:key-bold"
+                  width="27"
+                  height="27"
+                  className="mr-3"
+                />
+
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder=" "
+                  className="w-full focus:ring-sky-400 focus:outline-none text-[32px] h-full pr-[50px]"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+
+                {/* 👁 ปุ่มแสดงรหัส */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-6 text-gray-500  z-10 cursor-pointer"
+                >
+                  <Icon
+                    icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                    width="32"
+                    height="32"
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Validation rules */}
+            <div className=" text-gray-600 mb-5 text-[28px]">
+              <p className={`${allValid && match ? "text-[#73D13D]" : "text-[#40A9FF]"} font-medium mb-2`}>
+                กรุณาเพิ่มอักขระที่จำเป็นทั้งหมดเพื่อสร้างรหัสผ่านที่ปลอดภัย
+              </p>
+              <ul className="space-y-1">
+                <li
+                  className={
+                    validations.length ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                  }
+                >
+                  • อักษรขั้นต่ำ 12 ขึ้นไป
+                </li>
+                <li
+                  className={
+                    validations.upper ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                  }
+                >
+                  • อักษรตัวใหญ่อย่างน้อย 1 ตัว
+                </li>
+                <li
+                  className={
+                    validations.lower ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                  }
+                >
+                  • อักษรตัวเล็กอย่างน้อย 1 ตัว
+                </li>
+                <li
+                  className={
+                    validations.special ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                  }
+                >
+                  • อักษรพิเศษอย่างน้อย 1 ตัว เช่น *()_-=+{ }
+                </li>
+                <li
+                  className={
+                    validations.number ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                  }
+                >
+                  • ตัวเลขอย่างน้อย 1 ตัว
+                </li>
+                <li
+                  className={
+                    validations.noThai ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                  }
+                >
+                  • ห้ามมีการเว้นวรรค
+                </li>
+              </ul>
+            </div>
+
+            {/* Confirm password */}
+            <div className="mb-8">
+              <label className="block text-gray-700  mb-1 ">
+                ยืนยันรหัสผ่านใหม่
+              </label>
+              <div className="relative flex items-center w-full h-[76px] rounded-full bg-white border border-[#A2A2A2] px-6">
+                <Icon
+                  icon="solar:key-bold"
+                  width="27"
+                  height="27"
+                  className="mr-3"
+                />
+
+                <input
+                  type={showConfrimPassword ? "text" : "password"}
+                  placeholder=" "
+                  className="w-full focus:ring-sky-400 focus:outline-none text-[32px] h-full pr-[50px]"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                />
+
+                {/*  ปุ่มแสดงรหัส */}
+                <button
+                  type="button"
+                  onClick={() => setConfrimPassword(!showConfrimPassword)}
+                  className="absolute right-6 text-gray-500  z-10 cursor-pointer"
+                >
+                  <Icon
+                    icon={showConfrimPassword ? "mdi:eye-off" : "mdi:eye"}
+                    width="32"
+                    height="32"
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Submit button */}
+            <div className="flex items-center justify-center">
+              <button
+                className={`w-[225px] h-[76px] py-2 rounded-full text-white font-bold text-[32px]  transition ${allValid && match
+                    ? "bg-sky-500 hover:bg-sky-600"
+                    : "bg-gray-300 cursor-not-allowed"
+                  }`}
+                disabled={!allValid || !match}
+                onClick={() => ResetPW(email, password, confirm)}
+              >
+                บันทึก
+              </button>
+            </div>
           </div>
         </div>
       </div>

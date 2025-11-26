@@ -170,16 +170,28 @@ export default function UserModal({
   };
 
   useEffect(() => {
-    const fetchNextCode = async () => {
+    const handleCodeChange = async () => {
+      
+      if (!formDataObject.us_role) return;
+
+      if (typeform === "edit" && user) {
+
+        if (formDataObject.us_role === user.us_role) {
+
+          setFormDataObject((prev) => ({
+            ...prev,
+            us_emp_code: user.us_emp_code, 
+          }));
+          return; 
+        }
+      }
+
       try {
-        // 2. ใช้ await ในนี้ได้เลย
         const res = await api.post("/accounts/next-employee-code", {
           role: formDataObject.us_role,
         });
 
         if (res.data?.success) {
-          // 3. (สำคัญ) เอาค่าที่ได้ไปใช้งาน (เช่น set state)
-          // สมมติว่าคุณต้องการตั้งค่านี้ในฟอร์ม
           setFormDataObject((prev) => ({
             ...prev,
             us_emp_code: res.data.data.us_emp_code,
@@ -190,9 +202,8 @@ export default function UserModal({
       }
     };
 
-    // 4. เรียกใช้ฟังก์ชัน
-    fetchNextCode();
-  }, [formDataObject.us_role]);
+    handleCodeChange();
+  }, [formDataObject.us_role, typeform, user]); // ✅ อย่าลืมเพิ่ม user ใน dependency
 
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -324,7 +335,15 @@ export default function UserModal({
 
     payload.us_password = generatePassword(12);
 
-    if (onSubmit) onSubmit(payload);
+    setIsAddAlertOpen(false);
+
+    if (onClose) onClose();
+
+    
+    if (onSubmit) {
+ 
+        onSubmit(payload); 
+    }
   };
 
   // preload user data เมื่อแก้ไข / ลบ

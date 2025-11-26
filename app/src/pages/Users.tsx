@@ -484,8 +484,8 @@ export const Users = () => {
           valB = `${b.us_firstname} ${b.us_lastname}`;
           break;
         case "us_role":
-          valA = a.us_role;
-          valB = b.us_role;
+          valA = roleTranslation[a.us_role];
+          valB = roleTranslation[b.us_role];
           break;
         case "us_dept_name":
           valA = a.us_dept_name;
@@ -561,7 +561,7 @@ export const Users = () => {
         <div className="flex items-center gap-[14px] mb-[21px]">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
-            ผู้ใช้งานทั้งหมด {users.length}
+            ผู้ใช้งานทั้งหมด {users.filter((u) => u.us_is_active).length}
           </div>
         </div>
 

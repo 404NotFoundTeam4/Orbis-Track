@@ -209,7 +209,7 @@ export const Users = () => {
           },
         },
       );
-      console.log("✅ PATCH Response:", res.data);
+      
       // จัดการ Response
       if (res.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
@@ -394,7 +394,7 @@ export const Users = () => {
       try {
         const res = await api.get("/accounts");
         const data = res.data;
-        console.log(res)
+     
         setSections(data.data.sections || []);
         setDepartments(data.data.departments || []);
         setusers(data.data.accountsWithDetails || []);

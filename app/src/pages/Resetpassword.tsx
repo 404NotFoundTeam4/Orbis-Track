@@ -23,8 +23,8 @@ export function Resetpassword() {
     upper: /[A-Z]/.test(password),
     lower: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
-    special:  /^(?=.*[!@#$%^&*()_\-+=<>?{}])\S+$/.test(password),
-    noThai: !/[ก-๙]/.test(password),
+    special:  /^(?=.*[!@#$%^&*()_\-+=<>?{}])/.test(password),
+    noSpace: !/\s/.test(password),
   };
 
   const allValid = Object.values(validations).every(Boolean);
@@ -203,7 +203,7 @@ export function Resetpassword() {
                 </li>
                 <li
                   className={
-                    validations.noThai ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                    validations.noSpace ? "text-[#73D13D]" : "text-[#CDCDCD]"
                   }
                 >
                   • ห้ามมีการเว้นวรรค

@@ -24,7 +24,7 @@ type ModalType =
 const Departments = () => {
   // เก็บข้อมูลแผนกทั้งหมด
   const [departments, setDepartments] = useState<GetDepartmentsWithSections[]>(
-    [],
+    []
   );
   const { push } = useToast();
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ const Departments = () => {
         await departmentService.getDepartmentsWithSections();
       setDepartments(departmentsData);
       setDepartmentFilter(
-        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" },
+        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
       );
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -83,21 +83,6 @@ const Departments = () => {
         : [...prev, id];
     });
   };
-  // ดึงข้อมูล api จาก backend
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     // เรียกใช้ API ดึงข้อมูลแผนกพร้อมฝ่ายย่อย
-  //     const departments = await departmentService.getDepartmentsWithSections();
-  //     console.log(departments);
-  //     // เก็บข้อมูลแผนก
-  //     setDepartments(departments);
-  //     // ตั้งค่า filter แผนกเริ่มต้นเป็น "ทั้งหมด"
-  //     setDepartmentFilter(
-  //       (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
-  //     );
-  //   };
-  //   fetchData();
-  // }, []);
 
   const handleModalSubmit = async (data: any) => {
     setLoading(true);
@@ -172,7 +157,7 @@ const Departments = () => {
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const HandleSort = (
-    field: keyof GetDepartmentsWithSections | "statusText",
+    field: keyof GetDepartmentsWithSections | "statusText"
   ) => {
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
@@ -412,12 +397,15 @@ const Departments = () => {
           {pageRows.map((dep) => (
             <div
               key={dep.dept_id}
-              onClick={() => toggleOpen(dep.dept_id)}
+              // onClick={() => toggleOpen(dep.dept_id)}
               className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
             >
               <div className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] mt-[30px] mb-[30px] items-center text-[16px] ">
                 {/* Dropdown Arrow */}
-                <div className="py-2 px-4 flex justify-center items-center hover:cursor-pointer">
+                <div
+                  className="py-2 px-4 flex justify-center items-center hover:cursor-pointer"
+                  onClick={() => toggleOpen(dep.dept_id)}
+                >
                   <DropdownArrow isOpen={openDeptId.includes(dep.dept_id)} />
                 </div>
                 {/* ชื่อแผนก */}
@@ -443,10 +431,11 @@ const Departments = () => {
                       type="submit"
                       className="text-[#1890FF] hover:text-[#1890FF]"
                       title="แก้ไข"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setModalType("edit-department");
                         setSelectedData({
-                          id: dep.dept_id,
+                          id: Number(dep.dept_id),
                           department: dep.dept_name,
                         });
                         setModalOpen(true);
@@ -464,13 +453,14 @@ const Departments = () => {
                                                         : "hover:text-[#FF4D4F]"
                                                     }`}
                       title="ลบ"
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setDeleteTarget({
                           type: "department", // ระบุเป็น department
-                          id: dep.dept_id, // id ของ department
+                          id: Number(dep.dept_id), // id ของ department
                           name: dep.dept_name, // ชื่อ department
-                        })
-                      }
+                        });
+                      }}
                     >
                       <Icon
                         icon="solar:trash-bin-trash-outline"
@@ -510,12 +500,13 @@ const Departments = () => {
                               type="submit"
                               className="text-[#1890FF] hover:text-[#1890FF]"
                               title="แก้ไข"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setModalType("edit-section");
                                 setSelectedData({
-                                  sectionId: section.sec_id,
+                                  sectionId: Number(section.sec_id),
                                   department: dep.dept_name,
-                                  departmentId: dep.dept_id,
+                                  departmentId: Number(dep.dept_id),
                                   section: section.sec_name,
                                 });
                                 setModalOpen(true);
@@ -539,15 +530,16 @@ const Departments = () => {
                                                                             : "hover:text-[#FF4D4F]"
                                                                         }`}
                               title="ลบ"
-                              onClick={() =>
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setDeleteTarget({
                                   type: "section", // ระบุเป็น section
-                                  id: section.sec_id, // id ของ section
+                                  id: Number(section.sec_id), // id ของ section
                                   name: section.sec_name, // ชื่อฝ่ายย่อย
-                                  deptId: dep.dept_id, // id ของ department สำหรับอัปเดต state
+                                  deptId: Number(dep.dept_id), // id ของ department สำหรับอัปเดต state
                                   deptName: dep.dept_name, // ชื่อแผนก สำหรับแสดงใน alert
-                                })
-                              }
+                                });
+                              }}
                             >
                               <Icon
                                 icon="solar:trash-bin-trash-outline"

@@ -484,8 +484,8 @@ export const Users = () => {
           valB = `${b.us_firstname} ${b.us_lastname}`;
           break;
         case "us_role":
-          valA = a.us_role;
-          valB = b.us_role;
+          valA = roleTranslation[a.us_role];
+          valB = roleTranslation[b.us_role];
           break;
         case "us_dept_name":
           valA = a.us_dept_name;

@@ -160,7 +160,7 @@ export class DepartmentController extends BaseController {
     await departmentService.deleteDepartment(params);
 
     //return response message
-    return { message: "Section deleted successfully" };
+    return { message: "Department deleted successfully" };
   }
 
   /**

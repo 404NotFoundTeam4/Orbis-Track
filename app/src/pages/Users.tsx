@@ -394,7 +394,7 @@ export const Users = () => {
       try {
         const res = await api.get("/accounts");
         const data = res.data;
-
+        console.log(res)
         setSections(data.data.sections || []);
         setDepartments(data.data.departments || []);
         setusers(data.data.accountsWithDetails || []);
@@ -558,7 +558,7 @@ export const Users = () => {
         </div>
 
         {/* ชื่อหน้า */}
-        <div className="flex items-center gap-[14px] mb-[21px]">
+        <div className="flex items-center gap-[14px] mb-[21px]   ">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             ผู้ใช้งานทั้งหมด {users.filter((u) => u.us_is_active).length}
@@ -603,10 +603,10 @@ export const Users = () => {
         </div>
 
         {/* ตาราง */}
-        <div className="w-[1655px]">
+        <div className="w-auto">
           {/* หัวตาราง */}
           <div
-            className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
+            className="grid grid-cols-[400px_130px_203px_230px_160px_150px_180px_81px]
               bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center">

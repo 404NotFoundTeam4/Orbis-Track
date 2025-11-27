@@ -24,7 +24,7 @@ export const verifyEmail = () => {
   const SetOtp = async (email, otp) => {
     const res = await VerifyOtp(email, otp);
     if (res.data.success) {
-      navigate("/resetpassword", { state: { email } });
+      navigate("/reset-password", { state: { email } });
     }
     return res.data.success;
   };

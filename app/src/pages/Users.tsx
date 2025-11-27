@@ -561,7 +561,7 @@ export const Users = () => {
         <div className="flex items-center gap-[14px] mb-[21px]">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
-            ผู้ใช้งานทั้งหมด {users.length}
+            ผู้ใช้งานทั้งหมด {users.filter((u) => u.us_is_active).length}
           </div>
         </div>
 

@@ -127,7 +127,7 @@ export function Otppassword() {
       </div>
 
       {/* ==== กล่องฟอร์มอยู่กลางจอ ==== */}
-      <div className="flex flex-1 justify-center items-center">
+      <div className="flex flex-1 justify-center items-center mt-10">
         <div
           className="z-10 bg-white backdrop-blur-lg bg-opacity-40 border-gray-200 
           shadow-[inset_-8px_0_15px_rgba(0,0,0,0.04)] rounded-[40px]

@@ -23,9 +23,9 @@ export const SocketEmitter = {
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
   // แจ้งเตือนตาม Role
-  toRole: (role: string, event: string, data: any) => {
+  toRole: (role: string, dept: number, sec: number, event: string, data: any) => {
     try {
-      getIO().to(`role_${role}`).emit(event, data);
+      getIO().to(`role_${role}_${dept}_${sec}`).emit(event, data);
     } catch (e) {
       console.error("Socket emit error:", e);
     }

@@ -6,6 +6,8 @@ declare module "socket.io" {
     user?: {
       sub: number;
       role: string;
+      dept: number | null;
+      sec: number | null;
     };
   }
 }

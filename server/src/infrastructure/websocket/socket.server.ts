@@ -25,7 +25,7 @@ export const initSocket = (httpServer: HttpServer) => {
     // Join Room อัตโนมัติ
     socket.join(`user_${user?.sub}`);
     if (user?.role) {
-      socket.join(`role_${user?.role}`);
+      socket.join(`role_${user?.role}_${user?.dept}_${user?.sec}`);
     }
 
     socket.on("disconnect", () => {

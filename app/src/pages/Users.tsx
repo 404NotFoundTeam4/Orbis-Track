@@ -209,7 +209,7 @@ export const Users = () => {
           },
         },
       );
-      console.log("✅ PATCH Response:", res.data);
+      
       // จัดการ Response
       if (res.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
@@ -394,7 +394,7 @@ export const Users = () => {
       try {
         const res = await api.get("/accounts");
         const data = res.data;
-
+     
         setSections(data.data.sections || []);
         setDepartments(data.data.departments || []);
         setusers(data.data.accountsWithDetails || []);
@@ -456,7 +456,8 @@ export const Users = () => {
           u.us_firstname,
           u.us_lastname,
           u.us_emp_code,
-          u.us_role,
+          roleTranslation[u.us_role] || "",
+          u.us_email,
           u.us_dept_name,
           u.us_sec_name,
           u.us_phone,
@@ -483,8 +484,8 @@ export const Users = () => {
           valB = `${b.us_firstname} ${b.us_lastname}`;
           break;
         case "us_role":
-          valA = a.us_role;
-          valB = b.us_role;
+          valA = roleTranslation[a.us_role];
+          valB = roleTranslation[b.us_role];
           break;
         case "us_dept_name":
           valA = a.us_dept_name;
@@ -557,10 +558,10 @@ export const Users = () => {
         </div>
 
         {/* ชื่อหน้า */}
-        <div className="flex items-center gap-[14px] mb-[21px]">
+        <div className="flex items-center gap-[14px] mb-[21px]   ">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
-            ผู้ใช้งานทั้งหมด {users.length}
+            ผู้ใช้งานทั้งหมด {users.filter((u) => u.us_is_active).length}
           </div>
         </div>
 
@@ -602,10 +603,10 @@ export const Users = () => {
         </div>
 
         {/* ตาราง */}
-        <div className="w-[1655px]">
+        <div className="w-auto">
           {/* หัวตาราง */}
           <div
-            className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
+            className="grid grid-cols-[400px_130px_203px_230px_160px_150px_180px_81px]
               bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center">

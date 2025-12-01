@@ -112,7 +112,7 @@ export function Otppassword() {
       <div className="absolute bottom-20 left-3/5 top-5 w-[450px] h-[450px] bg-[#5292FF]/40 rounded-full blur-[200px]"></div>
 
       {/* ==== ส่วนหัวโลโก้ ==== */}
-      <div className="z-10 ml-[66px] mt-[67px] relative flex gap-[29px] items-center">
+      <div className="z-10 ml-[66px] mt-[27px] relative flex gap-[29px] items-center">
         <Icon
           icon="streamline-plump-color:wrench-circle-flat"
           width="96"
@@ -127,17 +127,17 @@ export function Otppassword() {
       </div>
 
       {/* ==== กล่องฟอร์มอยู่กลางจอ ==== */}
-      <div className="flex flex-1 justify-center items-center">
+      <div className="flex flex-1 justify-center items-center mt-10">
         <div
-          className="z-10 backdrop-blur-lg bg-opacity-40 border-white/30 
-          shadow-[inset_-8px_0_15px_rgba(0,0,0,0.04)] rounded-[100px]
-          p-10 w-[844px] h-auto flex flex-col items-center justify-center border-2"
+          className="z-10 bg-white backdrop-blur-lg bg-opacity-40 border-gray-200 
+          shadow-[inset_-8px_0_15px_rgba(0,0,0,0.04)] rounded-[40px]
+          py-20 px-40 w-auto h-auto flex flex-col items-center justify-center border-2"
         >
           <Icon
             icon="tabler:circle-key-filled"
-            width="114"
-            height="114"
-            className="text-[#40A9FF] pb-4"
+            width="150"
+            height="150"
+            className="text-[#40A9FF] pb-4 "
           />
           <h2 className="text-2xl font-bold text-[64px] text-sky-500 pb-4">
             ลืมรหัสผ่าน ?
@@ -203,7 +203,7 @@ export function Otppassword() {
               type="button"
               onClick={() => Sumbit_Otp()}
               className="text-[32px] bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-full 
-                my-[42px] w-[596px] h-[76px]"
+                my-8 w-[596px] h-[76px]"
             >
               ยืนยัน
             </button>
@@ -211,8 +211,8 @@ export function Otppassword() {
             {/* ปุ่มกลับ */}
             <a
               href="/login"
-              className="mt-4 text-gray-500 hover:text-sky-500 transition flex items-center justify-center 
-                gap-1 mx-auto text-[32px] py-[15px] w-[596px] h-[76px]"
+              className="mt-2 text-gray-500 hover:text-sky-500 transition flex items-center justify-center 
+                gap-1 mx-auto text-[32px] py-[12px] w-[596px] h-[76px]"
             >
               <span>←</span> กลับไปหน้าเข้าสู่ระบบ
             </a>

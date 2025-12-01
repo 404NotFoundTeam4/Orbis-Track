@@ -104,7 +104,7 @@ export const welcomeTemplate = (data: WelcomeTemplateData): string => {
                 <div class="button-box">
                     <a href="${resetPasswordUrl}" class="button">ตั้งรหัสผ่าน</a>
                     <p style="color: #888; font-size: 13px; margin: 15px 0 0 0;">
-                      ลิงก์นี้จะหมดอายุภายใน ${expiryHours} ชั่วโมง
+                      ลิงก์นี้จะหมดอายุภายใน ${Math.floor(Number(expiryHours)/ 86400)} วัน
                     </p>
                 </div>
 

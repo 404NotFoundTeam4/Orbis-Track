@@ -22,7 +22,7 @@ function App() {
           {/* Public Route */}
           <Route path="/login" element={<Login />} />
           <Route path="/otp" element={<Otppassword />} />
-          <Route path="/resetpassword" element={<Resetpassword />} />
+          <Route path="/reset-password" element={<Resetpassword />} />
           <Route path="/" element={<Login />} />
 
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}

@@ -170,16 +170,28 @@ export default function UserModal({
   };
 
   useEffect(() => {
-    const fetchNextCode = async () => {
+    const handleCodeChange = async () => {
+      
+      if (!formDataObject.us_role) return;
+
+      if (typeform === "edit" && user) {
+
+        if (formDataObject.us_role === user.us_role) {
+
+          setFormDataObject((prev) => ({
+            ...prev,
+            us_emp_code: user.us_emp_code, 
+          }));
+          return; 
+        }
+      }
+
       try {
-        // 2. ใช้ await ในนี้ได้เลย
         const res = await api.post("/accounts/next-employee-code", {
           role: formDataObject.us_role,
         });
 
         if (res.data?.success) {
-          // 3. (สำคัญ) เอาค่าที่ได้ไปใช้งาน (เช่น set state)
-          // สมมติว่าคุณต้องการตั้งค่านี้ในฟอร์ม
           setFormDataObject((prev) => ({
             ...prev,
             us_emp_code: res.data.data.us_emp_code,
@@ -190,9 +202,8 @@ export default function UserModal({
       }
     };
 
-    // 4. เรียกใช้ฟังก์ชัน
-    fetchNextCode();
-  }, [formDataObject.us_role]);
+    handleCodeChange();
+  }, [formDataObject.us_role, typeform, user]); // ✅ อย่าลืมเพิ่ม user ใน dependency
 
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -324,7 +335,15 @@ export default function UserModal({
 
     payload.us_password = generatePassword(12);
 
-    if (onSubmit) onSubmit(payload);
+    setIsAddAlertOpen(false);
+
+    if (onClose) onClose();
+
+    
+    if (onSubmit) {
+ 
+        onSubmit(payload); 
+    }
   };
 
   // preload user data เมื่อแก้ไข / ลบ
@@ -400,7 +419,7 @@ export default function UserModal({
 
   /**
    * Description: (Handler) จัดการการอัปโหลดไฟล์รูปภาพ Avatar
-   *             สร้าง URL (blob) สำหรับ Preview และเก็บ File object ไว้ใน state
+   * สร้าง URL (blob) สำหรับ Preview และเก็บ File object ไว้ใน state
    * Input: (fileChangeEvent: React.ChangeEvent<...>) Event จาก <input type="file">
    * Output: - (void)
    * Author:Worrawat Namwat (Wave) 66160372
@@ -419,8 +438,8 @@ export default function UserModal({
 
   /**
    * Description: (Handler) ฟังก์ชันหลักเมื่อคลิกปุ่ม "บันทึก" หรือ "ปิดการใช้งาน"
-   *             - ถ้าเป็น 'edit' จะเปิด Dialog ยืนยัน (isEditAlertOpen)
-   *             - ถ้าเป็น 'add'/'delete' จะเรียก onSubmit ทันที
+   * - ถ้าเป็น 'edit' จะเปิด Dialog ยืนยัน (isEditAlertOpen)
+   * - ถ้าเป็น 'add'/'delete' จะเรียก onSubmit ทันที
    * Input: -
    * Output: - (void)
    * Author:Worrawat Namwat (Wave) 66160372
@@ -515,7 +534,7 @@ export default function UserModal({
   }, [departmentsList]);
 
   // (Section Options) - กรองก่อนแล้วค่อยแปลง
-  //  ใช้ useMemo กรอง 'sectionsList' ให้เหลือเฉพาะที่ตรงกับ 'us_dept_id' ที่เลือก
+  // ใช้ useMemo กรอง 'sectionsList' ให้เหลือเฉพาะที่ตรงกับ 'us_dept_id' ที่เลือก
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
     return sectionsList?.filter(
@@ -523,7 +542,7 @@ export default function UserModal({
     );
   }, [formDataObject.us_dept_id, sectionsList]);
 
-  //  ใช้ useMemo แปลง 'filteredSectionsList' ให้ DropDown ใช้ได้
+  // ใช้ useMemo แปลง 'filteredSectionsList' ให้ DropDown ใช้ได้
   const sectionOptions = useMemo(() => {
     return filteredSections.map((sec) => ({
       id: sec.sec_id,

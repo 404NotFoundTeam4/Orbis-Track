@@ -85,6 +85,9 @@ async function editDepartment(
 ) {
   const { id } = params;
   const { department } = payload;
+  
+  if (!isTextOnly(department))
+    throw new Error("Departments should be text only");
 
   // clean text: ตัดคำว่า "แผนก" ออกจากชื่อที่ผู้ใช้กรอก
   const cleanedName = department
@@ -109,6 +112,16 @@ async function editDepartment(
 
     const oldDeptName = oldDepartment.dept_name;
 
+    //ตรวจสอบแผนกว่ามีอยู่แล้วหรือไม่
+    const existingDept = await prisma.departments.findFirst({
+      where: {
+        dept_name: { equals: newDept, mode: "insensitive" }, //ชื่อแผนกที่มีอยู่ตรงกับชื่อแผนกที่กรอกเข้ามาใหม่ (ภาษาอังกฤษไม่สนตัวเล็กตัวใหญ่)
+      },
+    });
+  
+    //ถ้ามีแผนกอยู่แล้ว
+    if (existingDept) throw new Error("Department name already exists");
+    
     // อัพเดตชื่อแผนกหลัก
     await tx.departments.update({
       where: { dept_id: id },
@@ -153,6 +166,9 @@ async function editSection(
 ) {
   const { deptId, secId } = params;
   const { section } = payload;
+  
+  if (!isTextOnly(section))
+    throw new Error("Departments should be text only");
 
   // ดึงชื่อแผนกจาก database
   const dept = await prisma.departments.findUnique({
@@ -173,6 +189,16 @@ async function editSection(
   const newSec = isEnglishText(cleanedName)
     ? `${dept.dept_name} ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
     : `${dept.dept_name} ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
+  
+  //ตรวจสอบแผนกว่ามีอยู่แล้วหรือไม่
+  const existingDept = await prisma.sections.findFirst({
+    where: {
+      sec_name: { equals: newSec, mode: "insensitive" }, //ชื่อแผนกที่มีอยู่ตรงกับชื่อแผนกที่กรอกเข้ามาใหม่ (ภาษาอังกฤษไม่สนตัวเล็กตัวใหญ่)
+    },
+  });
+
+  //ถ้ามีแผนกอยู่แล้ว
+  if (existingDept) throw new Error("Department name already exists");
 
   await prisma.sections.update({
     where: { sec_id: secId },

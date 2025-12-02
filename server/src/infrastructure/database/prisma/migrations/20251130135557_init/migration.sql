@@ -263,6 +263,11 @@ CREATE TABLE "borrow_return_ticket_stages" (
     "brts_status" "BRTS_STATUS" NOT NULL,
     "brts_name" VARCHAR(191) NOT NULL,
     "brts_step_approve" INTEGER NOT NULL,
+    "brts_role" "US_ROLE" NOT NULL,
+    "brts_dept_id" INTEGER,
+    "brts_sec_id" INTEGER,
+    "brts_dept_name" VARCHAR(200),
+    "brts_sec_name" VARCHAR(200),
     "brts_brt_id" INTEGER NOT NULL,
     "brts_us_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
@@ -297,7 +302,7 @@ CREATE TABLE "ticket_issues" (
     "ti_result" "TI_RESULT" NOT NULL,
     "ti_damaged_reason" VARCHAR(255),
     "ti_resolved_note" TEXT,
-    "recive_at" TIMESTAMPTZ(6),
+    "receive_at" TIMESTAMPTZ(6),
     "success_at" TIMESTAMPTZ(6),
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -516,6 +521,9 @@ CREATE INDEX "idx_brts_brt_step" ON "borrow_return_ticket_stages"("brts_id", "br
 CREATE INDEX "idx_brts_status" ON "borrow_return_ticket_stages"("brts_status");
 
 -- CreateIndex
+CREATE INDEX "idx_brts_pending_lookup" ON "borrow_return_ticket_stages"("brts_status", "brts_role", "brts_dept_id", "brts_sec_id");
+
+-- CreateIndex
 CREATE INDEX "idx_ticket_device_brt" ON "ticket_devices"("td_brt_id");
 
 -- CreateIndex
@@ -646,6 +654,12 @@ ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_s
 
 -- AddForeignKey
 ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_stages_brts_us_id_fkey" FOREIGN KEY ("brts_us_id") REFERENCES "users"("us_id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_stages_brts_dept_id_fkey" FOREIGN KEY ("brts_dept_id") REFERENCES "departments"("dept_id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_stages_brts_sec_id_fkey" FOREIGN KEY ("brts_sec_id") REFERENCES "sections"("sec_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ticket_devices" ADD CONSTRAINT "ticket_devices_td_brt_id_fkey" FOREIGN KEY ("td_brt_id") REFERENCES "borrow_return_tickets"("brt_id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -7,6 +7,7 @@ interface User {
   us_username?: string;
   us_firstname?: string;
   us_lastname?: string;
+  us_phone?: string;
   us_role?: string;
 }
 

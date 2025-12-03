@@ -26,7 +26,11 @@ export function App(): Express {
   const __dirname = path.dirname(__filename);
   app.set("trust proxy", 1);
   app.use(httpLogger);
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
   app.use(
     cors({
       origin: [
@@ -49,7 +53,7 @@ export function App(): Express {
 
   const uploadsPath = path.join(__dirname, "..", "uploads");
   // ให้บริการไฟล์ static จากโฟลเดอร์ 'public' ที่อยู่นอก 'src'
-  app.use("/uploads", express.static(uploadsPath));
+  app.use("/api/v1/uploads", express.static(uploadsPath));
   app.use(
     "/api/v1",
     rateLimit({

@@ -171,35 +171,32 @@ export default function UserModal({
 
   useEffect(() => {
     const handleCodeChange = async () => {
-      
       if (!formDataObject.us_role) return;
 
       if (typeform === "edit" && user) {
-
         if (formDataObject.us_role === user.us_role) {
-
           setFormDataObject((prev) => ({
             ...prev,
-            us_emp_code: user.us_emp_code, 
+            us_emp_code: user.us_emp_code,
           }));
-          return; 
+          return;
         }
       }
 
-      try {
-        const res = await api.post("/accounts/next-employee-code", {
-          role: formDataObject.us_role,
-        });
+      // try {
+      //   const res = await api.post("/accounts/next-employee-code", {
+      //     role: formDataObject.us_role,
+      //   });
 
-        if (res.data?.success) {
-          setFormDataObject((prev) => ({
-            ...prev,
-            us_emp_code: res.data.data.us_emp_code,
-          }));
-        }
-      } catch (error) {
-        console.error("Failed to fetch next code:", error);
-      }
+      //   if (res.data?.success) {
+      //     setFormDataObject((prev) => ({
+      //       ...prev,
+      //       us_emp_code: res.data.data.us_emp_code,
+      //     }));
+      //   }
+      // } catch (error) {
+      //   console.error("Failed to fetch next code:", error);
+      // }
     };
 
     handleCodeChange();
@@ -335,14 +332,18 @@ export default function UserModal({
 
     payload.us_password = generatePassword(12);
 
+    if (newImageFile) {
+      payload.us_images = newImageFile;
+    } else {
+      payload.us_images = null;
+    }
+
     setIsAddAlertOpen(false);
 
     if (onClose) onClose();
 
-    
     if (onSubmit) {
- 
-        onSubmit(payload); 
+      onSubmit(payload);
     }
   };
 
@@ -714,10 +715,9 @@ export default function UserModal({
                     placeholder="รหัสพนักงานของผู้ใช้งาน"
                     value={formDataObject.us_emp_code}
                     onChange={handleChange}
-                    disabled={true}
                     readOnly={isDelete}
                     className={
-                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black opacity-50 cursor-not-allowed placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
+                      "w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black  placeholder:text-[#CDCDCD] border-[#a2a2a2] " +
                       (isDelete ? DISABLED_CLS : "")
                     }
                   />

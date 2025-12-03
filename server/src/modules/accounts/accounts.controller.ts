@@ -76,6 +76,8 @@ export class AccountsController extends BaseController {
   ): Promise<BaseResponse<CreateAccountsSchema>> {
     // ถ้ามีไฟล์ที่อัปโหลดเข้ามาให้เก็บชื่อไฟล์
     const images = req.file ? req.file.path : undefined;
+    
+    console.log('image: ', images)
     // ตรวจสอบและ validate ข้อมูลที่ส่งมา
     const payload = createAccountsPayload.parse(req.body);
     // เรียกใช้งาน service เพื่อบันทึกข้อมูลลงฐานข้อมูล

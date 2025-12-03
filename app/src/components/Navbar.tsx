@@ -47,12 +47,15 @@ export const Navbar = () => {
           <div className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full mr-1 border-2 border-black">
             <FontAwesomeIcon icon={faBell} className="text-[22px] text-black" />
           </div>
-          <div className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full border-2 border-black">
+          <Link
+            to="/list-devices/cart"
+            className="w-[40px] h-[40px] bg-white flex justify-center items-center rounded-full border-2 border-black cursor-pointer"
+          >
             <FontAwesomeIcon
               icon={faCartShopping}
               className="text-[22px] text-black"
             />
-          </div>
+          </Link>
 
           <div className="flex gap-1 items-center bg-white rounded-full border-2 border-black w-auto h-[46px] p-4 ">
             <div className=" text-left text-black pr-8">

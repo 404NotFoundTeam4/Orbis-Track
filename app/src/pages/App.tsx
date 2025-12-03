@@ -13,6 +13,8 @@ import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
+import { Cart } from "./Cart";
+import EditCart from "./EditCart";
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
                 path="/administrator/account-management"
                 element={<Users />}
               />
+              <Route path="/list-devices/cart" element={<Cart />}/>
+              <Route path="/list-devices/cart/edit" element={<EditCart />}/>
               <Route path="/users" element={<Users />} />
               <Route
                 path="/administrator/departments-management"

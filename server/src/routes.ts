@@ -7,6 +7,7 @@ import { departmentRouter } from "./modules/departments/index.js";
 import { roleRouter } from "./modules/roles/index.js";
 import { UserRole } from "./core/roles.enum.js";
 import { requireRole } from "./middlewares/role.middleware.js";
+import { cartsRouter } from "./modules/cart/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1
@@ -32,6 +33,8 @@ export function routes(app: Express) {
   api.use("/accounts", authMiddleware, requireRole([UserRole.ADMIN]), accountsRouter);
 
   api.use("/roles", authMiddleware, roleRouter);
+
+  api.use("/borrow/cart", authMiddleware, cartsRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

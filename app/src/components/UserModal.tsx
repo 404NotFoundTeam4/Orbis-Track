@@ -12,6 +12,7 @@ import DropDown from "./DropDown.js";
 import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 import UsersService from "../services/UsersService.js";
+import getImageUrl from "../services/GetImage.js";
 
 type IDepartment = {
   dept_id: number;
@@ -212,32 +213,14 @@ export default function UserModal({
    * Author:Worrawat Namwat (Wave) 66160372
    */
   const handleConfirmEdit = async () => {
-    // ฟังก์ชันที่ทำงานหลังจากกดยืนยัน 'แก้ไข' ใน Dialog
-    const formDataPayload = new FormData();
+    const payload: any = { ...formDataObject };
 
-    // เพิ่มข้อมูล Text fields ลงใน FormData
-    formDataPayload.append("us_firstname", formDataObject.us_firstname);
-    formDataPayload.append("us_lastname", formDataObject.us_lastname);
-    formDataPayload.append("us_username", formDataObject.us_username);
-    formDataPayload.append("us_email", formDataObject.us_email);
-    formDataPayload.append("us_phone", formDataObject.us_phone);
-    formDataPayload.append("us_role", formDataObject.us_role);
-    formDataPayload.append("us_dept_id", String(formDataObject.us_dept_id));
-    formDataPayload.append("us_sec_id", String(formDataObject.us_sec_id));
-    formDataPayload.append("us_is_active", String(formDataObject.us_is_active));
-    formDataPayload.append("us_emp_code", formDataObject.us_emp_code); // Author:Worrawat Namwat (Wave) 66160372
-    // Logic การจัดการรูปภาพตอน 'แก้ไข' (ส่วนที่อาจทำให้สับสน)
     if (newImageFile) {
-      //ถ้ามีไฟล์ใหม่ (อัปโหลดใหม่) ให้ใช้ไฟล์ใหม่
-      formDataPayload.append("us_images", newImageFile);
-    } else if (formDataObject.us_images && !newImageFile) {
-      //ถ้าไม่มีไฟล์ใหม่ แต่มี URL รูปภาพ (คือไม่ได้เปลี่ยนรูป) ให้ส่ง URL เดิมไป (เพื่อให้ backend รู้ว่ายังใช้รูปเดิม)
-      if (!formDataObject.us_images.startsWith("blob:")) {
-        //เช็คว่าไม่ใช่ URL ชั่วคราว (blob:) ที่สร้างจากการ preview
-        formDataPayload.append("us_images", formDataObject.us_images);
-      }
+      payload.us_images = newImageFile;
     }
-    if (onSubmit) onSubmit(formDataObject);
+
+    if (onSubmit) onSubmit(payload);
+
     // return;
     // try {
     //   //ส่ง Request (PATCH)
@@ -601,7 +584,7 @@ export default function UserModal({
             className="
               justify-self-end grid place-items-center
               w-8 h-8 rounded-full bg-white
-              border-2 border-gray-400 text-gray-500     /* เริ่มต้นเป็นเทา */
+              border-2 border-black  /* เริ่มต้นเป็นเทา */
               hover:border-black hover:text-black        /* hover เป็นดำ */
               hover:bg-gray-50 active:scale-[0.98]
               transition-colors duration-150
@@ -636,7 +619,7 @@ export default function UserModal({
           <div className="w-28 h-28 rounded-full border border-[#a2a2a2] flex items-center justify-center overflow-hidden bg-gray-50">
             {formDataObject.us_images ? (
               <img
-                src={formDataObject.us_images}
+                src={getImageUrl(formDataObject.us_images)}
                 alt="avatar"
                 className="w-full h-full object-cover"
               />

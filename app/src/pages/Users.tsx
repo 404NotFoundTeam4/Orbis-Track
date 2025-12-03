@@ -168,90 +168,70 @@ export const Users = () => {
     setSelectedUser(null);
   };
   const handleSaveUser = async (updatedData: Partial<User>) => {
-    console.log(updatedData);
-    // 1. ตรวจสอบ us_id
     if (!updatedData.us_id) {
       console.error("Cannot save user: missing us_id for update");
       return;
     }
-    const {
-      us_emp_code,
-      us_firstname,
-      us_lastname,
-      us_username,
-      us_email,
-      us_phone,
-      us_images,
-      us_role,
-      us_dept_id,
-      us_sec_id,
-    } = updatedData;
-    const updateNewData = {
-      us_emp_code,
-      us_firstname,
-      us_lastname,
-      us_username,
-      us_email,
-      us_phone,
-      us_images,
-      us_role,
-      us_dept_id,
-      us_sec_id,
-    };
 
     try {
-      //ส่ง Request (PATCH)
-      const res = await api.patch(
-        `/accounts/${updatedData.us_id}`,
-        updateNewData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      const formData = new FormData();
 
-      // จัดการ Response
+      (Object.keys(updatedData) as (keyof User)[]).forEach((key) => {
+        const value = updatedData[key];
+
+        if (value !== undefined && value !== null) {
+          if (key === "us_images") {
+            if (value instanceof File) {
+              formData.append(key, value);
+            }
+            return;
+          }
+
+          // key อื่นๆ (ชื่อ, นามสกุล) ส่งปกติ
+          formData.append(key, value as any);
+        }
+      });
+      //ส่ง Request (PATCH)
+      const res = await api.patch(`/accounts/${updatedData.us_id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       if (res.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+
+        // อัปเดต State ให้รูปเปลี่ยนทันทีโดยไม่ต้องรีเฟรช
         setusers((prevUsers) => {
           return prevUsers.map((user) => {
             if (user.us_id === updatedData.us_id) {
-              // ผสานข้อมูลที่แก้ไขเข้ามา
               const mergedUser = { ...user, ...updatedData };
 
-              // หาชื่อแผนกและฝ่ายย่อยใหม่
-              const dept = departments.find(
-                (d) => d.dept_id === mergedUser.us_dept_id,
-              );
-              const sec = sections.find(
-                (s) => s.sec_id === mergedUser.us_sec_id,
-              );
-
-              // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
-              const newDeptName = dept ? dept.dept_name : user.us_dept_name;
-              const newSecName = sec
-                ? sec.sec_name
-                : updatedData.us_sec_id === 0 || !updatedData.us_sec_id
-                  ? "-"
-                  : user.us_sec_name;
+              // Logic โชว์รูป Preview ทันที
+              let newImage = user.us_images;
+              if (updatedData.us_images instanceof File) {
+                newImage = URL.createObjectURL(updatedData.us_images);
+              }
 
               return {
                 ...mergedUser,
-                us_dept_name: newDeptName,
-                us_sec_name: newSecName,
+                // ... update logic อื่นๆ ...
+                us_dept_name:
+                  departments.find((d) => d.dept_id === mergedUser.us_dept_id)
+                    ?.dept_name || user.us_dept_name,
+                us_sec_name:
+                  sections.find((s) => s.sec_id === mergedUser.us_sec_id)
+                    ?.sec_name ||
+                  (mergedUser.us_sec_id ? user.us_sec_name : "-"),
+                us_images: newImage,
               };
             }
             return user;
           });
         });
-        return;
+      } else {
+        toast.push({ message: "เกิดข้อผิดพลาด", tone: "danger" });
       }
-
-      toast.push({
-        message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
-        tone: "danger",
-      });
     } catch (err: any) {
       console.error("❌ Error (catch):", err);
 

@@ -4,7 +4,10 @@ const getImageUrl = (filename: string | null | undefined) => {
   if (!filename || filename === "") {
     return "/default-profile.png";
   }
-  if (filename.startsWith("blob:") || filename.startsWith("http"))
+  if (
+    (typeof filename === "string" && filename.startsWith("blob:")) ||
+    filename.startsWith("http")
+  )
     return filename;
 
   return `${BASE_URL}/${filename}`;

@@ -9,29 +9,33 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { verifyEmail } from "../hooks/verifyEmail.js"
 export function Otppassword() {
-  const {GetOtp, SetOtp } = verifyEmail();
+  const { GetOtp, SetOtp } = verifyEmail();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [errorOtp, setErrorOtp] = useState(false)
   const [errorEmail, setErrorEmail] = useState(false)
   const [timer, setTimer] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const HandleGetOtp = async () => {
     // เคลียร์ error ก่อน
+      setIsLoading(true);   
     setErrorEmail(false);
     setErrorOtp(false);
 
     // validate email
     if (!email.trim()) {
       setErrorEmail(true);
+      setIsLoading(false); 
       return;
     }
 
     try {
       const res = await GetOtp(email)
       setTimer(60);
+       setIsLoading(false);   
       setIsCounting(true);
-
       const countdown = setInterval(() => {
         setTimer((prev) => {
           if (prev <= 1) {
@@ -46,6 +50,7 @@ export function Otppassword() {
       console.error(err);
       setErrorEmail(true);
     }
+     setIsLoading(false);
   };
   const Sumbit_Otp = async () => {
     setErrorEmail(false)
@@ -112,111 +117,128 @@ export function Otppassword() {
       <div className="absolute bottom-20 left-3/5 top-5 w-[450px] h-[450px] bg-[#5292FF]/40 rounded-full blur-[200px]"></div>
 
       {/* ==== ส่วนหัวโลโก้ ==== */}
-      <div className="z-10 ml-[66px] mt-[27px] relative flex gap-[29px] items-center">
+      <div className="z-10 ml-[66px] mt-[67px] relative flex gap-[29px] items-center">
         <Icon
           icon="streamline-plump-color:wrench-circle-flat"
           width="96"
           height="96"
         />
         <div>
-          <h1 className="font-roboto font-semibold text-[64px]">Obis Track</h1>
-          <p className="font-roboto font-regular text-[32px]">
+          <h1 className="font-roboto font-semibold text-[32px]">Obris Track</h1>
+          <p className="font-roboto font-regular text-[24px]">
             ระบบบริหารการยืม - คืน และแจ้งซ่อมอุปกรณ์ภายในองค์กร
           </p>
         </div>
       </div>
 
       {/* ==== กล่องฟอร์มอยู่กลางจอ ==== */}
-      <div className="flex flex-1 justify-center items-center mt-10">
+      <div className="flex flex-1 justify-center items-center">
         <div
           className="z-10 bg-white backdrop-blur-lg bg-opacity-40 border-gray-200 
           shadow-[inset_-8px_0_15px_rgba(0,0,0,0.04)] rounded-[40px]
-          py-20 px-40 w-auto h-auto flex flex-col items-center justify-center border-2"
+          pt-2.5 px-31 w-auto h-auto flex flex-col border-2 text-[32px] gap-1"
         >
-          <Icon
-            icon="tabler:circle-key-filled"
-            width="150"
-            height="150"
-            className="text-[#40A9FF] pb-4 "
-          />
-          <h2 className="text-2xl font-bold text-[64px] text-sky-500 pb-4">
-            ลืมรหัสผ่าน ?
-          </h2>
-          <p className="text-[#8C8C8C] text-[32px] font-normal mt-2 mb-[42px]">
-            กรอกอีเมลของคุณเพื่อรับลิงก์รีเซ็ตรหัสผ่าน
-          </p>
+          <div className="flex flex-col  px-6 items-center justify-center">
+            <Icon
+              icon="tabler:circle-key-filled"
+              width="114"
+              height="114"
+              className="text-[#40A9FF]"
+            />
+            <h2 className=" font-bold text-[64px] text-sky-500">
+              ลืมรหัสผ่าน ?
+            </h2>
+            <p className="text-[#8C8C8C] font-normal">
+              กรอกอีเมลของคุณเพื่อรับลิงก์รีเซ็ตรหัสผ่าน
+            </p>
+          </div>
+          <div>
+            <div className="flex flex-col  gap-2.5">
+              <div className="flex flex-col gap-2 mb-2.5">
+                {/* Label */}
+                <label className="text-[32px]">อีเมล</label>
 
-          <form>
-            {/* ช่องกรอกอีเมล */}
-            <div className="mb-6">
-              <label className="block text-gray-700 text-sm font-regular text-[32px] mb-[12px]">
-                อีเมล
-              </label>
-              <div className="flex gap-2.5">
-                <input
-                  type="email"
-                  placeholder="example@gmail.com"
-                  className={`text-[32px] rounded-full border ${errorEmail?"border-[#F74E57]": "border-gray-300"} bg-white/60 backdrop-blur-sm 
-                    px-4 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 
-                    w-[413px] h-[76px]`}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <button
-                  type="button"
-                  disabled={isCounting}
-                  onClick={() => HandleGetOtp()}
-                  className={`${isCounting ? "bg-gray-400 cursor-not-allowed" : "bg-sky-500 hover:bg-sky-600"} text-white text-[32px] font-medium px-5 
-                    rounded-full transition w-[173px] h-[76px]`}
-                >
-                  {isCounting ? `${timer}s` : "ขอ OTP"}
-                </button>
+                {/* Input + Button row */}
+                <div className="flex items-center gap-5">
+                  {/* Email Input */}
+                  <input
+                    type="text"
+                    className="flex-1 border text-[32px] px-7.5 py-[13px] rounded-full border-[#8C8C8C]"
+                    placeholder="example@gmail.com"
+                  />
+
+                  {/* OTP Button */}
+               <button
+  type="button"
+  disabled={isCounting || isLoading}
+  onClick={() => HandleGetOtp()}
+  className={`${
+    isCounting || isLoading
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-sky-500 hover:bg-sky-600"
+  } 
+    text-white text-[32px] font-medium px-8 rounded-full transition py-2.5`}
+>
+  {isLoading
+    ? "กำลังส่ง"                // ขณะรอ API
+    : isCounting
+    ? `${timer}s`                   // ขณะนับถอยหลัง
+    : "ขอ OTP"}                     
+</button>
+                </div>
               </div>
-              {(errorEmail) &&
-                <span className="text-[#F74E57] text-[32px] pt-4" >
-                  กรุณากรอกอีเมล
-                </span>}
+              <div className="">
+                {/* Label */}
+                <label className="text-[32px]">กรอก OTP</label>
+                {/* Input + Button row */}
+                <div className="">
+                  {/* Email Input */}
+                  <input
+                    type="text"
+                    className={`flex-1 w-full border text-[32px] px-7.5 py-[14px] rounded-full ${errorOtp ? "border-[#F74E57]" : "border-[#8C8C8C]"}`}
+                    placeholder="OTP"
+                  />
+
+                  <div className={`${errorOtp ? "text-[#F74E57]" : "mb-2"}`}>
+                    {errorOtp && "OTP ไม่ถูกต้อง"}
+                  </div>
+
+                </div>
+              </div>
+              {/* ปุ่มยืนยัน */}
+              <button
+                type="button"
+                onClick={() => Sumbit_Otp()}
+                className="text-[32px] bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-full 
+                w-full "
+              >
+                ยืนยัน
+              </button>
+              {/* ปุ่มกลับ */}
+              <div>
+
+              <a
+                href="/login"
+                className="  text-gray-500 hover:text-sky-500 transition flex items-center justify-center gap-1 
+                 text-[32px]"
+                 >
+                <Icon
+                  icon="tabler:chevron-left"
+                  width="24"
+                  height="48"
+                  className="mt-2.5"
+                  /> 
+                <p>
+                  กลับไปหน้าเข้าสู่ระบบ
+                  </p>
+              </a>
+                  </div>
+
             </div>
+          </div>
+          <div>
 
-            {/* ช่องกรอก OTP */}
-            <div className="mb-4">
-              <label className="block text-gray-700 font-regular text-[32px] mb-3">
-                กรอก OTP
-              </label>
-              <input
-                type="text"
-                placeholder="OTP"
-                className={`w-full border ${errorOtp ?"border-[#F74E57]": "border-gray-300"} rounded-full px-4 py-2 bg-white/60 backdrop-blur-sm 
-                  focus:outline-none focus:ring-2 focus:ring-sky-400 text-gray-800 placeholder-gray-400 
-                  h-[76px] text-[32px]`}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-              />
-              {(errorOtp) &&
-                <span className="text-[#F74E57] text-[32px] pt-4" >
-                  OTP ไม่ถูกต้อง
-                </span>}
-            </div>
-
-            {/* ปุ่มยืนยัน */}
-            <button
-              type="button"
-              onClick={() => Sumbit_Otp()}
-              className="text-[32px] bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-full 
-                my-8 w-[596px] h-[76px]"
-            >
-              ยืนยัน
-            </button>
-
-            {/* ปุ่มกลับ */}
-            <a
-              href="/login"
-              className="mt-2 text-gray-500 hover:text-sky-500 transition flex items-center justify-center 
-                gap-1 mx-auto text-[32px] py-[12px] w-[596px] h-[76px]"
-            >
-              <span>←</span> กลับไปหน้าเข้าสู่ระบบ
-            </a>
-          </form>
+          </div>
         </div>
       </div>
     </div>

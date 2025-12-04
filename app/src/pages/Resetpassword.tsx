@@ -271,4 +271,4 @@ export function ResetPassword() {
     </div>
   );
 }
-export default Resetpassword;
+export default ResetPassword;

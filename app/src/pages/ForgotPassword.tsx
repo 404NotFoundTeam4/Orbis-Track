@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { verifyEmail } from "../hooks/verifyEmail.js"
 import { Icon } from "@iconify/react";
-export function ForgotPasswordPage() {
+export function ForgotPassword() {
   const { ForgotPW } = verifyEmail();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -266,4 +266,4 @@ export function ForgotPasswordPage() {
     </div>
   );
 }
-export default ForgotPasswordPage;
+export default ForgotPassword;

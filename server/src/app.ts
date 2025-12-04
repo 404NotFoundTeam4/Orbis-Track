@@ -29,6 +29,30 @@ export function App(): Express {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: "cross-origin" },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "https://static.cloudflareinsights.com",
+          ],
+          connectSrc: [
+            "'self'",
+            "http://localhost:4041",
+            "http://localhost:4040",
+            "http://localhost:4140",
+            "http://localhost:4141",
+            "http://seteam.bsospace.com:4140",
+            "http://seteam.bsospace.com:4141",
+            "https://404notfound-front.bsospace.com",
+            "https://404notfound-back.bsospace.com",
+            "https://orbistrack.bsospace.com",
+          ],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https://validator.swagger.io"],
+        },
+      },
     }),
   );
   app.use(

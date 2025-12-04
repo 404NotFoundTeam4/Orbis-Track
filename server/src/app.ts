@@ -45,6 +45,7 @@ export function App(): Express {
             "http://localhost:4141",
             "http://seteam.bsospace.com:4140",
             "http://seteam.bsospace.com:4141",
+            "http://seteam.bsospace.com:4041",
             "https://404notfound-front.bsospace.com",
             "https://404notfound-back.bsospace.com",
             "https://orbistrack.bsospace.com",
@@ -60,6 +61,7 @@ export function App(): Express {
       origin: [
         "http://seteam.bsospace.com:4140",
         "http://seteam.bsospace.com:4141",
+        "http://seteam.bsospace.com:4041",
         "http://localhost:4040",
         "http://localhost:4041",
         "http://localhost:4140",

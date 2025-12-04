@@ -34,7 +34,7 @@ export const Navbar = () => {
   return (
     <div className="flex flex-col background w-full min-h-screen ">
       {/* Navbar */}
-      <div className=" w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4 py-2 h-[110px] flex justify-between items-center  top-0 left-0 z-50">
+      <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4 py-2 h-[110px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex text-white ml-3 w-[149px] h-[44px] rounded-full bg-[#40A9FF] items-center justify-center">
           <span className="font-bold text-2xl">Orbis Track</span>
         </div>
@@ -64,8 +64,8 @@ export const Navbar = () => {
         </div>
       </div>
       {/* Sidebar */}
-      <div className="flex">
-        <div className="w-[213px] bg-white text-black px-2 shadow-xl min-h-screen z-40">
+      <div className="flex  ">
+        <div className="fixed w-[213px] bg-white text-black px-2 shadow-xl min-h-screen z-40">
           <div className="text-left">
             {/* 🏠 หน้าหลัก */}
             <Link
@@ -81,28 +81,25 @@ export const Navbar = () => {
             <li>
               <div
                 onClick={toggleDropdown}
-                className={`px-7.5 flex items-center w-full cursor-pointer gap-2 h-[50px] rounded-[9px] select-none transition-colors duration-200 ${
-                  isDropdownOpen
+                className={`px-7.5 flex items-center w-full cursor-pointer gap-2 h-[50px] rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen
                     ? "bg-[#40A9FF] text-white"
                     : "hover:bg-[#F0F0F0]"
-                }`}
+                  }`}
               >
                 <FontAwesomeIcon icon={faServer} />
                 <span>การจัดการ</span>
                 <FontAwesomeIcon
                   icon={faChevronUp}
-                  className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${
-                    isDropdownOpen ? "rotate-0" : "rotate-180"
-                  }`}
+                  className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
+                    }`}
                 />
               </div>
 
               <ul
-                className={`overflow-hidden transition-all duration-800 ease-in-out ${
-                  isDropdownOpen
+                className={`overflow-hidden transition-all duration-800 ease-in-out ${isDropdownOpen
                     ? "max-h-[500px] opacity-100"
                     : "max-h-0 opacity-0"
-                }`}
+                  }`}
               >
                 <Link
                   to="/users"
@@ -212,7 +209,7 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <main className="flex-1 bg-[#FAFAFA] ">
+        <main className="flex-1 bg-[#FAFAFA] pl-[213px] pt-[110px]">
           <div className=" w-full min-h-[calc(100vh-150px)]  ">
             <Outlet />
           </div>

@@ -10,7 +10,7 @@ import { Link, useLocation } from "react-router-dom";
 import { verifyEmail } from "../hooks/verifyEmail.js"
 import { Icon } from "@iconify/react";
 export function Resetpassword() {
-  const { ResetPW } = verifyEmail();
+  const { ForgotPW } = verifyEmail();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,12 +29,7 @@ export function Resetpassword() {
 
   const allValid = Object.values(validations).every(Boolean);
   const match = password && password === confirm;
-   const getNewPassword =(Password,ConfrimPassword) =>{
-       const query = new URLSearchParams(location.search);
-        const token = query.get("token") || "";
-          console.log(token,Password,ConfrimPassword)
-        ResetPW(token,Password,ConfrimPassword)
-  }
+
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
       {/* ==== พื้นหลัง ==== */}
@@ -260,7 +255,7 @@ export function Resetpassword() {
                     : "bg-gray-300 cursor-not-allowed"
                   }`}
                 disabled={!allValid || !match}
-                onClick={() => getNewPassword(password, confirm)}
+                onClick={() => ForgotPW(email, password, confirm)}
               >
                 บันทึก
               </button>

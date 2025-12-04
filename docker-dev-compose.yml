@@ -1,3 +1,7 @@
+networks:
+  default:
+    name: orbis_dev_network
+
 services:
   db:
     image: pgvector/pgvector:pg17

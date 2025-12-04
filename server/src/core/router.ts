@@ -22,6 +22,7 @@ type Doc = {
     params?: ZodType;      // zod ของ path params
     query?: ZodType;       // zod ของ query
     headers?: ZodType;
+    contentType?: "application/json" | "multipart/form-data";
 };
 
 const joinPath = (a = '', b = '') =>
@@ -40,8 +41,10 @@ function registerDoc(method: "get" | "post" | "put" | "patch" | "delete", path: 
     if (!d) return;
 
     const openapiPath = path.replace(/:([A-Za-z0-9_]+)/g, '{$1}');
-
-    const content = (s?: ZodType) => s ? { "application/json": { schema: s } } : undefined;
+    
+    const mediaType = d.contentType || "application/json";
+    
+    const content = (s?: ZodType) => s ? { [mediaType]: { schema: s } } : undefined;
     const base = (s?: ZodType) =>
     ({
         "application/json": {

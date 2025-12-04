@@ -8,10 +8,17 @@ import { Icon } from "@iconify/react";
 interface DatePickerFieldProps {
   label?: string; // หัวข้อ
   value: Date | null; // วันที่
+  width?: number;
   onChange: (date: Date | null) => void; // เปลี่ยนวัน
 }
 
-const DatePickerField = ({ label = "วันที่", value, onChange }: DatePickerFieldProps) => {
+const DatePickerField = ({
+  // default
+  label = "วันที่",
+  value,
+  width = 280,
+  onChange
+}: DatePickerFieldProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);   // ควบคุมการเปิด / ปิด popup
   const [tempDate, setTempDate] = useState<Date | null>(value); // เก็บวันที่เลือก
 
@@ -68,7 +75,8 @@ const DatePickerField = ({ label = "วันที่", value, onChange }: Date
       readOnly // ป้องกันผู้ใช้พิมพ์เอง
       value={formatThaiInput(value)} // แสดงวันที่แบบไทย
       placeholder="วัน/เดือน/ปี"
-      className="border border-[#A2A2A2] w-[280px] h-[46px] text-[16px] rounded-[16px] px-5 py-[6px] cursor-pointer"
+      className="border border-[#A2A2A2] h-[46px] text-[16px] rounded-[16px] px-5 py-[6px] cursor-pointer"
+      style={{ width: width }}
     />
   ));
 

@@ -5,10 +5,17 @@ import { useState } from "react"
 interface TimePickerFieldProps {
     label?: string; // หัวข้อ
     value: string; // เวลา
+    width?: number;
     onChange: (time: string) => void; // เปลี่ยนเวลา
 }
 
-const TimePickerField = ({ label = "เวลา", value, onChange }: TimePickerFieldProps) => {
+const TimePickerField = ({
+    // default
+    label = "เวลา",
+    value,
+    width = 137,
+    onChange
+}: TimePickerFieldProps) => {
     const hours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]; // เวลาที่สามารถเลือกได้ภายใน Popup
     const [tempTime, setTempTime] = useState<string>(value); // เก็บเวลาที่เลือก
 
@@ -22,7 +29,8 @@ const TimePickerField = ({ label = "เวลา", value, onChange }: TimePicker
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        className={`border border-[#A2A2A2] rounded-[16px] w-[137px] h-[46px] text-center text-[16px] ${value ? "text-black" : "text-[#CDCDCD]"}`}
+                        className={`border border-[#A2A2A2] rounded-[16px] h-[46px] text-center text-[16px] ${value ? "text-black" : "text-[#CDCDCD]"}`}
+                        style={{ width: width }}
                     >
                         {value || "ขั่วโมง : นาที"}
                     </button>

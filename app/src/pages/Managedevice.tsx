@@ -1,23 +1,29 @@
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import { useToast } from "../components/Toast";
-// import api from "../api/axios.js"; 
-// import DeviceModal from "../components/DeviceModal"; 
+import { AlertDialog } from "../components/AlertDialog";
+import api from "../api/axios.js";
 
-// --- Type Definitions ---
+
+const API_BASE_URL = "http://localhost:4041/api/v1";
+
 type Equipment = {
   id: number;
+  serial_number: string;
   name: string;
+  description: string;
+  location: string;
   image: string | null;
-  department: string;
-  category: string;
-  sub_section: string;
-  quantity: number;
-  unit: string;
+  department: string | number; 
+  category: string | number;
+  sub_section: string | number;
+  
+  max_borrow_days: number;
   last_edited: string | Date;
   status_text: string;
   status_type: "active" | "inactive";
@@ -30,32 +36,43 @@ type DropdownOption = {
   value: string;
 };
 
+// --- Helper: Extract Unique Dropdown Options ---
+const extractOptions = (data: Equipment[], key: keyof Equipment): DropdownOption[] => {
+  const uniqueValues = Array.from(new Set(data.map(item => String(item[key] || "")).filter(val => val !== "")));
+  return [
+    { id: "all", label: "ทั้งหมด", value: "" },
+    ...uniqueValues.map((val, index) => ({
+      id: index,
+      label: val, // หากเป็น ID อาจจะต้องมี Map ชื่อมาแสดงแทน
+      value: val
+    }))
+  ];
+};
+
 export const Inventory = () => {
+  const location = useLocation();
+  const isStaff = location.pathname.includes("/staff");
+
   // --- States ---
   const [items, setItems] = useState<Equipment[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const toast = useToast();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // --- Checkbox State ---
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
-  // --- Modal States ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Equipment | null>(null);
-  const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
+  // --- Alert & Modal States ---
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // const [isModalOpen, setIsModalOpen] = useState(false); // ยังไม่ได้ใช้ใน Code ส่วนนี้
+  // const [selectedItem, setSelectedItem] = useState<Equipment | null>(null);
+  // const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
 
-  // --- Filter Options Data (Mock) ---
-  const [deptOptions] = useState<DropdownOption[]>([
-    { id: 1, label: "แผนก A", value: "A" },
-    { id: 2, label: "คลังสินค้า", value: "คลังสินค้า" },
-  ]);
-  const [subSecOptions] = useState<DropdownOption[]>([
-    { id: 1, label: "ฝ่าย A", value: "A" },
-  ]);
-  const [catOptions] = useState<DropdownOption[]>([
-    { id: 1, label: "IT", value: "IT" },
-    { id: 2, label: "เครื่องเขียน", value: "Stationery" },
-  ]);
+  // --- Filter Options ---
+  const [deptOptions, setDeptOptions] = useState<DropdownOption[]>([]);
+  const [subSecOptions, setSubSecOptions] = useState<DropdownOption[]>([]);
+  const [catOptions, setCatOptions] = useState<DropdownOption[]>([]);
 
   // --- Active Filters ---
   const [deptFilter, setDeptFilter] = useState<DropdownOption | null>(null);
@@ -63,85 +80,117 @@ export const Inventory = () => {
   const [catFilter, setCatFilter] = useState<DropdownOption | null>(null);
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
-  // --- Sorting State ---
+  // --- Sorting & Pagination ---
   const [sortField, setSortField] = useState<keyof Equipment | "status_text">("last_edited");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
-  // --- Pagination State ---
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  // --- Handlers: Modal ---
+  // --- Handlers: Modal Placeholders ---
   const handleOpenAddModal = () => {
-    setSelectedItem(null);
-    setModalType("add");
-    setIsModalOpen(true);
+    // setSelectedItem(null);
+    // setModalType("add");
+    // setIsModalOpen(true);
+    console.log("Open Add Modal");
   };
 
   const handleOpenEditModal = (item: Equipment) => {
-    setSelectedItem(item);
-    setModalType("edit");
-    setIsModalOpen(true);
+    // setSelectedItem(item);
+    // setModalType("edit");
+    // setIsModalOpen(true);
+    console.log("Open Edit Modal", item);
   };
 
-  const handleOpenDeleteModal = (item: Equipment) => {
-    setSelectedItem(item);
-    setModalType("delete");
-    setIsModalOpen(true);
+  // --- Handler: Delete ---
+  const handleDeleteClick = () => {
+    if (selectedItems.length === 0) {
+      toast.push({ message: "กรุณาเลือกรายการที่ต้องการลบ", tone: "danger" });
+      return;
+    }
+    setIsAlertOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedItem(null);
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await Promise.all(
+        selectedItems.map((id) => 
+          // [UPDATED] ใช้ Endpoint /inventory
+          api.delete(`${API_BASE_URL}/inventory/${id}`)
+        )
+      );
+      toast.push({ message: "ลบข้อมูลเรียบร้อยแล้ว", tone: "success" });
+      setSelectedItems([]);
+      setIsAlertOpen(false);
+      setRefreshTrigger((prev) => !prev);
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.push({ message: "เกิดข้อผิดพลาดในการลบข้อมูล", tone: "danger" });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const handleModalSubmit = () => {
-    handleCloseModal();
-    setRefreshTrigger((prev) => prev + 1);
-  };
-
-  // --- Data Fetching ---
+  
   useEffect(() => {
-    // Mock Data ให้ตรงกับภาพตัวอย่าง
-    setItems([
-        {
-          id: 1,
-          name: "เครื่องพิมพ์เลเซอร์",
-          image: null,
-          department: "เครื่องพิมพ์/สแกน",
-          category: "IT",
-          sub_section: "A",
-          quantity: 20,
-          unit: "ชิ้น",
-          last_edited: new Date("2025-08-20"),
-          status_text: "มีการยืมอยู่",
-          status_type: "active",
-          created_at: new Date()
-        },
-        {
-          id: 2,
-          name: "Projector",
-          image: null,
-          department: "คลังสินค้า",
-          category: "IT",
-          sub_section: "A",
-          quantity: 20,
-          unit: "ชิ้น",
-          last_edited: new Date("2025-08-20"),
-          status_text: "ไม่มีการยืม",
-          status_type: "inactive",
-          created_at: new Date()
-        },
-    ]);
-  }, [refreshTrigger]);
+    const fetchEquipment = async () => {
+      setIsLoading(true);
+      try {
+        // [UPDATED] ใช้ Endpoint /inventory
+        const response = await api.get(`${API_BASE_URL}/inventory`); 
+        
+        // [UPDATED] เช็คโครงสร้าง Response ให้ดี (ปกติจะเป็น response.data.data ถ้าใช้ BaseResponse)
+        const rawData = response.data.data || response.data || [];
+        
+        console.log("Fetched Data:", rawData);
+
+        // [UPDATED] Map ข้อมูลจาก Backend (de_...) มาเป็น Frontend Equipment Type
+        const formattedData: Equipment[] = rawData.map((item: any) => ({
+             id: item.de_id,
+             serial_number: item.de_serial_number || "-",
+             name: item.de_name || "ไม่มีชื่อ",
+             description: item.de_description || "",
+             location: item.de_location || "-",
+             // จัดการ Path รูปภาพ
+             image: item.de_images ? `${API_BASE_URL}/${item.de_images.replace(/\\/g, '/')}` : null,
+             
+             // Mapping IDs (ถ้า Backend ยังไม่ส่งชื่อมา ให้โชว์ ID หรือ "-" ไปก่อน)
+             department: item.de_sec_id ? item.de_sec_id : "-", 
+             category: item.de_ca_id ? item.de_ca_id : "-",
+             sub_section: "-", // ไม่มีฟิลด์นี้ใน Schema ตัวอย่างล่าสุด
+             
+             max_borrow_days: item.de_max_borrow_days || 7,
+             last_edited: item.updated_at || item.created_at,
+             created_at: item.created_at,
+             
+             // Logic Status เบื้องต้น (ถ้า Fetch มาได้คือ Active เพราะ Backend กรอง deleted_at: null)
+             status_text: "พร้อมใช้งาน", 
+             status_type: "active"
+        }));
+
+        setItems(formattedData);
+        
+        // Setup Filter Options
+        setDeptOptions(extractOptions(formattedData, "department"));
+        setCatOptions(extractOptions(formattedData, "category"));
+        // setSubSecOptions(extractOptions(formattedData, "sub_section"));
+
+      } catch (error) {
+        console.error("❌ Fetch error:", error);
+        toast.push({ message: "เชื่อมต่อ Backend ไม่สำเร็จ", tone: "danger" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEquipment();
+  }, [refreshTrigger, isStaff]);
 
   // --- Helper Functions ---
   const FormatThaiDate = (iso: string | Date) => {
+    if (!iso) return "-";
     const d = new Date(iso);
-    const day = d.getDate();
-    const month = d.toLocaleString("th-TH", { month: "short" });
-    const year = d.getFullYear() + 543;
-    return `${day} / ${month} / ${year}`;
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("th-TH", { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const HandleSort = (field: keyof Equipment | "status_text") => {
@@ -155,19 +204,19 @@ export const Inventory = () => {
 
   // --- Filter & Sort Logic ---
   const filtered = useMemo(() => {
-    const search = searchFilter.search.trim().toLowerCase();
+    const search = searchFilter.search?.trim().toLowerCase() || "";
     
     let result = items.filter((item) => {
       const bySearch =
         !search ||
-        [item.name, item.department, item.category, item.sub_section]
+        [item.name, String(item.department), String(item.category), item.serial_number]
           .join(" ")
           .toLowerCase()
           .includes(search);
       
-      const byDept = !deptFilter?.value || item.department.includes(deptFilter.value);
-      const bySub = !subSecFilter?.value || item.sub_section === subSecFilter.value;
-      const byCat = !catFilter?.value || item.category === catFilter.value;
+      const byDept = !deptFilter?.value || String(item.department) === deptFilter.value;
+      const bySub = !subSecFilter?.value || String(item.sub_section) === subSecFilter.value;
+      const byCat = !catFilter?.value || String(item.category) === catFilter.value;
 
       return bySearch && byDept && bySub && byCat;
     });
@@ -175,14 +224,11 @@ export const Inventory = () => {
     result = [...result].sort((a, b) => {
         let valA: any = a[sortField as keyof Equipment];
         let valB: any = b[sortField as keyof Equipment];
-
-        if (sortField === "status_text") {
-            valA = a.status_text;
-            valB = b.status_text;
-        }
+        
         if (sortField === "last_edited" || sortField === "created_at") {
-            valA = new Date(valA).getTime();
-            valB = new Date(valB).getTime();
+             valA = new Date(valA).getTime();
+             valB = new Date(valB).getTime();
+             return sortDirection === "asc" ? valA - valB : valB - valA;
         }
 
         if (typeof valA === "string" && typeof valB === "string") {
@@ -195,23 +241,20 @@ export const Inventory = () => {
     return result;
   }, [items, searchFilter, deptFilter, subSecFilter, catFilter, sortField, sortDirection]);
 
-  // --- Pagination Logic ---
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   
   useEffect(() => {
     setPage(1);
-    setSelectedItems([]); // Clear selection when filter changes
-  }, [searchFilter, deptFilter, subSecFilter, catFilter, sortDirection]);
+    setSelectedItems([]);
+  }, [searchFilter, deptFilter, subSecFilter, catFilter]);
 
   const pageRows = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
-  // --- Checkbox Handlers ---
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      // Select all visible items
       const allIds = filtered.map((item) => item.id);
       setSelectedItems(allIds);
     } else {
@@ -250,27 +293,10 @@ export const Inventory = () => {
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <SearchFilter onChange={setSearchFilters} />
             <div className="flex space-x-[4px]">
-              <Dropdown
-                items={deptOptions}
-                value={deptFilter}
-                onChange={setDeptFilter}
-                placeholder="แผนก"
-                className="w-[120px]"
-              />
-              <Dropdown
-                items={subSecOptions}
-                value={subSecFilter}
-                onChange={setSubSecFilter}
-                placeholder="ฝ่ายย่อย"
-                className="w-[120px]"
-              />
-              <Dropdown
-                items={catOptions}
-                value={catFilter}
-                onChange={setCatFilter}
-                placeholder="หมวดหมู่"
-                className="w-[120px]"
-              />
+              <Dropdown items={deptOptions} value={deptFilter} onChange={setDeptFilter} placeholder="แผนก" className="w-[120px]" />
+              <Dropdown items={subSecOptions} value={subSecFilter} onChange={setSubSecFilter} placeholder="ฝ่ายย่อย" className="w-[120px]" />
+              <Dropdown items={catOptions} value={catFilter} onChange={setCatFilter} placeholder="หมวดหมู่" className="w-[120px]" />
+              
               <Button
                 size="md"
                 icon={<Icon icon="ic:baseline-plus" width="20px" height="20px" />}
@@ -284,317 +310,175 @@ export const Inventory = () => {
         </div>
 
         {/* Table Container */}
-        <div className="w-auto">
-          {/* Table Header */}
-          <div
-            className="grid grid-cols-[50px_250px_180px_140px_140px_140px_160px_140px_100px] 
-            bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
-          >
-            {/* Checkbox Column */}
+        <div className="w-auto relative">
+          
+          {isLoading && (
+              <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center rounded-[16px]">
+                  <div className="flex flex-col items-center">
+                    <Icon icon="eos-icons:loading" width="40" height="40" className="text-blue-500 animate-spin" />
+                    <span className="mt-2 text-gray-500">กำลังโหลดข้อมูล...</span>
+                  </div>
+              </div>
+          )}
+
+          {/* Table Header - ปรับ Grid ให้เหมาะกับข้อมูลที่มี */}
+          <div className="grid grid-cols-[50px_250px_120px_140px_120px_100px_160px_120px_100px] 
+            bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3 pr-2">
+            
             <div className="py-2 px-4 flex items-center justify-center">
-               <input 
-                 type="checkbox" 
-                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                 checked={isAllSelected}
-                 onChange={handleSelectAll}
-               />
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                    disabled={isLoading}
+                  />
             </div>
 
-            <div className="py-2 px-4 text-left flex items-center">
+            <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("name")}>
               ชื่ออุปกรณ์
-              <button type="button" onClick={() => HandleSort("name")}>
-                <Icon
-                  icon={
-                    sortField === "name"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down"
-                  }
-                  width="24"
-                  height="24"
-                  className="ml-1"
-                />
-              </button>
+              <Icon icon={sortField === "name" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
-            <div className="py-2 px-4 text-left flex items-center">
-              แผนก
-              <button type="button" onClick={() => HandleSort("department")}>
-                <Icon
-                  icon={
-                    sortField === "department"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down"
-                  }
-                  width="24"
-                  height="24"
-                  className="ml-1"
-                />
-              </button>
+            
+             <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("serial_number")}>
+              S/N
+              <Icon icon={sortField === "serial_number" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
-            <div className="py-2 px-4 text-left flex items-center">
-              หมวดหมู่
-              <button type="button" onClick={() => HandleSort("category")}>
-                <Icon
-                  icon={
-                    sortField === "category"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down"
-                  }
-                  width="24"
-                  height="24"
-                  className="ml-1"
-                />
-              </button>
+
+            <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("department")}>
+              แผนก (ID)
+              <Icon icon={sortField === "department" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
-            <div className="py-2 px-4 text-left flex items-center">
-              ฝ่ายย่อย
-              <button type="button" onClick={() => HandleSort("sub_section")}>
-                <Icon
-                  icon={
-                    sortField === "sub_section"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down"
-                  }
-                  width="24"
-                  height="24"
-                  className="ml-1"
-                />
-              </button>
+            <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("category")}>
+              หมวดหมู่ (ID)
+              <Icon icon={sortField === "category" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
-            {/* จำนวนคงเหลือ: ใส่ whitespace-nowrap เพื่อให้อยู่บรรทัดเดียว */}
-            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap">
-              จำนวนคงเหลือ (ชิ้น)
-              <button type="button" onClick={() => HandleSort("quantity")}>
-                <Icon
-                  icon={
-                    sortField === "quantity"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down"
-                  }
-                  width="24"
-                  height="24"
-                  className="ml-1"
-                />
-              </button>
+            
+            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap cursor-pointer" onClick={() => HandleSort("location")}>
+              สถานที่
+              <Icon icon={sortField === "location" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
-            <div className="py-2 px-4 text-left flex items-center">
+            
+            <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("last_edited")}>
               แก้ไขล่าสุด
-              <button type="button" onClick={() => HandleSort("last_edited")}>
-                <Icon
-                  icon={
-                    sortField === "last_edited"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down"
-                  }
-                  width="24"
-                  height="24"
-                  className="ml-1"
-                />
-              </button>
+              <Icon icon={sortField === "last_edited" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
-            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap">
-              การใช้งาน
-              <button type="button" onClick={() => HandleSort("status_text")}>
-                <Icon
-                  icon={
-                    sortField === "status_text"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down"
-                  }
-                  width="24"
-                  height="24"
-                  className="ml-1"
-                />
-              </button>
+            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap cursor-pointer" onClick={() => HandleSort("status_text")}>
+              สถานะ
+              <Icon icon={sortField === "status_text" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
-            <div className="py-2 px-4 text-left flex items-center">จัดการ</div>
+            <div className="py-2 px-4 text-center">จัดการ</div>
           </div>
 
           {/* Table Body */}
-          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px]">
-            {pageRows.map((item) => (
-              <div
-                key={item.id}
-                // ใช้ grid-template-columns ให้ตรงกับ header เป๊ะๆ
-                className="grid [grid-template-columns:50px_250px_180px_140px_140px_140px_160px_140px_100px] 
-                items-center hover:bg-gray-50 text-[16px] gap-3"
-              >
-                {/* Checkbox Column */}
-                <div className="py-2 px-4 flex items-center justify-center">
-                   <input 
-                     type="checkbox" 
-                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                     checked={selectedItems.includes(item.id)}
-                     onChange={() => handleSelectItem(item.id)}
-                   />
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] min-h-[200px] overflow-hidden">
+            {filtered.length === 0 && !isLoading ? (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                    <Icon icon="tabler:database-off" width="48" height="48" />
+                    <span className="mt-2">ไม่พบข้อมูลอุปกรณ์</span>
                 </div>
+            ) : (
+                pageRows.map((item) => (
+                    <div
+                        key={item.id}
+                        className="grid grid-cols-[50px_250px_120px_140px_120px_100px_160px_120px_100px] 
+                        items-center hover:bg-gray-50 text-[15px] gap-3 min-h-[60px] border-b last:border-b-0 border-gray-100 pr-2"
+                    >
+                        <div className="py-2 px-4 flex items-center justify-center">
+                            <input 
+                                type="checkbox" 
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                checked={selectedItems.includes(item.id)}
+                                onChange={() => handleSelectItem(item.id)}
+                            />
+                        </div>
 
-                {/* Name & Image */}
-                <div className="py-2 px-4 flex items-center">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-500">
-                         <Icon icon="ph:image" width="24" />
+                        <div className="py-2 px-4 flex items-center">
+                        {item.image ? (
+                            <img src={item.image} alt={item.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-gray-200" 
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).src = ""; // Clear if error
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                            }}
+                            />
+                        ) : (
+                             // Placeholder when no image
+                            <div className="w-9 h-9 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400">
+                                <Icon icon="ph:image" width="20" />
+                            </div>
+                        )}
+                         {/* Fallback Icon if image fails load (hidden by default) */}
+                         <div className="w-9 h-9 bg-gray-100 rounded-lg flex-shrink-0 hidden items-center justify-center text-gray-400">
+                                <Icon icon="ph:image" width="20" />
+                         </div>
+
+                        <span className="ml-3 truncate font-medium text-gray-900" title={item.name}>{item.name}</span>
+                        </div>
+
+                        <div className="py-2 px-4 truncate text-gray-600" title={item.serial_number}>{item.serial_number}</div>
+                        
+                        <div className="py-2 px-4 truncate text-gray-600">{item.department}</div>
+                        <div className="py-2 px-4 truncate text-gray-600">{item.category}</div>
+                        <div className="py-2 px-4 truncate text-gray-600">{item.location}</div>
+                        
+                        <div className="py-2 px-4 text-gray-600 text-sm">{FormatThaiDate(item.last_edited)}</div>
+                        <div className="py-2 px-4">
+                        <span className={`flex items-center justify-center w-[110px] h-[28px] border rounded-full text-xs font-medium ${item.status_type === "active" ? "bg-green-50 border-green-200 text-green-600" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                            {item.status_text}
+                        </span>
+                        </div>
+
+                        <div className="py-2 px-4 flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => handleOpenEditModal(item)}
+                                className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
+                                title="แก้ไข"
+                            >
+                                <Icon icon="prime:pen-to-square" width="20" height="20" />
+                            </button>
+                        </div>
                     </div>
-                  )}
-                  <span className="ml-3 truncate font-medium text-gray-900">
-                    {item.name}
-                  </span>
-                </div>
+                ))
+            )}
+          </div>
 
-                <div className="py-2 px-4">{item.department}</div>
-                <div className="py-2 px-4">{item.category}</div>
-                <div className="py-2 px-4">{item.sub_section}</div>
-                <div className="py-2 px-4">{item.quantity} {item.unit}</div>
-                <div className="py-2 px-4">{FormatThaiDate(item.last_edited)}</div>
-
-                {/* Status Badge */}
-                <div className="py-2 px-4">
-                  <span
-                    className={`flex items-center justify-center w-[120px] h-[35px] border rounded-full text-base ${
-                      item.status_type === "active"
-                        ? "border-[#73D13D] text-[#73D13D]"
-                        : "border-gray-400 text-gray-500"
-                    }`}
+          {/* Footer */}
+          <div className="mt-3 mb-[24px] pt-3 flex items-center justify-between px-2">
+            <div className="flex items-center gap-4 h-8">
+                {selectedItems.length > 0 && (
+                  <button 
+                    onClick={handleDeleteClick}
+                    disabled={isLoading}
+                    className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm transition-colors border border-red-200"
                   >
-                    {item.status_text}
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div className="py-2 px-4 flex items-center gap-3">
-                    <button
-                        onClick={() => handleOpenEditModal(item)}
-                        className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
-                        title="แก้ไข"
-                    >
-                        <Icon icon="prime:pen-to-square" width="22" height="22" />
-                    </button>
-                    <button
-                        onClick={() => handleOpenDeleteModal(item)}
-                        className="text-[#FF4D4F] hover:text-[#FF4D4F] cursor-pointer"
-                        title="ลบ"
-                    >
-                        <Icon icon="solar:trash-bin-trash-outline" width="22" height="22" />
-                    </button>
-                </div>
-              </div>
-            ))}
-
-            {/* Pagination Footer */}
-            <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
-                >
-                  {"<"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPage(1)}
-                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
-                >
-                  1
-                </button>
-
-                {page > 2 && <span className="px-1 text-gray-400">…</span>}
-                {page > 1 && page < totalPages && (
-                  <button
-                    type="button"
-                    className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
-                  >
-                    {page}
+                      <Icon icon="solar:trash-bin-trash-bold" width="16" />
+                      ลบ {selectedItems.length} รายการ
                   </button>
                 )}
-                {page < totalPages - 1 && (
-                  <span className="px-1 text-gray-400">…</span>
-                )}
+            </div>
 
-                {totalPages > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setPage(totalPages)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
-                  >
-                    {totalPages}
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
-                >
-                  {">"}
-                </button>
-
-                <form
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      const fd = new FormData(e.currentTarget);
-                      const v = Number(fd.get("goto"));
-                      if (!Number.isNaN(v))
-                        setPage(Math.min(totalPages, Math.max(1, v)));
-                    }
-                  }}
-                  className="flex items-center gap-1"
-                >
-                  <span>ไปที่หน้า</span>
-                  <input
-                    name="goto"
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
-                  />
-                </form>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-gray-300 border-gray-300 hover:bg-gray-50 disabled:bg-white">{"<"}</button>
+              <div className="text-sm text-gray-600 px-2">
+                 หน้า {page} จาก {totalPages}
               </div>
+              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-gray-300 border-gray-300 hover:bg-gray-50 disabled:bg-white">{">"}</button>
             </div>
           </div>
         </div>
-
-        
-        {selectedItems.length > 0 && (
-           <div className="fixed bottom-10 left-10 bg-white border border-red-200 p-4 rounded-lg shadow-lg flex items-center gap-4 animate-fade-in-up">
-              <button 
-                onClick={() => {
-                    toast.push({ message: `ลบ ${selectedItems.length} รายการเรียบร้อย`, tone: "confirm" });
-                    setSelectedItems([]);
-                }}
-                className="bg-[#FF4D4F] hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-              >
-                  <Icon icon="solar:trash-bin-trash-bold" width="20" />
-                  ลบอุปกรณ์
-              </button>
-              <span className="text-[#FF4D4F] font-medium">เลือกอุปกรณ์ ({selectedItems.length})</span>
-           </div>
-        )}
-
       </div>
+
+      <AlertDialog
+        open={isAlertOpen}
+        title="ยืนยันการลบ"
+        description={isDeleting ? "กำลังลบข้อมูล..." : `คุณต้องการลบอุปกรณ์ ${selectedItems.length} รายการใช่หรือไม่?`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => !isDeleting && setIsAlertOpen(false)}
+        confirmText="ลบข้อมูล"
+        cancelText="ยกเลิก"
+        tone="danger"
+      />
     </div>
   );
 };

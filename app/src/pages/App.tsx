@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Login } from "./Login"; // ✅ import ได้ปกติ
+import { Login } from "./Login";
 import "../styles/css/App.css";
 import { Users } from "./Users";
 
@@ -39,7 +39,15 @@ function App() {
                 element={<Departments />}
               />
 
-   <Route path="/inventory" element={<Inventory />} />
+              <Route 
+                path="/administrator/inventory" 
+                element={<Inventory />} 
+              />
+              <Route 
+                path="/staff/inventory" 
+                element={<Inventory />} 
+              />
+              <Route path="/inventory" element={<Inventory />} />
 
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />

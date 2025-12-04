@@ -307,30 +307,16 @@ export const Users = () => {
     };
 
     try {
-      const response = await api.post(`/accounts`, newUser);
+      await api.post(`/accounts`, newUser);
+      setRefreshTrigger((prev) => prev + 1);
 
-      setusers((prevUsers) => {
-        const newUser = {
-          ...newUserData,
-          us_id: response.data.id || Date.now(), // ใช้ ID จาก response หรือใช้ temporary ID
-          us_dept_name:
-            departments.find((d) => d.dept_id === newUserData.us_dept_id)
-              ?.dept_name || "",
-          us_sec_name:
-            sections.find((s) => s.sec_id === newUserData.us_sec_id)
-              ?.sec_name || "-",
-          created_at: new Date(),
-          us_is_active: true,
-          us_images: newUserData.us_images || null,
-        } as User;
 
-        return [...prevUsers, newUser];
-      });
       // แสดงข้อความสำเร็จ
 
       toast.push({
         message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
         tone: "confirm",
+        
       });
       handleCloseModal();
     } catch {

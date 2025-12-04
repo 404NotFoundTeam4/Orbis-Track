@@ -17,9 +17,14 @@ type ModalType =
   | "delete-section"
   | "delete-department";
 
+// interface Department {
+//   id: number;
+//   name: string;
+// }
 interface Department {
   id: number;
   name: string;
+  sections: { id: number; name: string }[];
 }
 
 interface DepartmentModalProps {
@@ -103,23 +108,102 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     ? "warning"
     : "success";
 
+  const normalizeName = (str: string) =>
+    str.trim().replace(/\s+/g, "").toLowerCase();
+  const normalizeSectionName = (str: string) => {
+    return str
+      .replace(/^แผนก\s*[^\s]+\s*ฝ่ายย่อย/i, "") // ตัด "แผนก XXX ฝ่ายย่อย"
+      .replace(/^ฝ่ายย่อย/i, "") // ตัด "ฝ่ายย่อย" (กรณีแก้ไข)
+      .trim()
+      .toLowerCase();
+  };
+  // ตรวจชื่อซ้ำทั้งหมด
+  const isDuplicate = () => {
+    const trimmedDept = department.trim();
+    const trimmedSection = section.trim();
+
+    // ● ตรวจแผนกซ้ำ
+    if (type === "add-department" || type === "edit-department") {
+      const inputName = normalizeName(trimmedDept);
+
+      return departments.some((d) => {
+        if (isEdit && d.id === initialData?.id) return false; // เคสแก้ไข → ถ้าชื่อเดิมให้ผ่าน
+        return normalizeName(d.name) === inputName; // ตรวจซ้ำแบบ normalize
+      });
+    }
+
+    // ● ตรวจฝ่ายย่อยซ้ำเฉพาะแผนกเดียวกัน
+    if (type === "add-section") {
+      const dept = departments.find((d) => d.id === selectedDepartment?.value);
+      if (!dept) return false;
+
+      const input = normalizeSectionName(trimmedSection);
+
+      return dept.sections.some((s) => normalizeSectionName(s.name) === input);
+    }
+
+    if (type === "edit-section") {
+      const dept = departments.find((d) => d.id === initialData?.departmentId);
+      if (!dept) return false;
+
+      const input = normalizeSectionName(trimmedSection);
+
+      return dept.sections.some((s) => {
+        if (s.id === initialData?.sectionId) return false;
+        return normalizeSectionName(s.name) === input;
+      });
+    }
+
+    return false;
+  };
+
   // Reset form เมื่อเปิด modal
   useEffect(() => {
-    if (isOpen) {
-      setDepartment(initialData?.department || "");
-      setSection(initialData?.section || "");
-      setSectionId(initialData?.sectionId || 0);
+    // if (isOpen) {
+    //   setDepartment(initialData?.department || "");
+    //   setSection(initialData?.section || "");
+    //   setSectionId(initialData?.sectionId || 0);
+    //   setDeptError("");
 
-      if (initialData?.departmentId && type === "add-section") {
-        const foundDept = departmentItems.find(
-          (item) => item.id === initialData.departmentId,
-        );
-        setSelectedDepartment(foundDept || null);
-      } else {
-        setSelectedDepartment(null);
-      }
+    //   if (initialData?.departmentId && type === "add-section") {
+    //     const foundDept = departmentItems.find(
+    //       (item) => item.id === initialData.departmentId
+    //     );
+    //     setSelectedDepartment(foundDept || null);
+    //   } else {
+    //     setSelectedDepartment(null);
+    //   }
+    // }
+
+    if (!isOpen) return;
+
+    //ล้าง error ทุกโหมด
+    setDeptError("");
+
+    if (type === "add-department") {
+      //เพิ่มแผนก → ช่องต้องว่าง
+      setDepartment("");
+      setSection("");
+      setSelectedDepartment(null);
+    } else if (type === "edit-department") {
+      //แก้ไขแผนก → ใส่ข้อมูลเดิม
+      setDepartment(initialData?.department || "");
+      setSection("");
+      setSelectedDepartment(null);
+    } else if (type === "add-section") {
+      //เพิ่มฝ่ายย่อย → ช่องว่างทั้งหมด
+      setSection("");
+      setSelectedDepartment(null);
+      setDepartment("");
+    } else if (type === "edit-section") {
+      //แก้ไขฝ่ายย่อย → ใช้ข้อมูลเดิม
+      setSection(initialData?.section || "");
+      setSelectedDepartment(null);
+      setDepartment(initialData?.department || "");
     }
-  }, [isOpen]);
+
+    setSectionId(initialData?.sectionId || 0);
+  }, [isOpen, type]);
 
   // Title ของแต่ละ modal
   const getTitle = () => {
@@ -164,9 +248,85 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
           department,
         };
 
+  const [deptError, setDeptError] = useState("");
+
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const trimmedDept = department.trim();
+    const trimmedSection = section.trim();
+
+    // ตัวอักษรไทย/อังกฤษ ห้ามเว้นวรรค ห้ามเลข ห้ามพิเศษ
+    // const onlyLetters = /^[A-Za-zก-ฮ]+$/;
+    const onlyLetters = /^[A-Za-zก-ฮ0-9\s]+$/;
+
+    //Validate แผนก
+    if (type === "add-department" || type === "edit-department") {
+      if (trimmedDept === "") {
+        setDeptError("กรุณากรอกประเภทแผนก");
+        return false;
+      }
+
+      if (!onlyLetters.test(trimmedDept)) {
+        setDeptError("กรุณากรอกเฉพาะตัวอักษรเท่านั้น");
+        return false;
+      }
+
+      if (isDuplicate()) {
+        setDeptError("ชื่อแผนกนี้มีอยู่แล้ว");
+        return false;
+      }
+    }
+
+    //Validate เพิ่มฝ่ายย่อย
+    if (type === "add-section") {
+      if (!selectedDepartment) {
+        setDeptError("กรุณาเลือกแผนก");
+        return false;
+      }
+
+      if (trimmedSection === "") {
+        setDeptError("กรุณากรอกประเภทฝ่ายย่อย");
+        return false;
+      }
+
+      if (!onlyLetters.test(trimmedSection)) {
+        setDeptError("กรุณากรอกเฉพาะตัวอักษรเท่านั้น");
+        return false;
+      }
+
+      if (isDuplicate()) {
+        setDeptError("ชื่อฝ่ายย่อยนี้มีอยู่แล้วในแผนกนี้");
+        return false;
+      }
+    }
+
+    //Validate แก้ไขฝ่ายย่อย
+    if (type === "edit-section") {
+      const pureValue = trimmedSection
+        .replace(/^ฝ่ายย่อย/i, "")
+        .replace(/\s+/g, "") //ตัดช่องว่างทั้งหมด
+        .trim();
+
+      if (pureValue === "") {
+        setDeptError("กรุณากรอกชื่อฝ่ายย่อย");
+        return false;
+      }
+
+      if (!onlyLetters.test(pureValue)) {
+        setDeptError("กรุณากรอกเฉพาะตัวอักษรเท่านั้น");
+        return false;
+      }
+
+      if (isDuplicate()) {
+        setDeptError("ชื่อฝ่ายย่อยนี้มีอยู่แล้วในแผนกนี้");
+        return false;
+      }
+    }
+    setDeptError("");
+
+    if (deptError) return;
     if (!isValid()) return;
     setPendingPayload(buildPayload());
     setConfirmOpen(true);
@@ -242,9 +402,13 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   label="แผนก"
                   placeholder="ประเภทแผนก"
                   value={department}
-                  onChange={(e: any) => setDepartment(e?.target?.value ?? e)}
+                  onChange={(e: any) => {
+                    setDepartment(e?.target?.value ?? e);
+                    setDeptError("");
+                  }}
                   autoFocus
                   required
+                  error={deptError}
                 />
               </div>
             )}
@@ -285,9 +449,13 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   label="ฝ่ายย่อย"
                   placeholder="ประเภทฝ่ายย่อย"
                   value={section}
-                  onChange={(e) => setSection(e.target.value)}
+                  onChange={(e) => {
+                    setSection(e.target.value);
+                    setDeptError("");
+                  }}
                   autoFocus={type === "edit-section"}
                   required
+                  error={deptError}
                 />
               </div>
             )}

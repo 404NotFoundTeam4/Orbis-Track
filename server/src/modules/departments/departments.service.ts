@@ -238,8 +238,8 @@ async function addSection(deptId: number, section: string) {
 
   // เพิ่มคำว่า "ฝ่ายย่อย" กลับเข้าไปตามรูปแบบที่ถูกต้อง
   const formattedName = isEnglishText(cleanedName)
-    ? `ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
-    : `ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
+    ? `${dept.dept_name} ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
+    : `${dept.dept_name} ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
 
   // ตรวจสอบว่าฝ่ายย่อยชื่อเดียวกันในแผนกนั้นมีอยู่แล้วหรือไม่
   const existingSection = await prisma.sections.findFirst({

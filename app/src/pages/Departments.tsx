@@ -196,8 +196,8 @@ const Departments = () => {
 
         //แสดงข้อความแจ้งเตือนว่าลบสำเร็จ
         push({
-          tone: "success",
-          message: `ลบฝ่ายย่อย ${deleteTarget.name} เรียบร้อยแล้ว`,
+          tone: "danger",
+          message: `ลบฝ่ายย่อยเสร็จสิ้น!`,
         });
       } else if (deleteTarget.type === "department") {
         // ถ้าเป็น section ให้เรียกใช้ service เพื่อลบ section
@@ -205,8 +205,8 @@ const Departments = () => {
 
         //แสดงข้อความแจ้งเตือนว่าลบสำเร็จ
         push({
-          tone: "success",
-          message: `ลบแผนก ${deleteTarget.name} เรียบร้อยแล้ว`,
+          tone: "danger",
+          message: `ลบแผนกเสร็จสิ้น!`,
         });
       }
     } catch (error) {
@@ -646,9 +646,17 @@ const Departments = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         type={modalType}
+        // departments={departments.map((d) => ({
+        //   id: d.dept_id,
+        //   name: d.dept_name,
+        // }))}
         departments={departments.map((d) => ({
           id: d.dept_id,
           name: d.dept_name,
+          sections: d.sections.map((s) => ({
+            id: s.sec_id,
+            name: s.sec_name,
+          })),
         }))}
         initialData={selectedData}
         onSubmit={handleModalSubmit}
@@ -663,7 +671,7 @@ const Departments = () => {
           width={786}
           onConfirm={handleDelete}
           tone="danger"
-          title={`คุณแน่ใจหรือไม่ว่าต้องการลบ${deleteTarget.type === "section" ? "ฝ่ายย่อย" : "แผนก"}`}
+          title={`คุณแน่ใจหรือไม่ว่าต้องการลบ${deleteTarget.type === "section" ? `${deleteTarget.name}` : `แผนก ${deleteTarget.name}`}`}
           description={
             deleteTarget.type === "section" ? (
               <>
@@ -673,7 +681,7 @@ const Departments = () => {
               </>
             ) : (
               <>
-                แผนก {deleteTarget.name} และฝ่ายย่อยทั้งหมดจะถูกลบ
+                ฝ่ายย่อยในแผนก{deleteTarget.name}จะถูกลบทั้งหมด
                 <br />
                 และการดำเนินการนี้ไม่สามารถกู้คืนได้
               </>

@@ -18,40 +18,47 @@ export function Otppassword() {
   const [isCounting, setIsCounting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const HandleGetOtp = async () => {
-    // เคลียร์ error ก่อน
-      setIsLoading(true);   
-    setErrorEmail(false);
-    setErrorOtp(false);
+ const HandleGetOtp = async () => {
+  // เคลียร์ error
+  setErrorEmail(false);
+  setErrorOtp(false);
 
-    // validate email
-    if (!email.trim()) {
-      setErrorEmail(true);
-      setIsLoading(false); 
-      return;
-    }
+  // validate email
+  if (!email.trim()) {
+    setErrorEmail(true);
+    return;
+  }
 
-    try {
-      const res = await GetOtp(email)
-      setTimer(60);
-       setIsLoading(false);   
-      setIsCounting(true);
-      const countdown = setInterval(() => {
-        setTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdown);
-            setIsCounting(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } catch (err) {
-      console.error(err);
-      setErrorEmail(true);
-    }
-     setIsLoading(false);
-  };
+  setIsLoading(true); // ⬅ เริ่มโหลด
+  console.log("กำลังไป")
+  try {
+    
+    const res = await GetOtp(email);
+    console.log("ส่งแล้ว")
+    // หลังส่งสำเร็จ
+    setTimer(60);
+    setIsCounting(true);
+
+    // เริ่มนับถอยหลัง
+    const countdown = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          setIsCounting(false);
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+  } catch (error) {
+    console.log(error);
+    setErrorOtp(true);
+  } finally {
+    console.log("มาทำไม")
+    setIsLoading(false); // ⬅ ปิดโหลดหลัง API เสร็จ ไม่ว่า success หรือ error
+  }
+};
+
   const Sumbit_Otp = async () => {
     setErrorEmail(false)
     setErrorOtp(false)
@@ -165,26 +172,26 @@ export function Otppassword() {
                     type="text"
                     className="flex-1 border text-[32px] px-7.5 py-[13px] rounded-full border-[#8C8C8C]"
                     placeholder="example@gmail.com"
+                        onChange={(e)=>setEmail(e.target.value)}  
                   />
 
                   {/* OTP Button */}
-               <button
-  type="button"
-  disabled={isCounting || isLoading}
-  onClick={() => HandleGetOtp()}
-  className={`${
-    isCounting || isLoading
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-sky-500 hover:bg-sky-600"
-  } 
+                  <button
+                    type="button"
+                    disabled={isCounting || isLoading}
+                    onClick={() => HandleGetOtp()}
+                    className={`${isCounting || isLoading
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-sky-500 hover:bg-sky-600"
+                      } 
     text-white text-[32px] font-medium px-8 rounded-full transition py-2.5`}
->
-  {isLoading
-    ? "กำลังส่ง"                // ขณะรอ API
-    : isCounting
-    ? `${timer}s`                   // ขณะนับถอยหลัง
-    : "ขอ OTP"}                     
-</button>
+                  >
+                    {isLoading
+                      ? "กำลังส่ง"                // ขณะรอ API
+                      : isCounting
+                        ? `${timer}s`                   // ขณะนับถอยหลัง
+                        : "ขอ OTP"}
+                  </button>
                 </div>
               </div>
               <div className="">
@@ -217,22 +224,22 @@ export function Otppassword() {
               {/* ปุ่มกลับ */}
               <div>
 
-              <a
-                href="/login"
-                className="  text-gray-500 hover:text-sky-500 transition flex items-center justify-center gap-1 
+                <a
+                  href="/login"
+                  className="  text-gray-500 hover:text-sky-500 transition flex items-center justify-center gap-1 
                  text-[32px]"
-                 >
-                <Icon
-                  icon="tabler:chevron-left"
-                  width="24"
-                  height="48"
-                  className="mt-2.5"
-                  /> 
-                <p>
-                  กลับไปหน้าเข้าสู่ระบบ
+                >
+                  <Icon
+                    icon="tabler:chevron-left"
+                    width="24"
+                    height="48"
+                    className="mt-2.5"
+                  />
+                  <p>
+                    กลับไปหน้าเข้าสู่ระบบ
                   </p>
-              </a>
-                  </div>
+                </a>
+              </div>
 
             </div>
           </div>

@@ -186,20 +186,6 @@ export default function UserModal({
           return;
         }
       }
-
-      try {
-         const res = await api.post("/accounts/next-employee-code", {
-           role: formDataObject.us_role,
-         });
-         if (res.data?.success) {
-           setFormDataObject((prev) => ({
-             ...prev,
-             us_emp_code: res.data.data.us_emp_code,
-           }));
-         }
-      } catch (error) {
-         console.error("Failed to fetch next code:", error);
-      }
     };
 
     handleCodeChange();
@@ -457,8 +443,7 @@ export default function UserModal({
                     value={formDataObject.us_emp_code}
                     onChange={handleChange}
                     readOnly={isDelete}
-                    disabled={true}
-                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black opacity-50 cursor-not-allowed placeholder:text-[#CDCDCD] border-[#a2a2a2] ${isDelete ? DISABLED_CLS : ""}`}
+                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black  placeholder:text-[#CDCDCD] ${isDelete ? DISABLED_CLS : ""}`}
                   />
                 </div>
 

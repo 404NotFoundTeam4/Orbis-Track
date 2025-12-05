@@ -22,8 +22,8 @@ import { fileURLToPath } from "url";
 export function App(): Express {
   const app = express();
   const baseUrl = (env.API_URL ?? `http://localhost:${env.PORT}`) + "/api/v1";
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+  // const __filename = fileURLToPath(import.meta.url);
+  // const __dirname = path.dirname(__filename);
   app.set("trust proxy", 1);
   app.use(httpLogger);
   app.use(
@@ -77,7 +77,12 @@ export function App(): Express {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
-  const uploadsPath = path.join(__dirname, "..", "uploads");
+  const uploadsPath = path.join(process.cwd(), "uploads");
+
+  // Debug: Log ออกมาดูตอน Start server ว่ามันชี้ไปไหนแน่
+  console.log(`Uploads directory set to: ${uploadsPath}`);
+
+  // const uploadsPath = path.join(__dirname, "..", "uploads");
   // ให้บริการไฟล์ static จากโฟลเดอร์ 'public' ที่อยู่นอก 'src'
   app.use("/api/v1/uploads", express.static(uploadsPath));
   app.use(

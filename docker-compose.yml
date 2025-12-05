@@ -73,6 +73,7 @@ services:
       # ถ้าต้องการ bake ค่า API ตอน build (แนะนำ):
       args:
         VITE_API_BASE: ${VITE_API_BASE}
+        VITE_MY_IMAGE_PATH: ${VITE_MY_IMAGE_PATH}
     env_file:
       - .env
     ports:

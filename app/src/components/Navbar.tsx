@@ -34,7 +34,7 @@ export const Navbar = () => {
   return (
     <div className="flex flex-col background w-full min-h-screen ">
       {/* Navbar */}
-      <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4 py-2 h-[110px] flex justify-between items-center  top-0 left-0 z-50">
+      <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4 py-2 h-[110px] mb-[110px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex text-white ml-3 w-[149px] h-[44px] rounded-full bg-[#40A9FF] items-center justify-center">
           <span className="font-bold text-2xl">Orbis Track</span>
         </div>
@@ -54,7 +54,7 @@ export const Navbar = () => {
             />
           </div>
 
-          <div className="flex gap-1 items-center bg-white rounded-full border-2 border-black w-auto h-[46px] p-4 ">
+          <div className="flex gap-1 items-center bg-white rounded-full border-2 border-black w-auto h-[46px]  p-4 ">
             <div className=" text-left text-black pr-8">
               <div className="text-[16px] font-semibold">นายอภิทัชชา</div>
               <div className="text-[13px] font-normal">พนักงานทั่วไป</div>
@@ -64,8 +64,8 @@ export const Navbar = () => {
         </div>
       </div>
       {/* Sidebar */}
-      <div className="flex  ">
-        <div className="fixed w-[213px] bg-white text-black px-2 shadow-xl min-h-screen z-40">
+      <div className="flex ">
+        <div className="fixed w-[213px] mt-[110px] bg-white text-black px-2 shadow-xl min-h-screen z-40 ">
           <div className="text-left">
             {/* 🏠 หน้าหลัก */}
             <Link

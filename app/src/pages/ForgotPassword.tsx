@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { verifyEmail } from "../hooks/verifyEmail.js"
 import { Icon } from "@iconify/react";
-export function Resetpassword() {
+export function ForgotPassword() {
   const { ForgotPW } = verifyEmail();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -23,7 +23,7 @@ export function Resetpassword() {
     upper: /[A-Z]/.test(password),
     lower: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
-    special:  /^(?=.*[!@#$%^&*()_\-+=<>?{}])/.test(password),
+    special: /^(?=.*[!@#$%^&*()_\-+=<>?{}])/.test(password),
     noSpace: !/\s/.test(password),
   };
 
@@ -251,8 +251,8 @@ export function Resetpassword() {
             <div className="flex items-center justify-center">
               <button
                 className={`w-[225px] h-[76px] py-2 rounded-full text-white font-bold text-[32px]  transition ${allValid && match
-                    ? "bg-sky-500 hover:bg-sky-600"
-                    : "bg-gray-300 cursor-not-allowed"
+                  ? "bg-sky-500 hover:bg-sky-600"
+                  : "bg-gray-300 cursor-not-allowed"
                   }`}
                 disabled={!allValid || !match}
                 onClick={() => ForgotPW(email, password, confirm)}
@@ -266,4 +266,4 @@ export function Resetpassword() {
     </div>
   );
 }
-export default Resetpassword;
+export default ForgotPassword;

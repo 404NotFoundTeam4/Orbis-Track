@@ -22,13 +22,38 @@ import { fileURLToPath } from "url";
 export function App(): Express {
   const app = express();
   const baseUrl = (env.API_URL ?? `http://localhost:${env.PORT}`) + "/api/v1";
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+  // const __filename = fileURLToPath(import.meta.url);
+  // const __dirname = path.dirname(__filename);
   app.set("trust proxy", 1);
   app.use(httpLogger);
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: "cross-origin" },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "https://static.cloudflareinsights.com",
+          ],
+          connectSrc: [
+            "'self'",
+            "http://localhost:4041",
+            "http://localhost:4040",
+            "http://localhost:4140",
+            "http://localhost:4141",
+            "http://seteam.bsospace.com:4140",
+            "http://seteam.bsospace.com:4141",
+            "http://seteam.bsospace.com:4041",
+            "https://404notfound-front.bsospace.com",
+            "https://404notfound-back.bsospace.com",
+            "https://orbistrack.bsospace.com",
+          ],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https://validator.swagger.io"],
+        },
+      },
     }),
   );
   app.use(
@@ -36,6 +61,7 @@ export function App(): Express {
       origin: [
         "http://seteam.bsospace.com:4140",
         "http://seteam.bsospace.com:4141",
+        "http://seteam.bsospace.com:4041",
         "http://localhost:4040",
         "http://localhost:4041",
         "http://localhost:4140",
@@ -51,7 +77,12 @@ export function App(): Express {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
-  const uploadsPath = path.join(__dirname, "..", "uploads");
+  const uploadsPath = path.join(process.cwd(), "uploads");
+
+  // Debug: Log ออกมาดูตอน Start server ว่ามันชี้ไปไหนแน่
+  console.log(`Uploads directory set to: ${uploadsPath}`);
+
+  // const uploadsPath = path.join(__dirname, "..", "uploads");
   // ให้บริการไฟล์ static จากโฟลเดอร์ 'public' ที่อยู่นอก 'src'
   app.use("/api/v1/uploads", express.static(uploadsPath));
   app.use(

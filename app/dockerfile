@@ -15,8 +15,10 @@ COPY . .
 WORKDIR /repo/app
 
 ARG VITE_API_BASE
+ARG VITE_MY_IMAGE_PATH
 # 2. ประกาศเป็น ENV ชั่วคราวเพื่อให้คำสั่ง npx vite build มองเห็น
 ENV VITE_API_BASE=$VITE_API_BASE
+ENV VITE_MY_IMAGE_PATH=$VITE_MY_IMAGE_PATH
 
 RUN npx vite build
 

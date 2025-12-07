@@ -129,6 +129,10 @@ export default function UserModal({
       newErrors.us_lastname = "กรุณากรอกนามสกุล";
       isValid = false;
     }
+    if (!formDataObject.us_emp_code?.trim()) {
+      newErrors.us_emp_code = "กรุณากรอกรหัสพนักงาน";
+      isValid = false;
+    }
 
     if (!formDataObject.us_email?.trim()) {
       newErrors.us_email = "กรุณากรอกอีเมล";
@@ -141,11 +145,11 @@ export default function UserModal({
     if (!formDataObject.us_phone?.trim()) {
       newErrors.us_phone = "กรุณากรอกเบอร์โทรศัพท์";
       isValid = false;
-    } else if (formDataObject.us_phone.length !== 10) {
-      newErrors.us_phone = "กรุณากรอกเบอร์โทรศัพท์ให้ครบถ้วน";
-      isValid = false;
     } else if (!/^\d+$/.test(formDataObject.us_phone)) {
       newErrors.us_phone = "เบอร์โทรศัพท์ต้องเป็นตัวเลขเท่านั้น";
+      isValid = false;
+    } else if (formDataObject.us_phone.length !== 10) {
+      newErrors.us_phone = "กรุณากรอกเบอร์โทรศัพท์ให้ครบถ้วน";
       isValid = false;
     }
 
@@ -158,8 +162,7 @@ export default function UserModal({
       isValid = false;
     }
 
-    const hasSections = sectionsList.some(sec => sec.sec_dept_id === formDataObject.us_dept_id);
-    if (hasSections && !formDataObject.us_sec_id) {
+    if (!formDataObject.us_sec_id) {
       newErrors.us_sec_id = "กรุณาเลือกฝ่ายย่อย";
       isValid = false;
     }
@@ -236,10 +239,6 @@ export default function UserModal({
 
     // เรียกใช้ Validation
     if (!validateForm()) {
-      toast.push({
-        message: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน",
-        tone: "danger",
-      });
       return;
     }
 
@@ -443,8 +442,12 @@ export default function UserModal({
                     value={formDataObject.us_emp_code}
                     onChange={handleChange}
                     readOnly={isDelete}
-                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black  placeholder:text-[#CDCDCD] ${isDelete ? DISABLED_CLS : ""}`}
+                    disabled={isDelete} 
+                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] 
+                      ${errors.us_emp_code ? "border-red-500" : "border-[#a2a2a2]"}  
+                      ${isDelete ? DISABLED_CLS : ""}`}
                   />
+                  {errors.us_emp_code && <div className="text-red-500 text-xs mt-1">{errors.us_emp_code}</div>}
                 </div>
 
                 {/* อีเมล */}
@@ -553,7 +556,7 @@ export default function UserModal({
                     value={formDataObject.us_username}
                     onChange={handleChange}
                     readOnly={isDelete}
-                    className="flex-1 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] bg-transparent outline-none"
+                    className="flex-1 min-w-0 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] bg-transparent outline-none"
                   />
                 </div>
                 {errors.us_username && <div className="text-red-500 text-xs mt-1">{errors.us_username}</div>}

@@ -194,7 +194,7 @@ export const Cart = () => {
   } else if (modalType === "success") {
     modalProps = {
       title: "ยืนยันการส่งคำร้อง?",
-      description: `การดำเนินการนี้จะส่งรายการอุปกรณ์จำนวน ${selectedItemCount} รายการเพื่อขออนุมัติ`,
+      // description: `การดำเนินการนี้จะส่งรายการอุปกรณ์จำนวน ${selectedItemCount} รายการเพื่อขออนุมัติ`,
       onConfirm: handleConfirmSubmit,
       tone: "success" as AlertTone,
       confirmText: "ยืนยัน",
@@ -256,11 +256,11 @@ export const Cart = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.availability === "พร้อมใช้งาน" ? "bg-[#E6FFE9] text-[#00A84F]" : "bg-[#FFEBE6] text-[#FF4D4F]"}`}
+                      className={`px-2 py-0.5 border rounded-full text-xs font-medium ${item.availability === "พร้อมใช้งาน" ? "border-[#73D13D] text-[#73D13D]" : "border-[#FF4D4F] text-[#FF4D4F]"}`}
                     >
                       {item.availability}
                     </span>
-                    <span className="px-2 py-0.5 bg-[#E7F3FF] text-[#0072FF] rounded-full text-xs font-medium">
+                    <span className="px-2 py-0.5 border border-[#7492FF] text-[#7492FF] rounded-full text-xs font-medium">
                       ฝ่ายย่อย : {item.section}
                     </span>
                   </div>

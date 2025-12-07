@@ -36,6 +36,8 @@ async function checkLogin(payload: LoginPayload) {
             us_password: true,
             us_role: true,
             us_is_active: true,
+            us_dept_id: true,
+            us_sec_id: true,
         },
     });
 
@@ -54,6 +56,8 @@ async function checkLogin(payload: LoginPayload) {
     const token = signToken({
         sub: result.us_id,
         role: result.us_role,
+        dept: result.us_dept_id,
+        sec: result.us_sec_id
     }, exp);
 
     return token;

@@ -17,6 +17,8 @@ export const loginPayload = z.object({
 export const accessTokenPayload = z.object({
     sub: z.coerce.number().int().positive(), // user_id
     role: z.enum(Object.values(UserRole) as [string, ...string[]]),
+    dept: z.coerce.number().int().positive().nullable(),
+    sec: z.coerce.number().int().positive().nullable(),
     iat: z.number().optional(),
     exp: z.number().optional(),
 }).strict();

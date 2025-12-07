@@ -11,7 +11,7 @@
   <a href="#">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
-      <img src=".github/assets/images/login/Logo.png" width="720" alt="Orbis-Track" />
+      <img src=".github/assets/Logo.png" width="720" alt="Orbis-Track" />
     </picture>
   </a>
  </p>

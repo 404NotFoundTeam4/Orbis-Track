@@ -11,7 +11,7 @@
   <a href="#">
     <picture>
     <!--<source media="(prefers-color-scheme: dark)" srcset=".github/assets/Logo.png">-->
-      <img src=".github/assets/Logo.png" width="720" alt="Orbis-Track" />
+      <img src=".github/assets/Logo.png" width="60%"" alt="Orbis-Track" />
     </picture>
   </a>
  </p>

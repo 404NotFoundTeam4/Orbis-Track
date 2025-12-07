@@ -10,7 +10,7 @@
 <p align="center">
   <a href="#">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
+    <!--<source media="(prefers-color-scheme: dark)" srcset=".github/assets/Logo.png">-->
       <img src=".github/assets/Logo.png" width="720" alt="Orbis-Track" />
     </picture>
   </a>

@@ -37,7 +37,7 @@ export function IsTokenExpired(token: string): boolean {
   if (!payload || !payload.exp) return true;
 
   const nowInSec = Math.floor(Date.now() / 1000);
-  
+
   return payload.exp <= nowInSec;
 }
 
@@ -58,8 +58,9 @@ export const SaveToken = (token: string, isRemember: boolean) => {
     localStorage.setItem(accessTokenKey, token);
     sessionStorage.removeItem(accessTokenKey);
   } else {
-    sessionStorage.setItem(accessTokenKey, token);
-    localStorage.removeItem(accessTokenKey);
+    // Force save to localStorage as requested
+    localStorage.setItem(accessTokenKey, token);
+    sessionStorage.removeItem(accessTokenKey);
   }
 };
 

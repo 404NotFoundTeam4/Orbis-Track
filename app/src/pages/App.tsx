@@ -12,8 +12,9 @@ import Navbar from "../components/Navbar";
 import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
+import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
-import ForgotPassword from "./ForgotPassword"
+import ForgotPassword from "./ForgotPassword";
 function App() {
   return (
     <ToastProvider>

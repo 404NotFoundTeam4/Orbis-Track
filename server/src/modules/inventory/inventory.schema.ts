@@ -14,12 +14,20 @@ export const inventorySchema = z.object({
   de_location: z.string().nullable(),
   de_max_borrow_days: z.number().nullable(),
   de_images: z.string().nullable(),
-  // Foreign Keys (เลือกใส่ตามต้องการ)
+  
+  // Foreign Keys (คงไว้เหมือนเดิม)
   de_af_id: z.number().nullable(),
   de_ca_id: z.number().nullable(),
   de_us_id: z.number().nullable(),
   de_sec_id: z.number().nullable(),
   de_acc_id: z.number().nullable(),
+
+  // *** ส่วนที่เพิ่มเข้ามา (Virtual Fields) ***
+  category_name: z.string().optional().default("-"),
+  sub_section_name: z.string().optional().default("-"),
+  department_name: z.string().optional().default("-"),
+  quantity: z.number().optional().default(0),
+
   // Timestamps
   created_at: z.date().nullable(),
   updated_at: z.date().nullable(),

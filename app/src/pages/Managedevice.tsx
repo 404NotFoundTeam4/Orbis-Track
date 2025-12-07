@@ -9,7 +9,6 @@ import { useToast } from "../components/Toast";
 import { AlertDialog } from "../components/AlertDialog";
 import api from "../api/axios.js";
 
-
 const API_BASE_URL = "http://localhost:4041/api/v1";
 
 type Equipment = {
@@ -17,11 +16,12 @@ type Equipment = {
   serial_number: string;
   name: string;
   description: string;
-  location: string;
+  location: string; 
   image: string | null;
-  department: string | number; 
-  category: string | number;
-  sub_section: string | number;
+  department: string;
+  category: string;
+  sub_section: string;
+  quantity: number;
   
   max_borrow_days: number;
   last_edited: string | Date;
@@ -43,7 +43,7 @@ const extractOptions = (data: Equipment[], key: keyof Equipment): DropdownOption
     { id: "all", label: "ทั้งหมด", value: "" },
     ...uniqueValues.map((val, index) => ({
       id: index,
-      label: val, // หากเป็น ID อาจจะต้องมี Map ชื่อมาแสดงแทน
+      label: val,
       value: val
     }))
   ];
@@ -59,15 +59,13 @@ export const Inventory = () => {
   const toast = useToast();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // --- Checkbox State ---
+  // --- Checkbox & Delete States ---
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [deleteId, setDeleteId] = useState<number | null>(null); // สำหรับเก็บ ID เวลาลบแถวเดียว
 
   // --- Alert & Modal States ---
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  // const [isModalOpen, setIsModalOpen] = useState(false); // ยังไม่ได้ใช้ใน Code ส่วนนี้
-  // const [selectedItem, setSelectedItem] = useState<Equipment | null>(null);
-  // const [modalType, setModalType] = useState<"add" | "edit" | "delete">("add");
 
   // --- Filter Options ---
   const [deptOptions, setDeptOptions] = useState<DropdownOption[]>([]);
@@ -88,41 +86,53 @@ export const Inventory = () => {
 
   // --- Handlers: Modal Placeholders ---
   const handleOpenAddModal = () => {
-    // setSelectedItem(null);
-    // setModalType("add");
-    // setIsModalOpen(true);
     console.log("Open Add Modal");
   };
 
   const handleOpenEditModal = (item: Equipment) => {
-    // setSelectedItem(item);
-    // setModalType("edit");
-    // setIsModalOpen(true);
     console.log("Open Edit Modal", item);
   };
 
-  // --- Handler: Delete ---
-  const handleDeleteClick = () => {
+  // --- Handler: Delete (Multiple) ---
+  const handleDeleteSelected = () => {
     if (selectedItems.length === 0) {
       toast.push({ message: "กรุณาเลือกรายการที่ต้องการลบ", tone: "danger" });
       return;
     }
+    setDeleteId(null); // เคลียร์ deleteId เพื่อบอกว่าเป็นโหมดลบหลายตัว
     setIsAlertOpen(true);
   };
 
+  // --- Handler: Delete (Single Row) ---
+  const handleDeleteRow = (id: number) => {
+    setDeleteId(id); // ระบุ ID ที่จะลบ
+    setIsAlertOpen(true);
+  };
+
+  // --- Handler: Confirm Delete ---
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
+    
+    // ถ้า deleteId มีค่า แปลว่าลบแถวเดียว, ถ้าไม่มี ให้ใช้ selectedItems
+    const idsToDelete = deleteId ? [deleteId] : selectedItems;
+
     try {
       await Promise.all(
-        selectedItems.map((id) => 
-          // [UPDATED] ใช้ Endpoint /inventory
+        idsToDelete.map((id) => 
           api.delete(`${API_BASE_URL}/inventory/${id}`)
         )
       );
-      toast.push({ message: "ลบข้อมูลเรียบร้อยแล้ว", tone: "success" });
+      
+      const message = deleteId 
+        ? "ลบอุปกรณ์เรียบร้อยแล้ว" 
+        : `ลบอุปกรณ์ ${idsToDelete.length} รายการเรียบร้อยแล้ว`;
+
+      toast.push({ message: message, tone: "success" });
+      
       setSelectedItems([]);
+      setDeleteId(null);
       setIsAlertOpen(false);
-      setRefreshTrigger((prev) => !prev);
+      setRefreshTrigger((prev) => !prev); // รีโหลดข้อมูลใหม่
     } catch (error) {
       console.error("Delete error:", error);
       toast.push({ message: "เกิดข้อผิดพลาดในการลบข้อมูล", tone: "danger" });
@@ -136,44 +146,36 @@ export const Inventory = () => {
     const fetchEquipment = async () => {
       setIsLoading(true);
       try {
-        // [UPDATED] ใช้ Endpoint /inventory
         const response = await api.get(`${API_BASE_URL}/inventory`); 
-        
-        // [UPDATED] เช็คโครงสร้าง Response ให้ดี (ปกติจะเป็น response.data.data ถ้าใช้ BaseResponse)
         const rawData = response.data.data || response.data || [];
         
         console.log("Fetched Data:", rawData);
 
-        // [UPDATED] Map ข้อมูลจาก Backend (de_...) มาเป็น Frontend Equipment Type
         const formattedData: Equipment[] = rawData.map((item: any) => ({
              id: item.de_id,
              serial_number: item.de_serial_number || "-",
              name: item.de_name || "ไม่มีชื่อ",
              description: item.de_description || "",
              location: item.de_location || "-",
-             // จัดการ Path รูปภาพ
              image: item.de_images ? `${API_BASE_URL}/${item.de_images.replace(/\\/g, '/')}` : null,
              
-             // Mapping IDs (ถ้า Backend ยังไม่ส่งชื่อมา ให้โชว์ ID หรือ "-" ไปก่อน)
-             department: item.de_sec_id ? item.de_sec_id : "-", 
-             category: item.de_ca_id ? item.de_ca_id : "-",
-             sub_section: "-", // ไม่มีฟิลด์นี้ใน Schema ตัวอย่างล่าสุด
-             
+             department: item.department_name || "-", 
+             category: item.category_name || "-",
+             sub_section: item.sub_section_name || "-",
+             quantity: item.quantity !== undefined ? item.quantity : 0, 
+
              max_borrow_days: item.de_max_borrow_days || 7,
              last_edited: item.updated_at || item.created_at,
              created_at: item.created_at,
-             
-             // Logic Status เบื้องต้น (ถ้า Fetch มาได้คือ Active เพราะ Backend กรอง deleted_at: null)
              status_text: "พร้อมใช้งาน", 
              status_type: "active"
         }));
 
         setItems(formattedData);
         
-        // Setup Filter Options
         setDeptOptions(extractOptions(formattedData, "department"));
         setCatOptions(extractOptions(formattedData, "category"));
-        // setSubSecOptions(extractOptions(formattedData, "sub_section"));
+        setSubSecOptions(extractOptions(formattedData, "sub_section"));
 
       } catch (error) {
         console.error("❌ Fetch error:", error);
@@ -209,14 +211,14 @@ export const Inventory = () => {
     let result = items.filter((item) => {
       const bySearch =
         !search ||
-        [item.name, String(item.department), String(item.category), item.serial_number]
+        [item.name, item.department, item.category, item.serial_number]
           .join(" ")
           .toLowerCase()
           .includes(search);
       
-      const byDept = !deptFilter?.value || String(item.department) === deptFilter.value;
-      const bySub = !subSecFilter?.value || String(item.sub_section) === subSecFilter.value;
-      const byCat = !catFilter?.value || String(item.category) === catFilter.value;
+      const byDept = !deptFilter?.value || item.department === deptFilter.value;
+      const bySub = !subSecFilter?.value || item.sub_section === subSecFilter.value;
+      const byCat = !catFilter?.value || item.category === catFilter.value;
 
       return bySearch && byDept && bySub && byCat;
     });
@@ -236,6 +238,10 @@ export const Inventory = () => {
             ? valA.localeCompare(valB, "th")
             : valB.localeCompare(valA, "th");
         }
+        if (typeof valA === "number" && typeof valB === "number") {
+             return sortDirection === "asc" ? valA - valB : valB - valA;
+        }
+
         return sortDirection === "asc" ? valA - valB : valB - valA;
     });
     return result;
@@ -321,8 +327,8 @@ export const Inventory = () => {
               </div>
           )}
 
-          {/* Table Header - ปรับ Grid ให้เหมาะกับข้อมูลที่มี */}
-          <div className="grid grid-cols-[50px_250px_120px_140px_120px_100px_160px_120px_100px] 
+          {/* Table Header */}
+          <div className="grid grid-cols-[50px_220px_130px_130px_130px_100px_140px_120px_100px] 
             bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3 pr-2">
             
             <div className="py-2 px-4 flex items-center justify-center">
@@ -340,23 +346,24 @@ export const Inventory = () => {
               <Icon icon={sortField === "name" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
             
-             <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("serial_number")}>
-              S/N
-              <Icon icon={sortField === "serial_number" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
-            </div>
-
             <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("department")}>
-              แผนก (ID)
+              แผนก
               <Icon icon={sortField === "department" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
+
             <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("category")}>
-              หมวดหมู่ (ID)
+              หมวดหมู่
               <Icon icon={sortField === "category" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
+
+            <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("sub_section")}>
+              ฝ่ายย่อย
+              <Icon icon={sortField === "sub_section" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
+            </div>
             
-            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap cursor-pointer" onClick={() => HandleSort("location")}>
-              สถานที่
-              <Icon icon={sortField === "location" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
+            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap cursor-pointer" onClick={() => HandleSort("quantity")}>
+              คงเหลือ
+              <Icon icon={sortField === "quantity" ? (sortDirection === "asc" ? "bx:sort-down" : "bx:sort-up") : "bx:sort-down"} width="20" className="ml-1 text-gray-400" />
             </div>
             
             <div className="py-2 px-4 text-left flex items-center cursor-pointer" onClick={() => HandleSort("last_edited")}>
@@ -381,7 +388,7 @@ export const Inventory = () => {
                 pageRows.map((item) => (
                     <div
                         key={item.id}
-                        className="grid grid-cols-[50px_250px_120px_140px_120px_100px_160px_120px_100px] 
+                        className="grid grid-cols-[50px_220px_130px_130px_130px_100px_140px_120px_100px] 
                         items-center hover:bg-gray-50 text-[15px] gap-3 min-h-[60px] border-b last:border-b-0 border-gray-100 pr-2"
                     >
                         <div className="py-2 px-4 flex items-center justify-center">
@@ -397,30 +404,27 @@ export const Inventory = () => {
                         {item.image ? (
                             <img src={item.image} alt={item.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-gray-200" 
                             onError={(e) => {
-                                (e.target as HTMLImageElement).src = ""; // Clear if error
+                                (e.target as HTMLImageElement).src = ""; 
                                 (e.target as HTMLImageElement).style.display = 'none';
                                 (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                             }}
                             />
                         ) : (
-                             // Placeholder when no image
                             <div className="w-9 h-9 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400">
                                 <Icon icon="ph:image" width="20" />
                             </div>
                         )}
-                         {/* Fallback Icon if image fails load (hidden by default) */}
                          <div className="w-9 h-9 bg-gray-100 rounded-lg flex-shrink-0 hidden items-center justify-center text-gray-400">
                                 <Icon icon="ph:image" width="20" />
                          </div>
 
                         <span className="ml-3 truncate font-medium text-gray-900" title={item.name}>{item.name}</span>
                         </div>
-
-                        <div className="py-2 px-4 truncate text-gray-600" title={item.serial_number}>{item.serial_number}</div>
                         
                         <div className="py-2 px-4 truncate text-gray-600">{item.department}</div>
                         <div className="py-2 px-4 truncate text-gray-600">{item.category}</div>
-                        <div className="py-2 px-4 truncate text-gray-600">{item.location}</div>
+                        <div className="py-2 px-4 truncate text-gray-600">{item.sub_section}</div>
+                        <div className="py-2 px-4 text-gray-900">{item.quantity}</div>
                         
                         <div className="py-2 px-4 text-gray-600 text-sm">{FormatThaiDate(item.last_edited)}</div>
                         <div className="py-2 px-4">
@@ -430,6 +434,7 @@ export const Inventory = () => {
                         </div>
 
                         <div className="py-2 px-4 flex items-center justify-center gap-2">
+                            {/* ปุ่มแก้ไข */}
                             <button
                                 onClick={() => handleOpenEditModal(item)}
                                 className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
@@ -437,6 +442,7 @@ export const Inventory = () => {
                             >
                                 <Icon icon="prime:pen-to-square" width="20" height="20" />
                             </button>
+                            
                         </div>
                     </div>
                 ))
@@ -448,7 +454,7 @@ export const Inventory = () => {
             <div className="flex items-center gap-4 h-8">
                 {selectedItems.length > 0 && (
                   <button 
-                    onClick={handleDeleteClick}
+                    onClick={handleDeleteSelected}
                     disabled={isLoading}
                     className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm transition-colors border border-red-200"
                   >
@@ -472,9 +478,20 @@ export const Inventory = () => {
       <AlertDialog
         open={isAlertOpen}
         title="ยืนยันการลบ"
-        description={isDeleting ? "กำลังลบข้อมูล..." : `คุณต้องการลบอุปกรณ์ ${selectedItems.length} รายการใช่หรือไม่?`}
+        description={
+            isDeleting 
+            ? "กำลังลบข้อมูล..." 
+            : (deleteId 
+                ? "คุณต้องการลบอุปกรณ์นี้ใช่หรือไม่?" // ข้อความกรณีลบแถวเดียว
+                : `คุณต้องการลบอุปกรณ์ ${selectedItems.length} รายการใช่หรือไม่?`) // ข้อความกรณีลบหลายตัว
+        }
         onConfirm={handleConfirmDelete}
-        onCancel={() => !isDeleting && setIsAlertOpen(false)}
+        onCancel={() => {
+            if (!isDeleting) {
+                setIsAlertOpen(false);
+                setDeleteId(null); // เคลียร์ ID เมื่อยกเลิก
+            }
+        }}
         confirmText="ลบข้อมูล"
         cancelText="ยกเลิก"
         tone="danger"

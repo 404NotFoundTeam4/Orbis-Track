@@ -21,6 +21,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Logo from "../assets/images/navbar/Logo.png"
 import LogoGiag from "../assets/images/navbar/logo giga.png"
+import getImageUrl from "../services/GetImage"
+
 export const Navbar = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [active, setActive] = useState<"bell" | "cart" | null>(null);
@@ -86,7 +88,7 @@ const User = dataUser ? JSON.parse(dataUser) : null;
           </button>
 
           <div className="flex gap-2.5 items-centerx border-l border-l-[#D9D9D9] py-2.5 pl-7.5 pr-1 ">
-            <img src={User.images} alt="" className="w-9 h-9 rounded-full" />
+            <img src={getImageUrl(User.us_images)} alt="" className="w-9 h-9 rounded-full" />
             <div className=" text-left text-black pr-8">
               <div className="text-[16px] font-semibold">{User.us_firstname}</div>
               <div className="text-[13px] font-normal">{User.us_role}</div>

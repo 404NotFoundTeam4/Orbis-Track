@@ -119,7 +119,7 @@ export function Login() {
           <img src={LogoLogin} alt="" className="w-[88.14px] h-[114.03px]" />
         </div>
         <div>
-          <h1 className="font-roboto font-semibold text-[64px]">Obis Track</h1>
+          <h1 className="font-roboto font-semibold text-[64px]">Orbis Track</h1>
           <p className="font-roboto font-regular text-[32px]">
             ระบบบริหารการยืม - คืน และแจ้งซ่อมอุปกรณ์ภายในองค์กร
           </p>

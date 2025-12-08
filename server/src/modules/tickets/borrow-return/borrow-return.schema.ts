@@ -13,16 +13,19 @@ export const getBorrowTicketDto = z.object({
 export const getBorrowTicketQuery = z.object({
   page: z.coerce.number().optional().nullable(),
   limit: z.coerce.number().optional().nullable(),
-  status: z.nativeEnum(BRT_STATUS),
+  status: z.nativeEnum(BRT_STATUS).optional().nullable(),
   search: z.string().optional().nullable(),
-  type: z.enum([
-    "ALL",
-    "MY_ACTIVE",
-    "MY_REQUEST",
-    "MY_APPROVAL",
-    "MY_HISTORY",
-    "MY_APPROVAL_HISTORY",
-  ]),
+  type: z
+    .enum([
+      "ALL",
+      "MY_ACTIVE",
+      "MY_REQUEST",
+      "MY_APPROVAL",
+      "MY_HISTORY",
+      "MY_APPROVAL_HISTORY",
+    ])
+    .optional()
+    .default("ALL"),
 });
 
 const requesterSchema = z.object({
@@ -48,7 +51,7 @@ const deviceChildSchema = z.object({
   serial_number: z.string(),
   asset_code: z.string(),
   has_serial_number: z.union([z.boolean(), z.string()]),
-  status: z.string(),
+  status: z.union([z.nativeEnum(DEVICE_CHILD_STATUS), z.string()]),
 });
 
 const currentStageSchema = z
@@ -61,9 +64,9 @@ const currentStageSchema = z
 
 export const ticketItemSchema = z.object({
   id: z.coerce.number(),
-  status: z.string(), // PENDING, APPROVED, etc.
-  created_at: z.string().datetime().nullable(),
-  request_date: z.string().datetime().nullable(),
+  status: z.nativeEnum(BRT_STATUS),
+  created_at: z.date().nullable(),
+  request_date: z.date().nullable(),
   requester: requesterSchema,
   device_summary: deviceSummarySchema,
   device_child: deviceChildSchema,
@@ -122,7 +125,7 @@ const ticketTimelineSchema = z.object({
   dept_name: z.string().nullable(),
   sec_id: z.coerce.number().nullable(),
   sec_name: z.string().nullable(),
-  approved_by: z.coerce.string().nullable(),
+  approved_by: z.string().nullable(),
   updated_at: z.date().nullable(),
 });
 

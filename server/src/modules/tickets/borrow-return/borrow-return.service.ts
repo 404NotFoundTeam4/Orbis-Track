@@ -1,5 +1,5 @@
 import { GetBorrowTicketQuery } from "./borrow-return.schema.js";
-import { Prisma } from "@prisma/client";
+import { Prisma, US_ROLE } from "@prisma/client";
 import { prisma } from "../../../infrastructure/database/client.js";
 import { IdParamDto } from "../../departments/departments.schema.js";
 
@@ -85,7 +85,7 @@ async function getBorrowReturnTicket(
           brts_status: {
             in: ["PENDING", "APPROVED"],
           },
-          brts_role: role,
+          brts_role: role as US_ROLE,
 
           AND: [
             {
@@ -205,7 +205,9 @@ async function getBorrowReturnTicket(
       },
 
       device_child: {
-        serial_number: deviceChild ? deviceChild.dec_serial_number : "-",
+        serial_number: deviceChild
+          ? (deviceChild.dec_serial_number ?? "-")
+          : "-",
         asset_code: deviceChild ? deviceChild.dec_asset_code : "-",
         has_serial_number: deviceChild
           ? deviceChild.dec_has_serial_number
@@ -226,9 +228,9 @@ async function getBorrowReturnTicket(
   return {
     data: formattedData,
     total,
-    page,
-    limit,
-    paginated: true,
+    page: page || 1,
+    limit: limit || 10,
+    paginated: true as const,
   };
 }
 
@@ -246,8 +248,8 @@ async function getBorrowReturnTicketById(params: IdParamDto) {
           us_images: true,
           us_email: true,
           us_phone: true,
-          department: { select: { dept_name: true } },
-          section: { select: { sec_name: true } },
+          department: { select: { dept_name: true, dept_id: true } },
+          section: { select: { sec_name: true, sec_id: true } },
         },
       },
 

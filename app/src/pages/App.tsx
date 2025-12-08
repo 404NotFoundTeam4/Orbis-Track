@@ -14,6 +14,7 @@ import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
+import Requests from "./Requests";
 function App() {
   return (
     <ToastProvider>
@@ -40,6 +41,7 @@ function App() {
               />
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
+              <Route path="/requests" element={<Request />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Route>

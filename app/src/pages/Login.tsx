@@ -11,6 +11,7 @@ import { Icon } from "@iconify/react";
 import male from "../assets/images/login/male.png";
 import female from "../assets/images/login/female.png";
 import { useLogin } from "../hooks/useLogin.ts"
+import LogoLogin from "../assets/images/login/LogoLogin.png"
 
 /** หน้าเข้าสู่ระบบตามภาพตัวอย่าง */
 export function Login() {
@@ -115,11 +116,7 @@ export function Login() {
 
       <div className="z-10 ml-[66px] mt-[67px] relative flex gap-[29px] items-center">
         <div>
-          <Icon
-            icon="streamline-plump-color:wrench-circle-flat"
-            width="96"
-            height="96"
-          />
+          <img src={LogoLogin} alt="" className="w-[88.14px] h-[114.03px]" />
         </div>
         <div>
           <h1 className="font-roboto font-semibold text-[64px]">Obis Track</h1>
@@ -145,7 +142,7 @@ export function Login() {
 
           {/* Header Section */}
           <div className="z-10 relative flex gap-[15px] items-center mb-[48px]">
-            <Icon icon="pepicons-print:wrench-circle" width="98" height="98" />
+            <img src={LogoLogin} alt="" className="w-[88.14px] h-[114.03px]" />
             <div>
               <h1 className="font-roboto font-extrabold text-[64px] text-[#40A9FF]">
                 สวัสดี !

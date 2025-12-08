@@ -161,9 +161,6 @@ async function sendOtp(payload: SendOtpPayload) {
         900 // 15 minutes
     );
 
-    // ส่ง OTP ทางอีเมล
-    await emailService.sendOtp(email, otp);
-
     try {
         await emailService.sendOtp(email, otp);
         logger.info(`📧 OTP sent to ${email}: ${otp}`);

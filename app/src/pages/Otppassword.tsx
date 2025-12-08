@@ -59,7 +59,7 @@ export function Otppassword() {
     }
   };
 
-  const Sumbit_Otp = async () => {
+  const Submit_Otp = async () => {
     setErrorEmail(false);
     setErrorOtp(false);
     let FindError = false;
@@ -200,6 +200,7 @@ export function Otppassword() {
                     type="text"
                     className={`flex-1 w-full border text-[32px] px-7.5 py-[14px] rounded-full ${errorOtp ? "border-[#F74E57]" : "border-[#8C8C8C]"}`}
                     placeholder="OTP"
+                    onChange={(e) => setOtp(e.target.value)}
                   />
 
                   <div className={`${errorOtp ? "text-[#F74E57]" : "mb-2"}`}>
@@ -210,7 +211,7 @@ export function Otppassword() {
               {/* ปุ่มยืนยัน */}
               <button
                 type="button"
-                onClick={() => Sumbit_Otp()}
+                onClick={() => Submit_Otp()}
                 className="text-[32px] bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-full
                 w-full "
               >

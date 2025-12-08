@@ -28,6 +28,11 @@ export const initSocket = (httpServer: HttpServer) => {
       socket.join(`role_${user?.role}_${user?.dept}_${user?.sec}`);
     }
 
+    // For Testing: Echo notification back to sender
+    socket.on("TEST_NOTIFICATION", (payload) => {
+      socket.emit("NEW_NOTIFICATION", payload);
+    });
+
     socket.on("disconnect", () => {
       console.log("User disconnected");
     });

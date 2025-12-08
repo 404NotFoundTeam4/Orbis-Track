@@ -12,9 +12,8 @@ import Navbar from "../components/Navbar";
 import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
-import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
-import ForgotPassword from "./ForgotPassword"
+import ForgotPassword from "./ForgotPassword";
 import Requests from "./Requests";
 function App() {
   return (
@@ -42,7 +41,7 @@ function App() {
               />
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
-              <Route path="/requests" element={<Request />} />
+              <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Route>

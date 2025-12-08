@@ -45,6 +45,6 @@ export class BorrowReturnController extends BaseController {
     const id = idParamSchema.parse(req.params);
     const result = await borrowReturnService.getBorrowReturnTicketById(id);
 
-    return result;
+    return { data: result };
   }
 }

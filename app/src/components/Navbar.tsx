@@ -148,56 +148,75 @@ export const Navbar = () => {
                 <ul
                   className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${
                     isDropdownOpen
-                      ? "max-h-[500px] opacity-100 "
+                      ? "max-h-[500px] opacity-100"
                       : "max-h-0 opacity-0"
                   }`}
                 >
-                  <Link
-                    to="/requests"
-                    className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
-                  >
+                  <li>
                     <Link
-                      to="/users"
-                      className="mt-1 px-15 hover:bg-[#F0F0F0] rounded-[9px]  py-[11px]  flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      to="/requests"
+                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
+                 flex items-center w-full whitespace-nowrap
+                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                     >
                       คำร้อง
                     </Link>
+                  </li>
 
+                  <li>
                     <Link
                       to="/users"
-                      className=" px-15 hover:bg-[#F0F0F0] rounded-[9px]  py-[11px]  flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
+                 flex items-center w-full whitespace-nowrap
+                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                     >
                       คลังอุปกรณ์
                     </Link>
+                  </li>
 
+                  <li>
                     <Link
                       to="/users"
-                      className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]  flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
+                 flex items-center w-full whitespace-nowrap
+                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                     >
                       บัญชีผู้ใช้
                     </Link>
+                  </li>
 
+                  <li>
                     <Link
                       to="/users"
-                      className=" px-15 hover:bg-[#F0F0F0] rounded-[9px]  py-[11px]  flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
+                 flex items-center w-full whitespace-nowrap
+                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                     >
                       แชทบอท
                     </Link>
+                  </li>
 
+                  <li>
                     <Link
                       to="/administrator/departments-management"
-                      className=" px-15 hover:bg-[#F0F0F0] rounded-[9px]  py-[11px]  flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
+                 flex items-center w-full whitespace-nowrap
+                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                     >
                       แผนกและฝ่ายย่อย
                     </Link>
+                  </li>
 
+                  <li>
                     <Link
                       to="/users"
-                      className=" px-15 hover:bg-[#F0F0F0] rounded-[9px]  py-[11px]  flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
+                 flex items-center w-full whitespace-nowrap
+                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                     >
                       หมวดหมู่อุปกรณ์
                     </Link>
-                  </Link>
+                  </li>
                 </ul>
 
                 <Link

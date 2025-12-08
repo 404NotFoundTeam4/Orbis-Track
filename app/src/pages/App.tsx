@@ -41,7 +41,7 @@ function App() {
               />
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
-              <Route path="/requests" element={<Requests />} />
+              <Route path="/requests" element={<Request />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Route>

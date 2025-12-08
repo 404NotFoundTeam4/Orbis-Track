@@ -199,7 +199,7 @@ export const Users = () => {
       });
 
       if (res.data?.success) {
-        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+        toast.push({ message: "แก้ไขบัญชีผู้ใช้เสร็จสิ้น!", tone: "confirm" });
 
         // อัปเดต State ให้รูปเปลี่ยนทันทีโดยไม่ต้องรีเฟรช
         setusers((prevUsers) => {
@@ -236,7 +236,7 @@ export const Users = () => {
       console.error("❌ Error (catch):", err);
 
       if (err.response?.data?.success) {
-        toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+        toast.push({ message: "แก้ไขบัญชีผู้ใช้เสร็จสิ้น!", tone: "confirm" });
       }
       const apiErrorMessage =
         err.response?.data?.message ||

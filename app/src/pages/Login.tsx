@@ -142,7 +142,7 @@ export function Login() {
 
           {/* Header Section */}
           <div className="z-10 relative flex gap-[15px] items-center mb-[48px]">
-            <Icon icon="pepicons-print:wrench-circle" width="98" height="98" />
+            <img src={LogoLogin} alt="" className="w-[88.14px] h-[114.03px]" />
             <div>
               <h1 className="font-roboto font-extrabold text-[64px] text-[#40A9FF]">
                 สวัสดี !

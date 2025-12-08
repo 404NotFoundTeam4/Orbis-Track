@@ -126,7 +126,7 @@ export function Otppassword() {
       <div className="z-10 ml-[66px] mt-[67px] relative flex gap-[29px] items-center">
         <img src={LogoLogin} alt="" className="w-[88.14px] h-[114.03px]" />
         <div>
-          <h1 className="font-roboto font-semibold text-[32px]">Obris Track</h1>
+          <h1 className="font-roboto font-semibold text-[32px]">Orbis Track</h1>
           <p className="font-roboto font-regular text-[24px]">
             ระบบบริหารการยืม - คืน และแจ้งซ่อมอุปกรณ์ภายในองค์กร
           </p>

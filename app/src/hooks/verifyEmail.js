@@ -1,6 +1,6 @@
 import {  useNavigate } from "react-router-dom";
 import { SendOtp, VerifyOtp } from "../services/otpservices";
-import { ResetPassword } from "../services/AccountService";
+import { ResetPassword,ForgotPassword } from "../services/AccountService";
 
 export const verifyEmail = () => {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export const verifyEmail = () => {
   const SetOtp = async (email, otp) => {
     const res = await VerifyOtp(email, otp);
     if (res.data.success) {
-      navigate("/reset-password", { state: { email } });
+      navigate("/forgot-password", { state: { email } });
     }
     return res.data.success;
   };
@@ -35,12 +35,26 @@ export const verifyEmail = () => {
    *  - ถ้ารีเซ็ตสำเร็จ นำผู้ใช้กลับไปหน้า Login
    * Author: Panyapon Phollert (Ton) 66160086
    */
-  const ResetPW = async (email, newPassword, confirmNewPassword) => {
-    const res = await ResetPassword(email, newPassword, confirmNewPassword);
+  const ResetPW = async (token, newPassword, confirmNewPassword) => {
+    const res = await ResetPassword(token, newPassword, confirmNewPassword);
     if (res) {
       navigate("/login");
     }
     return res;
   };
-  return { GetOtp, SetOtp, ResetPW };
+    /**
+   * Function: ResetPW
+   * Features:
+   *  - รีเซ็ตรหัสผ่านใหม่หลังยืนยัน OTP ผ่านแล้ว
+   *  - ถ้ารีเซ็ตสำเร็จ นำผู้ใช้กลับไปหน้า Login
+   * Author: Panyapon Phollert (Ton) 66160086
+   */
+  const ForgotPW = async (email, newPassword, confirmNewPassword) => {
+    const res = await ForgotPassword(email, newPassword, confirmNewPassword);
+    if (res) {
+      navigate("/login");
+    }
+    return res;
+  };
+  return { GetOtp, SetOtp, ResetPW, ForgotPW };
 };

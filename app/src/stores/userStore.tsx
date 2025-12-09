@@ -7,6 +7,7 @@ interface User {
   us_username?: string;
   us_firstname?: string;
   us_lastname?: string;
+  us_phone?: string;
   us_role?: string;
 }
 
@@ -45,6 +46,7 @@ export const useUserStore = create<UserStore>()(
       logout: () => {
         localStorage.removeItem("token");
         localStorage.removeItem("rememberUser");
+        sessionStorage.removeItem("token");
         set({ user: null });
       },
     }),

@@ -38,13 +38,17 @@ export const useLogin = () => {
           return;
         }
         const User = await UserData(validToken);
+        setUser(User); // เก็บ user ลงใน store เพื่อให้หน้าอื่นใช้งานได้
+
         if (isRemember) {
-          localStorage.setItem("rememberUser", JSON.stringify(User));
+          localStorage.setItem("User", JSON.stringify(User));
         } else {
-          localStorage.removeItem("rememberUser");
+          localStorage.removeItem("User");
+          // Force save user to localStorage as requested, ensuring consistent persistence
+          localStorage.setItem("User", JSON.stringify(User));
         }
 
-        navigate("/users", { state: { user: User } });
+        navigate("/users");
         return res?.success;
       }
     } catch {

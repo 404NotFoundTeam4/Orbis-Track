@@ -76,6 +76,8 @@ export class AccountsController extends BaseController {
   ): Promise<BaseResponse<CreateAccountsSchema>> {
     // ถ้ามีไฟล์ที่อัปโหลดเข้ามาให้เก็บชื่อไฟล์
     const images = req.file ? req.file.path : undefined;
+    
+    // console.log('image: ', images)
     // ตรวจสอบและ validate ข้อมูลที่ส่งมา
     const payload = createAccountsPayload.parse(req.body);
     // เรียกใช้งาน service เพื่อบันทึกข้อมูลลงฐานข้อมูล
@@ -97,8 +99,10 @@ export class AccountsController extends BaseController {
     next: NextFunction
   ): Promise<BaseResponse<void>> {
     const id = idParamSchema.parse(req.params);
+    const images = req.file ? req.file.path : undefined;
     const validatedData = editAccountSchema.parse(req.body);
-    const result = await accountsService.updateAccount(id, validatedData);
+
+    const result = await accountsService.updateAccount(id, validatedData, images);
 
     return {
       message: result.message,

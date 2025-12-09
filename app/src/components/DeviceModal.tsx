@@ -4,6 +4,7 @@ import Input from "./Input";
 import Button from "./Button";
 import { Icon } from "@iconify/react";
 import Checkbox from "./Checkbox";
+import QuantityInput from "./QuantityInput";
 
 // โครงสร้างข้อมูลของแผนก
 interface Department {
@@ -132,29 +133,22 @@ const MainDeviceModal = ({
     setPreview(url);
   }
 
-
   // แผนกท่ีเลือกใน dropdown
-  const [selectedDepartment, setSelectedDepartment] =
-    useState<Department | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   // หมวดหมู่ท่ีเลือกใน dropdown
-  const [selectedCategory, setSelectedCategory] = useState<Department | null>(
-    null,
-  );
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   // ฝ่ายย่อยท่ีเลือกใน dropdown
-  const [selectedSection, setSelectedSection] = useState<Department | null>(
-    null,
-  );
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   // ลำดับการอนุมัติ
-  const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(
-    null,
-  );
+  const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(null);
+
   // เลือกลำดับการอนุมัติ
   const handleSelectApprover = (item: Approver) => {
     setSelectedApprovers(item);
   };
 
   // อุปกรณ์มี Serial Number
-  const [checked, setChecked] = useState(true);
+  const [checked, setChecked] = useState<boolean>(true);
 
   const [serialNumbers, setSerialNumbers] = useState([{ id: 1, value: "" }]);
 
@@ -202,36 +196,61 @@ const MainDeviceModal = ({
   useEffect(() => {
     if (mode === "edit" && defaultValues) {
       // รูปภาพ
-      setPreview(defaultValues.imageUrl ?? null);
+      setPreview(defaultValues.de_images ?? null);
 
       // Input text
-      setDeviceName(defaultValues.device_name ?? "");
-      setDeviceCode(defaultValues.device_code ?? "");
-      setLocation(defaultValues.location ?? "");
-      setDescription(defaultValues.description ?? "");
+      setDeviceName(defaultValues.de_name ?? "");
+      setDeviceCode(defaultValues.de_serial_number ?? "");
+      setLocation(defaultValues.de_location ?? "");
+      setDescription(defaultValues.de_description ?? "");
 
       // จำนวน
-      setMaxBorrowDays(defaultValues.maxBorrowDays ?? 0);
-      setTotalQuantity(defaultValues.totalQuantity ?? 0);
+      setMaxBorrowDays(defaultValues.de_max_borrow_days ?? 0);
+      setTotalQuantity(defaultValues.total_quantity ?? 0);
 
       // Dropdown
       setSelectedDepartment(defaultValues.department ?? null);
       setSelectedCategory(defaultValues.category ?? null);
       setSelectedSection(defaultValues.section ?? null);
 
-      // Serial Numbers
-      if (defaultValues.serialNumbers?.length > 0) {
+      // Serial Number
+      if (defaultValues.de_serial_number) {
         setChecked(true);
-        setSerialNumbers(defaultValues.serialNumbers);
+        setSerialNumbers([{
+          id: defaultValues.de_id,
+          value: defaultValues.de_serial_number
+        }]);
       } else {
         setChecked(false);
+        setSerialNumbers([{ id: Date.now(), value: "" }]); // แสดงช่อง input
       }
 
       // อุปกรณ์เสริม
-      setAccessories(defaultValues.accessories ?? []);
+      if (defaultValues.accessory) {
+        setAccessories([{
+          id: defaultValues.accessory.acc_id,
+          name: defaultValues.accessory.acc_name,
+          qty: String(defaultValues.accessory.acc_quantity)
+        }])
+      } else {
+        setAccessories([{ id: Date.now(), name: "", qty: "" }]); // แสดงช่อง input
+      }
 
       // ลำดับการอนุมัติ
-      setSelectedApprovers(defaultValues.approverGroup ?? null);
+      if (defaultValues.approval_flow.steps) {
+        setSelectedApprovers({
+          id: defaultValues.approval_flow.af_id,
+          label: defaultValues.approval_flow.af_name,
+          value: defaultValues.approval_flow.af_id,
+          // แปลง array เป็น approvers ที่ UI ใช้ render เช่น HOS › HOD
+          approvers: defaultValues.approval_flow.steps.map((step :any) => ({
+            id: step.afs_id, // id ของแต่ละขั้นตอน
+            label: step.afs_role, // role ที่อนุมัติ
+            order: step.afs_step_approve // ลำดับการอนุมัติ
+          }))
+        });
+      }
+
     }
   }, [mode, defaultValues]);
 
@@ -267,7 +286,7 @@ const MainDeviceModal = ({
         </div>
 
         {/* กรอกรายละเอียดอุปกรณ์ */}
-        <div className="flex flex-col items-center gap-[20px] w-[853px]">
+        <div className="flex flex-col gap-[20px] w-[853px]">
           <div className="flex gap-[20px]">
             {/* ชื่ออุปกรณ์ */}
             <div className="flex flex-col gap-[4px]">
@@ -381,6 +400,18 @@ const MainDeviceModal = ({
               placeholder="รายละเอียดอุปกรณ์"
             ></textarea>
           </div>
+          <div className="flex gap-[20px]">
+            <QuantityInput
+              label="จำนวนวันสูงสุดที่สามารถยืมได้"
+              value={maxBorrowDays}
+              onChange={(value) => setMaxBorrowDays(value)}
+            />
+            <QuantityInput
+              label="จำนวนอุปกรณ์"
+              value={totalQuantity}
+              onChange={(value) => setTotalQuantity(value)}
+            />
+          </div>
         </div>
       </form>
 
@@ -406,7 +437,7 @@ const MainDeviceModal = ({
                       Serial Number
                     </div>
                     <Button className="bg-[#1890FF] w-[173px]" onClick={addSerial}>
-                      + Serail Number
+                      + Serial Number
                     </Button>
                   </div>
 
@@ -489,8 +520,8 @@ const MainDeviceModal = ({
         {/* ลำดับการอนุมัติ */}
         <div className="flex items-start gap-[110px]">
           <div className="flex flex-col gap-[7px] w-[212px] self-start">
-            <p className="text-[18px] font-medium">อุปกรณ์เสริม</p>
-            <p className="text-[16px] font-medium text-[#40A9FF]">ข้อมูลของอุปกรณ์เสริม</p>
+            <p className="text-[18px] font-medium">ลำดับการอนุมัติ</p>
+            <p className="text-[16px] font-medium text-[#40A9FF]">ลำดับผู้อนุมัติของอุปกรณ์</p>
           </div>
           <div className="flex flex-col gap-[15px] h-full">
             <div className="flex gap-3 items-end">

@@ -4,7 +4,7 @@ interface QuantityInputProps {
   label?: string; // ข้อความ
   min?: number; // จำนวนต่ำสุด
   max?: number; // จำนวนสูงสุด
-  value: number;
+  value: number | null;
   width?: number;
   onChange?: (value: number) => void; // เปลี่ยนแปลงค่า
 }

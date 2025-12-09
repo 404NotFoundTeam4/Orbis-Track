@@ -63,11 +63,11 @@ export const otpTemplate = (data: OtpTemplateData): string => {
         <body>
             <div class="container">
             <div class="header">
-                <h1>Obis Track</h1>
+                <h1>Orbis Track</h1>
             </div>
             <div class="content">
                 ${username ? `<p class="greeting">เรียนคุณ ${username}</p>` : '<p class="greeting">เรียนผู้ใช้งาน</p>'}
-                <p class="info">คุณได้ขอรีเซ็ตรหัสผ่านสำหรับบัญชี Obis Track กรุณาใช้รหัส OTP ด้านล่างเพื่อดำเนินการต่อ</p>
+                <p class="info">คุณได้ขอรีเซ็ตรหัสผ่านสำหรับบัญชี Orbis Track กรุณาใช้รหัส OTP ด้านล่างเพื่อดำเนินการต่อ</p>
 
                 <div class="otp-box">
                 <div class="otp-label">รหัส OTP</div>
@@ -80,7 +80,7 @@ export const otpTemplate = (data: OtpTemplateData): string => {
                 <div class="warning">
                 เพื่อความปลอดภัยของบัญชี:<br>
                 • อย่าแชร์รหัส OTP ให้ผู้อื่นไม่ว่ากรณีใด ๆ<br>
-                • Obis Track จะไม่ขอรหัส OTP จากคุณทางโทรศัพท์<br>
+                • Orbis Track จะไม่ขอรหัส OTP จากคุณทางโทรศัพท์<br>
                 • หากมีข้อสงสัย กรุณาติดต่อทีมสนับสนุนทันที
                 </div>
 
@@ -89,7 +89,7 @@ export const otpTemplate = (data: OtpTemplateData): string => {
                 </p>
             </div>
             <div class="footer">
-                <p>© ${new Date().getFullYear()} Obis Track. All rights reserved.</p>
+                <p>© ${new Date().getFullYear()} Orbis Track. All rights reserved.</p>
                 <p>อีเมลนี้ถูกส่งโดยอัตโนมัติ กรุณาอย่าตอบกลับ</p>
             </div>
             </div>

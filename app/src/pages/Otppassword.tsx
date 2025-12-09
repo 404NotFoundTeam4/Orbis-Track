@@ -7,80 +7,79 @@
  */
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import { verifyEmail } from "../hooks/verifyEmail.js"
+import { verifyEmail } from "../hooks/verifyEmail.js";
+import LogoLogin from "../assets/images/login/LogoLogin.png";
+
 export function Otppassword() {
   const { GetOtp, SetOtp } = verifyEmail();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [errorOtp, setErrorOtp] = useState(false)
-  const [errorEmail, setErrorEmail] = useState(false)
+  const [errorOtp, setErrorOtp] = useState(false);
+  const [errorEmail, setErrorEmail] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
- const HandleGetOtp = async () => {
-  // เคลียร์ error
-  setErrorEmail(false);
-  setErrorOtp(false);
+  const HandleGetOtp = async () => {
+    // เคลียร์ error
+    setErrorEmail(false);
+    setErrorOtp(false);
 
-  // validate email
-  if (!email.trim()) {
-    setErrorEmail(true);
-    return;
-  }
-
-  setIsLoading(true); // ⬅ เริ่มโหลด
-  console.log("กำลังไป")
-  try {
-    
-    const res = await GetOtp(email);
-    console.log("ส่งแล้ว")
-    // หลังส่งสำเร็จ
-    setTimer(60);
-    setIsCounting(true);
-
-    // เริ่มนับถอยหลัง
-    const countdown = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdown);
-          setIsCounting(false);
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-  } catch (error) {
-    console.log(error);
-    setErrorOtp(true);
-  } finally {
-    console.log("มาทำไม")
-    setIsLoading(false); // ⬅ ปิดโหลดหลัง API เสร็จ ไม่ว่า success หรือ error
-  }
-};
-
-  const Sumbit_Otp = async () => {
-    setErrorEmail(false)
-    setErrorOtp(false)
-    let FindError = false
+    // validate email
     if (!email.trim()) {
-      setErrorEmail(true)
+      setErrorEmail(true);
+      return;
+    }
+
+    setIsLoading(true); // ⬅ เริ่มโหลด
+    console.log("กำลังไป");
+    try {
+      const res = await GetOtp(email);
+      console.log("ส่งแล้ว");
+      // หลังส่งสำเร็จ
+      setTimer(60);
+      setIsCounting(true);
+
+      // เริ่มนับถอยหลัง
+      const countdown = setInterval(() => {
+        setTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdown);
+            setIsCounting(false);
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (error) {
+      console.log(error);
+      setErrorOtp(true);
+    } finally {
+      console.log("มาทำไม");
+      setIsLoading(false); // ⬅ ปิดโหลดหลัง API เสร็จ ไม่ว่า success หรือ error
+    }
+  };
+
+  const Submit_Otp = async () => {
+    setErrorEmail(false);
+    setErrorOtp(false);
+    let FindError = false;
+    if (!email.trim()) {
+      setErrorEmail(true);
       FindError = true;
     }
     if (!otp.trim() || otp.trim().length != 6) {
-      setErrorOtp(true)
-      FindError = true
+      setErrorOtp(true);
+      FindError = true;
     }
     if (FindError) return;
 
     try {
-      const res = await SetOtp(email, otp)
-      setErrorOtp(!res)
+      const res = await SetOtp(email, otp);
+      setErrorOtp(!res);
+    } catch {
+      setErrorOtp(true);
     }
-    catch {
-      setErrorOtp(true)
-    }
-  }
+  };
 
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
@@ -125,13 +124,9 @@ export function Otppassword() {
 
       {/* ==== ส่วนหัวโลโก้ ==== */}
       <div className="z-10 ml-[66px] mt-[67px] relative flex gap-[29px] items-center">
-        <Icon
-          icon="streamline-plump-color:wrench-circle-flat"
-          width="96"
-          height="96"
-        />
+        <img src={LogoLogin} alt="" className="w-[88.14px] h-[114.03px]" />
         <div>
-          <h1 className="font-roboto font-semibold text-[32px]">Obris Track</h1>
+          <h1 className="font-roboto font-semibold text-[32px]">Orbis Track</h1>
           <p className="font-roboto font-regular text-[24px]">
             ระบบบริหารการยืม - คืน และแจ้งซ่อมอุปกรณ์ภายในองค์กร
           </p>
@@ -141,9 +136,9 @@ export function Otppassword() {
       {/* ==== กล่องฟอร์มอยู่กลางจอ ==== */}
       <div className="flex flex-1 justify-center items-center">
         <div
-          className="z-10 bg-white backdrop-blur-lg bg-opacity-40 border-gray-200 
+          className="z-10 bg-white backdrop-blur-lg bg-opacity-40 border-gray-200
           shadow-[inset_-8px_0_15px_rgba(0,0,0,0.04)] rounded-[40px]
-          pt-2.5 px-31 w-auto h-auto flex flex-col border-2 text-[32px] gap-1"
+          py-10 pt-14 px-31 w-auto h-auto flex flex-col border-2 text-[32px] gap-1"
         >
           <div className="flex flex-col  px-6 items-center justify-center">
             <Icon
@@ -172,7 +167,7 @@ export function Otppassword() {
                     type="text"
                     className="flex-1 border text-[32px] px-7.5 py-[13px] rounded-full border-[#8C8C8C]"
                     placeholder="example@gmail.com"
-                        onChange={(e)=>setEmail(e.target.value)}  
+                    onChange={(e) => setEmail(e.target.value)}
                   />
 
                   {/* OTP Button */}
@@ -180,16 +175,17 @@ export function Otppassword() {
                     type="button"
                     disabled={isCounting || isLoading}
                     onClick={() => HandleGetOtp()}
-                    className={`${isCounting || isLoading
+                    className={`${
+                      isCounting || isLoading
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-sky-500 hover:bg-sky-600"
-                      } 
+                    }
     text-white text-[32px] font-medium px-8 rounded-full transition py-2.5`}
                   >
                     {isLoading
-                      ? "กำลังส่ง"                // ขณะรอ API
+                      ? "กำลังส่ง" // ขณะรอ API
                       : isCounting
-                        ? `${timer}s`                   // ขณะนับถอยหลัง
+                        ? `${timer}s` // ขณะนับถอยหลัง
                         : "ขอ OTP"}
                   </button>
                 </div>
@@ -204,29 +200,28 @@ export function Otppassword() {
                     type="text"
                     className={`flex-1 w-full border text-[32px] px-7.5 py-[14px] rounded-full ${errorOtp ? "border-[#F74E57]" : "border-[#8C8C8C]"}`}
                     placeholder="OTP"
+                    onChange={(e) => setOtp(e.target.value)}
                   />
 
                   <div className={`${errorOtp ? "text-[#F74E57]" : "mb-2"}`}>
                     {errorOtp && "OTP ไม่ถูกต้อง"}
                   </div>
-
                 </div>
               </div>
               {/* ปุ่มยืนยัน */}
               <button
                 type="button"
-                onClick={() => Sumbit_Otp()}
-                className="text-[32px] bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-full 
+                onClick={() => Submit_Otp()}
+                className="text-[32px] bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-full
                 w-full "
               >
                 ยืนยัน
               </button>
               {/* ปุ่มกลับ */}
               <div>
-
                 <a
                   href="/login"
-                  className="  text-gray-500 hover:text-sky-500 transition flex items-center justify-center gap-1 
+                  className="  text-gray-500 hover:text-sky-500 transition flex items-center justify-center gap-1
                  text-[32px]"
                 >
                   <Icon
@@ -235,17 +230,12 @@ export function Otppassword() {
                     height="48"
                     className="mt-2.5"
                   />
-                  <p>
-                    กลับไปหน้าเข้าสู่ระบบ
-                  </p>
+                  <p>กลับไปหน้าเข้าสู่ระบบ</p>
                 </a>
               </div>
-
             </div>
           </div>
-          <div>
-
-          </div>
+          <div></div>
         </div>
       </div>
     </div>

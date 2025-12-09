@@ -25,12 +25,17 @@ interface CartItem {
 }
 
 export const Cart = () => {
+
+  const loginData = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const user = loginData ? JSON.parse(loginData) : null;
+  const us_id = user?.us_id || user?.state?.user?.us_id || null;
+
   const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
     const loadCart = async () => {
       try {
-        const res = await CartService.getCartItems(1);
+        const res = await CartService.getCartItems(us_id);
         const mapped: CartItem[] = res.itemData.map((d: any) => ({
           id: d.cti_id,
           name: d.device?.de_name ?? "ไม่ระบุ",
@@ -239,19 +244,19 @@ export const Cart = () => {
           {items.map((item) => (
             <div
               key={item.id}
-              className="bg-white rounded-xl shadow-sm flex overflow-hidden transition-all duration-200 hover:shadow-lg"
+              className="h-[208px] bg-white rounded-xl shadow-sm flex overflow-hidden transition-all duration-200 hover:shadow-lg"
             >
-              <div className="flex-1 p-4 flex gap-4 items-center">
+              <div className="flex-1 p-4 flex gap-[25px] items-center">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded text-[#0072FF] focus:ring-0 cursor-pointer"
+                  className="w-[29px] h-[29px] rounded-[8px] text-[#0072FF] focus:ring-0 cursor-pointer"
                   checked={selectedItems.includes(item.id)}
                   onChange={() => toggleSelect(item.id)}
                 />
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="w-[110px] h-[110px] rounded-lg object-cover border border-gray-100"
+                  className="w-[143px] h-[153px] rounded-lg object-cover border border-gray-100"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -343,7 +348,9 @@ export const Cart = () => {
       {/* RIGHT SIDE: Summary (Sidebar) */}
       <div className="w-[300px]">
         <div className="bg-white rounded-xl shadow-md p-5 flex flex-col h-full">
-          <h2 className="font-bold text-lg mb-4 flex items-center justify-center">สรุปรายการยืมอุปกรณ์</h2>
+          <h2 className="font-bold text-lg mb-4 flex items-center justify-center">
+            สรุปรายการยืมอุปกรณ์
+          </h2>
 
           <div className="space-y-2 text-sm flex-grow overflow-y-auto pr-1">
             {items

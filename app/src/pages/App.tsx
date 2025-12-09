@@ -15,7 +15,6 @@ import Departments from "./Departments";
 import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
-import Requests from "./Requests";
 import { Cart } from "./Cart";
 import EditCart from "./EditCart";
 
@@ -47,7 +46,7 @@ function App() {
               />
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
-              <Route path="/requests" element={<Request />} />
+              <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Route>

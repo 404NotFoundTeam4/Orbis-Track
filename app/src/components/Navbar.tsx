@@ -75,7 +75,10 @@ export const Navbar = () => {
 
           <button
             type="button"
-            onClick={() => setActive(active === "cart" ? null : "cart")}
+            onClick={() => {
+              (setActive(active === "cart" ? null : "cart"),
+                navigate("/list-devices/cart"));
+            }}
             className={`h-full px-6.5 ${
               active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
             } flex justify-center items-center relative`}

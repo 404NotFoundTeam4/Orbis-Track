@@ -1,9 +1,8 @@
 import api from "../api/axios";
 
 /**
- * Enum: NR_EVENT
  * Description: เหตุการณ์ต่างๆ ที่เกิดขึ้นในระบบแจ้งเตือน (Backend Event Types)
- * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
  */
 export const NR_EVENT = {
     APPROVAL_REQUESTED: "APPROVAL_REQUESTED", // มีคำขอยืมใหม่
@@ -72,7 +71,9 @@ export interface PaginatedResult<T> {
 export const notificationService = {
     /**
      * Description: ดึงรายการแจ้งเตือนของผู้ใช้ปัจจุบัน แบบแบ่งหน้า
-     * Endpoint: GET /notifications
+     * Input      : page (number), limit (number)
+     * Output     : PaginatedResult<GetNotiDto>
+     * Author     : Pakkapon Chomchoey (Tonnam) 66160080
      */
     getUserNotifications: async (page: number = 1, limit: number = 10): Promise<PaginatedResult<GetNotiDto>> => {
         const { data } = await api.get(`/notifications`, {
@@ -83,7 +84,9 @@ export const notificationService = {
 
     /**
      * Description: ดึงจำนวนการแจ้งเตือนที่ยังไม่ได้อ่าน
-     * Endpoint: GET /notifications/unread-count
+     * Input      : -
+     * Output     : { data: number }
+     * Author     : Pakkapon Chomchoey (Tonnam) 66160080
      */
     getUnreadCount: async (): Promise<{ data: number }> => {
         const { data } = await api.get(`/notifications/unread-count`);
@@ -92,7 +95,9 @@ export const notificationService = {
 
     /**
      * Description: อัปเดตสถานะการแจ้งเตือนเป็น "อ่านแล้ว" ตาม ID ที่ระบุ
-     * Endpoint: PATCH /notifications/read
+     * Input      : ids (number[]) - รายการ ID ที่ต้องการ mark
+     * Output     : { message: string }
+     * Author     : Pakkapon Chomchoey (Tonnam) 66160080
      */
     markAsRead: async (ids: number[]): Promise<{ message: string }> => {
         const { data } = await api.patch(`/notifications/read`, { ids });
@@ -101,7 +106,9 @@ export const notificationService = {
 
     /**
      * Description: อัปเดตสถานะการแจ้งเตือน "ทั้งหมด" เป็น "อ่านแล้ว"
-     * Endpoint: PATCH /notifications/read-all
+     * Input      : -
+     * Output     : { message: string }
+     * Author     : Pakkapon Chomchoey (Tonnam) 66160080
      */
     markAllAsRead: async (): Promise<{ message: string }> => {
         const { data } = await api.patch(`/notifications/read-all`);

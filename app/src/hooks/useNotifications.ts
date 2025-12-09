@@ -15,9 +15,10 @@ import { useToast } from "../components/Toast";
 // but for simplicity let's assume valid auth is handled via cookies/headers.
 
 /**
- * Hook: useNotifications
  * Description: จัดการ Logic ทั้งหมดเกี่ยวกับการแจ้งเตือน (Fetching, State Management, Mapping, Socket)
- * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ * Input      : { onOpenNotifications?: () => void } - callback เปิดกล่องแจ้งเตือน
+ * Output     : { notifications, unreadCount, loading, hasMore, loadMore, refetch, markAllRead }
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
  */
 export const useNotifications = ({ onOpenNotifications }: { onOpenNotifications?: () => void } = {}) => {
     const [notifications, setNotifications] = useState<NotificationItemProps[]>([]);
@@ -31,8 +32,10 @@ export const useNotifications = ({ onOpenNotifications }: { onOpenNotifications?
     const { push } = useToast();
 
     /**
-     * Function: mapEventType
      * Description: แปลง Event จาก Backend (NR_EVENT) ให้เป็น Type ของ Frontend (NotificationType)
+     * Input      : event (NR_EVENT | undefined)
+     * Output     : NotificationType
+     * Author     : Pakkapon Chomchoey (Tonnam) 66160080
      */
     const mapEventType = useCallback((event?: NR_EVENT): NotificationType => {
         switch (event) {
@@ -57,7 +60,10 @@ export const useNotifications = ({ onOpenNotifications }: { onOpenNotifications?
     }, []);
 
     /**
-     * Function: handleNotificationClick
+     * Description: จัดการเมื่อผู้ใช้คลิกที่การแจ้งเตือน (Mark as read + Navigate)
+     * Input      : dto (GetNotiDto) - ข้อมูลการแจ้งเตือนที่ถูกคลิก
+     * Output     : void
+     * Author     : Pakkapon Chomchoey (Tonnam) 66160080
      */
     const handleNotificationClick = useCallback(async (dto: GetNotiDto) => {
         // Mark as read if unread
@@ -105,8 +111,10 @@ export const useNotifications = ({ onOpenNotifications }: { onOpenNotifications?
     }, [mapEventType, handleNotificationClick]);
 
     /**
-     * Function: fetchNotifications
-     * Description: ดึงข้อมูลการแจ้งเตือนตาม page
+     * Description: ดึงข้อมูลการแจ้งเตือนจาก API ตามหน้าที่ระบุ
+     * Input      : pageNum (number) - หมายเลขหน้าที่ต้องการดึง
+     * Output     : void (อัปเดต state โดยตรง)
+     * Author     : Pakkapon Chomchoey (Tonnam) 66160080
      */
     const fetchNotifications = useCallback(async (pageNum: number) => {
         try {

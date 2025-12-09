@@ -1,6 +1,10 @@
 import React from "react";
 import { Icon } from "@iconify/react";
 
+/**
+ * Description: ประเภทของการแจ้งเตือนที่รองรับในระบบ
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export type NotificationType =
   | "approved"
   | "warning"
@@ -13,6 +17,10 @@ export type NotificationType =
   | "rejected"
   | "general";
 
+/**
+ * Description: Props สำหรับ NotificationItem component
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export interface NotificationItemProps {
   id?: number;
   type: NotificationType;
@@ -23,6 +31,12 @@ export interface NotificationItemProps {
   onClick?: () => void;
 }
 
+/**
+ * Description: คืนค่า icon และสีตามประเภทการแจ้งเตือน
+ * Input      : type (NotificationType)
+ * Output     : { icon: string, color: string, iconColor: string }
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 const getIconAndColor = (type: NotificationType) => {
   switch (type) {
     case "approved":
@@ -89,6 +103,12 @@ const getIconAndColor = (type: NotificationType) => {
   }
 };
 
+/**
+ * Description: แสดงรายการแจ้งเตือนแต่ละรายการ พร้อม icon, title, description, timestamp
+ * Input      : NotificationItemProps { type, title, description, timestamp, isRead, onClick }
+ * Output     : JSX.Element
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   type,
   title,
@@ -102,9 +122,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-        !isRead ? "bg-white" : "bg-[#F8FAFC]"
-      }`}
+      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!isRead ? "bg-white" : "bg-[#F8FAFC]"
+        }`}
     >
       {/* Icon Circle */}
       <div
@@ -131,6 +150,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   );
 };
 
+/**
+ * Description: Props สำหรับ NotificationList component
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export interface NotificationListProps {
   notifications: NotificationItemProps[];
   onClose: () => void;
@@ -138,6 +161,12 @@ export interface NotificationListProps {
   hasMore?: boolean;
 }
 
+/**
+ * Description: แสดงรายการแจ้งเตือนทั้งหมดในกล่อง popup พร้อม infinite scroll
+ * Input      : NotificationListProps { notifications, onClose, onLoadMore, hasMore }
+ * Output     : JSX.Element
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const NotificationList: React.FC<NotificationListProps> = ({
   notifications,
   onClose,
@@ -198,11 +227,21 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   );
 };
 
+/**
+ * Description: Props สำหรับ NotificationBell component
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export interface NotificationBellProps {
   count?: number;
   onClick?: () => void;
 }
 
+/**
+ * Description: ปุ่มกระดิ่งแจ้งเตือน พร้อมแสดง badge จำนวนที่ยังไม่อ่าน
+ * Input      : NotificationBellProps { count, onClick }
+ * Output     : JSX.Element
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const NotificationBell: React.FC<NotificationBellProps> = ({
   count = 0,
   onClick,

@@ -16,6 +16,9 @@ import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
 import Requests from "./Requests";
+import { Cart } from "./Cart";
+import EditCart from "./EditCart";
+
 function App() {
   return (
     <ToastProvider>
@@ -35,6 +38,8 @@ function App() {
                 path="/administrator/account-management"
                 element={<Users />}
               />
+              <Route path="/list-devices/cart" element={<Cart />}/>
+              <Route path="/list-devices/cart/edit" element={<EditCart />}/>
               <Route path="/users" element={<Users />} />
               <Route
                 path="/administrator/departments-management"

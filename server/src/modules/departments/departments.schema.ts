@@ -127,3 +127,7 @@ export type DeptSectionSchema = z.infer<typeof deptSectionSchema>;
 export type AddDepartmentsPayload = z.infer<typeof addDepartmentsPayload>
 
 export type AddDepartmentsSchema = z.infer<typeof addDepartmentsSchema>
+
+export type DepartmentSchema = z.infer<typeof departmentSchema>
+
+export type SectionSchema = z.infer<typeof sectionSchema>

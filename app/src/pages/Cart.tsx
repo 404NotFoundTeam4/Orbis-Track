@@ -112,7 +112,7 @@ export const Cart = () => {
 
         push({
           tone: "danger",
-          message: `ลบ ${selectedItems.length} รายการออกจากรถเข็นเสร็จสิ้น!`,
+          message: "ลบออกจากรถเข็นเสร็จสิ้น!",
         });
 
         setSelectedItems([]);
@@ -343,7 +343,7 @@ export const Cart = () => {
       {/* RIGHT SIDE: Summary (Sidebar) */}
       <div className="w-[300px]">
         <div className="bg-white rounded-xl shadow-md p-5 flex flex-col h-full">
-          <h2 className="font-semibold text-lg mb-4">สรุปรายการยืมอุปกรณ์</h2>
+          <h2 className="font-bold text-lg mb-4 flex items-center justify-center">สรุปรายการยืมอุปกรณ์</h2>
 
           <div className="space-y-2 text-sm flex-grow overflow-y-auto pr-1">
             {items
@@ -368,7 +368,7 @@ export const Cart = () => {
 
             <button
               onClick={openSubmitModal}
-              className="w-full bg-[#0A6CFF] text-white py-3 rounded-xl text-center text-base font-semibold hover:bg-[#0050B3] transition-colors disabled:bg-gray-400"
+              className="w-full bg-[#40A9FF] text-white py-3 rounded-full text-center text-base font-semibold hover:bg-[#0050B3] transition-colors disabled:bg-gray-400"
               disabled={selectedItemCount === 0}
             >
               ส่งคำร้อง ({selectedItemCount})

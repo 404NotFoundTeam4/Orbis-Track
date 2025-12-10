@@ -71,6 +71,12 @@ useEffect(() => {
     setActiveSubMenu("");
   };
 
+
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+    setActiveSubMenu("");
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -176,7 +182,10 @@ useEffect(() => {
                     toggleDropdown();
                     handleMenuClick("managements");
                   }}
-                  className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen
+
+                  className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
+                    isDropdownOpen
+
                       ? "bg-[#40A9FF] text-white"
                       : "hover:bg-[#F0F0F0]"
                     }`}

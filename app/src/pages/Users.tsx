@@ -518,6 +518,22 @@ export const Users = () => {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
+  const getSortIcon = (
+    currentField: string,
+    targetField: string,
+    direction: "asc" | "desc"
+  ) => {
+    // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
+    if (currentField !== targetField) {
+      return "bx:sort-down";
+    }
+
+    // ถ้าเป็น asc
+    if (direction === "asc") return "bx:sort-up";
+
+    // ถ้าเป็น desc
+    return "bx:sort-down";
+  };
   return (
     <div className="w-full min-h-screen flex flex-col p-4">
       <div className="flex-1">
@@ -578,20 +594,14 @@ export const Users = () => {
           {/* หัวตาราง */}
           <div
             className="grid grid-cols-[minmax(300px,2fr)_repeat(6,minmax(120px,1fr))_auto]
-    bg-white border border-[#D9D9D9] font-semibold text-gray-700 
-    rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
+                      bg-white border border-[#D9D9D9] font-semibold text-gray-700 
+                      rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
               <button type="button" onClick={() => HandleSort("us_firstname")}>
                 <Icon
-                  icon={
-                    sortField === "us_firstname"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_firstname", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -602,13 +612,7 @@ export const Users = () => {
               ตำแหน่ง
               <button type="button" onClick={() => HandleSort("us_role")}>
                 <Icon
-                  icon={
-                    sortField === "us_role"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_role", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -619,13 +623,7 @@ export const Users = () => {
               แผนก
               <button type="button" onClick={() => HandleSort("us_dept_name")}>
                 <Icon
-                  icon={
-                    sortField === "us_dept_name"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_dept_name", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -636,13 +634,7 @@ export const Users = () => {
               ฝ่ายย่อย
               <button type="button" onClick={() => HandleSort("us_sec_name")}>
                 <Icon
-                  icon={
-                    sortField === "us_sec_name"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_sec_name", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -656,13 +648,7 @@ export const Users = () => {
               วันที่เพิ่ม
               <button type="button" onClick={() => HandleSort("created_at")}>
                 <Icon
-                  icon={
-                    sortField === "created_at"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "created_at", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -673,20 +659,16 @@ export const Users = () => {
               สถานะ
               <button type="button" onClick={() => HandleSort("us_is_active")}>
                 <Icon
-                  icon={
-                    sortField === "us_is_active"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_is_active", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
                 />
               </button>
             </div>
-            <div className="py-2 px-4 text-left flex items-center w-[100px]">จัดการ</div>
+            <div className="py-2 px-4 text-left flex items-center w-[150px]">
+              จัดการ
+            </div>
           </div>
 
           <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] min-h-[679px] flex flex-col">
@@ -741,12 +723,14 @@ export const Users = () => {
                   )}
                 </div>
 
-                <div className="py-2 px-4 flex items-center gap-3 w-[100px]">
+                <div className="py-2 px-4 flex items-center gap-3 w-[150px]">
                   {u.us_is_active && (
                     <>
                       <button
                         onClick={() => handleOpenEditModal(u)}
-                        className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
+                        className="w-[34px] h-[34px] flex items-center justify-center 
+                          text-[#1890FF] hover:bg-[#40A9FF] hover:text-[#FFFFFF]
+                          rounded-[8px] cursor-pointer transition-all duration-150"
                         title="แก้ไข"
                       >
                         <Icon
@@ -758,7 +742,9 @@ export const Users = () => {
 
                       <button
                         onClick={() => handleOpenDeleteModal(u)}
-                        className="text-[#FF4D4F] hover:text-[#FF4D4F] cursor-pointer"
+                        className="w-[34px] h-[34px] flex items-center justify-center 
+                          text-[#FF4D4F] hover:bg-[#FF7875] hover:text-[#FFFFFF]
+                          rounded-[8px] cursor-pointer transition-all duration-150"
                         title="ลบ"
                       >
                         <Icon

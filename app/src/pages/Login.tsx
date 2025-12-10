@@ -161,21 +161,27 @@ export function Login() {
                 <label className="block font-roboto text-[32px]">
                   ชื่อผู้ใช้
                 </label>
-                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${errorUS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4`}>
-                  <Icon
-                    icon="icon-park-solid:people"
-                    width="25"
-                    height="25"
-                    className={`${errorUS ? "text-[#F74E57]" : "text-sky-500"}`}
-                  />
-                  <input
-                    type="text"
-                    placeholder="ชื่อผู้ใช้"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className=" flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
-                  />
-                </div>
+               <div
+  className={`autofill-wrapper flex items-center w-[557px] h-[76px] rounded-full border ${
+    errorUS ? "border-[#F74E57]" : "border-[#40A9FF]"
+  } shadow-sm px-6 space-x-4`}
+>
+  <Icon
+    icon="icon-park-solid:people"
+    width="25"
+    height="25"
+    className={`${errorUS ? "text-[#F74E57]" : "text-sky-500"}`}
+  />
+
+  <input
+    type="text"
+    placeholder="ชื่อผู้ใช้"
+    value={username}
+    onChange={(e) => setUsername(e.target.value)}
+    className="autofill-target flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
+  />
+</div>
+
                 {
                   (errorUS) &&
                   <span className="pt-3 text-[#F74E57] text-[32px]">
@@ -189,7 +195,7 @@ export function Login() {
                 <label className="block font-roboto text-[32px]">
                   รหัสผ่าน
                 </label>
-                <div className={`flex items-center w-[557px] h-[76px] rounded-full border ${errorPS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4 `}>
+                <div className={`autofill-wrapper flex items-center w-[557px] h-[76px] rounded-full border ${errorPS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4 `}>
                   <Icon
                     icon="ph:key-duotone"
                     width="25"
@@ -202,7 +208,7 @@ export function Login() {
                     placeholder="รหัสผ่าน"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
+                    className="autofill-target flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
                   />
                   <button
                     type="button"

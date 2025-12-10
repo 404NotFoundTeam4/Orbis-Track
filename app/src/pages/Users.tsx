@@ -8,6 +8,7 @@ import api from "../api/axios.js";
 import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
 import getImageUrl from "../services/GetImage.js";
+import { getAccount } from "../hooks/useAccount.js"
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -50,7 +51,7 @@ const FormatPhone = (phone: string | null | undefined): string => {
   if (!phone) {
     return "-"; // ถ้าไม่มีเบอร์
   }
-
+  
   // ลบตัวอักษรที่ไม่ใช่ตัวเลขออก (เผื่อมีขีดกลางอยู่แล้ว)
   const digits = phone.replace(/\D/g, "");
 
@@ -200,7 +201,8 @@ export const Users = () => {
 
       if (res.data?.success) {
         toast.push({ message: "แก้ไขบัญชีผู้ใช้เสร็จสิ้น!", tone: "confirm" });
-
+        
+        getAccount()
         // อัปเดต State ให้รูปเปลี่ยนทันทีโดยไม่ต้องรีเฟรช
         setusers((prevUsers) => {
           return prevUsers.map((user) => {

@@ -28,7 +28,7 @@ function App() {
           <Route path="/" element={<Login />} />
 
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
-          <Route element={<ProtectedRoute />}>
+          {/* <Route element={<ProtectedRoute />}> */}
             <Route element={<Navbar />}>
               <Route
                 path="/administrator/account-management"
@@ -44,7 +44,7 @@ function App() {
               <Route path="/requests" element={<Request />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
-          </Route>
+          {/* </Route> */}
         </Routes>
       </BrowserRouter>
     </ToastProvider>

@@ -6,6 +6,7 @@ export async function getAccount() {
           localStorage.removeItem("User");
           localStorage.setItem("User", JSON.stringify(User));
           sessionStorage.setItem("User", JSON.stringify(User));
+          window.dispatchEvent(new Event("user-updated"));
 }
 
 export const Account ={getAccount}

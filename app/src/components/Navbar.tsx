@@ -32,25 +32,39 @@ export const Navbar = () => {
   };
   const navigate = useNavigate();
   const { user, logout } = useUserStore();
-  const [userData, setUserData] = useState(() => {
+  const [User, setUser] = useState(() => {
+  const data =
+    localStorage.getItem("User") || sessionStorage.getItem("User");
+  return data ? JSON.parse(data) : null;
+});
+
+useEffect(() => {
+  let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const handleStorageChange = () => {
     const data =
       localStorage.getItem("User") || sessionStorage.getItem("User");
-    return data ? JSON.parse(data) : null;
-  });
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const data =
-        localStorage.getItem("User") || sessionStorage.getItem("User");
-      setUserData(data ? JSON.parse(data) : null);
-    };
+    const parsed = data ? JSON.parse(data) : null;
 
-    window.addEventListener("user-updated", handleStorageChange);
+   
+    if (JSON.stringify(parsed) !== JSON.stringify(User)) {
+      reloadTimeout = setTimeout(() => {
+        window.location.reload();
+      }, 2000); 
+    }
 
-    return () => {
-      window.removeEventListener("user-updated", handleStorageChange);
-    };
-  }, []);
+    setUser(parsed);
+  };
+
+  window.addEventListener("user-updated", handleStorageChange);
+
+  return () => {
+    window.removeEventListener("user-updated", handleStorageChange);
+    if (reloadTimeout) clearTimeout(reloadTimeout);
+  };
+}, [User]);
+
 
   const closeDropdown = () => {
     setDropdownOpen(false);

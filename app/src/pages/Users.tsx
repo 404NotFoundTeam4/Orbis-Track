@@ -202,7 +202,7 @@ export const Users = () => {
       if (res.data?.success) {
         toast.push({ message: "แก้ไขบัญชีผู้ใช้เสร็จสิ้น!", tone: "confirm" });
         
-        getAccount()
+       
         // อัปเดต State ให้รูปเปลี่ยนทันทีโดยไม่ต้องรีเฟรช
         setusers((prevUsers) => {
           return prevUsers.map((user) => {
@@ -231,6 +231,7 @@ export const Users = () => {
             return user;
           });
         });
+         getAccount()
       } else {
         toast.push({ message: "เกิดข้อผิดพลาด", tone: "danger" });
       }

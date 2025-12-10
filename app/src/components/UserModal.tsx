@@ -54,6 +54,7 @@ type IUserModalProps = {
   departmentsList: IDepartment[];
   sectionsList: ISection[];
   rolesList: IDropDownItemType[];
+  allUsers: IUserApiData[];
 };
 
 const defaultFormDataObject: IUserApiData = {
@@ -82,13 +83,16 @@ export default function UserModal({
   departmentsList,
   sectionsList,
   rolesList,
+  allUsers,
 }: IUserModalProps) {
   const [formDataObject, setFormDataObject] = useState<IUserApiData>(
     user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject
   );
 
   //  State สำหรับเก็บ Error Message
-  const [errors, setErrors] = useState<Partial<Record<keyof IUserApiData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof IUserApiData, string>>
+  >({});
 
   const FieldLabel = ({ children }: { children: React.ReactNode }) => (
     <label className="w-[221px] block text-[16px] font-medium text-[#000000] mb-2">
@@ -109,28 +113,53 @@ export default function UserModal({
 
   function generatePassword(length: number = 12): string {
     if (length < 12) throw new Error("ความยาวต้องอย่างน้อย 12 ตัวขึ้นไป");
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const chars =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+    return Array.from(
+      { length },
+      () => chars[Math.floor(Math.random() * chars.length)]
+    ).join("");
   }
 
-/**
- * Description: Validate Form Function สำหรับตรวจสอบความถูกต้องของข้อมูลในฟอร์ม
- * Author    : Worrawat Namwat (Wave) 66160372
- */
+  /**
+   * Description: Validate Form Function สำหรับตรวจสอบความถูกต้องของข้อมูลในฟอร์ม
+   * Author    : Worrawat Namwat (Wave) 66160372
+   */
   const validateForm = () => {
     const newErrors: Partial<Record<keyof IUserApiData, string>> = {};
     let isValid = true;
 
+    // แปลงค่าที่กรอกเป็น Lowercase เพื่อ compare case-insensitive
+    const empCodeLower = formDataObject.us_emp_code?.trim().toLowerCase();
+    const emailLower = formDataObject.us_email?.trim().toLowerCase();
+    const usernameLower = formDataObject.us_username?.trim().toLowerCase();
+
+    // ดึง user อื่น ๆ ทั้งหมด (ยกเว้น user ปัจจุบันตอนแก้ไข)
+    const otherUsers = allUsers.filter((u) => u.us_id !== formDataObject.us_id);
+
     if (!formDataObject.us_firstname?.trim()) {
       newErrors.us_firstname = "กรุณากรอกชื่อจริง";
       isValid = false;
+    } else if (!/^[\u0E00-\u0E7FA-Za-z]+$/.test(formDataObject.us_firstname)) {
+      newErrors.us_firstname = "ชื่อต้องเป็นตัวอักษรเท่านั้น";
+      isValid = false;
     }
+
     if (!formDataObject.us_lastname?.trim()) {
       newErrors.us_lastname = "กรุณากรอกนามสกุล";
       isValid = false;
+    } else if (!/^[\u0E00-\u0E7FA-Za-z]+$/.test(formDataObject.us_lastname)) {
+      newErrors.us_lastname = "นามสกุลต้องเป็นตัวอักษรเท่านั้น";
+      isValid = false;
     }
+
     if (!formDataObject.us_emp_code?.trim()) {
       newErrors.us_emp_code = "กรุณากรอกรหัสพนักงาน";
+      isValid = false;
+    } else if (
+      otherUsers.some((u) => u.us_emp_code?.toLowerCase() === empCodeLower)
+    ) {
+      newErrors.us_emp_code = "รหัสพนักงานนี้ถูกใช้งานแล้ว";
       isValid = false;
     }
 
@@ -139,6 +168,11 @@ export default function UserModal({
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formDataObject.us_email)) {
       newErrors.us_email = "รูปแบบอีเมลไม่ถูกต้อง";
+      isValid = false;
+    } else if (
+      otherUsers.some((u) => u.us_email?.toLowerCase() === emailLower)
+    ) {
+      newErrors.us_email = "อีเมลนี้ถูกใช้งานแล้ว";
       isValid = false;
     }
 
@@ -169,6 +203,11 @@ export default function UserModal({
 
     if (!formDataObject.us_username?.trim()) {
       newErrors.us_username = "กรุณากรอกชื่อผู้ใช้";
+      isValid = false;
+    } else if (
+      otherUsers.some((u) => u.us_username?.toLowerCase() === usernameLower)
+    ) {
+      newErrors.us_username = "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว";
       isValid = false;
     }
 
@@ -221,7 +260,9 @@ export default function UserModal({
     }
   };
 
-  const handleAvatarChange = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (
+    changeEvent: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = changeEvent.target.files?.[0];
     if (file) {
       const previewUrl = URL.createObjectURL(file);
@@ -267,7 +308,10 @@ export default function UserModal({
       onSubmit?.({ us_id: user.us_id });
       onClose?.();
     } catch (err) {
-      toast.push({ tone: "danger", message: "ล้มเหลว: ไม่สามารถปิดการใช้งานผู้ใช้ได้" });
+      toast.push({
+        tone: "danger",
+        message: "ล้มเหลว: ไม่สามารถปิดการใช้งานผู้ใช้ได้",
+      });
     } finally {
       setDeleting(false);
     }
@@ -299,7 +343,10 @@ export default function UserModal({
   useEffect(() => {
     let filtered: Partial<IUserApiData> = {};
     if (keyvalue === "all") filtered = { ...formDataObject };
-    else keyvalue.forEach((k) => { (filtered as any)[k] = formDataObject[k]; });
+    else
+      keyvalue.forEach((k) => {
+        (filtered as any)[k] = formDataObject[k];
+      });
     setFormOutput(filtered);
   }, [formDataObject, keyvalue]);
 
@@ -315,12 +362,14 @@ export default function UserModal({
       us_dept_id: selectedItem.value,
       us_sec_id: null,
     }));
-    if (errors.us_dept_id) setErrors((prev) => ({ ...prev, us_dept_id: undefined }));
+    if (errors.us_dept_id)
+      setErrors((prev) => ({ ...prev, us_dept_id: undefined }));
   };
 
   const handleSectionChange = (selectedItem: IDropDownItemType) => {
     setFormDataObject((prev) => ({ ...prev, us_sec_id: selectedItem.value }));
-    if (errors.us_sec_id) setErrors((prev) => ({ ...prev, us_sec_id: undefined }));
+    if (errors.us_sec_id)
+      setErrors((prev) => ({ ...prev, us_sec_id: undefined }));
   };
 
   const roleOptions: IDropDownItemType[] = [
@@ -332,28 +381,42 @@ export default function UserModal({
     { id: "EMPLOYEE", label: "EMPLOYEE", value: "EMPLOYEE" },
   ];
 
-  const departmentOptions = useMemo(() =>
-    departmentsList?.map((dept) => ({
-      id: dept.dept_id,
-      label: dept.dept_name,
-      value: dept.dept_id,
-    })), [departmentsList]);
+  const departmentOptions = useMemo(
+    () =>
+      departmentsList?.map((dept) => ({
+        id: dept.dept_id,
+        label: dept.dept_name,
+        value: dept.dept_id,
+      })),
+    [departmentsList]
+  );
 
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
-    return sectionsList?.filter((sec) => sec.sec_dept_id === formDataObject.us_dept_id);
+    return sectionsList?.filter(
+      (sec) => sec.sec_dept_id === formDataObject.us_dept_id
+    );
   }, [formDataObject.us_dept_id, sectionsList]);
 
-  const sectionOptions = useMemo(() =>
-    filteredSections.map((sec) => ({
-      id: sec.sec_id,
-      label: sec.sec_name,
-      value: sec.sec_id,
-    })), [filteredSections]);
+  const sectionOptions = useMemo(
+    () =>
+      filteredSections.map((sec) => ({
+        id: sec.sec_id,
+        label: sec.sec_name,
+        value: sec.sec_id,
+      })),
+    [filteredSections]
+  );
 
-  const selectedRole = rolesList?.find((op) => op.value === formDataObject.us_role);
-  const selectedDepartment = departmentOptions?.find((op) => op.id === formDataObject.us_dept_id);
-  const selectedSection = sectionOptions?.find((op) => op.id === formDataObject.us_sec_id);
+  const selectedRole = rolesList?.find(
+    (op) => op.value === formDataObject.us_role
+  );
+  const selectedDepartment = departmentOptions?.find(
+    (op) => op.id === formDataObject.us_dept_id
+  );
+  const selectedSection = sectionOptions?.find(
+    (op) => op.id === formDataObject.us_sec_id
+  );
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
@@ -362,15 +425,34 @@ export default function UserModal({
         <div className="mb-6 grid grid-cols-[1fr_auto_1fr] items-center">
           <div aria-hidden />
           <h2 className="justify-self-center text-[32px] font-bold font-roboto text-black">
-            {typeform === "delete" ? "ปิดการใช้งานบัญชีผู้ใช้" : typeform === "edit" ? "แก้ไขบัญชีผู้ใช้" : "เพิ่มบัญชีผู้ใช้"}
+            {typeform === "delete"
+              ? "ปิดการใช้งานบัญชีผู้ใช้"
+              : typeform === "edit"
+                ? "แก้ไขบัญชีผู้ใช้"
+                : "เพิ่มบัญชีผู้ใช้"}
           </h2>
           <button
             onClick={onClose}
             className="justify-self-end grid place-items-center w-8 h-8 rounded-full bg-white border-2 border-black hover:border-black hover:text-black hover:bg-gray-50 transition-colors"
           >
-            <svg width="19" height="19" viewBox="0 0 24 24" className="text-inherit">
-              <path d="M6 6 L18 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M18 6 L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            <svg
+              width="19"
+              height="19"
+              viewBox="0 0 24 24"
+              className="text-inherit"
+            >
+              <path
+                d="M6 6 L18 18"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M18 6 L6 18"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -379,26 +461,45 @@ export default function UserModal({
         <div className="flex flex-col items-center mb-6">
           <div className="w-28 h-28 rounded-full border border-[#a2a2a2] flex items-center justify-center overflow-hidden bg-gray-50">
             {formDataObject.us_images ? (
-              <img src={getImageUrl(formDataObject.us_images)} alt="avatar" className="w-full h-full object-cover" />
+              <img
+                src={getImageUrl(formDataObject.us_images)}
+                alt="avatar"
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <Icon icon="ion:image-outline" width="37.19" height="20" className="text-gray-300" />
+              <Icon
+                icon="ion:image-outline"
+                width="37.19"
+                height="20"
+                className="text-gray-300"
+              />
             )}
           </div>
           {!isDelete && (
             <label className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#a2a2a2] text-[16px] font-normal text-gray-600 cursor-pointer">
-              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
               <span>+ เพิ่มรูปภาพ</span>
             </label>
           )}
         </div>
 
         {/* Form */}
-        <form className="space-y-8 text-sm" onSubmit={(e) => e.preventDefault()}>
+        <form
+          className="space-y-8 text-sm"
+          onSubmit={(e) => e.preventDefault()}
+        >
           <fieldset disabled={isDelete} aria-readonly={isDelete}>
             {/* Profile Section */}
             <div className="mb-[30px]">
               <h3 className="text-[000000] font-medium text-[18px]">โปรไฟล์</h3>
-              <div className="font-medium text-[#858585] mb-3 text-[16px]">รายละเอียดโปรไฟล์ผู้ใช้</div>
+              <div className="font-medium text-[#858585] mb-3 text-[16px]">
+                รายละเอียดโปรไฟล์ผู้ใช้
+              </div>
 
               <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-3">
                 {/* ชื่อ */}
@@ -414,7 +515,11 @@ export default function UserModal({
                       ${errors.us_firstname ? "border-red-500" : "border-[#a2a2a2]"} 
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
-                  {errors.us_firstname && <div className="text-red-500 text-xs mt-1">{errors.us_firstname}</div>}
+                  {errors.us_firstname && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_firstname}
+                    </div>
+                  )}
                 </div>
 
                 {/* นามสกุล */}
@@ -430,7 +535,11 @@ export default function UserModal({
                       ${errors.us_lastname ? "border-red-500" : "border-[#a2a2a2]"} 
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
-                  {errors.us_lastname && <div className="text-red-500 text-xs mt-1">{errors.us_lastname}</div>}
+                  {errors.us_lastname && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_lastname}
+                    </div>
+                  )}
                 </div>
 
                 {/* รหัสพนักงาน */}
@@ -442,12 +551,16 @@ export default function UserModal({
                     value={formDataObject.us_emp_code}
                     onChange={handleChange}
                     readOnly={isDelete}
-                    disabled={isDelete} 
+                    disabled={isDelete}
                     className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] 
                       ${errors.us_emp_code ? "border-red-500" : "border-[#a2a2a2]"}  
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
-                  {errors.us_emp_code && <div className="text-red-500 text-xs mt-1">{errors.us_emp_code}</div>}
+                  {errors.us_emp_code && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_emp_code}
+                    </div>
+                  )}
                 </div>
 
                 {/* อีเมล */}
@@ -463,7 +576,11 @@ export default function UserModal({
                       ${errors.us_email ? "border-red-500" : "border-[#a2a2a2]"} 
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
-                  {errors.us_email && <div className="text-red-500 text-xs mt-1">{errors.us_email}</div>}
+                  {errors.us_email && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_email}
+                    </div>
+                  )}
                 </div>
 
                 {/* เบอร์โทรศัพท์ */}
@@ -480,15 +597,23 @@ export default function UserModal({
                       ${errors.us_phone ? "border-red-500" : "border-[#a2a2a2]"} 
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
-                  {errors.us_phone && <div className="text-red-500 text-xs mt-1">{errors.us_phone}</div>}
+                  {errors.us_phone && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_phone}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Position Section */}
             <div className="mb-[30px]">
-              <h3 className="text-[000000] font-medium text-[18px]">ตำแหน่งงาน</h3>
-              <div className="font-medium text-[#858585] mb-3 text-[16px]">รายละเอียดตำแหน่งงานของผู้ใช้</div>
+              <h3 className="text-[000000] font-medium text-[18px]">
+                ตำแหน่งงาน
+              </h3>
+              <div className="font-medium text-[#858585] mb-3 text-[16px]">
+                รายละเอียดตำแหน่งงานของผู้ใช้
+              </div>
               <div className="grid grid-cols-3 gap-y-4 gap-x-4">
                 {/* ตำแหน่ง */}
                 <div>
@@ -500,10 +625,16 @@ export default function UserModal({
                     placeholder="ประเภทตำแหน่ง"
                     disabled={isDelete}
                     className={"!w-[221px]"}
-                    triggerClassName={errors.us_role ? "!border-red-500" : "!border-[#a2a2a2]"}
+                    triggerClassName={
+                      errors.us_role ? "!border-red-500" : "!border-[#a2a2a2]"
+                    }
                     searchable={true}
                   />
-                  {errors.us_role && <div className="text-red-500 text-xs mt-1">{errors.us_role}</div>}
+                  {errors.us_role && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_role}
+                    </div>
+                  )}
                 </div>
 
                 {/* แผนก */}
@@ -516,10 +647,18 @@ export default function UserModal({
                     placeholder="ประเภทแผนก"
                     disabled={isDelete}
                     className="!w-[221px]"
-                    triggerClassName={errors.us_dept_id ? "!border-red-500" : "!border-[#a2a2a2]"}
+                    triggerClassName={
+                      errors.us_dept_id
+                        ? "!border-red-500"
+                        : "!border-[#a2a2a2]"
+                    }
                     searchable={true}
                   />
-                  {errors.us_dept_id && <div className="text-red-500 text-xs mt-1">{errors.us_dept_id}</div>}
+                  {errors.us_dept_id && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_dept_id}
+                    </div>
+                  )}
                 </div>
 
                 {/* ฝ่ายย่อย */}
@@ -531,11 +670,17 @@ export default function UserModal({
                     onChange={handleSectionChange}
                     placeholder="ประเภทฝ่ายย่อย"
                     className="!w-[221px]"
-                    triggerClassName={errors.us_sec_id ? "!border-red-500" : "!border-[#a2a2a2]"}
+                    triggerClassName={
+                      errors.us_sec_id ? "!border-red-500" : "!border-[#a2a2a2]"
+                    }
                     searchable={true}
                     disabled={filteredSections.length === 0 || isDelete}
                   />
-                  {errors.us_sec_id && <div className="text-red-500 text-xs mt-1">{errors.us_sec_id}</div>}
+                  {errors.us_sec_id && (
+                    <div className="text-red-500 text-xs mt-1">
+                      {errors.us_sec_id}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -543,13 +688,26 @@ export default function UserModal({
             {/* Account Section */}
             <div>
               <h3 className="text-[000000] font-medium text-[18px]">บัญชี</h3>
-              <div className="font-medium text-[#858585] mb-3 text-[16px]">รายละเอียดบัญชีของผู้ใช้</div>
-              <div className="font-medium text-[000000] mb-2 text-[16px]">ชื่อผู้ใช้ (ล็อกอิน)</div>
+              <div className="font-medium text-[#858585] mb-3 text-[16px]">
+                รายละเอียดบัญชีของผู้ใช้
+              </div>
+              <div className="font-medium text-[000000] mb-2 text-[16px]">
+                ชื่อผู้ใช้ (ล็อกอิน)
+              </div>
               <div>
-                <div className={`w-[221px] h-[46px] border rounded-[16px] px-2 flex items-center gap-2 
-                  ${errors.us_username ? "border-red-500" : "border-[#a2a2a2]"} 
-                  ${isDelete ? "opacity-50 cursor-not-allowed" : ""}`}>
-                  <span className="text-black"><Icon icon="mdi:user" width="28" height="28" /></span>
+                <div
+                  className={`
+                    w-[221px] h-[46px] border rounded-[16px] px-2 flex items-center gap-2 
+                    ${errors.us_username ? "border-red-500" : "border-[#a2a2a2]"} 
+                    focus-within:border-3
+                    focus-within:border-black
+                    focus-within:outline-none
+                    ${isDelete ? "opacity-50 cursor-not-allowed" : ""}
+                  `}
+                >
+                  <span className="text-black">
+                    <Icon icon="mdi:user" width="28" height="28" />
+                  </span>
                   <input
                     name="us_username"
                     placeholder="ชื่อผู้ใช้"
@@ -559,7 +717,12 @@ export default function UserModal({
                     className="flex-1 min-w-0 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] bg-transparent outline-none"
                   />
                 </div>
-                {errors.us_username && <div className="text-red-500 text-xs mt-1">{errors.us_username}</div>}
+
+                {errors.us_username && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {errors.us_username}
+                  </div>
+                )}
               </div>
             </div>
           </fieldset>
@@ -570,18 +733,52 @@ export default function UserModal({
               type="button"
               onClick={handle}
               disabled={deleting}
-              className={`px-8 py-3 rounded-full shadow text-white cursor-pointer ${typeform === "delete" ? "bg-red-500 hover:bg-red-600" : "bg-blue-400 hover:bg-blue-500"
-                }`}
+              className={`px-8 py-3 rounded-full shadow text-white cursor-pointer ${
+                typeform === "delete"
+                  ? "bg-red-500 hover:bg-red-600"
+                  : "bg-blue-400 hover:bg-blue-500"
+              }`}
             >
-              {typeform === "delete" ? "ปิดการใช้งาน" : typeform === "add" ? "เพิ่มบัญชีผู้ใช้" : "บันทึก"}
+              {typeform === "delete"
+                ? "ปิดการใช้งาน"
+                : typeform === "add"
+                  ? "เพิ่มบัญชีผู้ใช้"
+                  : "บันทึก"}
             </button>
           </div>
         </form>
       </div>
 
-      <AlertDialog open={isEditAlertOpen} onOpenChange={setIsEditAlertOpen} title="ยืนยันการแก้ไข" description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้" tone="warning" onConfirm={handleConfirmEdit} confirmText="ยืนยัน" cancelText="ยกเลิก" />
-      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen} title="ยืนยันการปิดการใช้งาน" description="คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานบัญชีผู้ใช้นี้" tone="danger" onConfirm={handleConfirmDelete} confirmText="ยืนยัน" cancelText="ยกเลิก" />
-      <AlertDialog open={isAddAlertOpen} onOpenChange={setIsAddAlertOpen} title="ยืนยันการเพิ่มบัญชีผู้ใช้" description="คุณแน่ใจหรือไม่ว่าต้องการเพิ่มบัญชีผู้ใช้ใหม่" tone="warning" onConfirm={handleConfirmAdd} confirmText="ยืนยัน" cancelText="ยกเลิก" />
+      <AlertDialog
+        open={isEditAlertOpen}
+        onOpenChange={setIsEditAlertOpen}
+        title="ยืนยันการแก้ไข"
+        description="คุณแน่ใจหรือไม่ว่าต้องการบันทึกการเปลี่ยนแปลงนี้"
+        tone="warning"
+        onConfirm={handleConfirmEdit}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
+      <AlertDialog
+        open={isDeleteAlertOpen}
+        onOpenChange={setIsDeleteAlertOpen}
+        title="ยืนยันการปิดการใช้งาน"
+        description="คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานบัญชีผู้ใช้นี้"
+        tone="danger"
+        onConfirm={handleConfirmDelete}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
+      <AlertDialog
+        open={isAddAlertOpen}
+        onOpenChange={setIsAddAlertOpen}
+        title="ยืนยันการเพิ่มบัญชีผู้ใช้"
+        description="คุณแน่ใจหรือไม่ว่าต้องการเพิ่มบัญชีผู้ใช้ใหม่"
+        tone="warning"
+        onConfirm={handleConfirmAdd}
+        confirmText="ยืนยัน"
+        cancelText="ยกเลิก"
+      />
     </div>
   );
 }

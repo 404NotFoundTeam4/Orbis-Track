@@ -109,13 +109,27 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     : "success";
 
   const normalizeName = (str: string) =>
-    str.trim().replace(/\s+/g, "").toLowerCase();
+    str.trim().replace(/^(แผนก)\s*/i, "").replace(/\s+/g, "").toLowerCase();
+  // const normalizeSectionName = (str: string) => {
+  //   return str
+  //     .replace(/^แผนก\s*[^\s]+\s*ฝ่ายย่อย/i, "") // ตัด "แผนก XXX ฝ่ายย่อย"
+  //     .replace(/^ฝ่ายย่อย/i, "") // ตัด "ฝ่ายย่อย" (กรณีแก้ไข)
+  //     .trim()
+  //     .toLowerCase();
+  // };
   const normalizeSectionName = (str: string) => {
-    return str
-      .replace(/^แผนก\s*[^\s]+\s*ฝ่ายย่อย/i, "") // ตัด "แผนก XXX ฝ่ายย่อย"
-      .replace(/^ฝ่ายย่อย/i, "") // ตัด "ฝ่ายย่อย" (กรณีแก้ไข)
-      .trim()
-      .toLowerCase();
+    return (
+      str
+        .toLowerCase()
+        // ตัดคำขึ้นต้นทั้งหมด: แผนก / ฝ่าย / ฝ่ายย่อย / คำผสมใด ๆ
+        .replace(/^(แผนก|ฝ่ายย่อย|ฝ่าย)\s*/i, "")
+        // ถ้าชอบเขียนแบบ "แผนก ฝ่ายย่อย การขาย"
+        .replace(/^(แผนก\s*)?(ฝ่ายย่อย|ฝ่าย)\s*/i, "")
+        // กรณี "แผนก XXX ฝ่ายย่อย XXX"
+        .replace(/แผนก\s*.*?\s*ฝ่ายย่อย\s*/i, "")
+        // ลบช่องว่างซ้ำ
+        .trim()
+    );
   };
   // ตรวจชื่อซ้ำทั้งหมด
   const isDuplicate = () => {

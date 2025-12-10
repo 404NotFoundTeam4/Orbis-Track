@@ -35,11 +35,27 @@ export const Navbar = () => {
     localStorage.getItem("User") || sessionStorage.getItem("User");
   const User = dataUser ? JSON.parse(dataUser) : null;
 
-  const closeDropdown = () => setDropdownOpen(false);
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+    setActiveSubMenu("");
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  const handleMenuClick = (menu: string) => {
+    setActiveMenu(menu);
+  };
+
+  const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
+  const handleSubMenuClick = (menu: string) => {
+    setActiveSubMenu(menu);
+  };
+
   return (
     <div className="flex flex-col background w-full min-h-screen ">
       {/* Navbar */}
@@ -119,8 +135,11 @@ export const Navbar = () => {
             <div className="text-left">
               <Link
                 to="/home"
-                onClick={closeDropdown}
-                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] py-[11px] flex items-center w-full gap-2 "
+                onClick={() => {
+                  closeDropdown();
+                  handleMenuClick("home");
+                }}
+                className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "home" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
               >
                 <FontAwesomeIcon icon={faHome} />
                 <span>หน้าแรก</span>
@@ -128,7 +147,10 @@ export const Navbar = () => {
 
               <li>
                 <div
-                  onClick={toggleDropdown}
+                  onClick={() => {
+                    toggleDropdown();
+                    handleMenuClick("managements");
+                  }}
                   className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
                     isDropdownOpen
                       ? "bg-[#40A9FF] text-white"
@@ -155,9 +177,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/requests"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("requests")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "requests" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       คำร้อง
                     </Link>
@@ -166,9 +187,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("storages")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "storages" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       คลังอุปกรณ์
                     </Link>
@@ -177,9 +197,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("users")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "users" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       บัญชีผู้ใช้
                     </Link>
@@ -188,9 +207,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("chatbots")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "chatbots" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       แชทบอท
                     </Link>
@@ -199,9 +217,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/administrator/departments-management"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("departments")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "departments" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       แผนกและฝ่ายย่อย
                     </Link>
@@ -210,9 +227,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("categories")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "categories" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       หมวดหมู่อุปกรณ์
                     </Link>
@@ -221,8 +237,11 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("device-lists");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "device-lists" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faBoxArchive} />
                   <span>รายการอุปกรณ์</span>
@@ -230,8 +249,11 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("reports");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "reports" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faWrench} />
                   <span>แจ้งซ่อม</span>
@@ -239,8 +261,11 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("dashboards");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "dashboards" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faChartLine} flip="horizontal" />
                   <span>แดชบอร์ด</span>
@@ -248,8 +273,11 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("histories");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "histories" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faClockRotateLeft} />
                   <span>ดูประวัติ</span>
@@ -257,8 +285,11 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("setting");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "setting" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faGear} />
                   <span>การตั้งค่า</span>

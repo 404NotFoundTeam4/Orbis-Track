@@ -17,10 +17,6 @@ type ModalType =
   | "delete-section"
   | "delete-department";
 
-// interface Department {
-//   id: number;
-//   name: string;
-// }
 interface Department {
   id: number;
   name: string;
@@ -110,13 +106,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   const normalizeName = (str: string) =>
     str.trim().replace(/^(แผนก)\s*/i, "").replace(/\s+/g, "").toLowerCase();
-  // const normalizeSectionName = (str: string) => {
-  //   return str
-  //     .replace(/^แผนก\s*[^\s]+\s*ฝ่ายย่อย/i, "") // ตัด "แผนก XXX ฝ่ายย่อย"
-  //     .replace(/^ฝ่ายย่อย/i, "") // ตัด "ฝ่ายย่อย" (กรณีแก้ไข)
-  //     .trim()
-  //     .toLowerCase();
-  // };
+
   const normalizeSectionName = (str: string) => {
     return (
       str
@@ -173,22 +163,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   // Reset form เมื่อเปิด modal
   useEffect(() => {
-    // if (isOpen) {
-    //   setDepartment(initialData?.department || "");
-    //   setSection(initialData?.section || "");
-    //   setSectionId(initialData?.sectionId || 0);
-    //   setDeptError("");
-
-    //   if (initialData?.departmentId && type === "add-section") {
-    //     const foundDept = departmentItems.find(
-    //       (item) => item.id === initialData.departmentId
-    //     );
-    //     setSelectedDepartment(foundDept || null);
-    //   } else {
-    //     setSelectedDepartment(null);
-    //   }
-    // }
-
     if (!isOpen) return;
 
     //ล้าง error ทุกโหมด
@@ -438,11 +412,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   searchPlaceholder="ค้นหาแผนก"
                   searchable={true}
                   className="w-[333px]"
-                  triggerClassName="h-[46px] pl-[15px] pr-[8px] py-3
-                                   border-[#A2A2A2] text-[#000] rounded-[16px]
-                                   h-[46px] pl-[15px] pr-[8px] py-3
-                                       border-[#A2A2A2] text-[#000] rounded-[16px]
-                                       text-[16px] [&>span]:text-[16px]"
+                  triggerClassName="h-[46px] pl-[15px] pr-[8px] py-3 border-[#A2A2A2] text-[#000] rounded-[16px] h-[46px] pl-[15px] pr-[8px] py-3 border-[#A2A2A2] text-[#000] rounded-[16px] text-[16px] [&>span]:text-[16px]"
                 />
               </div>
             )}

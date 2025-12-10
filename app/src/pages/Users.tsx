@@ -575,8 +575,8 @@ export const Users = () => {
           {/* หัวตาราง */}
           <div
             className="grid grid-cols-[minmax(300px,2fr)_repeat(6,minmax(120px,1fr))_auto]
-    bg-white border border-[#D9D9D9] font-semibold text-gray-700 
-    rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
+                      bg-white border border-[#D9D9D9] font-semibold text-gray-700 
+                      rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
@@ -683,7 +683,9 @@ export const Users = () => {
                 />
               </button>
             </div>
-            <div className="py-2 px-4 text-left flex items-center w-[100px]">จัดการ</div>
+            <div className="py-2 px-4 text-left flex items-center w-[150px]">
+              จัดการ
+            </div>
           </div>
 
           <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] min-h-[679px] flex flex-col">
@@ -738,7 +740,7 @@ export const Users = () => {
                   )}
                 </div>
 
-                <div className="py-2 px-4 flex items-center gap-3 w-[100px]">
+                <div className="py-2 px-4 flex items-center gap-3 w-[150px]">
                   {u.us_is_active && (
                     <>
                       <button

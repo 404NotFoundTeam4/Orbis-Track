@@ -397,15 +397,15 @@ const Departments = () => {
           {pageRows.map((dep) => (
             <div
               key={dep.dept_id}
-              // onClick={() => toggleOpen(dep.dept_id)}
-              className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
               onClick={() => toggleOpen(dep.dept_id)}
+              className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
+              // onClick={() => toggleOpen(dep.dept_id)}
             >
               <div className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] mt-[30px] mb-[30px] items-center text-[16px] ">
                 {/* Dropdown Arrow */}
                 <div
                   className="py-2 px-4 flex justify-center items-center hover:cursor-pointer"
-                  onClick={() => toggleOpen(dep.dept_id)}
+                  // onClick={() => toggleOpen(dep.dept_id)}
                 >
                   <DropdownArrow isOpen={openDeptId.includes(dep.dept_id)} />
                 </div>

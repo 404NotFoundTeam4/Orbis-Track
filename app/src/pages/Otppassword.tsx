@@ -190,8 +190,8 @@ export function Otppassword() {
                   </button>
                 </div>
                 <div className={`${errorEmail ? "text-[#F74E57]" : ""}`}>
-                    {errorEmail && "กรุณากรอกข้อมูล"}
-                  </div>
+                  {errorEmail && "กรุณากรอกอีเมล"}
+                </div>
               </div>
               <div className="">
                 {/* Label */}

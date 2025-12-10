@@ -10,36 +10,35 @@ import "../styles/css/Login.css";
 import { Icon } from "@iconify/react";
 import male from "../assets/images/login/male.png";
 import female from "../assets/images/login/female.png";
-import { useLogin } from "../hooks/useLogin.ts"
-import LogoLogin from "../assets/images/login/LogoLogin.png"
+import { useLogin } from "../hooks/useLogin.ts";
+import LogoLogin from "../assets/images/login/LogoLogin.png";
 
 /** หน้าเข้าสู่ระบบตามภาพตัวอย่าง */
 export function Login() {
-
   const { HandleLogin } = useLogin();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isRemember, setIsRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errorUS, setErrorUS] = useState(false)
-  const [errorPS, setErrorPS] = useState(false)
+  const [errorUS, setErrorUS] = useState(false);
+  const [errorPS, setErrorPS] = useState(false);
   const onSubmit = async (a) => {
-    setErrorUS(false)
-    setErrorPS(false)
+    setErrorUS(false);
+    setErrorPS(false);
     a.preventDefault();
-    let FindError = false
+    let FindError = false;
     if (!username) {
-      setErrorUS(true)
-      FindError = true
+      setErrorUS(true);
+      FindError = true;
     }
     if (!password) {
-      setErrorPS(true)
-      FindError = true
+      setErrorPS(true);
+      FindError = true;
     }
     if (FindError) return;
     const res = await HandleLogin(username, password, isRemember);
-    setErrorUS(!res)
-    setErrorPS(!res)  
+    setErrorUS(!res);
+    setErrorPS(!res);
   };
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden">
@@ -130,12 +129,12 @@ export function Login() {
           className="relative w-[821px] rounded-[100px] p-10
               backdrop-blur-2xl
                shadow-[inset_-15px_0_25px_rgba(0,0,0,0.08)]
-               border border-white/70 
+               border border-white/70
                flex flex-col justify-center items-center"
         >
           {/* เพิ่มเงาสะท้อนขาวด้านขวา */}
           <div
-            className="absolute inset-y-0 right-0 w-[2px] 
+            className="absolute inset-y-0 right-0 w-[2px]
                     bg-gradient-to-r from-white/80 to-transparent
                     pointer-events-none rounded-[100px]"
           ></div>
@@ -161,33 +160,32 @@ export function Login() {
                 <label className="block font-roboto text-[32px]">
                   ชื่อผู้ใช้
                 </label>
-               <div
-  className={`autofill-wrapper flex items-center w-[557px] h-[76px] rounded-full border ${
-    errorUS ? "border-[#F74E57]" : "border-[#40A9FF]"
-  } shadow-sm px-6 space-x-4`}
->
-  <Icon
-    icon="icon-park-solid:people"
-    width="25"
-    height="25"
-    className={`${errorUS ? "text-[#F74E57]" : "text-sky-500"}`}
-  />
+                <div
+                  className={`autofill-wrapper flex items-center w-[557px] h-[76px] rounded-full border ${
+                    errorUS ? "border-[#F74E57]" : "border-[#40A9FF]"
+                  } shadow-sm px-6 space-x-4`}
+                >
+                  <Icon
+                    icon="icon-park-solid:people"
+                    width="25"
+                    height="25"
+                    className={`${errorUS ? "text-[#F74E57]" : "text-sky-500"}`}
+                  />
 
-  <input
-    type="text"
-    placeholder="ชื่อผู้ใช้"
-    value={username}
-    onChange={(e) => setUsername(e.target.value)}
-    className="autofill-target flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
-  />
-</div>
+                  <input
+                    type="text"
+                    placeholder="ชื่อผู้ใช้"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="autofill-target flex-1 bg-transparent outline-none font-roboto text-[20px] text-gray-700 placeholder:text-gray-400"
+                  />
+                </div>
 
-                {
-                  (errorUS) &&
+                {errorUS && (
                   <span className="pt-3 text-[#F74E57] text-[32px]">
                     กรุณากรอกชื่อผู้ใช้งาน
                   </span>
-                }
+                )}
               </div>
 
               {/* Password */}
@@ -195,12 +193,13 @@ export function Login() {
                 <label className="block font-roboto text-[32px]">
                   รหัสผ่าน
                 </label>
-                <div className={`autofill-wrapper flex items-center w-[557px] h-[76px] rounded-full border ${errorPS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4 `}>
+                <div
+                  className={`autofill-wrapper flex items-center w-[557px] h-[76px] rounded-full border ${errorPS ? " border-[#F74E57]" : "border-[#40A9FF]"} shadow-sm px-6 space-x-4 `}
+                >
                   <Icon
                     icon="ph:key-duotone"
                     width="25"
                     height="25"
-
                     className={`${errorPS ? "text-[#F74E57]" : "text-sky-500"}`}
                   />
                   <input
@@ -222,20 +221,23 @@ export function Login() {
                     />
                   </button>
                 </div>
-                {
-                  (errorPS) &&
+                {errorPS && (
                   <span className="pt-3 text-[#F74E57] text-[32px]">
                     กรุณากรอกรหัสผ่านให้ถูกต้อง
                   </span>
-                }
+                )}
               </div>
               {/* Remember + Forgot */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center mb-4 gap-[15px]">
-                  <input id="default-checkbox" type="checkbox" value=""
+                  <input
+                    id="default-checkbox"
+                    type="checkbox"
+                    value=""
                     checked={isRemember}
                     onChange={(e) => setIsRemember(e.target.checked)}
-                    className="w-[29px] h-[29px] accent-[#BFBFBF] " />
+                    className="w-[29px] h-[29px] accent-[#BFBFBF] "
+                  />
                   <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
                 </div>
                 <a

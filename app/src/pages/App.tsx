@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Login } from "./Login"; // ✅ import ได้ปกติ
+import { Login } from "./Login";
 import "../styles/css/App.css";
 import { Users } from "./Users";
 
@@ -13,7 +13,7 @@ import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
-import ForgotPassword from "./ForgotPassword"
+import ForgotPassword from "./ForgotPassword";
 import Requests from "./Requests";
 function App() {
   return (
@@ -28,7 +28,7 @@ function App() {
           <Route path="/" element={<Login />} />
 
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
-          {/* <Route element={<ProtectedRoute />}> */}
+          <Route element={<ProtectedRoute />}>
             <Route element={<Navbar />}>
               <Route
                 path="/administrator/account-management"
@@ -41,10 +41,10 @@ function App() {
               />
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
-              <Route path="/requests" element={<Request />} />
+              <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
-          {/* </Route> */}
+          </Route>
         </Routes>
       </BrowserRouter>
     </ToastProvider>

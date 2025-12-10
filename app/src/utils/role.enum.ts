@@ -1,10 +1,10 @@
 export enum UserRole {
-  ADMIN = 'ADMIN',
-  HEADDEPT = 'HOD',
-  HEADSEC = 'HOS',
-  TECHNICAL = 'TECHNICAL',
-  STAFF = 'STAFF',
-  USER = 'EMPLOYEE',
+  ADMIN = "ADMIN",
+  HEADDEPT = "HOD",
+  HEADSEC = "HOS",
+  TECHNICAL = "TECHNICAL",
+  STAFF = "STAFF",
+  USER = "EMPLOYEE",
 }
 
 export const UserRoleTH: Record<UserRole, string> = {

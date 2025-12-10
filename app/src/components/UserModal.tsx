@@ -10,7 +10,7 @@ import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 import UsersService from "../services/UsersService.js";
 import getImageUrl from "../services/GetImage.js";
-
+import { getAccount } from "../hooks/useAccount.js"
 type IDepartment = {
   dept_id: number;
   dept_name: string;

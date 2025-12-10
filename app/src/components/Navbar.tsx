@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState ,useEffect} from "react";
 import "../styles/css/icon.css";
 import "../styles/css/Navbar.css";
 import { Outlet } from "react-router-dom";
@@ -19,6 +19,7 @@ import {
   faClockRotateLeft,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
+import { UserRole, UserRoleTH } from "../utils/role.enum"
 import Logo from "../assets/images/navbar/Logo.png";
 import LogoGiag from "../assets/images/navbar/logo giga.png";
 import getImageUrl from "../services/GetImage";
@@ -31,9 +32,45 @@ export const Navbar = () => {
   };
   const navigate = useNavigate();
   const { user, logout } = useUserStore();
-  const dataUser =
+  const [User, setUser] = useState(() => {
+  const data =
     localStorage.getItem("User") || sessionStorage.getItem("User");
-  const User = dataUser ? JSON.parse(dataUser) : null;
+  return data ? JSON.parse(data) : null;
+});
+
+useEffect(() => {
+  let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const handleStorageChange = () => {
+    const data =
+      localStorage.getItem("User") || sessionStorage.getItem("User");
+
+    const parsed = data ? JSON.parse(data) : null;
+
+   
+    if (JSON.stringify(parsed) !== JSON.stringify(User)) {
+      reloadTimeout = setTimeout(() => {
+        window.location.reload();
+      }, 2000); 
+    }
+
+    setUser(parsed);
+  };
+
+  window.addEventListener("user-updated", handleStorageChange);
+
+  return () => {
+    window.removeEventListener("user-updated", handleStorageChange);
+    if (reloadTimeout) clearTimeout(reloadTimeout);
+  };
+}, [User]);
+
+
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+    setActiveSubMenu("");
+  };
+
 
   const closeDropdown = () => {
     setDropdownOpen(false);
@@ -74,57 +111,51 @@ export const Navbar = () => {
           <button
             type="button"
             onClick={() => setActive(active === "bell" ? null : "bell")}
-            className={`h-full px-6.5 ${
-              active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
+            className={`h-full px-6.5 ${active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+              } flex justify-center items-center relative`}
           >
             {active !== "bell" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
             )}
             <FontAwesomeIcon
               icon={faBell}
-              className={`text-[23px] ${
-                active === "bell" ? "text-white" : "text-[#595959]"
-              }`}
+              className={`text-[23px] ${active === "bell" ? "text-white" : "text-[#595959]"
+                }`}
             />
           </button>
 
           <button
             type="button"
             onClick={() => setActive(active === "cart" ? null : "cart")}
-            className={`h-full px-6.5 ${
-              active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
+            className={`h-full px-6.5 ${active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+              } flex justify-center items-center relative`}
           >
             {active !== "cart" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"></div>
             )}
             <FontAwesomeIcon
               icon={faCartShopping}
-              className={`text-[23px] ${
-                active === "cart" ? "text-white" : "text-[#595959]"
-              }`}
+              className={`text-[23px] ${active === "cart" ? "text-white" : "text-[#595959]"
+                }`}
             />
           </button>
 
-          <div className="flex gap-2.5 items-centerx border-l border-l-[#D9D9D9] py-2.5 pl-7.5 pr-1 ">
-            <img
-              src={getImageUrl(User.us_images)}
-              alt=""
-              className="w-9 h-9 rounded-full"
-            />
-            <div className=" text-left text-black pr-8">
-              <div className="text-[16px] font-semibold">
-                {User.us_firstname}
+          <div className="flex gap-5 items-centerx border-l border-l-[#D9D9D9] ml-[21px] pl-11  pr-1 ">
+            <div className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
+              <img
+                src={getImageUrl(User.us_images)}
+                alt=""
+                className="w-9 h-9 rounded-full"
+              />
+              <div className=" text-left text-black pr-8">
+                <div className="text-[16px] font-semibold">
+                  {User.us_firstname}
+                </div>
+                <div className="text-[13px] font-normal">{UserRoleTH[User.us_role as UserRole]}</div>
               </div>
-              <div className="text-[13px] font-normal">{User.us_role}</div>
             </div>
-            <Icon
-              icon="weui:arrow-outlined"
-              width="38"
-              height="38"
-              className="text-black rotate-90 "
-            />
+
+
           </div>
         </div>
       </div>
@@ -151,28 +182,28 @@ export const Navbar = () => {
                     toggleDropdown();
                     handleMenuClick("managements");
                   }}
+
                   className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
                     isDropdownOpen
+
                       ? "bg-[#40A9FF] text-white"
                       : "hover:bg-[#F0F0F0]"
-                  }`}
+                    }`}
                 >
                   <FontAwesomeIcon icon={faServer} />
                   <span>การจัดการ</span>
                   <FontAwesomeIcon
                     icon={faChevronUp}
-                    className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${
-                      isDropdownOpen ? "rotate-0" : "rotate-180"
-                    }`}
+                    className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
+                      }`}
                   />
                 </div>
 
                 <ul
-                  className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${
-                    isDropdownOpen
+                  className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${isDropdownOpen
                       ? "max-h-[500px] opacity-100"
                       : "max-h-0 opacity-0"
-                  }`}
+                    }`}
                 >
                   <li>
                     <Link

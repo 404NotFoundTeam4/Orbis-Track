@@ -24,7 +24,7 @@ type ModalType =
 const Departments = () => {
   // เก็บข้อมูลแผนกทั้งหมด
   const [departments, setDepartments] = useState<GetDepartmentsWithSections[]>(
-    []
+    [],
   );
   const { push } = useToast();
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ const Departments = () => {
         await departmentService.getDepartmentsWithSections();
       setDepartments(departmentsData);
       setDepartmentFilter(
-        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" }
+        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" },
       );
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -157,7 +157,7 @@ const Departments = () => {
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const HandleSort = (
-    field: keyof GetDepartmentsWithSections | "statusText"
+    field: keyof GetDepartmentsWithSections | "statusText",
   ) => {
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
@@ -289,7 +289,7 @@ const Departments = () => {
   const getSortIcon = (
     currentField: string,
     targetField: string,
-    direction: "asc" | "desc"
+    direction: "asc" | "desc",
   ) => {
     // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
     if (currentField !== targetField) {
@@ -303,9 +303,9 @@ const Departments = () => {
     return "bx:sort-down";
   };
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-1">
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex-1">
+        <div>
           {/* แถบนำทาง */}
           <div className="mb-[8px] space-x-[9px]">
             <span className="text-[#858585]">การจัดการ</span>
@@ -355,303 +355,312 @@ const Departments = () => {
             </div>
           </div>
 
-          <div className="w-full">
-            <div
-              className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px]
-                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center "
-            >
-              <div className="py-2 px-4 text-left flex items-center"></div>
-              <div className="py-2 px-4 text-left flex items-center">
-                แผนก
-                <button type="button" onClick={() => HandleSort("dept_name")}>
-                  <Icon
-                    icon={getSortIcon(sortField, "dept_name", sortDirection)}
-                    width="28"
-                    height="28"
-                    className="ml-1"
-                  />
-                </button>
-              </div>
-              <div className="py-2 px-4 text-left flex items-center">
-                จำนวนฝ่ายย่อย
-                <button type="button" onClick={() => HandleSort("sections")}>
-                  <Icon
-                    icon={getSortIcon(sortField, "sections", sortDirection)}
-                    width="28"
-                    height="28"
-                    className="ml-1"
-                  />
-                </button>
-              </div>
-              <div className="py-2 px-4 text-left flex items-center">
-                จำนวนคน
-                <button
-                  type="button"
-                  onClick={() => HandleSort("people_count")}
-                >
-                  <Icon
-                    icon={getSortIcon(sortField, "people_count", sortDirection)}
-                    width="28"
-                    height="28"
-                    className="ml-1"
-                  />
-                </button>
-              </div>
-              <div className="py-2 px-4 text-left flex items-center">
-                จัดการ
-              </div>
-            </div>
-            {pageRows.map((dep) => (
+          <div className="flex-1 flex flex-col min-h-[718px]">
+            <div className="w-full ">
               <div
-                key={dep.dept_id}
-                onClick={() => toggleOpen(dep.dept_id)}
-                className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
-                // onClick={() => toggleOpen(dep.dept_id)}
+                className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px]
+                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center "
               >
-                <div className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] mt-[30px] mb-[30px] items-center text-[16px] ">
-                  {/* Dropdown Arrow */}
-                  <div
-                    className="py-2 px-4 flex justify-center items-center hover:cursor-pointer"
-                    // onClick={() => toggleOpen(dep.dept_id)}
+                <div className="py-2 px-4 text-left flex items-center"></div>
+                <div className="py-2 px-4 text-left flex items-center">
+                  แผนก
+                  <button type="button" onClick={() => HandleSort("dept_name")}>
+                    <Icon
+                      icon={getSortIcon(sortField, "dept_name", sortDirection)}
+                      width="28"
+                      height="28"
+                      className="ml-1"
+                    />
+                  </button>
+                </div>
+                <div className="py-2 px-4 text-left flex items-center">
+                  จำนวนฝ่ายย่อย
+                  <button type="button" onClick={() => HandleSort("sections")}>
+                    <Icon
+                      icon={getSortIcon(sortField, "sections", sortDirection)}
+                      width="28"
+                      height="28"
+                      className="ml-1"
+                    />
+                  </button>
+                </div>
+                <div className="py-2 px-4 text-left flex items-center">
+                  จำนวนคน
+                  <button
+                    type="button"
+                    onClick={() => HandleSort("people_count")}
                   >
-                    <DropdownArrow isOpen={openDeptId.includes(dep.dept_id)} />
-                  </div>
-                  {/* ชื่อแผนก */}
-                  <div className="py-2 px-4 flex flex-col gap-2">
-                    {dep.dept_name}
-                  </div>
-                  {/* จำนวนฝ่ายย่อย */}
-                  <div className="py-2 px-4">
-                    <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
-                      {dep.sections.length} ฝ่ายย่อย
-                    </span>
-                  </div>
-                  {/* จำนวนคนในแผนก */}
-                  <div className="py-2 px-4">
-                    <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
-                      {dep.people_count} คน
-                    </span>
-                  </div>
-                  {/* จัดการ */}
-                  <div>
-                    <div className="py-2 px-4 flex items-center gap-3">
-                      <button
-                        style={{ cursor: "pointer" }}
-                        type="submit"
-                        className="w-[34px] h-[34px] flex items-center justify-center 
-                          text-[#1890FF] hover:bg-[#40A9FF] hover:text-[#FFFFFF]
-                          rounded-[8px] transition-all duration-150"
-                        title="แก้ไข"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setModalType("edit-department");
-                          setSelectedData({
-                            id: Number(dep.dept_id),
-                            department: dep.dept_name,
-                          });
-                          setModalOpen(true);
-                        }}
-                      >
-                        <Icon
-                          icon="prime:pen-to-square"
-                          width="28"
-                          height="28"
-                        />
-                      </button>
-                      {dep.people_count <= 0 && (
+                    <Icon
+                      icon={getSortIcon(
+                        sortField,
+                        "people_count",
+                        sortDirection,
+                      )}
+                      width="28"
+                      height="28"
+                      className="ml-1"
+                    />
+                  </button>
+                </div>
+                <div className="py-2 px-4 text-left flex items-center">
+                  จัดการ
+                </div>
+              </div>
+              {pageRows.map((dep) => (
+                <div
+                  key={dep.dept_id}
+                  onClick={() => toggleOpen(dep.dept_id)}
+                  className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] mt-[16px] mb-[16px] hover:bg-gray-50 overflow-hidden"
+                  // onClick={() => toggleOpen(dep.dept_id)}
+                >
+                  <div className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] mt-[30px] mb-[30px] items-center text-[16px] ">
+                    {/* Dropdown Arrow */}
+                    <div
+                      className="py-2 px-4 flex justify-center items-center hover:cursor-pointer"
+                      // onClick={() => toggleOpen(dep.dept_id)}
+                    >
+                      <DropdownArrow
+                        isOpen={openDeptId.includes(dep.dept_id)}
+                      />
+                    </div>
+                    {/* ชื่อแผนก */}
+                    <div className="py-2 px-4 flex flex-col gap-2">
+                      {dep.dept_name}
+                    </div>
+                    {/* จำนวนฝ่ายย่อย */}
+                    <div className="py-2 px-4">
+                      <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
+                        {dep.sections.length} ฝ่ายย่อย
+                      </span>
+                    </div>
+                    {/* จำนวนคนในแผนก */}
+                    <div className="py-2 px-4">
+                      <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
+                        {dep.people_count} คน
+                      </span>
+                    </div>
+                    {/* จัดการ */}
+                    <div>
+                      <div className="py-2 px-4 flex items-center gap-3">
                         <button
                           style={{ cursor: "pointer" }}
                           type="submit"
-                          className="w-[34px] h-[34px] flex items-center justify-center 
-                            text-[#FF4D4F] hover:bg-[#FF7875] hover:text-[#FFFFFF]
-                            rounded-[8px] transition-all duration-150"
-                          title="ลบ"
+                          className="w-[34px] h-[34px] flex items-center justify-center
+                          text-[#1890FF] hover:bg-[#40A9FF] hover:text-[#FFFFFF]
+                          rounded-[8px] transition-all duration-150"
+                          title="แก้ไข"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setDeleteTarget({
-                              type: "department", // ระบุเป็น department
-                              id: Number(dep.dept_id), // id ของ department
-                              name: dep.dept_name, // ชื่อ department
+                            setModalType("edit-department");
+                            setSelectedData({
+                              id: Number(dep.dept_id),
+                              department: dep.dept_name,
                             });
+                            setModalOpen(true);
                           }}
                         >
                           <Icon
-                            icon="solar:trash-bin-trash-outline"
+                            icon="prime:pen-to-square"
                             width="28"
                             height="28"
                           />
                         </button>
-                      )}
+                        {dep.people_count <= 0 && (
+                          <button
+                            style={{ cursor: "pointer" }}
+                            type="submit"
+                            className="w-[34px] h-[34px] flex items-center justify-center
+                            text-[#FF4D4F] hover:bg-[#FF7875] hover:text-[#FFFFFF]
+                            rounded-[8px] transition-all duration-150"
+                            title="ลบ"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget({
+                                type: "department", // ระบุเป็น department
+                                id: Number(dep.dept_id), // id ของ department
+                                name: dep.dept_name, // ชื่อ department
+                              });
+                            }}
+                          >
+                            <Icon
+                              icon="solar:trash-bin-trash-outline"
+                              width="28"
+                              height="28"
+                            />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {
-                  // ถ้า openDeptId เปิดอยู่ (แสดงฝ่ายย่อย)
-                  openDeptId.includes(dep.dept_id) && (
-                    <div className="flex flex-col gap-5 mt-[30px] mb-[30px]">
-                      <hr className="border-t border-gray-200 mx-[60px]" />
-                      {dep.sections.map((section: any, index: any) => (
-                        <div
-                          key={index}
-                          className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] h-[35px] items-center hover:bg-gray-50 text-[16px]"
-                        >
-                          {/* พื้นที่ว่าง */}
-                          <div className="py-2 px-4"></div>
-                          {/* ชื่อฝ่ายย่อย */}
-                          <div className="py-2 px-4">{section.sec_name}</div>
-                          {/* พื้นที่ว่าง */}
-                          <div className="py-2 px-4"></div>
-                          {/* จำนวนคนในแผนก */}
-                          <div className="py-2 px-4">
-                            <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
-                              {section.people_count} คน
-                            </span>
-                          </div>
-                          {/* จัดการ */}
-                          <div>
-                            <div className="py-2 px-4 flex items-center gap-3">
-                              <button
-                                style={{ cursor: "pointer" }}
-                                type="submit"
-                                className="w-[34px] h-[34px] flex items-center justify-center 
-                                  text-[#1890FF] hover:bg-[#40A9FF] hover:text-[#FFFFFF]
-                                  rounded-[8px] transition-all duration-150"
-                                title="แก้ไข"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setModalType("edit-section");
-                                  setSelectedData({
-                                    sectionId: Number(section.sec_id),
-                                    department: dep.dept_name,
-                                    departmentId: Number(dep.dept_id),
-                                    section: section.sec_name,
-                                  });
-                                  setModalOpen(true);
-                                }}
-                              >
-                                <Icon
-                                  icon="prime:pen-to-square"
-                                  width="28"
-                                  height="28"
-                                />
-                              </button>
-                              {section.people_count <= 0 && (
+                  {
+                    // ถ้า openDeptId เปิดอยู่ (แสดงฝ่ายย่อย)
+                    openDeptId.includes(dep.dept_id) && (
+                      <div className="flex flex-col gap-5 mt-[30px] mb-[30px]">
+                        <hr className="border-t border-gray-200 mx-[60px]" />
+                        {dep.sections.map((section: any, index: any) => (
+                          <div
+                            key={index}
+                            className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px] h-[35px] items-center hover:bg-gray-50 text-[16px]"
+                          >
+                            {/* พื้นที่ว่าง */}
+                            <div className="py-2 px-4"></div>
+                            {/* ชื่อฝ่ายย่อย */}
+                            <div className="py-2 px-4">{section.sec_name}</div>
+                            {/* พื้นที่ว่าง */}
+                            <div className="py-2 px-4"></div>
+                            {/* จำนวนคนในแผนก */}
+                            <div className="py-2 px-4">
+                              <span className="bg-[#EBF3FE] rounded-[16px] w-[88px] h-[34px] inline-flex items-center justify-center">
+                                {section.people_count} คน
+                              </span>
+                            </div>
+                            {/* จัดการ */}
+                            <div>
+                              <div className="py-2 px-4 flex items-center gap-3">
                                 <button
                                   style={{ cursor: "pointer" }}
                                   type="submit"
-                                  className="w-[34px] h-[34px] flex items-center justify-center 
-                                    text-[#FF4D4F] hover:bg-[#FF7875] hover:text-[#FFFFFF]
-                                    rounded-[8px] transition-all duration-150"
-                                  title="ลบ"
+                                  className="w-[34px] h-[34px] flex items-center justify-center
+                                  text-[#1890FF] hover:bg-[#40A9FF] hover:text-[#FFFFFF]
+                                  rounded-[8px] transition-all duration-150"
+                                  title="แก้ไข"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setDeleteTarget({
-                                      type: "section", // ระบุเป็น section
-                                      id: Number(section.sec_id), // id ของ section
-                                      name: section.sec_name, // ชื่อฝ่ายย่อย
-                                      deptId: Number(dep.dept_id), // id ของ department สำหรับอัปเดต state
-                                      deptName: dep.dept_name, // ชื่อแผนก สำหรับแสดงใน alert
+                                    setModalType("edit-section");
+                                    setSelectedData({
+                                      sectionId: Number(section.sec_id),
+                                      department: dep.dept_name,
+                                      departmentId: Number(dep.dept_id),
+                                      section: section.sec_name,
                                     });
+                                    setModalOpen(true);
                                   }}
                                 >
                                   <Icon
-                                    icon="solar:trash-bin-trash-outline"
+                                    icon="prime:pen-to-square"
                                     width="28"
                                     height="28"
                                   />
                                 </button>
-                              )}
+                                {section.people_count <= 0 && (
+                                  <button
+                                    style={{ cursor: "pointer" }}
+                                    type="submit"
+                                    className="w-[34px] h-[34px] flex items-center justify-center
+                                    text-[#FF4D4F] hover:bg-[#FF7875] hover:text-[#FFFFFF]
+                                    rounded-[8px] transition-all duration-150"
+                                    title="ลบ"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteTarget({
+                                        type: "section", // ระบุเป็น section
+                                        id: Number(section.sec_id), // id ของ section
+                                        name: section.sec_name, // ชื่อฝ่ายย่อย
+                                        deptId: Number(dep.dept_id), // id ของ department สำหรับอัปเดต state
+                                        deptName: dep.dept_name, // ชื่อแผนก สำหรับแสดงใน alert
+                                      });
+                                    }}
+                                  >
+                                    <Icon
+                                      icon="solar:trash-bin-trash-outline"
+                                      width="28"
+                                      height="28"
+                                    />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                }
-              </div>
-            ))}
+                        ))}
+                      </div>
+                    )
+                  }
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        {/* ปุ่มหน้า */}
-        <div className="mt-25 pt-3 mr-[24px] flex items-center justify-end">
-          {/* ขวา: ตัวแบ่งหน้า */}
-          <div className="flex items-center gap-2">
-            {/* ปุ่มก่อนหน้า */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
-            >
-              {"<"}
-            </button>
 
-            {/* หน้า 1 */}
-            <button
-              type="button"
-              onClick={() => setPage(1)}
-              className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
-            >
-              1
-            </button>
-
-            {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
-            {page > 2 && <span className="px-1 text-gray-400">…</span>}
-            {page > 1 && page < totalPages && (
+          {/* ปุ่มหน้า */}
+          <div className="mt-auto py-4 mr-6 flex items-center justify-end">
+            {/* ขวา: ตัวแบ่งหน้า */}
+            <div className="flex items-center gap-2">
+              {/* ปุ่มก่อนหน้า */}
               <button
                 type="button"
-                className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
               >
-                {page}
+                {"<"}
               </button>
-            )}
-            {page < totalPages - 1 && (
-              <span className="px-1 text-gray-400">…</span>
-            )}
 
-            {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
-            {totalPages > 1 && (
+              {/* หน้า 1 */}
               <button
                 type="button"
-                onClick={() => setPage(totalPages)}
-                className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                onClick={() => setPage(1)}
+                className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
               >
-                {totalPages}
+                1
               </button>
-            )}
 
-            {/* ถัดไป */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
-            >
-              {">"}
-            </button>
+              {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
+              {page > 2 && <span className="px-1 text-gray-400">…</span>}
+              {page > 1 && page < totalPages && (
+                <button
+                  type="button"
+                  className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                >
+                  {page}
+                </button>
+              )}
+              {page < totalPages - 1 && (
+                <span className="px-1 text-gray-400">…</span>
+              )}
 
-            {/* ไปหน้าที่ */}
-            <form
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const fd = new FormData(e.currentTarget);
-                  const v = Number(fd.get("goto"));
-                  if (!Number.isNaN(v))
-                    setPage(Math.min(totalPages, Math.max(1, v)));
-                }
-              }}
-              className="flex items-center gap-1"
-            >
-              <span>ไปที่หน้า</span>
-              <input
-                name="goto"
-                type="number"
-                min={1}
-                max={totalPages}
-                className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
-              />
-            </form>
+              {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
+              {totalPages > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPage(totalPages)}
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                >
+                  {totalPages}
+                </button>
+              )}
+
+              {/* ถัดไป */}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+              >
+                {">"}
+              </button>
+
+              {/* ไปหน้าที่ */}
+              <form
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const fd = new FormData(e.currentTarget);
+                    const v = Number(fd.get("goto"));
+                    if (!Number.isNaN(v))
+                      setPage(Math.min(totalPages, Math.max(1, v)));
+                  }
+                }}
+                className="flex items-center gap-1"
+              >
+                <span>ไปที่หน้า</span>
+                <input
+                  name="goto"
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
+                />
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -694,7 +703,7 @@ const Departments = () => {
                   deleteTarget.name
                     .replace(/^ฝ่ายย่อย/i, "")
                     .replace(/\s+/g, "") //ตัดช่องว่างทั้งหมด
-                    .trim()
+                    .trim(),
                 )
                   ? " "
                   : ""}

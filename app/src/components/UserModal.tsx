@@ -10,7 +10,7 @@ import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 import UsersService from "../services/UsersService.js";
 import getImageUrl from "../services/GetImage.js";
-import { getAccount } from "../hooks/useAccount.js"
+import { getAccount } from "../hooks/useAccount.js";
 type IDepartment = {
   dept_id: number;
   dept_name: string;
@@ -86,7 +86,7 @@ export default function UserModal({
   allUsers,
 }: IUserModalProps) {
   const [formDataObject, setFormDataObject] = useState<IUserApiData>(
-    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject
+    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject,
   );
 
   //  State สำหรับเก็บ Error Message
@@ -117,7 +117,7 @@ export default function UserModal({
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
     return Array.from(
       { length },
-      () => chars[Math.floor(Math.random() * chars.length)]
+      () => chars[Math.floor(Math.random() * chars.length)],
     ).join("");
   }
 
@@ -235,7 +235,7 @@ export default function UserModal({
 
   // Handle Change และเคลียร์ Error เมื่อพิมพ์
   const handleChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = changeEvent.target;
 
@@ -261,7 +261,7 @@ export default function UserModal({
   };
 
   const handleAvatarChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = changeEvent.target.files?.[0];
     if (file) {
@@ -388,13 +388,13 @@ export default function UserModal({
         label: dept.dept_name,
         value: dept.dept_id,
       })),
-    [departmentsList]
+    [departmentsList],
   );
 
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
     return sectionsList?.filter(
-      (sec) => sec.sec_dept_id === formDataObject.us_dept_id
+      (sec) => sec.sec_dept_id === formDataObject.us_dept_id,
     );
   }, [formDataObject.us_dept_id, sectionsList]);
 
@@ -405,17 +405,17 @@ export default function UserModal({
         label: sec.sec_name,
         value: sec.sec_id,
       })),
-    [filteredSections]
+    [filteredSections],
   );
 
   const selectedRole = rolesList?.find(
-    (op) => op.value === formDataObject.us_role
+    (op) => op.value === formDataObject.us_role,
   );
   const selectedDepartment = departmentOptions?.find(
-    (op) => op.id === formDataObject.us_dept_id
+    (op) => op.id === formDataObject.us_dept_id,
   );
   const selectedSection = sectionOptions?.find(
-    (op) => op.id === formDataObject.us_sec_id
+    (op) => op.id === formDataObject.us_sec_id,
   );
 
   return (
@@ -511,8 +511,8 @@ export default function UserModal({
                     value={formDataObject.us_firstname}
                     onChange={handleChange}
                     readOnly={isDelete}
-                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] 
-                      ${errors.us_firstname ? "border-red-500" : "border-[#a2a2a2]"} 
+                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD]
+                      ${errors.us_firstname ? "border-red-500" : "border-[#a2a2a2]"}
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
                   {errors.us_firstname && (
@@ -531,8 +531,8 @@ export default function UserModal({
                     value={formDataObject.us_lastname}
                     onChange={handleChange}
                     readOnly={isDelete}
-                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] 
-                      ${errors.us_lastname ? "border-red-500" : "border-[#a2a2a2]"} 
+                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD]
+                      ${errors.us_lastname ? "border-red-500" : "border-[#a2a2a2]"}
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
                   {errors.us_lastname && (
@@ -552,8 +552,8 @@ export default function UserModal({
                     onChange={handleChange}
                     readOnly={isDelete}
                     disabled={isDelete}
-                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] 
-                      ${errors.us_emp_code ? "border-red-500" : "border-[#a2a2a2]"}  
+                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD]
+                      ${errors.us_emp_code ? "border-red-500" : "border-[#a2a2a2]"}
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
                   {errors.us_emp_code && (
@@ -572,8 +572,8 @@ export default function UserModal({
                     value={formDataObject.us_email}
                     onChange={handleChange}
                     readOnly={isDelete}
-                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] 
-                      ${errors.us_email ? "border-red-500" : "border-[#a2a2a2]"} 
+                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD]
+                      ${errors.us_email ? "border-red-500" : "border-[#a2a2a2]"}
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
                   {errors.us_email && (
@@ -593,8 +593,8 @@ export default function UserModal({
                     onChange={handleChange}
                     readOnly={isDelete}
                     maxLength={10}
-                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD] 
-                      ${errors.us_phone ? "border-red-500" : "border-[#a2a2a2]"} 
+                    className={`w-[221px] h-[46px] border rounded-[16px] px-4 text-[16px] font-normal text-black placeholder:text-[#CDCDCD]
+                      ${errors.us_phone ? "border-red-500" : "border-[#a2a2a2]"}
                       ${isDelete ? DISABLED_CLS : ""}`}
                   />
                   {errors.us_phone && (
@@ -697,8 +697,8 @@ export default function UserModal({
               <div>
                 <div
                   className={`
-                    w-[221px] h-[46px] border rounded-[16px] px-2 flex items-center gap-2 
-                    ${errors.us_username ? "border-red-500" : "border-[#a2a2a2]"} 
+                    w-[221px] h-[46px] border rounded-[16px] px-2 flex items-center gap-2
+                    ${errors.us_username ? "border-red-500" : "border-[#a2a2a2]"}
                     focus-within:border-3
                     focus-within:border-black
                     focus-within:outline-none

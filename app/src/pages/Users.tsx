@@ -51,7 +51,7 @@ const FormatPhone = (phone: string | null | undefined): string => {
   if (!phone) {
     return "-"; // ถ้าไม่มีเบอร์
   }
-  
+
   // ลบตัวอักษรที่ไม่ใช่ตัวเลขออก (เผื่อมีขีดกลางอยู่แล้ว)
   const digits = phone.replace(/\D/g, "");
 
@@ -201,8 +201,8 @@ export const Users = () => {
 
       if (res.data?.success) {
         toast.push({ message: "แก้ไขบัญชีผู้ใช้เสร็จสิ้น!", tone: "confirm" });
-        
-       
+
+
         // อัปเดต State ให้รูปเปลี่ยนทันทีโดยไม่ต้องรีเฟรช
         setusers((prevUsers) => {
           return prevUsers.map((user) => {
@@ -231,7 +231,7 @@ export const Users = () => {
             return user;
           });
         });
-         getAccount()
+        getAccount()
       } else {
         toast.push({ message: "เกิดข้อผิดพลาด", tone: "danger" });
       }
@@ -535,7 +535,7 @@ export const Users = () => {
     return "bx:sort-down";
   };
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
+    <div className="w-full h-full flex flex-col p-4">
       <div className="flex-1">
         {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">

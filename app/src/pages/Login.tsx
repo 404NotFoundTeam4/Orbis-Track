@@ -238,7 +238,9 @@ export function Login() {
                     onChange={(e) => setIsRemember(e.target.checked)}
                     className="w-[29px] h-[29px] accent-[#BFBFBF] "
                   />
-                  <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
+                  <label htmlFor="default-checkbox">
+                    <span className="font-roboto text-[32px]">จำรหัสผ่าน</span>
+                  </label>
                 </div>
                 <a
                   href="/otp"

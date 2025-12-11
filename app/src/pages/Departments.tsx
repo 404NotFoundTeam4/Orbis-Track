@@ -58,11 +58,14 @@ const Departments = () => {
   // ตัวเลือกแผนกใน Dropdown
   const departmentOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
-    ...departments.map((d) => ({
-      id: d.dept_id,
-      label: d.dept_name,
-      value: d.dept_name,
-    })),
+    ...departments
+      .slice()
+      .sort((a, b) => a.dept_name.localeCompare(b.dept_name, "th"))
+      .map((d) => ({
+        id: d.dept_id,
+        label: d.dept_name,
+        value: d.dept_name,
+      })),
   ];
 
   const [departmentFilter, setDepartmentFilter] = useState<{

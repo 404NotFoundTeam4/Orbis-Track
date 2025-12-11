@@ -124,6 +124,7 @@ async function getAllAccounts() {
         }),
         // ดึงข้อมูลจากตาราง users
         prisma.users.findMany({
+            orderBy: { us_id: "asc" },
             select: {
                 us_id: true,
                 us_emp_code: true,

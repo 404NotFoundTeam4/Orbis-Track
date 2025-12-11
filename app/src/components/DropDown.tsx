@@ -30,6 +30,7 @@ interface DropDownProps<T extends DropDownItem> {
   className?: string; // CSS class ของ wrapper
   triggerClassName?: string;
   emptyMessage?: string; // ข้อความแสดงเมื่อไม่มีข้อมูล
+  dropdownHeight?: number; // ความสูงของ dropdown
 }
 
 /**
@@ -57,6 +58,7 @@ function DropDown<T extends DropDownItem>({
   className = "",
   triggerClassName = "",
   emptyMessage = "ไม่พบข้อมูล",
+  dropdownHeight = 240,
 }: Readonly<DropDownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false); // สถานะเปิด/ปิด dropdown
   const [searchTerm, setSearchTerm] = useState(""); // คำค้นหาปัจจุบัน
@@ -247,7 +249,7 @@ function DropDown<T extends DropDownItem>({
           )}
 
           {/* Items List */}
-          <div className="overflow-y-auto" style={{ maxHeight: "240px" }}>
+          <div className="overflow-y-auto" style={{ maxHeight: `${dropdownHeight}px` }}>
             {filteredItems.length > 0 ? (
               <div>
                 {filteredItems.map((item) => (

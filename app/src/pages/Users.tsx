@@ -393,7 +393,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "created_at"
+    "us_id"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 

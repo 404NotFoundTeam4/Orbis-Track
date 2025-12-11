@@ -58,11 +58,14 @@ const Departments = () => {
   // ตัวเลือกแผนกใน Dropdown
   const departmentOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
-    ...departments.map((d) => ({
-      id: d.dept_id,
-      label: d.dept_name,
-      value: d.dept_name,
-    })),
+    ...departments
+      .slice()
+      .sort((a, b) => a.dept_name.localeCompare(b.dept_name, "th"))
+      .map((d) => ({
+        id: d.dept_id,
+        label: d.dept_name,
+        value: d.dept_name,
+      })),
   ];
 
   const [departmentFilter, setDepartmentFilter] = useState<{
@@ -279,7 +282,10 @@ const Departments = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   useEffect(() => {
     setPage(1);
-  }, [searchFilter, departmentFilter, sortDirection]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
+  }, [searchFilter, 
+    departmentFilter, 
+    // sortDirection
+  ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
   const pageRows = useMemo(() => {
     const start = (page - 1) * pageSize;

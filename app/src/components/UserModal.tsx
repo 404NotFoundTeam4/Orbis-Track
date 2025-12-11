@@ -621,6 +621,7 @@ export default function UserModal({
                     label="ตำแหน่ง"
                     items={rolesList || []}
                     value={selectedRole}
+                    dropdownHeight={200}
                     onChange={handleRoleChange}
                     placeholder="ประเภทตำแหน่ง"
                     disabled={isDelete}
@@ -643,6 +644,7 @@ export default function UserModal({
                     label="แผนก"
                     items={departmentOptions || []}
                     value={selectedDepartment}
+                    dropdownHeight={200}
                     onChange={handleDepartmentChange}
                     placeholder="ประเภทแผนก"
                     disabled={isDelete}
@@ -667,6 +669,7 @@ export default function UserModal({
                     label="ฝ่ายย่อย"
                     items={sectionOptions || []}
                     value={selectedSection}
+                    dropdownHeight={200}
                     onChange={handleSectionChange}
                     placeholder="ประเภทฝ่ายย่อย"
                     className="!w-[221px]"

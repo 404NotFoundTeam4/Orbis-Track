@@ -282,7 +282,10 @@ const Departments = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   useEffect(() => {
     setPage(1);
-  }, [searchFilter, departmentFilter, sortDirection]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
+  }, [searchFilter, 
+    departmentFilter, 
+    // sortDirection
+  ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
   const pageRows = useMemo(() => {
     const start = (page - 1) * pageSize;

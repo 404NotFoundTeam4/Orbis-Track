@@ -13,7 +13,7 @@ const router = new Router(undefined, '/inventory');
 // Get All Devices
 router.getDoc("/", { 
     tag: "Inventory", 
-    res: inventorySchema, // หมายเหตุ: ระบบ Router อาจต้องการ z.array(inventorySchema) หากรองรับ
+    res: inventorySchema, 
     auth: true 
 }, inventoryController.getAll);
 

@@ -7,7 +7,7 @@
 import React, { useEffect, useId } from "react";
 import Button from "./Button";
 
-export type AlertTone = "success" | "warning" | "danger";
+export type AlertTone = "success" | "warning" | "danger"| "devicewarning";
 
 export type AlertDialogProps = {
   open: boolean;
@@ -51,12 +51,14 @@ const TONE_HEX: Record<AlertTone, string> = {
   success: "#FFC53D",
   warning: "#FFC53D",
   danger: "#FF4D4F",
+  devicewarning: "#FFC53D",
 };
 
 const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
   success: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white",
   warning: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ยืนยันปกติให้เขียว
   danger: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
+  devicewarning: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
 };
 // bg-[#52C41A] text-[#FFFFFF] hover:bg-green-700 active:bg-green-600
 function cx(...p: Array<string | false | null | undefined>) {

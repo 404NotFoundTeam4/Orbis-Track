@@ -13,7 +13,7 @@ import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
-import { Inventory } from "./Managedevice";
+import { Inventory } from "./Inventory";
 
 function App() {
   return (

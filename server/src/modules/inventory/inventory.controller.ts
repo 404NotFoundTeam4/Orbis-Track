@@ -46,7 +46,6 @@ export class InventoryController extends BaseController {
     res: Response,
     next: NextFunction
   ): Promise<BaseResponse> {
-    // แปลง ID และตรวจสอบเบื้องต้น
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0)
       throw new ValidationError("Invalid id");

@@ -1,11 +1,16 @@
 import { z } from "zod";
 
-// สำหรับตรวจสอบ ID ที่ส่งมาทาง URL params
 export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
-// Schema ของข้อมูล Device ที่จะแสดงผล
+// Schema ของอุปกรณ์ย่อย
+const deviceChildSchema = z.object({
+  dec_id: z.number(),
+  dec_serial_number: z.string().nullable(),
+  dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]).nullable(), 
+});
+
 export const inventorySchema = z.object({
   de_id: z.number(),
   de_serial_number: z.string().nullable(),
@@ -15,32 +20,33 @@ export const inventorySchema = z.object({
   de_max_borrow_days: z.number().nullable(),
   de_images: z.string().nullable(),
   
-  // Foreign Keys (คงไว้เหมือนเดิม)
   de_af_id: z.number().nullable(),
   de_ca_id: z.number().nullable(),
   de_us_id: z.number().nullable(),
   de_sec_id: z.number().nullable(),
   de_acc_id: z.number().nullable(),
 
-  // *** ส่วนที่เพิ่มเข้ามา (Virtual Fields) ***
+  // Virtual Fields
   category_name: z.string().optional().default("-"),
   sub_section_name: z.string().optional().default("-"),
   department_name: z.string().optional().default("-"),
-  quantity: z.number().optional().default(0),
+ quantity: z.number().optional().default(0),
+ total_quantity: z.number().optional(),
+  
+  // [UPDATED]
+  device_childs: z.array(deviceChildSchema).optional(),
+  status_type: z.string().optional(), 
 
-  // Timestamps
   created_at: z.date().nullable(),
   updated_at: z.date().nullable(),
   deleted_at: z.date().nullable(),
 });
 
-// Schema สำหรับ Response การลบ
 export const softDeleteResponseSchema = z.object({
   de_id: z.number().int(),
   deletedAt: z.date(),
 });
 
-// Export Types
 export type InventorySchema = z.infer<typeof inventorySchema>;
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
 export type IdParamDto = z.infer<typeof idParamSchema>;

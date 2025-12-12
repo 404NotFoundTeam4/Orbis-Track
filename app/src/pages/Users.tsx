@@ -8,7 +8,7 @@ import api from "../api/axios.js";
 import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
 import getImageUrl from "../services/GetImage.js";
-import { getAccount } from "../hooks/useAccount.js"
+import { getAccount } from "../hooks/useAccount.js";
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -119,9 +119,9 @@ export const Users = () => {
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
   const roleOptions = [
-    { id: "", label: "ประเภทตำแหน่ง", value: "" },
+    { id: "", label: "ทั้งหมด", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
+      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
       label: roleTranslation[r] || r,
@@ -202,7 +202,6 @@ export const Users = () => {
       if (res.data?.success) {
         toast.push({ message: "แก้ไขบัญชีผู้ใช้เสร็จสิ้น!", tone: "confirm" });
 
-
         // อัปเดต State ให้รูปเปลี่ยนทันทีโดยไม่ต้องรีเฟรช
         setusers((prevUsers) => {
           return prevUsers.map((user) => {
@@ -231,7 +230,7 @@ export const Users = () => {
             return user;
           });
         });
-        getAccount()
+        getAccount();
       } else {
         toast.push({ message: "เกิดข้อผิดพลาด", tone: "danger" });
       }
@@ -393,7 +392,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "us_id"
+    "us_id",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -521,7 +520,7 @@ export const Users = () => {
   const getSortIcon = (
     currentField: string,
     targetField: string,
-    direction: "asc" | "desc"
+    direction: "asc" | "desc",
   ) => {
     // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
     if (currentField !== targetField) {
@@ -594,7 +593,7 @@ export const Users = () => {
           {/* หัวตาราง */}
           <div
             className="grid grid-cols-[minmax(300px,2fr)_repeat(6,minmax(120px,1fr))_auto]
-                      bg-white border border-[#D9D9D9] font-semibold text-gray-700 
+                      bg-white border border-[#D9D9D9] font-semibold text-gray-700
                       rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center">
@@ -728,7 +727,7 @@ export const Users = () => {
                     <>
                       <button
                         onClick={() => handleOpenEditModal(u)}
-                        className="w-[34px] h-[34px] flex items-center justify-center 
+                        className="w-[34px] h-[34px] flex items-center justify-center
                           text-[#1890FF] hover:bg-[#40A9FF] hover:text-[#FFFFFF]
                           rounded-[8px] cursor-pointer transition-all duration-150"
                         title="แก้ไข"
@@ -742,7 +741,7 @@ export const Users = () => {
 
                       <button
                         onClick={() => handleOpenDeleteModal(u)}
-                        className="w-[34px] h-[34px] flex items-center justify-center 
+                        className="w-[34px] h-[34px] flex items-center justify-center
                           text-[#FF4D4F] hover:bg-[#FF7875] hover:text-[#FFFFFF]
                           rounded-[8px] cursor-pointer transition-all duration-150"
                         title="ลบ"

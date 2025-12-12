@@ -4,13 +4,11 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import { Icon } from "@iconify/react";
-import api from "../api/axios.js";
 import DropDown from "./DropDown.js";
 import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 import UsersService from "../services/UsersService.js";
 import getImageUrl from "../services/GetImage.js";
-import { getAccount } from "../hooks/useAccount.js";
 type IDepartment = {
   dept_id: number;
   dept_name: string;
@@ -94,9 +92,16 @@ export default function UserModal({
     Partial<Record<keyof IUserApiData, string>>
   >({});
 
-  const FieldLabel = ({ children }: { children: React.ReactNode }) => (
+  const FieldLabel = ({
+    children,
+    required,
+  }: {
+    children: React.ReactNode;
+    required?: boolean;
+  }) => (
     <label className="w-[221px] block text-[16px] font-medium text-[#000000] mb-2">
       {children}
+      {required && <span className="text-[#F5222D] ml-1">*</span>}
     </label>
   );
 
@@ -496,7 +501,12 @@ export default function UserModal({
           <fieldset disabled={isDelete} aria-readonly={isDelete}>
             {/* Profile Section */}
             <div className="mb-[30px]">
-              <h3 className="text-[000000] font-medium text-[18px]">โปรไฟล์</h3>
+              <h3 className="text-[000000] font-medium text-[18px]">
+                โปรไฟล์{" "}
+                <span className="text-[#F5222D] font-medium text-[18px]">
+                  *
+                </span>
+              </h3>
               <div className="font-medium text-[#858585] mb-3 text-[16px]">
                 รายละเอียดโปรไฟล์ผู้ใช้
               </div>
@@ -609,7 +619,10 @@ export default function UserModal({
             {/* Position Section */}
             <div className="mb-[30px]">
               <h3 className="text-[000000] font-medium text-[18px]">
-                ตำแหน่งงาน
+                ตำแหน่งงาน{" "}
+                <span className="text-[#F5222D] font-medium text-[18px]">
+                  *
+                </span>
               </h3>
               <div className="font-medium text-[#858585] mb-3 text-[16px]">
                 รายละเอียดตำแหน่งงานของผู้ใช้
@@ -623,7 +636,7 @@ export default function UserModal({
                     value={selectedRole}
                     dropdownHeight={200}
                     onChange={handleRoleChange}
-                    placeholder="ประเภทตำแหน่ง"
+                    placeholder="ทั้งหมด"
                     disabled={isDelete}
                     className={"!w-[221px]"}
                     triggerClassName={
@@ -690,7 +703,12 @@ export default function UserModal({
 
             {/* Account Section */}
             <div>
-              <h3 className="text-[000000] font-medium text-[18px]">บัญชี</h3>
+              <h3 className="text-[000000] font-medium text-[18px]">
+                บัญชี{" "}
+                <span className="text-[#F5222D] font-medium text-[18px]">
+                  *
+                </span>
+              </h3>
               <div className="font-medium text-[#858585] mb-3 text-[16px]">
                 รายละเอียดบัญชีของผู้ใช้
               </div>

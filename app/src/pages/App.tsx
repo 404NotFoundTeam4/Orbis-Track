@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Login } from "./Login"; // ✅ import ได้ปกติ
+import { Login } from "./Login";
 import "../styles/css/App.css";
 import { Users } from "./Users";
 
@@ -12,8 +12,12 @@ import Navbar from "../components/Navbar";
 import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
+import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
+import { Cart } from "./Cart";
+import EditCart from "./EditCart";
+
 function App() {
   return (
     <ToastProvider>
@@ -33,6 +37,8 @@ function App() {
                 path="/administrator/account-management"
                 element={<Users />}
               />
+              <Route path="/list-devices/cart" element={<Cart />}/>
+              <Route path="/list-devices/cart/edit" element={<EditCart />}/>
               <Route path="/users" element={<Users />} />
               <Route
                 path="/administrator/departments-management"
@@ -40,6 +46,7 @@ function App() {
               />
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
+              <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Route>

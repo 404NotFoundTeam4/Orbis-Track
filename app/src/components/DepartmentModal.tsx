@@ -259,7 +259,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
     // ตัวอักษรไทย/อังกฤษ ห้ามเว้นวรรค ห้ามเลข ห้ามพิเศษ
     // const onlyLetters = /^[A-Za-zก-ฮ]+$/;
-    const onlyLetters = /^[A-Za-zก-ฮ0-9\s]+$/;
+    const onlyLetters = /^[\u0E00-\u0E7FA-Za-z\s]+$/;
 
     //Validate แผนก
     if (type === "add-department" || type === "edit-department") {

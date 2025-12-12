@@ -7,8 +7,9 @@
  */
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { verifyEmail } from "../hooks/verifyEmail.js"
+import { verifyEmail } from "../hooks/verifyEmail.js";
 import { Icon } from "@iconify/react";
+import LogoLogin from "../assets/images/login/LogoLogin.png";
 export function ResetPassword() {
   const { ResetPW } = verifyEmail();
   const [password, setPassword] = useState("");
@@ -32,9 +33,9 @@ export function ResetPassword() {
   const getNewPassword = (Password, ConfrimPassword) => {
     const query = new URLSearchParams(location.search);
     const token = query.get("token") || "";
-    console.log(token, Password, ConfrimPassword)
-    ResetPW(token, Password, ConfrimPassword)
-  }
+    console.log(token, Password, ConfrimPassword);
+    ResetPW(token, Password, ConfrimPassword);
+  };
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
       {/* ==== พื้นหลัง ==== */}
@@ -78,13 +79,9 @@ export function ResetPassword() {
 
       {/* ==== ส่วนหัวโลโก้ ==== */}
       <div className="z-10 ml-[66px] mt-[27px] relative flex gap-[29px] items-center">
-        <Icon
-          icon="streamline-plump-color:wrench-circle-flat"
-          width="96"
-          height="96"
-        />
+        <img src={LogoLogin} alt="" className="w-[88.14px] h-[114.03px]" />
         <div>
-          <h1 className="font-roboto font-semibold text-[64px]">Obis Track</h1>
+          <h1 className="font-roboto font-semibold text-[64px]">Orbis Track</h1>
           <p className="font-roboto font-regular text-[32px]">
             ระบบบริหารการยืม - คืน และแจ้งซ่อมอุปกรณ์ภายในองค์กร
           </p>
@@ -94,8 +91,6 @@ export function ResetPassword() {
       {/* ==== กล่องฟอร์มอยู่กลางจอ ==== */}
       <div className="flex justify-center items-center mt-10  z-100 text-[28px]">
         <div>
-
-
           <div className="border border-gray-200 rounded-[40px] px-18 py-7 bg-white ">
             <Link
               to="/login"
@@ -131,9 +126,7 @@ export function ResetPassword() {
 
             {/* Input password */}
             <div className="mb-5">
-              <label className="block text-gray-700  mb-1">
-                รหัสผ่านใหม่
-              </label>
+              <label className="block text-gray-700  mb-1">รหัสผ่านใหม่</label>
               <div className="relative flex items-center w-full h-[76px] rounded-full bg-white border border-[#A2A2A2] px-6">
                 <Icon
                   icon="solar:key-bold"
@@ -167,7 +160,9 @@ export function ResetPassword() {
 
             {/* Validation rules */}
             <div className=" text-gray-600 mb-5 text-[28px]">
-              <p className={`${allValid && match ? "text-[#73D13D]" : "text-[#40A9FF]"} font-medium mb-2`}>
+              <p
+                className={`${allValid && match ? "text-[#73D13D]" : "text-[#40A9FF]"} font-medium mb-2`}
+              >
                 กรุณาเพิ่มอักขระที่จำเป็นทั้งหมดเพื่อสร้างรหัสผ่านที่ปลอดภัย
               </p>
               <ul className="space-y-1">
@@ -197,7 +192,7 @@ export function ResetPassword() {
                     validations.special ? "text-[#73D13D]" : "text-[#CDCDCD]"
                   }
                 >
-                  • อักษรพิเศษอย่างน้อย 1 ตัว เช่น *()_-=+{ }
+                  • อักษรพิเศษอย่างน้อย 1 ตัว เช่น *()_-=+{}
                 </li>
                 <li
                   className={
@@ -255,10 +250,11 @@ export function ResetPassword() {
             {/* Submit button */}
             <div className="flex items-center justify-center">
               <button
-                className={`w-[225px] h-[76px] py-2 rounded-full text-white font-bold text-[32px]  transition ${allValid && match
-                  ? "bg-sky-500 hover:bg-sky-600"
-                  : "bg-gray-300 cursor-not-allowed"
-                  }`}
+                className={`w-[225px] h-[76px] py-2 rounded-full text-white font-bold text-[32px]  transition ${
+                  allValid && match
+                    ? "bg-sky-500 hover:bg-sky-600"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
                 disabled={!allValid || !match}
                 onClick={() => getNewPassword(password, confirm)}
               >

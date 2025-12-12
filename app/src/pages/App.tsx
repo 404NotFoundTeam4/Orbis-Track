@@ -18,6 +18,7 @@ import ForgotPassword from "./ForgotPassword"
 import Requests from "./Requests";
 import { Cart } from "./Cart";
 import EditCart from "./EditCart";
+import RoleRoute from "../middlewares/RoleRoute";
 
 function App() {
   return (
@@ -34,21 +35,35 @@ function App() {
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Navbar />}>
-              <Route
-                path="/administrator/account-management"
-                element={<Users />}
-              />
-              <Route path="/list-devices/cart" element={<Cart />}/>
-              <Route path="/list-devices/cart/edit" element={<EditCart />}/>
-              <Route path="/users" element={<Users />} />
-              <Route
-                path="/administrator/departments-management"
-                element={<Departments />}
-              />
+
+              {/* แอดมิน */}
+              <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
+                <Route
+                  path="/administrator/account-management"
+                  element={<Users />}
+                />
+                <Route path="/users" element={<Users />} />
+                <Route
+                  path="/administrator/departments-management"
+                  element={<Departments />}
+                />
+              </Route>
+
+              {/* แอดมิน, หัวหน้า, เจ้าหน้าที่คลัง */}
+              <Route element={<RoleRoute allowedRoles={["ADMIN", "HOD", "HOS", "STAFF"]} />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+              </Route>
+
+              {/* ผู้ใช้งานทั้งหมด */}
+              <Route element={<RoleRoute allowedRoles={["ADMIN", "HOD", "HOS", "TECHNICAL", "STAFF", "EMPLOYEE"]} />}>
+                <Route path="/home" element={<Home />} />
+                <Route path="/requests" element={<Request />} />
+                <Route path="/list-devices/cart" element={<Cart />} />
+                <Route path="/list-devices/cart/edit" element={<EditCart />} />
+              </Route>
+
               <Route path="/example-component" element={<TestDropDown />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/requests" element={<Request />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+
             </Route>
           </Route>
         </Routes>

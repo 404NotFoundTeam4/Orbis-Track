@@ -7,6 +7,7 @@ import { departmentRouter } from "./modules/departments/index.js";
 import { roleRouter } from "./modules/roles/index.js";
 import { UserRole } from "./core/roles.enum.js";
 import { requireRole } from "./middlewares/role.middleware.js";
+import { inventoryRouter } from "./modules/inventory/index.js";
 import { notificationsRouter } from "./modules/notifications/index.js";
 import { borrowReturnRouter } from "./modules/tickets/borrow-return/index.js";
 import { devicesRouter } from "./modules/inventorys/index.js";
@@ -34,12 +35,6 @@ export function routes(app: Express) {
   api.use("/accounts", authMiddleware, requireRole([UserRole.ADMIN]), accountsRouter);
 
   api.use("/roles", authMiddleware, roleRouter);
-
-  api.use("/notifications", authMiddleware, notificationsRouter);
-
-  api.use("/tickets/borrow-return", authMiddleware, borrowReturnRouter);
-
-  api.use("/devices", authMiddleware, devicesRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

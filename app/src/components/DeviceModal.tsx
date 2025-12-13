@@ -6,6 +6,8 @@ import Button from "./Button";
 import { Icon } from "@iconify/react";
 import Checkbox from "./Checkbox";
 type Group = { label: string; value: number };
+
+
 // โครงสร้างข้อมูลของแผนก
 interface Department {
   id: number;
@@ -119,61 +121,45 @@ const MainDeviceModal = ({
     setPreview(url);
   };
 
-  // Dropdown selections (แก้ type ให้ถูก)
-  const [selectedDepartment, setSelectedDepartment] =
-    useState<Department | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
+  // ลากไฟล์รูปภาพ
+  const [isDragging, setIsDragging] = useState(false);
+  // ลากมาเหนือ Drop Zone
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+  // ออกจาก Drop Zone
+  const handleLeave = () => {
+    setIsDragging(false);
+  }
+  // ปล่อยไฟล์ลง Drop Zone
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
+    if (!file) return;
+
+    const url = URL.createObjectURL(file); // แปลงเป็น url
+    setPreview(url);
+  }
+
+  // แผนกท่ีเลือกใน dropdown
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  // หมวดหมู่ท่ีเลือกใน dropdown
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  // ฝ่ายย่อยท่ีเลือกใน dropdown
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
-
   // ลำดับการอนุมัติ
-  const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(
-    null
-  );
+  const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(null);
 
-  // modal สำหรับจัดการลำดับการอนุมัติ
-  const [isApproverModalOpen, setIsApproverModalOpen] = useState(true);
-
-  // เปิด modal
-  const openApproverModal = () => {
-    // ถ้ามี selectedApprovers ให้เอามาเป็นค่าเริ่มต้นของ modal ถ้าไม่มีก็ว่าง
-    setModalApproverList(
-      selectedApprovers ? [...selectedApprovers.approvers] : []
-    );
-    setModalGroupLabel(selectedApprovers?.label ?? "");
-    setIsApproverModalOpen(true);
-  };
-  const closeApproverModal = () => setIsApproverModalOpen(false);
-
-  // ข้อมูลใน modal (editable copy)
-  const [modalApproverList, setModalApproverList] = useState<ApproverItem[]>(
-    []
-  );
-  const [modalGroupLabel, setModalGroupLabel] = useState("");
-
-  // reorder ใน modal (ขึ้น / ลง)
-  const moveApprover = (index: number, direction: "up" | "down") => {
-    setModalApproverList((prev) => {
-      const copy = [...prev];
-      const to = direction === "up" ? index - 1 : index + 1;
-      if (to < 0 || to >= copy.length) return copy;
-      const tmp = copy[to];
-      copy[to] = copy[index];
-      copy[index] = tmp;
-      // อัปเดต order ตามตำแหน่งใหม่
-      return copy.map((item, idx) => ({ ...item, order: idx + 1 }));
-    });
+  // เลือกลำดับการอนุมัติ
+  const handleSelectApprover = (item: Approver) => {
+    setSelectedApprovers(item);
   };
 
-  // ลบ approver ใน modal
-  const removeApproverFromModal = (id: number) => {
-    setModalApproverList((prev) =>
-      prev
-        .filter((item) => item.id !== id)
-        .map((it, idx) => ({ ...it, order: idx + 1 }))
-    );
-  };
+  // อุปกรณ์มี Serial Number
+  const [checked, setChecked] = useState<boolean>(true);
 
   // บันทึกจาก modal -> set selectedApprovers (ถ้ามี label ใหม่ จะสร้าง object ใหม่แบบชั่วคราว)
   const saveApproverModal = () => {
@@ -192,7 +178,6 @@ const MainDeviceModal = ({
   };
 
   // checkbox Serial
-  const [checked, setChecked] = useState(true);
   const [serialNumbers, setSerialNumbers] = useState([{ id: 1, value: "" }]);
 
   const addSerial = () => {
@@ -232,29 +217,61 @@ const MainDeviceModal = ({
   // ค่าเริ่มต้น edit
   useEffect(() => {
     if (mode === "edit" && defaultValues) {
-      setPreview(defaultValues.imageUrl ?? null);
+      // รูปภาพ
+      setPreview(defaultValues.de_images ?? null);
 
-      setDeviceName(defaultValues.device_name ?? "");
-      setDeviceCode(defaultValues.device_code ?? "");
-      setLocation(defaultValues.location ?? "");
-      setDescription(defaultValues.description ?? "");
+      // Input text
+      setDeviceName(defaultValues.de_name ?? "");
+      setDeviceCode(defaultValues.de_serial_number ?? "");
+      setLocation(defaultValues.de_location ?? "");
+      setDescription(defaultValues.de_description ?? "");
 
-      setMaxBorrowDays(defaultValues.maxBorrowDays ?? 0);
-      setTotalQuantity(defaultValues.totalQuantity ?? 0);
+      // จำนวน
+      setMaxBorrowDays(defaultValues.de_max_borrow_days ?? 0);
+      setTotalQuantity(defaultValues.total_quantity ?? 0);
 
       setSelectedDepartment(defaultValues.department ?? null);
       setSelectedCategory(defaultValues.category ?? null);
       setSelectedSection(defaultValues.section ?? null);
 
-      if (defaultValues.serialNumbers?.length > 0) {
+      // Serial Number
+      if (defaultValues.de_serial_number) {
         setChecked(true);
-        setSerialNumbers(defaultValues.serialNumbers);
+        setSerialNumbers([{
+          id: defaultValues.de_id,
+          value: defaultValues.de_serial_number
+        }]);
       } else {
         setChecked(false);
+        setSerialNumbers([{ id: Date.now(), value: "" }]); // แสดงช่อง input
       }
 
-      setAccessories(defaultValues.accessories ?? []);
-      setSelectedApprovers(defaultValues.approverGroup ?? null);
+      // อุปกรณ์เสริม
+      if (defaultValues.accessory) {
+        setAccessories([{
+          id: defaultValues.accessory.acc_id,
+          name: defaultValues.accessory.acc_name,
+          qty: String(defaultValues.accessory.acc_quantity)
+        }])
+      } else {
+        setAccessories([{ id: Date.now(), name: "", qty: "" }]); // แสดงช่อง input
+      }
+
+      // ลำดับการอนุมัติ
+      if (defaultValues.approval_flow.steps) {
+        setSelectedApprovers({
+          id: defaultValues.approval_flow.af_id,
+          label: defaultValues.approval_flow.af_name,
+          value: defaultValues.approval_flow.af_id,
+          // แปลง array เป็น approvers ที่ UI ใช้ render เช่น HOS › HOD
+          approvers: defaultValues.approval_flow.steps.map((step :any) => ({
+            id: step.afs_id, // id ของแต่ละขั้นตอน
+            label: step.afs_role, // role ที่อนุมัติ
+            order: step.afs_step_approve // ลำดับการอนุมัติ
+          }))
+        });
+      }
+
     }
   }, [mode, defaultValues]);
 
@@ -405,7 +422,7 @@ const MainDeviceModal = ({
         </div>
 
         {/* กรอกรายละเอียดอุปกรณ์ */}
-        <div className="flex flex-col gap-[7px] w-[672px]">
+        <div className="flex flex-col gap-[20px] w-[853px]">
           <div className="flex gap-[20px]">
             {/* ชื่ออุปกรณ์ */}
             <div className="flex flex-col gap-[4px]">
@@ -477,15 +494,72 @@ const MainDeviceModal = ({
               placeholder="รายละเอียดอุปกรณ์"
             ></textarea>
           </div>
+          <div className="flex gap-[20px]">
+            <QuantityInput
+              label="จำนวนวันสูงสุดที่สามารถยืมได้"
+              value={maxBorrowDays}
+              onChange={(value) => setMaxBorrowDays(value)}
+            />
+            <QuantityInput
+              label="จำนวนอุปกรณ์"
+              value={totalQuantity}
+              onChange={(value) => setTotalQuantity(value)}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Serial Number / อุปกรณ์เสริม / ลำดับการอนุมัติ */}
-      <div className="flex flex-col gap-[20px]">
-        {/* checkbox อุปกรณ์มี Serial Number */}
-        <div className="flex items-center gap-2 h-[46px]">
-          <Checkbox isChecked={checked} onClick={() => setChecked(!checked)} />
-          <p>อุปกรณ์มี Serial Number</p>
+      {/* Serail Number / อุปกรณ์เสริม / ลำดับการอนุมัติ */}
+      <div className="flex flex-col items-center gap-[60px] w-[1540px] px-[100px]">
+        <div className="flex items-start gap-[110px]">
+          <div className="flex flex-col gap-[7px] w-[212px] self-start">
+            <p className="text-[18px] font-medium">Serial Number</p>
+            <p className="text-[16px] font-medium text-[#40A9FF]">รหัสของอุปกรณ์</p>
+          </div>
+          <div className="flex flex-col gap-[15px] w-[856px]">
+            {/* checkbox อุปกร์มี Serail Number */}
+            <div className="flex gap-2">
+              <Checkbox isChecked={checked} onClick={() => setChecked(!checked)} />
+              <p>อุปกรณ์มี Serail Number</p>
+            </div>
+            {/* อุปกรณ์ที่มี Serail Number */}
+            {checked && (
+              <div className="flex items-start gap-[110px] ">
+                <div className="flex flex-col gap-[15px] h-full">
+                  <div className="flex gap-3">
+                    <div className="border border-[#D8D8D8] rounded-[16px] text-[16px] font-medium w-[663px] px-3 py-2">
+                      Serial Number
+                    </div>
+                    <Button className="bg-[#1890FF] w-[173px]" onClick={addSerial}>
+                      + Serial Number
+                    </Button>
+                  </div>
+
+                  {serialNumbers.map((sn) => (
+                    <div key={sn.id} className="flex gap-5">
+                      <Input
+                        className="!w-[568px]"
+                        placeholder="ABC12-3456-7890"
+                        value={sn.value}
+                        onChange={(e) => updateSerial(sn.id, e.target.value)}
+                      />
+
+                      <Button
+                        className="bg-[#DF203B] !w-[46px] !h-[46px] !rounded-[16px] hover:bg-red-600"
+                        onClick={() => removeSerial(sn.id)}
+                      >
+                        <Icon
+                          icon="solar:trash-bin-trash-outline"
+                          width="22"
+                          height="22"
+                        />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* อุปกรณ์ที่มี Serial Number */}
@@ -582,8 +656,8 @@ const MainDeviceModal = ({
         {/* ลำดับการอนุมัติ */}
         <div className="flex items-start gap-[110px] min-h-[132px]">
           <div className="flex flex-col gap-[7px] w-[212px] self-start">
-            <p>ลำดับการอนุมัติ</p>
-            <p className="text-[#858585]">ลำดับผู้อนุมัติของอุปกรณ์</p>
+            <p className="text-[18px] font-medium">ลำดับการอนุมัติ</p>
+            <p className="text-[16px] font-medium text-[#40A9FF]">ลำดับผู้อนุมัติของอุปกรณ์</p>
           </div>
           <div className="flex flex-col gap-[15px] h-full">
             <div className="flex gap-3 items-end">

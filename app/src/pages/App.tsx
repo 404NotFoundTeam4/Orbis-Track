@@ -15,6 +15,7 @@ import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword";
 import Requests from "./Requests";
+import Devices from "./Devices";
 function App() {
   return (
     <ToastProvider>
@@ -30,6 +31,7 @@ function App() {
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Navbar />}>
+             <Route path="/devices" element={<Devices />} />
               <Route
                 path="/administrator/account-management"
                 element={<Users />}

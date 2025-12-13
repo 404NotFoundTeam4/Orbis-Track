@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import DropDown from "./DropDown";
+import QuantityInput from "./QuantityInput";
 import Input from "./Input";
 import Button from "./Button";
 import { Icon } from "@iconify/react";
 import Checkbox from "./Checkbox";
-
+type Group = { label: string; value: number };
 // โครงสร้างข้อมูลของแผนก
 interface Department {
   id: number;
@@ -19,39 +20,38 @@ interface Category {
   value: number;
 }
 
-// โครงสร้างข้อมูลของแผนก
+// โครงสร้างข้อมูลของฝ่ายย่อย
 interface Section {
   id: number;
   label: string;
   value: number;
 }
 
+interface ApproverItem {
+  id: number;
+  label: string;
+  order: number;
+}
+
 interface Approver {
   id: number;
   label: string;
   value: number;
-  approvers: {
-    id: number;
-    label: string;
-    order: number;
-  }[];
+  approvers: ApproverItem[];
 }
 
-// ข้อมูลแผนกใน dropdown
 const departmentList: Department[] = [
   { id: 1, label: "Media", value: 1 },
   { id: 2, label: "Design", value: 2 },
   { id: 3, label: "Marketing", value: 3 },
 ];
 
-// ข้อมูลหมวดหมู่ใน dropdown
 const categoryList: Category[] = [
   { id: 1, label: "อิเล็กทรอนิกส์", value: 1 },
   { id: 2, label: "เครื่องใช้ไฟฟ้า", value: 2 },
   { id: 3, label: "อำนวยความสะดวก", value: 3 },
 ];
 
-// ข้อมูลหมวดฝ่ายย่อยใน dropdown
 const sectionList: Section[] = [
   { id: 1, label: "A", value: 1 },
   { id: 2, label: "B", value: 2 },
@@ -82,7 +82,7 @@ const approvalGroups: Approver[] = [
 
 interface MainDeviceModalProps {
   mode: "create" | "edit";
-  defaultValues?: any; // สำหรับ edit
+  defaultValues?: any;
   onSubmit: (data: any) => void;
 }
 
@@ -98,81 +98,115 @@ const MainDeviceModal = ({
   const [description, setDescription] = useState<string>("");
   const [maxBorrowDays, setMaxBorrowDays] = useState<number>(0);
   const [totalQuantity, setTotalQuantity] = useState<number>(0);
-
   // รูปภาพอุปกรณ์
   const [preview, setPreview] = useState<string | null>(null);
+  const [approverGroup, setapproverGroup] = useState([]);
+  const handleApproverGroup = (item) => {
+    setapproverGroup((prev) =>
+      prev.some((v) => v.value === item.value)
+        ? prev                     // มีอยู่แล้ว → คงเดิม
+        : [...prev, item]          // ยังไม่มี → เพิ่ม
+    );
+  };
+
+
+  // console.log(approverGroup)
   // มีการเลือกไฟล์รูปภาพ
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
+    const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file); // แปลงเป็น url
+    const url = URL.createObjectURL(file);
     setPreview(url);
   };
 
-  // ลากไฟล์รูปภาพ
-  const [isDragging, setIsDragging] = useState(false);
-  // ลากมาเหนือ Drop Zone
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }
-  // ออกจาก Drop Zone
-  const handleLeave = () => {
-    setIsDragging(false);
-  }
-  // ปล่อยไฟล์ลง Drop Zone
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
-    if (!file) return;
-
-    const url = URL.createObjectURL(file); // แปลงเป็น url
-    setPreview(url);
-  }
-
-
-  // แผนกท่ีเลือกใน dropdown
+  // Dropdown selections (แก้ type ให้ถูก)
   const [selectedDepartment, setSelectedDepartment] =
     useState<Department | null>(null);
-  // หมวดหมู่ท่ีเลือกใน dropdown
-  const [selectedCategory, setSelectedCategory] = useState<Department | null>(
-    null,
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
   );
-  // ฝ่ายย่อยท่ีเลือกใน dropdown
-  const [selectedSection, setSelectedSection] = useState<Department | null>(
-    null,
-  );
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
+
   // ลำดับการอนุมัติ
   const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(
-    null,
+    null
   );
-  // เลือกลำดับการอนุมัติ
-  const handleSelectApprover = (item: Approver) => {
-    setSelectedApprovers(item);
+
+  // modal สำหรับจัดการลำดับการอนุมัติ
+  const [isApproverModalOpen, setIsApproverModalOpen] = useState(true);
+
+  // เปิด modal
+  const openApproverModal = () => {
+    // ถ้ามี selectedApprovers ให้เอามาเป็นค่าเริ่มต้นของ modal ถ้าไม่มีก็ว่าง
+    setModalApproverList(
+      selectedApprovers ? [...selectedApprovers.approvers] : []
+    );
+    setModalGroupLabel(selectedApprovers?.label ?? "");
+    setIsApproverModalOpen(true);
+  };
+  const closeApproverModal = () => setIsApproverModalOpen(false);
+
+  // ข้อมูลใน modal (editable copy)
+  const [modalApproverList, setModalApproverList] = useState<ApproverItem[]>(
+    []
+  );
+  const [modalGroupLabel, setModalGroupLabel] = useState("");
+
+  // reorder ใน modal (ขึ้น / ลง)
+  const moveApprover = (index: number, direction: "up" | "down") => {
+    setModalApproverList((prev) => {
+      const copy = [...prev];
+      const to = direction === "up" ? index - 1 : index + 1;
+      if (to < 0 || to >= copy.length) return copy;
+      const tmp = copy[to];
+      copy[to] = copy[index];
+      copy[index] = tmp;
+      // อัปเดต order ตามตำแหน่งใหม่
+      return copy.map((item, idx) => ({ ...item, order: idx + 1 }));
+    });
   };
 
-  // อุปกรณ์มี Serial Number
-  const [checked, setChecked] = useState(true);
+  // ลบ approver ใน modal
+  const removeApproverFromModal = (id: number) => {
+    setModalApproverList((prev) =>
+      prev
+        .filter((item) => item.id !== id)
+        .map((it, idx) => ({ ...it, order: idx + 1 }))
+    );
+  };
 
+  // บันทึกจาก modal -> set selectedApprovers (ถ้ามี label ใหม่ จะสร้าง object ใหม่แบบชั่วคราว)
+  const saveApproverModal = () => {
+    const group: Approver = {
+      id: selectedApprovers?.id ?? Date.now(),
+      label:
+        modalGroupLabel || selectedApprovers?.label || `Group-${Date.now()}`,
+      value: selectedApprovers?.value ?? Date.now(),
+      approvers: modalApproverList.map((it, idx) => ({
+        ...it,
+        order: idx + 1,
+      })),
+    };
+    setSelectedApprovers(group);
+    setIsApproverModalOpen(false);
+  };
+
+  // checkbox Serial
+  const [checked, setChecked] = useState(true);
   const [serialNumbers, setSerialNumbers] = useState([{ id: 1, value: "" }]);
 
-  // เพิ่ม Input Serial Number
   const addSerial = () => {
     setSerialNumbers([...serialNumbers, { id: Date.now(), value: "" }]);
   };
 
-  // อัปเดตค่า Serial
   const updateSerial = (id: number, newValue: string) => {
     setSerialNumbers(
       serialNumbers.map((item) =>
-        item.id === id ? { ...item, value: newValue } : item,
-      ),
+        item.id === id ? { ...item, value: newValue } : item
+      )
     );
   };
 
-  // ลบ Input Serial
   const removeSerial = (id: number) => {
     setSerialNumbers(serialNumbers.filter((item) => item.id !== id));
   };
@@ -180,20 +214,17 @@ const MainDeviceModal = ({
   const [accessories, setAccessories] = useState([
     { id: 1, name: "", qty: "" },
   ]);
-
-  // เพิ่ม Input อุปกรณ์เสริม
+  console.log(accessories)
   const addAccessory = () => {
     setAccessories([...accessories, { id: Date.now(), name: "", qty: "" }]);
   };
 
-  // อัปเดตอุปกรณ์เสริม
   const updateAccessory = (id: number, key: "name" | "qty", value: string) => {
     setAccessories((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item)),
+      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
     );
   };
 
-  // ลบ Input อุปกรณ์เสริม
   const removeAccessory = (id: number) => {
     setAccessories((prev) => prev.filter((item) => item.id !== id));
   };
@@ -201,25 +232,20 @@ const MainDeviceModal = ({
   // ค่าเริ่มต้น edit
   useEffect(() => {
     if (mode === "edit" && defaultValues) {
-      // รูปภาพ
       setPreview(defaultValues.imageUrl ?? null);
 
-      // Input text
       setDeviceName(defaultValues.device_name ?? "");
       setDeviceCode(defaultValues.device_code ?? "");
       setLocation(defaultValues.location ?? "");
       setDescription(defaultValues.description ?? "");
 
-      // จำนวน
       setMaxBorrowDays(defaultValues.maxBorrowDays ?? 0);
       setTotalQuantity(defaultValues.totalQuantity ?? 0);
 
-      // Dropdown
       setSelectedDepartment(defaultValues.department ?? null);
       setSelectedCategory(defaultValues.category ?? null);
       setSelectedSection(defaultValues.section ?? null);
 
-      // Serial Numbers
       if (defaultValues.serialNumbers?.length > 0) {
         setChecked(true);
         setSerialNumbers(defaultValues.serialNumbers);
@@ -227,15 +253,11 @@ const MainDeviceModal = ({
         setChecked(false);
       }
 
-      // อุปกรณ์เสริม
       setAccessories(defaultValues.accessories ?? []);
-
-      // ลำดับการอนุมัติ
       setSelectedApprovers(defaultValues.approverGroup ?? null);
     }
   }, [mode, defaultValues]);
 
-  // ส่งข้อมูล
   const handleSubmit = () => {
     const payload = {
       device_name: deviceName,
@@ -256,18 +278,134 @@ const MainDeviceModal = ({
     onSubmit(payload);
   };
 
+
+  // drag hover
+
+  const dragItemIndex = useRef<number | null>(null);
+  const dragOverIndex = useRef<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    dragItemIndex.current = index;
+    // จำเป็นเพื่อให้ drag works บนบาง browser
+    e.dataTransfer.effectAllowed = "move";
+    try {
+      // ตัวอย่างเก็บข้อมูลเล็กน้อย (ต้องมีเพื่อให้ drag ทำงานใน Firefox)
+      e.dataTransfer.setData("text/plain", String(index));
+    } catch { }
+  };
+
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    dragOverIndex.current = index;
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // ต้องมีเพื่อให้ drop ทำงาน
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const from = dragItemIndex.current;
+    const to = dragOverIndex.current;
+
+    if (from === null || to === null) {
+      // fallback: พยายามอ่านจาก dataTransfer
+      const fallback = Number(e.dataTransfer.getData("text/plain"));
+      if (!isNaN(fallback)) {
+        dragItemIndex.current = fallback;
+      }
+    }
+
+    if (from === null || to === null) return;
+
+    // ถ้าลากไปตำแหน่งเดียวกัน -> ไม่ต้องเปลี่ยน
+    if (from === to) {
+      dragItemIndex.current = null;
+      dragOverIndex.current = null;
+      return;
+    }
+
+    setapproverGroup((prev) => {
+      const newArr = [...prev];
+      const [moved] = newArr.splice(from, 1); // เอาอันที่ลากออก
+      // หากลากจากตำแหน่งก่อน target และต้องการ insert ก่อน index ที่ระบุ
+      newArr.splice(to, 0, moved); // แทรกกลับเข้าไปที่ตำแหน่ง to
+      return newArr;
+    });
+
+    // รีเซ็ต
+    dragItemIndex.current = null;
+    dragOverIndex.current = null;
+  };
+
+  const handleDragEnd = () => {
+    dragItemIndex.current = null;
+    dragOverIndex.current = null;
+  };
+
+  // ปุ่มลบ — เอา item ที่มี value ตรงกับที่กดออก
+  const handleDelete = (e: React.MouseEvent, value: number) => {
+    // หยุด propagation เพื่อไม่ให้เกิด drag/drop หรือ onClick ของ parent
+    e.stopPropagation();
+    setapproverGroup((prev) => prev.filter((g) => g.value !== value));
+  };
+
   return (
-    <div className="flex flex-col gap-[60px] bg-[#FFFFFF] border border-[#BFBFBF] w-[1660px] rounded-[16px] px-[60px] py-[60px]">
+    <div className="flex flex-col gap-[60px] bg-white border border-[#BFBFBF] w-[100%] max-h-[1407px] rounded-[16px] px-[40px] py-[40px]">
       {/* ข้อมูลอุปกรณ์ / แบบฟอร์ม */}
-      <form className="flex justify-center gap-[110px] w-[1540px] min-h-[837px] px-[100px]">
+      <div className="flex justify-between">
         {/* ข้อมูลอุปกรณ์ */}
-        <div className="flex flex-col gap-[7px] w-[212px] h-[69px]">
+        <div className="flex flex-col gap-[7px]">
           <p className="text-[20px] font-medium">ข้อมูลอุปกรณ์</p>
-          <p className="text-[16px] text-[#40A9FF] font-medium">รายละเอียดข้อมูลอุปกรณ์</p>
+          <p className="text-[16px] text-[#858585] font-medium">
+            รายละเอียดข้อมูลอุปกรณ์
+          </p>
+          {/* รูปภาพ */}
+          <div className="flex flex-col gap-[7px]">
+            {/* Preview */}
+            <div className="flex items-center justify-center border border-[#D9D9D9] rounded-[16px] w-[538px] h-[225.32px]">
+              {preview ? (
+                <img
+                  className="w-full h-full object-cover rounded-[16px]"
+                  src={preview}
+                />
+              ) : (
+                <Icon
+                  icon="famicons:image-sharp"
+                  width="62"
+                  height="62"
+                  className="text-[#A2A2A2]"
+                />
+              )}
+            </div>
+            {/* Upload */}
+            <label className="border border-[#D9D9D9] rounded-[16px] w-[538px] h-[63.2px] text-[16px] font-medium px-[16px] py-[8px] flex items-center justify-center cursor-pointer">
+              อัปโหลดรูปภาพ
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+            </label>
+          </div>
+          {/* จำนวนวันสูงสุดที่สามารถยืมได้ / จำนวนอุปกรณ์ */}
+          <div className="flex gap-5">
+            <QuantityInput
+              label="จำนวนวันสูงสุดที่สามารถยืมได้"
+              value={maxBorrowDays}
+              onChange={(value: number) => setMaxBorrowDays(value)}
+            />
+            <QuantityInput
+              label="จำนวนอุปกรณ์"
+              value={totalQuantity}
+              onChange={(value: number) => setTotalQuantity(value)}
+            />
+          </div>
         </div>
 
         {/* กรอกรายละเอียดอุปกรณ์ */}
-        <div className="flex flex-col items-center gap-[20px] w-[853px]">
+        <div className="flex flex-col gap-[7px] w-[672px]">
           <div className="flex gap-[20px]">
             {/* ชื่ออุปกรณ์ */}
             <div className="flex flex-col gap-[4px]">
@@ -277,7 +415,7 @@ const MainDeviceModal = ({
                 label="ชื่ออุปกรณ์"
                 placeholder="ชื่อของอุปกรณ์"
                 size="md"
-                className="!w-[552px]"
+                className="!w-[425px]"
               />
             </div>
             {/* รหัสอุปกรณ์ */}
@@ -288,7 +426,7 @@ const MainDeviceModal = ({
                 label="รหัสอุปกรณ์"
                 placeholder="รหัสของอุปกรณ์"
                 size="md"
-                className="!w-[261px]"
+                className="!w-[207px]"
               />
             </div>
           </div>
@@ -296,7 +434,7 @@ const MainDeviceModal = ({
           <div className="flex gap-[20px]">
             <DropDown
               value={selectedDepartment}
-              className="!w-[264px]"
+              className="!w-[204px]"
               label="แผนกอุปกรณ์"
               items={departmentList}
               onChange={(item) => setSelectedDepartment(item)}
@@ -304,7 +442,7 @@ const MainDeviceModal = ({
             />
             <DropDown
               value={selectedCategory}
-              className="!w-[264px]"
+              className="!w-[204px]"
               label="หมวดหมู่"
               items={categoryList}
               onChange={(item) => setSelectedCategory(item)}
@@ -312,136 +450,91 @@ const MainDeviceModal = ({
             />
             <DropDown
               value={selectedSection}
-              className="!w-[264px]"
+              className="!w-[204px]"
               label="ฝ่ายย่อย"
               items={sectionList}
               onChange={(item) => setSelectedSection(item)}
               placeholder="ฝ่ายย่อย"
             />
           </div>
-          {/* รูปภาพ */}
-          <div className="flex flex-col gap-[10px]">
-            <p className="text-[16px] font-medium">รูปภาพ</p>
-            {/* Upload / Preview */}
-            <div
-              className={`flex flex-col items-center justify-center border rounded-[16px] w-[833px] h-[225.32px]
-              ${isDragging ? "border-[#40A9FF] bg-blue-50" : "border-[#D9D9D9]"}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleLeave}
-              onDrop={handleDrop}
-            >
-              <label className="flex flex-col items-center justify-center w-full h-full text-center cursor-pointer">
-                <input
-                  className="hidden"
-                  type="file"
-                  onChange={handleImageUpload}
-                />
-
-                {preview ? (
-                  <img
-                    className="w-full h-full object-cover rounded-[16px] pointer-events-none"
-                    src={preview}
-                  />
-                ) : (
-                  <div className="flex flex-col gap-[20px] items-center text-center text-[#A2A2A2]">
-                    <Icon
-                      icon="famicons:image-sharp"
-                      width="48"
-                      height="40"
-                    />
-                    <div className="text-[14px] font-medium">
-                      <p className="text-[#40A9FF]">
-                        อัปโหลดไฟล์
-                        <span className="text-[#A2A2A2]"> หรือวางไฟล์ที่นี่</span>
-                      </p>
-                      <p>ประเภทไฟล์ PNG, JPG</p>
-                    </div>
-                  </div>
-                )}
-              </label>
-            </div>
-          </div>
           {/* สถานที่เก็บอุปกรณ์ */}
-          <div className="flex flex-col gap-[10px]">
-            <label className="text-[16px] font-medium">สถานที่เก็บอุปกรณ์</label>
+          <div className="flex flex-col gap-[4px]">
+            <label className="text-[16px]">สถานที่เก็บอุปกรณ์</label>
             <textarea
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="border border-[#D8D8D8] rounded-[16px] w-[833px] h-[140px] px-[15px] py-[8px]"
+              className="border border-[#D8D8D8] rounded-[16px] w-[652px] h-[111px] px-[15px] py-[8px]"
               placeholder="สถานที่เก็บอุปกรณ์"
             ></textarea>
           </div>
           {/* รายละเอียดอุปกรณ์ */}
-          <div className="flex flex-col gap-[10px]">
-            <label className="text-[16px] font-medium">รายละเอียดอุปกรณ์</label>
+          <div className="flex flex-col gap-[4px]">
+            <label className="text-[16px]">รายละเอียดอุปกรณ์</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="border border-[#D8D8D8] rounded-[16px] w-[833px] h-[140px] px-[15px] py-[8px]"
+              className="border border-[#D8D8D8] rounded-[16px] w-[652px] h-[111px] px-[15px] py-[8px]"
               placeholder="รายละเอียดอุปกรณ์"
             ></textarea>
           </div>
         </div>
-      </form>
+      </div>
 
-      {/* Serail Number / อุปกรณ์เสริม / ลำดับการอนุมัติ */}
-      <div className="flex flex-col items-center gap-[60px] w-[1540px] px-[100px]">
-        <div className="flex items-start gap-[110px]">
-          <div className="flex flex-col gap-[7px] w-[212px] self-start">
-            <p className="text-[18px] font-medium">Serial Number</p>
-            <p className="text-[16px] font-medium text-[#40A9FF]">รหัสของอุปกรณ์</p>
-          </div>
-          <div className="flex flex-col gap-[15px] w-[856px]">
-            {/* checkbox อุปกร์มี Serail Number */}
-            <div className="flex gap-2">
-              <Checkbox isChecked={checked} onClick={() => setChecked(!checked)} />
-              <p>อุปกรณ์มี Serail Number</p>
-            </div>
-            {/* อุปกรณ์ที่มี Serail Number */}
-            {checked && (
-              <div className="flex items-start gap-[110px] ">
-                <div className="flex flex-col gap-[15px] h-full">
-                  <div className="flex gap-3">
-                    <div className="border border-[#D8D8D8] rounded-[16px] text-[16px] font-medium w-[663px] px-3 py-2">
-                      Serial Number
-                    </div>
-                    <Button className="bg-[#1890FF] w-[173px]" onClick={addSerial}>
-                      + Serail Number
-                    </Button>
-                  </div>
-
-                  {serialNumbers.map((sn) => (
-                    <div key={sn.id} className="flex gap-5">
-                      <Input
-                        className="!w-[568px]"
-                        placeholder="ABC12-3456-7890"
-                        value={sn.value}
-                        onChange={(e) => updateSerial(sn.id, e.target.value)}
-                      />
-
-                      <Button
-                        className="bg-[#DF203B] !w-[46px] !h-[46px] !rounded-[16px] hover:bg-red-600"
-                        onClick={() => removeSerial(sn.id)}
-                      >
-                        <Icon
-                          icon="solar:trash-bin-trash-outline"
-                          width="22"
-                          height="22"
-                        />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+      {/* Serial Number / อุปกรณ์เสริม / ลำดับการอนุมัติ */}
+      <div className="flex flex-col gap-[20px]">
+        {/* checkbox อุปกรณ์มี Serial Number */}
+        <div className="flex items-center gap-2 h-[46px]">
+          <Checkbox isChecked={checked} onClick={() => setChecked(!checked)} />
+          <p>อุปกรณ์มี Serial Number</p>
         </div>
 
+        {/* อุปกรณ์ที่มี Serial Number */}
+        {checked && (
+          <div className="flex items-start gap-[110px] min-h-[132px]">
+            <div className="flex flex-col gap-[7px] w-[212px] self-start">
+              <p>อุปกรณ์ที่มี Serial Number</p>
+              <p className="text-[#858585]">รหัสของอุปกรณ์</p>
+            </div>
+            <div className="flex flex-col gap-[15px] h-full">
+              <div className="flex gap-3">
+                <div className="border border-[#D8D8D8] rounded-[16px] text-[16px] font-medium w-[663px] px-3 py-2">
+                  Serial Number
+                </div>
+                <Button className="bg-[#1890FF] w-[173px]" onClick={addSerial}>
+                  + Serial Number
+                </Button>
+              </div>
+
+              {serialNumbers.map((sn) => (
+                <div key={sn.id} className="flex gap-5">
+                  <Input
+                    className="!w-[568px]"
+                    placeholder="ABC12-3456-7890"
+                    value={sn.value}
+                    onChange={(e) => updateSerial(sn.id, e.target.value)}
+                  />
+
+                  <Button
+                    className="bg-[#DF203B] !w-[46px] !h-[46px] !rounded-[16px] hover:bg-red-600"
+                    onClick={() => removeSerial(sn.id)}
+                  >
+                    <Icon
+                      icon="solar:trash-bin-trash-outline"
+                      width="22"
+                      height="22"
+                    />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* อุปกรณ์เสริม */}
-        <div className="flex items-start gap-[110px]">
+        <div className="flex items-start gap-[110px] min-h-[132px]">
           <div className="flex flex-col gap-[7px] w-[212px] self-start">
-            <p className="text-[18px] font-medium">อุปกรณ์เสริม</p>
-            <p className="text-[16px] font-medium text-[#40A9FF]">ข้อมูลของอุปกรณ์เสริม</p>
+            <p>อุปกรณ์เสริม</p>
+            <p className="text-[#858585]">ข้อมูลของอุปกรณ์เสริม</p>
           </div>
           <div className="flex flex-col gap-[15px] h-full">
             <div className="flex gap-3">
@@ -487,10 +580,10 @@ const MainDeviceModal = ({
         </div>
 
         {/* ลำดับการอนุมัติ */}
-        <div className="flex items-start gap-[110px]">
+        <div className="flex items-start gap-[110px] min-h-[132px]">
           <div className="flex flex-col gap-[7px] w-[212px] self-start">
-            <p className="text-[18px] font-medium">อุปกรณ์เสริม</p>
-            <p className="text-[16px] font-medium text-[#40A9FF]">ข้อมูลของอุปกรณ์เสริม</p>
+            <p>ลำดับการอนุมัติ</p>
+            <p className="text-[#858585]">ลำดับผู้อนุมัติของอุปกรณ์</p>
           </div>
           <div className="flex flex-col gap-[15px] h-full">
             <div className="flex gap-3 items-end">
@@ -499,33 +592,34 @@ const MainDeviceModal = ({
                 className="w-[663px]"
                 label="ลำดับการอนุมัติ"
                 items={approvalGroups}
-                onChange={handleSelectApprover}
+                onChange={(item) => setSelectedApprovers(item)}
                 placeholder="ลำดับการอนุมัติ"
               />
-              <Button className="bg-[#1890FF] w-[173px]">
+              <Button
+                className="bg-[#1890FF] w-[173px]"
+                onClick={openApproverModal}
+              >
                 + เพิ่มลำดับการอนุมัติ
               </Button>
             </div>
-            {
-              // เลือกลำดับการอนุมัติ
-              selectedApprovers && (
-                <div className="flex items-center gap-[9px]">
-                  {selectedApprovers.approvers.map((appr, index) => (
-                    <div key={appr.id} className="flex items-center gap-2">
-                      <span className="text-[16px] text-[#7BACFF]">
-                        {appr.label}
-                      </span>
-                      {index < selectedApprovers.approvers.length - 1 && (
-                        <span className="text-[16px] text-[#7BACFF]">›</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )
-            }
+
+            {/* แสดงลำดับที่เลือก */}
+            {selectedApprovers && (
+              <div className="flex items-center gap-[9px]">
+                {selectedApprovers.approvers.map((appr, index) => (
+                  <div key={appr.id} className="flex items-center gap-2">
+                    <span className="text-[16px] text-[#7BACFF]">
+                      {appr.label}
+                    </span>
+                    {index < selectedApprovers.approvers.length - 1 && (
+                      <span className="text-[16px] text-[#7BACFF]">›</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-
       </div>
 
       {/* ปุ่ม */}
@@ -537,6 +631,99 @@ const MainDeviceModal = ({
           {mode === "create" ? "เพิ่มอุปกรณ์" : "บันทึก"}
         </Button>
       </div>
+
+      {/* Approver Modal (simple) */}
+      {isApproverModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={closeApproverModal}
+          />
+          <div className="relative bg-white rounded-2xl p-[45px] w-auto h-auto overflow-auto z-10 max">
+            <div className="flex flex-col justify-between  gap-10 ">
+              <div className=" space-y-4 text-[16px]">
+                <p className="text-center text-[32px] font-semibold">เพิ่มลำดับการอนุมัติใหม่</p>
+                <div>
+                  <Input
+                    value={deviceName}
+                    onChange={(e) => setDeviceName(e.target.value)}
+                    label="ชื่อลำดับการอนุมัติ"
+                    placeholder="ชื่อของอุปกรณ์"
+                    size="md"
+                    className="w-full"
+                  />
+                </div>
+                <div className=" space-y-2.5">
+                  <div className="flex items-center gap-1">
+                    <p>เพิ่มผู้อนุมัติ</p>
+                    <p className="text-[#F5222D]">*</p>
+                  </div>
+
+                  <div className="flex gap-5  ">
+                    <DropDown
+                      value={selectedDepartment}
+                      className="max-w-[166px]"
+                      label=""
+                      items={departmentList}
+                      onChange={handleApproverGroup}
+                      placeholder="แผนก"
+                    />
+                    <DropDown
+                      value={selectedDepartment}
+                      className="max-w-[166px]"
+                      label=""
+                      items={departmentList}
+                      onChange={(item) => setSelectedDepartment(item)}
+                      placeholder="แผนก"
+                    />
+                    <DropDown
+                      value={selectedSection}
+                      className="max-w-[166px]"
+                      label=""
+                      items={departmentList}
+                      onChange={handleApproverGroup}
+                      placeholder="ฝ่ายย่อย"
+                    />
+                  </div>
+                  <div className=" space-y-[7px]">
+                    <div className="flex items-center gap-1">
+                      <p>ลำดับการอนุมัติ</p>
+                      <p className="text-[#F5222D]">*</p>
+                    </div>
+                    <p className=" text-[#858585]">
+                      สามารถลากเพื่อสลับลำดับผู้อนุมัติได้
+                    </p>
+                  </div>
+                  <div className=" space-y-2.5">
+                    {approverGroup.map((g, idx) => (
+                      <div
+                        key={g.value}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragEnter={(e) => handleDragEnter(e, idx)}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                        onDragEnd={handleDragEnd}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border cursor-grab select-none"
+                      >
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2.5 justify-end">
+                <Button onClick={() => setIsApproverModalOpen(false)} className="bg-[#D9D9D9]">
+                  ยกเลิก
+                </Button>
+                <Button className="bg-[#1890FF]">
+                  บันทึก
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,12 @@
 import { prisma } from "../../infrastructure/database/client.js";
 
+
+/**
+ * Description: ดึงข้อมูลทอุปกรณ์
+ * Input : -
+ * Output : รายการอุปกรณ์ (ข้อมูลอุปกรณ์ หมวดหมู่ แผนก ฝ่ายย่อย จำนวนอุปกรณ์ทั้งหมด จำนวนอุปกรณ์ที่พร้อมใช้งาน)
+ * Author: Sutaphat Thahin (Yeen) 66160378
+ */
 async function getInventory() {
     const devices = await prisma.devices.findMany({
         where: {
@@ -41,21 +48,23 @@ async function getInventory() {
         }
     });
 
+    // ฟังก์ชันแยกแชื่อแผนก แและ ฝ่ายย่อย
     function extractDepartmentAndSection(sectionName: string) {
-        const match = sectionName.match(/แผนก\s*(.*?)\s*ฝ่ายย่อย\s*(.*)/);
+        const match = sectionName.match(/แผนก\s*(.*?)\s*ฝ่ายย่อย\s*(.*)/); // แยก แผนก และ ฝ่ายย่อย ออกจากข้อความเดียวกัน
 
         return {
-            department: match?.[1]?.trim(),
-            sub_section: match?.[2]?.trim(),
+            department: match?.[1]?.trim(), // ข้อความหลังคำว่า แผนก
+            sub_section: match?.[2]?.trim(), // ข้อความหลังคำว่า ฝ่ายย่อย
         }
     }
 
     // Destructure เอาเฉพาะ fields ที่ต้องการ
     const result = devices.map(({ section, category, device_childs, _count, ...device }) => {
+        // แยกแชื่อแผนก แและ ฝ่ายย่อย
         const { department, sub_section } = section?.sec_name
             ? extractDepartmentAndSection(section.sec_name)
             : { department: null, sub_section: null };
-    
+
         return {
             ...device,
             category: category.ca_name,
@@ -65,7 +74,7 @@ async function getInventory() {
             available: device_childs.length,
         };
     });
-    
+
 
     return result;
 }

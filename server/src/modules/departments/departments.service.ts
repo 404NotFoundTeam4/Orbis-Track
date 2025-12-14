@@ -20,7 +20,7 @@ import {
 async function getAllDepartment() {
   // ดึงข้อมูลแผนกทั้งหมด เลือกเฉพาะ id และชื่อ
   const departments = await prisma.departments.findMany({
-    orderBy: { dept_name: "asc" },
+    orderBy: { dept_id: "asc" },
     select: {
       dept_id: true,
       dept_name: true,
@@ -286,7 +286,7 @@ async function addSection(deptId: number, section: string) {
 //  */
 async function getDeptSection() {
   const deptsection = await prisma.departments.findMany({
-    orderBy: { dept_name: "asc" },
+    orderBy: { dept_id: "asc" },
     select: {
       dept_id: true,
       dept_name: true,
@@ -298,7 +298,7 @@ async function getDeptSection() {
         },
       },
       sections: {
-        orderBy: { sec_name: "asc" },
+        orderBy: { sec_id: "asc" },
         select: {
           sec_id: true,
           sec_name: true,

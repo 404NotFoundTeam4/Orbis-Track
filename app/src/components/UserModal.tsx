@@ -35,7 +35,7 @@ type IUserApiData = {
   us_email: string;
   us_phone: string;
   us_images: string | null;
-  us_role: string;
+  us_role: string | null;
   us_dept_id: number;
   us_sec_id: number | null;
   us_is_active: boolean;
@@ -64,7 +64,7 @@ const defaultFormDataObject: IUserApiData = {
   us_email: "",
   us_phone: "",
   us_images: null,
-  us_role: "",
+  us_role: null,
   us_dept_id: 0,
   us_sec_id: null,
   us_is_active: true,
@@ -84,7 +84,7 @@ export default function UserModal({
   allUsers,
 }: IUserModalProps) {
   const [formDataObject, setFormDataObject] = useState<IUserApiData>(
-    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject,
+    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject
   );
 
   //  State สำหรับเก็บ Error Message
@@ -122,7 +122,7 @@ export default function UserModal({
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
     return Array.from(
       { length },
-      () => chars[Math.floor(Math.random() * chars.length)],
+      () => chars[Math.floor(Math.random() * chars.length)]
     ).join("");
   }
 
@@ -240,7 +240,7 @@ export default function UserModal({
 
   // Handle Change และเคลียร์ Error เมื่อพิมพ์
   const handleChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = changeEvent.target;
 
@@ -266,7 +266,7 @@ export default function UserModal({
   };
 
   const handleAvatarChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement>,
+    changeEvent: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = changeEvent.target.files?.[0];
     if (file) {
@@ -393,13 +393,13 @@ export default function UserModal({
         label: dept.dept_name,
         value: dept.dept_id,
       })),
-    [departmentsList],
+    [departmentsList]
   );
 
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
     return sectionsList?.filter(
-      (sec) => sec.sec_dept_id === formDataObject.us_dept_id,
+      (sec) => sec.sec_dept_id === formDataObject.us_dept_id
     );
   }, [formDataObject.us_dept_id, sectionsList]);
 
@@ -410,17 +410,22 @@ export default function UserModal({
         label: sec.sec_name,
         value: sec.sec_id,
       })),
-    [filteredSections],
+    [filteredSections]
   );
 
-  const selectedRole = rolesList?.find(
-    (op) => op.value === formDataObject.us_role,
-  );
+  // const selectedRole = rolesList?.find(
+  //   (op) => op.value === formDataObject.us_role,
+  // );
+  const selectedRole =
+    formDataObject.us_role == null
+      ? undefined //ถ้ายังไม่เลือก → บังคับให้ DropDown ใช้ placeholder
+      : rolesList?.find((op) => op.value === formDataObject.us_role);
+
   const selectedDepartment = departmentOptions?.find(
-    (op) => op.id === formDataObject.us_dept_id,
+    (op) => op.id === formDataObject.us_dept_id
   );
   const selectedSection = sectionOptions?.find(
-    (op) => op.id === formDataObject.us_sec_id,
+    (op) => op.id === formDataObject.us_sec_id
   );
 
   return (
@@ -514,7 +519,7 @@ export default function UserModal({
               <div className="grid grid-cols-3 gap-y-4 gap-x-4 mb-3">
                 {/* ชื่อ */}
                 <div>
-                  <FieldLabel>ชื่อ</FieldLabel>
+                  <FieldLabel required>ชื่อ</FieldLabel>
                   <input
                     name="us_firstname"
                     placeholder="ชื่อจริงของผู้ใช้งาน"
@@ -534,7 +539,7 @@ export default function UserModal({
 
                 {/* นามสกุล */}
                 <div>
-                  <FieldLabel>นามสกุล</FieldLabel>
+                  <FieldLabel required>นามสกุล</FieldLabel>
                   <input
                     name="us_lastname"
                     placeholder="นามสกุลของผู้ใช้งาน"
@@ -554,7 +559,7 @@ export default function UserModal({
 
                 {/* รหัสพนักงาน */}
                 <div>
-                  <FieldLabel>รหัสพนักงาน</FieldLabel>
+                  <FieldLabel required>รหัสพนักงาน</FieldLabel>
                   <input
                     name="us_emp_code"
                     placeholder="รหัสพนักงาน"
@@ -575,7 +580,7 @@ export default function UserModal({
 
                 {/* อีเมล */}
                 <div>
-                  <FieldLabel>อีเมล</FieldLabel>
+                  <FieldLabel required>อีเมล</FieldLabel>
                   <input
                     name="us_email"
                     placeholder="อีเมลของผู้ใช้งาน"
@@ -595,7 +600,7 @@ export default function UserModal({
 
                 {/* เบอร์โทรศัพท์ */}
                 <div>
-                  <FieldLabel>เบอร์โทรศัพท์</FieldLabel>
+                  <FieldLabel required>เบอร์โทรศัพท์</FieldLabel>
                   <input
                     name="us_phone"
                     placeholder="เบอร์โทรศัพท์"
@@ -630,13 +635,13 @@ export default function UserModal({
               <div className="grid grid-cols-3 gap-y-4 gap-x-4">
                 {/* ตำแหน่ง */}
                 <div>
+                  <FieldLabel required>ตำแหน่ง</FieldLabel>
                   <DropDown
-                    label="ตำแหน่ง"
                     items={rolesList || []}
                     value={selectedRole}
                     dropdownHeight={200}
                     onChange={handleRoleChange}
-                    placeholder="ทั้งหมด"
+                    placeholder="ประเภทตำแหน่ง"
                     disabled={isDelete}
                     className={"!w-[221px]"}
                     triggerClassName={
@@ -653,8 +658,8 @@ export default function UserModal({
 
                 {/* แผนก */}
                 <div>
+                  <FieldLabel required>แผนก</FieldLabel>
                   <DropDown
-                    label="แผนก"
                     items={departmentOptions || []}
                     value={selectedDepartment}
                     dropdownHeight={200}
@@ -678,8 +683,8 @@ export default function UserModal({
 
                 {/* ฝ่ายย่อย */}
                 <div>
+                  <FieldLabel required>ฝ่ายย่อย</FieldLabel>
                   <DropDown
-                    label="ฝ่ายย่อย"
                     items={sectionOptions || []}
                     value={selectedSection}
                     dropdownHeight={200}
@@ -712,9 +717,7 @@ export default function UserModal({
               <div className="font-medium text-[#858585] mb-3 text-[16px]">
                 รายละเอียดบัญชีของผู้ใช้
               </div>
-              <div className="font-medium text-[000000] mb-2 text-[16px]">
-                ชื่อผู้ใช้ (ล็อกอิน)
-              </div>
+              <FieldLabel required>ชื่อผู้ใช้ (ล็อกอิน)</FieldLabel>
               <div>
                 <div
                   className={`

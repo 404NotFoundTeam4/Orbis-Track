@@ -17,6 +17,7 @@ import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
 import { Cart } from "./Cart";
 import EditCart from "./EditCart";
+import ListDevices from "./ListDevices";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/list-devices" element={<ListDevices />} />
             </Route>
           </Route>
         </Routes>

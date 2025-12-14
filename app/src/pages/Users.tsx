@@ -1,5 +1,5 @@
 import "../styles/css/User.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
@@ -118,15 +118,26 @@ export const Users = () => {
 
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
+  // const roleOptions = [
+  //   { id: "", label: "ทั้งหมด", value: "" },
+  //   ...Array.from(
+  //     new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
+  //   ).map((r, index) => ({
+  //     id: index + 1,
+  //     label: roleTranslation[r] || r,
+  //     value: r,
+  //   })),
+  // ];
+  const baseRoleOptions = Array.from(
+    new Set(users.map((u) => u.us_role)) // ตัด role ที่ซ้ำ
+  ).map((r, index) => ({
+    id: index + 1,
+    label: roleTranslation[r] || r,
+    value: r,
+  }));
   const roleOptions = [
     { id: "", label: "ทั้งหมด", value: "" },
-    ...Array.from(
-      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
-    ).map((r, index) => ({
-      id: index + 1,
-      label: roleTranslation[r] || r,
-      value: r,
-    })),
+    ...baseRoleOptions,
   ];
   const [roleFilter, setRoleFilter] = useState<{
     id: number | string;
@@ -304,6 +315,9 @@ export const Users = () => {
         message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
         tone: "confirm",
       });
+
+      //  refreshTrigger จะทำให้ fetch ใหม่ → newUserIds ถูกคำนวณอัตโนมัติ
+      setRefreshTrigger((p) => p + 1);
     } catch {
       // จัดการข้อผิดพลาด
       toast.push({
@@ -355,6 +369,12 @@ export const Users = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  // เก็บ user id รอบก่อนหน้า
+  const prevUserIdsRef = useRef<Set<number>>(new Set());
+
+  //เก็บ user id ที่ "เพิ่มใหม่" → ใช้ดันไปท้ายสุดตอน sort
+  const [newUserIds, setNewUserIds] = useState<Set<number>>(new Set());
+
   /**
    * Description: ดึงข้อมูลผู้ใช้/แผนก/ฝ่ายย่อยจาก API
    * Author: Nontapat Sinthum (Guitar) 66160104
@@ -365,9 +385,25 @@ export const Users = () => {
         const res = await api.get("/accounts");
         const data = res.data;
 
+        const usersData: User[] = data.data.accountsWithDetails || [];
+
+        // ตรวจจับ user ที่ "เพิ่มใหม่" - id ที่อยู่ในรอบใหม่ แต่ไม่อยู่ในรอบก่อน
+        const nextIds = new Set<number>(usersData.map((u) => u.us_id));
+        const prevIds = prevUserIdsRef.current;
+
+        const added = new Set<number>();
+        for (const id of nextIds) {
+          if (!prevIds.has(id)) added.add(id);
+        }
+
+        setNewUserIds(added);
+        prevUserIdsRef.current = nextIds;
+
+        setusers(usersData);
+
         setSections(data.data.sections || []);
         setDepartments(data.data.departments || []);
-        setusers(data.data.accountsWithDetails || []);
+        // setusers(data.data.accountsWithDetails || []);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -392,7 +428,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "us_id",
+    "us_id"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -403,6 +439,7 @@ export const Users = () => {
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
   const HandleSort = (field: keyof User | "statusText") => {
+    setNewUserIds(new Set());
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -445,6 +482,13 @@ export const Users = () => {
 
     //เริ่มทำการ sort
     result = [...result].sort((a, b) => {
+      // user ที่อยู่ใน newUserIds → ไปท้ายสุดเสมอ
+      // - ทำก่อน sort ปกติ
+      const aIsNew = newUserIds.has(a.us_id);
+      const bIsNew = newUserIds.has(b.us_id);
+      if (aIsNew !== bIsNew) return aIsNew ? 1 : -1;
+      /* ===================================================== */
+
       let valA: any;
       let valB: any;
 
@@ -495,6 +539,7 @@ export const Users = () => {
     sectionFilter,
     sortField,
     sortDirection,
+    newUserIds,
   ]);
 
   //จัดการแบ่งแต่ละหน้า
@@ -520,7 +565,7 @@ export const Users = () => {
   const getSortIcon = (
     currentField: string,
     targetField: string,
-    direction: "asc" | "desc",
+    direction: "asc" | "desc"
   ) => {
     // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
     if (currentField !== targetField) {
@@ -861,7 +906,7 @@ export const Users = () => {
           keyvalue="all"
           departmentsList={departments}
           sectionsList={sections}
-          rolesList={roleOptions}
+          rolesList={baseRoleOptions}
           allUsers={users}
         />
       )}

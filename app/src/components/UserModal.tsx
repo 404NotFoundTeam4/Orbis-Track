@@ -84,7 +84,7 @@ export default function UserModal({
   allUsers,
 }: IUserModalProps) {
   const [formDataObject, setFormDataObject] = useState<IUserApiData>(
-    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject
+    user ? { ...defaultFormDataObject, ...user } : defaultFormDataObject,
   );
 
   //  State สำหรับเก็บ Error Message
@@ -122,7 +122,7 @@ export default function UserModal({
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
     return Array.from(
       { length },
-      () => chars[Math.floor(Math.random() * chars.length)]
+      () => chars[Math.floor(Math.random() * chars.length)],
     ).join("");
   }
 
@@ -240,7 +240,7 @@ export default function UserModal({
 
   // Handle Change และเคลียร์ Error เมื่อพิมพ์
   const handleChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = changeEvent.target;
 
@@ -266,7 +266,7 @@ export default function UserModal({
   };
 
   const handleAvatarChange = (
-    changeEvent: React.ChangeEvent<HTMLInputElement>
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = changeEvent.target.files?.[0];
     if (file) {
@@ -393,13 +393,13 @@ export default function UserModal({
         label: dept.dept_name,
         value: dept.dept_id,
       })),
-    [departmentsList]
+    [departmentsList],
   );
 
   const filteredSections = useMemo(() => {
     if (!formDataObject.us_dept_id) return [];
     return sectionsList?.filter(
-      (sec) => sec.sec_dept_id === formDataObject.us_dept_id
+      (sec) => sec.sec_dept_id === formDataObject.us_dept_id,
     );
   }, [formDataObject.us_dept_id, sectionsList]);
 
@@ -410,7 +410,7 @@ export default function UserModal({
         label: sec.sec_name,
         value: sec.sec_id,
       })),
-    [filteredSections]
+    [filteredSections],
   );
 
   // const selectedRole = rolesList?.find(
@@ -422,10 +422,10 @@ export default function UserModal({
       : rolesList?.find((op) => op.value === formDataObject.us_role);
 
   const selectedDepartment = departmentOptions?.find(
-    (op) => op.id === formDataObject.us_dept_id
+    (op) => op.id === formDataObject.us_dept_id,
   );
   const selectedSection = sectionOptions?.find(
-    (op) => op.id === formDataObject.us_sec_id
+    (op) => op.id === formDataObject.us_sec_id,
   );
 
   return (
@@ -506,12 +506,7 @@ export default function UserModal({
           <fieldset disabled={isDelete} aria-readonly={isDelete}>
             {/* Profile Section */}
             <div className="mb-[30px]">
-              <h3 className="text-[000000] font-medium text-[18px]">
-                โปรไฟล์{" "}
-                <span className="text-[#F5222D] font-medium text-[18px]">
-                  *
-                </span>
-              </h3>
+              <h3 className="text-[000000] font-medium text-[18px]">โปรไฟล์</h3>
               <div className="font-medium text-[#858585] mb-3 text-[16px]">
                 รายละเอียดโปรไฟล์ผู้ใช้
               </div>
@@ -624,10 +619,7 @@ export default function UserModal({
             {/* Position Section */}
             <div className="mb-[30px]">
               <h3 className="text-[000000] font-medium text-[18px]">
-                ตำแหน่งงาน{" "}
-                <span className="text-[#F5222D] font-medium text-[18px]">
-                  *
-                </span>
+                ตำแหน่งงาน
               </h3>
               <div className="font-medium text-[#858585] mb-3 text-[16px]">
                 รายละเอียดตำแหน่งงานของผู้ใช้
@@ -708,12 +700,7 @@ export default function UserModal({
 
             {/* Account Section */}
             <div>
-              <h3 className="text-[000000] font-medium text-[18px]">
-                บัญชี{" "}
-                <span className="text-[#F5222D] font-medium text-[18px]">
-                  *
-                </span>
-              </h3>
+              <h3 className="text-[000000] font-medium text-[18px]">บัญชี</h3>
               <div className="font-medium text-[#858585] mb-3 text-[16px]">
                 รายละเอียดบัญชีของผู้ใช้
               </div>

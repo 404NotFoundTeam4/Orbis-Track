@@ -81,12 +81,12 @@ export const welcomeTemplate = (data: WelcomeTemplateData): string => {
         <body>
             <div class="container">
             <div class="header">
-                <h1>Obis Track</h1>
+                <h1>Orbis Track</h1>
             </div>
             <div class="content">
                 <p class="greeting">เรียนคุณ ${name}</p>
                 <p class="intro">
-                ผู้ดูแลระบบได้สร้างบัญชีผู้ใช้งานสำหรับคุณในระบบ Obis Track เรียบร้อยแล้ว 
+                ผู้ดูแลระบบได้สร้างบัญชีผู้ใช้งานสำหรับคุณในระบบ Orbis Track เรียบร้อยแล้ว 
                 กรุณาคลิกปุ่มด้านล่างเพื่อตั้งรหัสผ่านและเริ่มใช้งาน
                 </p>
 
@@ -127,11 +127,11 @@ export const welcomeTemplate = (data: WelcomeTemplateData): string => {
                 </p>
 
                 <p class="info">
-                ยินดีต้อนรับสู่ Obis Track
+                ยินดีต้อนรับสู่ Orbis Track
                 </p>
             </div>
             <div class="footer">
-                <p>© ${new Date().getFullYear()} Obis Track. All rights reserved.</p>
+                <p>© ${new Date().getFullYear()} Orbis Track. All rights reserved.</p>
                 <p>บัญชีนี้ถูกสร้างโดยผู้ดูแลระบบสำหรับอีเมล ${userEmail}</p>
                 <p>อีเมลนี้ถูกส่งโดยอัตโนมัติ กรุณาอย่าตอบกลับ</p>
             </div>

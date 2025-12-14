@@ -75,13 +75,13 @@ export const passwordChangedTemplate = (data: PasswordChangedTemplateData): stri
         <body>
             <div class="container">
             <div class="header">
-                <h1>Obis Track</h1>
+                <h1>Orbis Track</h1>
             </div>
             <div class="content">
                 ${name ? `<p class="greeting">เรียนคุณ ${name}</p>` : '<p class="greeting">เรียนผู้ใช้งาน</p>'}
 
                 <p style="color: #555555; font-size: 15px; line-height: 1.6;">
-                รหัสผ่านของคุณสำหรับบัญชี Obis Track ได้รับการเปลี่ยนแปลงเรียบร้อยแล้ว
+                รหัสผ่านของคุณสำหรับบัญชี Orbis Track ได้รับการเปลี่ยนแปลงเรียบร้อยแล้ว
                 </p>
 
                 <div class="info-box">
@@ -130,7 +130,7 @@ export const passwordChangedTemplate = (data: PasswordChangedTemplateData): stri
                 </div>
             </div>
             <div class="footer">
-                <p>© ${new Date().getFullYear()} Obis Track. All rights reserved.</p>
+                <p>© ${new Date().getFullYear()} Orbis Track. All rights reserved.</p>
                 <p>หากมีคำถาม ติดต่อ <a href="mailto:${env.SUPPORT_EMAIL}">${env.SUPPORT_EMAIL}</a></p>
                 <p>อีเมลนี้ถูกส่งโดยอัตโนมัติ กรุณาอย่าตอบกลับ</p>
             </div>

@@ -34,7 +34,18 @@ export const UserData = async (token) => {
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export const ResetPassword = async (email, newPassword, confirmNewPassword) => {
+export const ResetPassword = async (token, newPassword, confirmNewPassword) => {
+  const data = await api.post("/reset-password", { token, newPassword, confirmNewPassword });
+  return data;
+} 
+/**
+ * Function: UserData
+ * Features:
+ *  - ส่งคำขอรีเซ็ตรหัสผ่านไปยัง backend หลังผู้ใช้ผ่าน OTP แล้ว
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+export const ForgotPassword = async (email, newPassword, confirmNewPassword) => {
   const data = await api.post("/forgot-password", { email, newPassword, confirmNewPassword });
   return data;
 } 

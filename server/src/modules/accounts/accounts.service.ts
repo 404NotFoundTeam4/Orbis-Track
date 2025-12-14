@@ -257,11 +257,12 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
  * Output : updated user object
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-async function updateAccount(params: IdParamDto, body: EditAccountSchema) {
+async function updateAccount(params: IdParamDto, body: EditAccountSchema, images: any) {
     const { id } = params;
     const user = await prisma.users.findUnique({ where: { us_id: id } });
     if (!user) throw new Error("account not found");
     const updateData: any = {
+        us_images: images,
         ...body,
         updated_at: new Date(),
     }

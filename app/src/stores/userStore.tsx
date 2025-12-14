@@ -46,6 +46,7 @@ export const useUserStore = create<UserStore>()(
       logout: () => {
         localStorage.removeItem("token");
         localStorage.removeItem("rememberUser");
+        sessionStorage.removeItem("token");
         set({ user: null });
       },
     }),

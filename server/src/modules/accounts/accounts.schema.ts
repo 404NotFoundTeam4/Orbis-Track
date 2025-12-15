@@ -26,7 +26,10 @@ export const createAccountsPayload = z.object({
   us_role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
   us_dept_id: z.coerce.number().int().positive().nullable().optional(),
   us_sec_id: z.coerce.number().int().positive().nullable().optional(),
-  us_is_active: z.boolean().default(true),
+  us_is_active: z.preprocess((val) => {
+          if (typeof val === 'string') return val === 'true';
+          return Boolean(val);
+      }, z.boolean()).default(true),
 });
 
 // สำหรับตรวจสอบข้อมูลผู้ใช้หลังจากสร้างบัญชีสำเร็จ

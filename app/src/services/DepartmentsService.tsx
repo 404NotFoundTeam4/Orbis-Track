@@ -180,7 +180,7 @@ export const sectionService = {
   ): Promise<{ message: string }> => {
     const { dept_id, sec_name } = payload;
     const { data } = await api.post(`/departments/${dept_id}/section`, {
-      dept_id,
+      // dept_id,
       sec_name,
     });
     return data;

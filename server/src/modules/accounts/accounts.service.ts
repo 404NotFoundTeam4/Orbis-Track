@@ -154,7 +154,7 @@ async function getAllAccounts() {
         return {
             ...user,
             us_dept_name: deptpartment?.dept_name,
-            us_sec_name: section?.sec_name
+            us_sec_name: section?.sec_name.replace(deptpartment?.dept_name ?? "", "").trim()
         }
     })
 

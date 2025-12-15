@@ -309,7 +309,10 @@ export default function UserModal({
     try {
       setDeleting(true);
       await UsersService.softDelete(user.us_id);
-      toast.push({ tone: "confirm", message: `ปิดการใช้งานบัญชีสำเร็จ` });
+      toast.push({
+        tone: "danger",
+        message: `ปิดการใช้งานบัญชีผู้ใช้เสร็จสิ้น!`,
+      });
       onSubmit?.({ us_id: user.us_id });
       onClose?.();
     } catch (err) {

@@ -33,6 +33,32 @@ export interface DeleteDeviceChlidsPayload {
   dec_id: number[];
 }
 
+export interface Section {
+  sec_id: number;
+  sec_name: string;
+  sec_dept_id: number;
+}
+
+export interface Department {
+  dept_id: number;
+  dept_name: string;
+}
+
+export interface Category {
+  ca_id: number;
+  ca_name: string;
+}
+
+export interface getAllDevices {
+  success: boolean;
+  message: string;
+  data: {
+    sections: Section[];
+    departments: Department[];
+    categories: Category[];
+  };
+}
+
 export const DeviceService = {
 
   /**
@@ -84,5 +110,13 @@ export const DeviceService = {
     return await api.post(`/inventory/devices/${id}/upload-childs`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+  },
+
+  getAllDevices: async ():Promise<getAllDevices>=>{
+    const {data} = await api.get("/inventory/add")
+
+    return data;
   }
 }
+
+  

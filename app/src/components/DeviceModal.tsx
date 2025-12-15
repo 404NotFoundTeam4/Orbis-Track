@@ -7,6 +7,8 @@ import Checkbox from "./Checkbox";
 import QuantityInput from "./QuantityInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { useInventorys } from "../hooks/useInventory"
+
 // โครงสร้างข้อมูลของแผนก
 interface Department {
   id: number;
@@ -101,6 +103,37 @@ const MainDeviceModal = ({
   const [description, setDescription] = useState<string>("");
   const [maxBorrowDays, setMaxBorrowDays] = useState<number>(0);
   const [totalQuantity, setTotalQuantity] = useState<number>(0);
+  const [departments, setDepartments] = useState([]);
+  const [category,setCategory] = useState([])
+  const [section,setSection] = useState([])
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await useInventorys.getDevicesAll();
+        setDepartments(res.data.departments);
+        setCategory(res.data.categories)
+        setSection(res.data.sections)
+        console.log(res.data.categories)
+      } catch (error) {
+        console.error("โหลดข้อมูลไม่สำเร็จ", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const departmentItems: DepartmentDropdownItem[] = departments.map((dept) => ({
+    id: dept.dept_id,
+    label: dept.dept_name,
+    value: dept.dept_id,
+  }));
+
+  const categoryItem: CategoryDropdownITem[] = category.map((ca)=>({
+  id: ca.ca_id,
+    label: ca.ca_name,
+    value: ca.ca_id,
+  }))
+ 
 
   // รูปภาพอุปกรณ์
   const [preview, setPreview] = useState<string | null>(null);
@@ -138,6 +171,7 @@ const MainDeviceModal = ({
   // แผนกท่ีเลือกใน dropdown
   const [selectedDepartment, setSelectedDepartment] =
     useState<Department | null>(null);
+  console.log(selectedDepartment)
   // หมวดหมู่ท่ีเลือกใน dropdown
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
@@ -161,12 +195,11 @@ const MainDeviceModal = ({
     );
   };
   const handleDeleteApproverGroup = (value) => {
-  setapproverGroupFlow((prev) =>
-    prev.filter((item) => item.label !== value)
-  );
-};
+    setapproverGroupFlow((prev) =>
+      prev.filter((item) => item.label !== value)
+    );
+  };
 
-console.log(approverGroupFlow)
   // เปิด modal
   const openApproverModal = () => {
     // ถ้ามี selectedApprovers ให้เอามาเป็นค่าเริ่มต้นของ modal ถ้าไม่มีก็ว่าง
@@ -216,7 +249,7 @@ console.log(approverGroupFlow)
   const [accessories, setAccessories] = useState([
     { id: 1, name: "", qty: "" },
   ]);
-  
+
   // เพิ่ม Input อุปกรณ์เสริม
   const addAccessory = () => {
     setAccessories([
@@ -254,7 +287,7 @@ console.log(approverGroupFlow)
       setTotalQuantity(defaultValues.total_quantity ?? 0);
 
       // Dropdown
-      setSelectedDepartment(defaultValues.department ?? null);
+
       setSelectedCategory(defaultValues.category ?? null);
       setSelectedSection(defaultValues.section ?? null);
 
@@ -331,7 +364,7 @@ console.log(approverGroupFlow)
     e.dataTransfer.effectAllowed = "move";
     try {
       e.dataTransfer.setData("text/plain", String(index));
-    } catch {}
+    } catch { }
   };
 
   const handleDragEnter = (e: React.DragEvent, index: number) => {
@@ -421,7 +454,7 @@ console.log(approverGroupFlow)
               value={selectedDepartment}
               className="!w-[264px]"
               label="แผนกอุปกรณ์"
-              items={departmentList}
+              items={departmentItems}
               onChange={(item) => setSelectedDepartment(item)}
               placeholder="แผนก"
             />
@@ -429,7 +462,7 @@ console.log(approverGroupFlow)
               value={selectedCategory}
               className="!w-[264px]"
               label="หมวดหมู่"
-              items={categoryList}
+              items={categoryItem}
               onChange={(item) => setSelectedCategory(item)}
               placeholder="หมวดหมู่อุปกรณ์"
             />
@@ -776,15 +809,15 @@ console.log(approverGroupFlow)
                           <div className="w-full border-2 border-[#D8D8D8] border-x-0 py-[9px]">
                             {g.label}
                           </div>
-                          <button type="button" 
-                           onClick={() => handleDeleteApproverGroup(g.label)}
-                          className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[9px] bg-[#F5222D] ">
+                          <button type="button"
+                            onClick={() => handleDeleteApproverGroup(g.label)}
+                            className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[9px] bg-[#F5222D] ">
                             <Icon
                               icon="solar:trash-bin-trash-linear"
                               width="24"
                               height="24"
                               className="text-white"
-                             
+
                             />
                           </button>
                         </div>

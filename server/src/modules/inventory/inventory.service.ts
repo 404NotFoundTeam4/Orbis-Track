@@ -359,6 +359,7 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
                 })),
             });
         }
+        
         return {
             ...device,
             approvalflow: approvalFlow,

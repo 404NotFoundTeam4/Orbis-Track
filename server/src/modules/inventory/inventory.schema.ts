@@ -38,7 +38,6 @@ export const createDevicePayload = z.object({
     de_location: z.string().min(1).max(200),
     de_max_borrow_days: z.coerce.number().int().positive(),
     de_images: z.string().nullable().optional(),
-    de_af_id: z.coerce.number().int().positive(),
     de_ca_id: z.coerce.number().int().positive(),
     de_us_id: z.coerce.number().int().positive(),
     de_sec_id: z.coerce.number().int().positive().nullable().optional(),

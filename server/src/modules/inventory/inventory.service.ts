@@ -1,9 +1,11 @@
 import { $Enums } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
+import { ValidationError } from "../../errors/errors.js";
 import xlsx from "xlsx";
 import fs from "fs";
 import {
     CreateDeviceChildPayload,
+    CreateDevicePayload,
     DeleteDeviceChildPayload,
     IdParamDto,
     UploadFileDeviceChildPayload
@@ -304,4 +306,107 @@ async function deleteDeviceChild(payload: DeleteDeviceChildPayload) {
     return { message: "Delete device child successfully" }
 }
 
-export const inventoryService = { getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild }
+async function createDevice(payload: CreateDevicePayload, images?: string) {
+    const { accessories,
+        approvalflowspayload,
+        approvalflowssteppayload,
+        de_images: payloadImages,
+        ...deviceData
+    } = payload;
+
+    const finalImages = images ?? payloadImages ?? null;
+
+    return prisma.$transaction(async (tx) => {
+
+        const approvalFlow = await tx.approval_flows.create({
+            data: {
+                af_name: approvalflowspayload.af_name,
+                af_is_active: approvalflowspayload.af_is_active,
+                af_us_id: approvalflowspayload.af_us_id,
+                created_at: new Date(),
+            },
+        });
+
+        const steps = await tx.approval_flow_steps.createMany({
+            data: approvalflowssteppayload.map(step => ({
+                afs_step_approve: step.afs_step_approve,
+                afs_dept_id: step.afs_dept_id,
+                afs_sec_id: step.afs_sec_id ?? null,
+                afs_role: step.afs_role,
+                afs_af_id: approvalFlow.af_id,
+                created_at: new Date(),
+            })),
+        });
+
+        const device = await tx.devices.create({
+            data: {
+                ...deviceData,
+                de_images: finalImages,
+                de_description: deviceData.de_description ?? null,
+                de_sec_id: deviceData.de_sec_id ?? null,
+                de_af_id: approvalFlow.af_id,
+                created_at: new Date(),
+            },
+        });
+
+        if (accessories?.length) {
+            await tx.accessories.createMany({
+                data: accessories.map((a) => ({
+                    acc_name: a.acc_name,
+                    acc_quantity: a.acc_quantity,
+                    acc_de_id: device.de_id,
+                    created_at: new Date(),
+                })),
+            });
+        }
+        return {
+            ...device,
+            approvalflow: approvalFlow,
+            steps,accessories
+        };
+    });
+}
+async function getAllDevices() {
+    const [departments, sections, categories] = await Promise.all([
+        prisma.departments.findMany({
+            select: {
+                dept_id: true,
+                dept_name: true,
+            },
+        }),
+        prisma.sections.findMany({
+            select: {
+                sec_id: true,
+                sec_name: true,
+                sec_dept_id: true,
+            },
+        }),
+        prisma.categories.findMany({
+            select: {
+                ca_id: true,
+                ca_name: true,
+            },
+        }),
+    ]);
+
+    const departmentsWithHead = departments.map((dept) => ({
+        ...dept,
+        sec_name: `หัวหน้า ${dept.sec_name}`,
+    }));
+
+    const sectionsWithHead = sections.map((sec) => ({
+        ...sec,
+        sec_name: `หัวหน้า ${sec.sec_name}`,
+    }));
+
+    return {
+        departments: departmentsWithHead,
+        sections: sectionsWithHead,
+        categories,
+    };
+
+}
+
+
+
+export const inventoryService = { getAllDevices, createDevice, getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild }

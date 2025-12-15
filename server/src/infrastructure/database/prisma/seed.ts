@@ -193,35 +193,6 @@ async function main() {
     },
   });
 
-  // ---- CATEGORIES & ACCESSORIES ----
-  console.log("📦 Creating categories & accessories...");
-  const catCamera = await prisma.categories.upsert({
-    where: { ca_id: 1 },
-    update: { ca_name: "กล้อง" },
-    create: { ca_name: "กล้อง" },
-  });
-  const catLaptop = await prisma.categories.upsert({
-    where: { ca_id: 2 },
-    update: { ca_name: "โน้ตบุ๊ค" },
-    create: { ca_name: "โน้ตบุ๊ค" },
-  });
-  const catProjector = await prisma.categories.upsert({
-    where: { ca_id: 3 },
-    update: { ca_name: "โปรเจคเตอร์" },
-    create: { ca_name: "โปรเจคเตอร์" },
-  });
-
-  const accBattery = await prisma.accessories.upsert({
-    where: { acc_id: 1 },
-    update: { acc_name: "แบตเตอรี่", acc_quantity: 10 },
-    create: { acc_name: "แบตเตอรี่", acc_quantity: 10 },
-  });
-  const accCharger = await prisma.accessories.upsert({
-    where: { acc_id: 2 },
-    update: { acc_name: "อแด็ปเตอร์", acc_quantity: 15 },
-    create: { acc_name: "อแด็ปเตอร์", acc_quantity: 15 },
-  });
-
   // ---- APPROVAL FLOWS ----
   console.log("🔄 Creating approval flows...");
   const flowMedia = await prisma.approval_flows.upsert({
@@ -271,6 +242,26 @@ async function main() {
     },
   });
 
+
+  // ---- CATEGORIES ----
+  console.log("📦 Creating accessories...");
+  const catCamera = await prisma.categories.upsert({
+    where: { ca_id: 1 },
+    update: { ca_name: "กล้อง" },
+    create: { ca_name: "กล้อง" },
+  });
+  const catLaptop = await prisma.categories.upsert({
+    where: { ca_id: 2 },
+    update: { ca_name: "โน้ตบุ๊ค" },
+    create: { ca_name: "โน้ตบุ๊ค" },
+  });
+  const catProjector = await prisma.categories.upsert({
+    where: { ca_id: 3 },
+    update: { ca_name: "โปรเจคเตอร์" },
+    create: { ca_name: "โปรเจคเตอร์" },
+  });
+
+
   // ---- DEVICES ----
   console.log("📷 Creating devices...");
   const deviceCamera = await prisma.devices.upsert({
@@ -285,7 +276,6 @@ async function main() {
       de_ca_id: catCamera.ca_id,
       de_us_id: admin.us_id,
       de_sec_id: sections.media[0].sec_id,
-      de_acc_id: accBattery.acc_id,
     },
   });
 
@@ -301,9 +291,49 @@ async function main() {
       de_ca_id: catLaptop.ca_id,
       de_us_id: admin.us_id,
       de_sec_id: sections.it[0].sec_id,
-      de_acc_id: accCharger.acc_id,
     },
   });
+
+
+  // ---- ACCESSORIES ----
+  console.log("📦 Creating accessories...");
+  const accBattery = await prisma.accessories.upsert({
+    where: { acc_id: 1 },
+    update: {
+      acc_name: "แบตเตอรี่",
+      acc_quantity: 10,
+      acc_de_id: deviceCamera.de_id,
+    },
+    create: {
+      acc_name: "แบตเตอรี่",
+      acc_quantity: 10,
+      device: {
+        connect: {
+          de_id: deviceCamera.de_id,
+        },
+      },
+      created_at: new Date(),
+    },
+  });
+  const accCharger = await prisma.accessories.upsert({
+    where: { acc_id: 2 },
+    update: {
+      acc_name: "อแด็ปเตอร์",
+      acc_quantity: 15,
+      acc_de_id: deviceLaptop.de_id,
+    },
+    create: {
+      acc_name: "อแด็ปเตอร์",
+      acc_quantity: 15,
+      device: {
+        connect: {
+          de_id: deviceLaptop.de_id,
+        },
+      },
+      created_at: new Date(),
+    },
+  });
+
 
   // ---- DEVICE CHILDS ----
   console.log("🔢 Creating device childs...");

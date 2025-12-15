@@ -16,6 +16,7 @@ import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword";
 import Requests from "./Requests";
 import Inventory from "./Inventory";
+import Devices from "./Devices";
 
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
                 path="/administrator/account-management"
                 element={<Users />}
               />
+               <Route path="/devices" element={<Devices />} />
               <Route path="/users" element={<Users />} />
               <Route
                 path="/administrator/departments-management"

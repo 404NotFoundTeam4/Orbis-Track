@@ -730,7 +730,7 @@ console.log(approverGroupFlow)
                       className="max-w-[166px]"
                       label=""
                       items={departmentList}
-                      onChange={(item) => setSelectedDepartment(item)}
+                      onChange={handleApproverGroup}
                       placeholder="แผนก"
                     />
                     <DropDown

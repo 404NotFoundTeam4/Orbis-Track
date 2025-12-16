@@ -5,6 +5,7 @@ import xlsx from "xlsx";
 import fs from "fs";
 import {
     CreateDeviceChildPayload,
+    CreateApprovalFlowsPayload,
     CreateDevicePayload,
     DeleteDeviceChildPayload,
     IdParamDto,
@@ -308,8 +309,7 @@ async function deleteDeviceChild(payload: DeleteDeviceChildPayload) {
 
 async function createDevice(payload: CreateDevicePayload, images?: string) {
     const { accessories,
-        approvalflowspayload,
-        approvalflowssteppayload,
+
         de_images: payloadImages,
         ...deviceData
     } = payload;
@@ -318,25 +318,7 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
 
     return prisma.$transaction(async (tx) => {
 
-        const approvalFlow = await tx.approval_flows.create({
-            data: {
-                af_name: approvalflowspayload.af_name,
-                af_is_active: approvalflowspayload.af_is_active,
-                af_us_id: approvalflowspayload.af_us_id,
-                created_at: new Date(),
-            },
-        });
 
-        const steps = await tx.approval_flow_steps.createMany({
-            data: approvalflowssteppayload.map(step => ({
-                afs_step_approve: step.afs_step_approve,
-                afs_dept_id: step.afs_dept_id,
-                afs_sec_id: step.afs_sec_id ?? null,
-                afs_role: step.afs_role,
-                afs_af_id: approvalFlow.af_id,
-                created_at: new Date(),
-            })),
-        });
 
         const device = await tx.devices.create({
             data: {
@@ -344,7 +326,6 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
                 de_images: finalImages,
                 de_description: deviceData.de_description ?? null,
                 de_sec_id: deviceData.de_sec_id ?? null,
-                de_af_id: approvalFlow.af_id,
                 created_at: new Date(),
             },
         });
@@ -359,11 +340,9 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
                 })),
             });
         }
-        
+
         return {
-            ...device,
-            approvalflow: approvalFlow,
-            steps,accessories
+            ...device, accessories
         };
     });
 }
@@ -392,12 +371,12 @@ async function getAllDevices() {
 
     const departmentsWithHead = departments.map((dept) => ({
         ...dept,
-        sec_name: `หัวหน้า ${dept.sec_name}`,
+        dept_name: `หัวหน้า${dept.dept_name}`,
     }));
 
     const sectionsWithHead = sections.map((sec) => ({
         ...sec,
-        sec_name: `หัวหน้า ${sec.sec_name}`,
+        sec_name: `หัวหน้า${sec.sec_name}`,
     }));
 
     return {
@@ -407,7 +386,53 @@ async function getAllDevices() {
     };
 
 }
+async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
+    const {
+        af_name,
+        af_is_active,
+        af_us_id,
+        approvalflowssteppayload, } = payload;
+    return prisma.$transaction(async (tx) => {
 
+        const approvalFlow = await tx.approval_flows.create({
+            data: {
+                af_name,
+                af_is_active,
+                af_us_id,
+                created_at: new Date(),
+            },
+        });
 
+        const steps = await tx.approval_flow_steps.createMany({
+            data: approvalflowssteppayload.map(step => ({
+                afs_step_approve: step.afs_step_approve,
+                afs_dept_id: step.afs_dept_id,
+                afs_sec_id: step.afs_sec_id ?? null,
+                afs_role: step.afs_role,
+                afs_af_id: approvalFlow.af_id,
+                created_at: new Date(),
+            })),
+        });
 
-export const inventoryService = { getAllDevices, createDevice, getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild }
+        return {
+            approvalflow: approvalFlow,
+            steps
+        };
+    });
+}
+async function getAllApproves() {
+    const [approval_flows] = await Promise.all([
+        prisma.approval_flows.findMany({
+            select: {
+                af_id: true,
+                af_name: true,
+                af_is_active: true,
+            },
+        }),
+    ])
+    return {
+         approval_flows
+    }
+}
+
+export const inventoryService = { createApprovesFlows, getAllApproves, getAllDevices, createDevice, getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild }

@@ -7,7 +7,7 @@ import Checkbox from "./Checkbox";
 import QuantityInput from "./QuantityInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useInventorys } from "../hooks/useInventory"
+import { useInventorys } from "../hooks/useInventory";
 
 // โครงสร้างข้อมูลของแผนก
 interface Department {
@@ -104,16 +104,15 @@ const MainDeviceModal = ({
   const [maxBorrowDays, setMaxBorrowDays] = useState<number>(0);
   const [totalQuantity, setTotalQuantity] = useState<number>(0);
   const [departments, setDepartments] = useState([]);
-  const [category,setCategory] = useState([])
-  const [section,setSection] = useState([])
+  const [categorys, setCategory] = useState([]);
+  const [sections, setSection] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await useInventorys.getDevicesAll();
         setDepartments(res.data.departments);
-        setCategory(res.data.categories)
-        setSection(res.data.sections)
-        console.log(res.data.categories)
+        setCategory(res.data.categories);
+        setSection(res.data.sections);
       } catch (error) {
         console.error("โหลดข้อมูลไม่สำเร็จ", error);
       }
@@ -121,19 +120,52 @@ const MainDeviceModal = ({
 
     fetchData();
   }, []);
-
+  console.log(sections)
   const departmentItems: DepartmentDropdownItem[] = departments.map((dept) => ({
     id: dept.dept_id,
     label: dept.dept_name,
     value: dept.dept_id,
   }));
 
-  const categoryItem: CategoryDropdownITem[] = category.map((ca)=>({
-  id: ca.ca_id,
+  const categoryItem: CategoryDropdownITem[] = categorys.map((ca) => ({
+    id: ca.ca_id,
     label: ca.ca_name,
     value: ca.ca_id,
-  }))
- 
+  }));
+
+  const sectionItems: SectionsDropdownItem[] = sections.map((sec) => ({
+    id: sec.sec_id,
+    label: sec.sec_name,
+    value: sec.sec_id,
+  }));
+
+const buildStaffOptions = (
+  data: { sec_id: number; sec_name: string }[]
+) => {
+  const seen = new Set<string>();
+  let idCounter = 1;
+
+  return data.reduce<{ id: number; name: string; value: number }[]>(
+    (acc, item) => {
+      const letter = item.sec_name.match(/([A-Z])$/)?.[1];
+      if (!letter || seen.has(letter)) return acc;
+      seen.add(letter);
+      acc.push({
+        id: idCounter,
+        label: `เจ้าหน้าที่คลัง ${letter}`,
+        value: idCounter,
+      });
+
+      idCounter++;
+      return acc;
+    },
+    []
+  );
+};
+
+const treasury = buildStaffOptions(sections);
+
+console.log(treasury)
 
   // รูปภาพอุปกรณ์
   const [preview, setPreview] = useState<string | null>(null);
@@ -171,7 +203,6 @@ const MainDeviceModal = ({
   // แผนกท่ีเลือกใน dropdown
   const [selectedDepartment, setSelectedDepartment] =
     useState<Department | null>(null);
-  console.log(selectedDepartment)
   // หมวดหมู่ท่ีเลือกใน dropdown
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
@@ -195,10 +226,10 @@ const MainDeviceModal = ({
     );
   };
   const handleDeleteApproverGroup = (value) => {
-    setapproverGroupFlow((prev) =>
-      prev.filter((item) => item.label !== value)
-    );
+    setapproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
   };
+
+  console.log(approverGroupFlow)
 
   // เปิด modal
   const openApproverModal = () => {
@@ -362,26 +393,20 @@ const MainDeviceModal = ({
   const handleDragStart = (e: React.DragEvent, index: number) => {
     dragItemIndex.current = index;
     e.dataTransfer.effectAllowed = "move";
-    try {
-      e.dataTransfer.setData("text/plain", String(index));
-    } catch { }
   };
 
-  const handleDragEnter = (e: React.DragEvent, index: number) => {
+  const handleDragOverStep = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     dragOverIndex.current = index;
-  };
-
-  const handleDragOverStep = (e: React.DragEvent) => {
-    e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
   const handleDropStep = (e: React.DragEvent) => {
     e.preventDefault();
-    const from =
-      dragItemIndex.current ?? Number(e.dataTransfer.getData("text/plain"));
+
+    const from = dragItemIndex.current;
     const to = dragOverIndex.current;
+
     if (from == null || to == null || from === to) {
       dragItemIndex.current = dragOverIndex.current = null;
       return;
@@ -390,9 +415,7 @@ const MainDeviceModal = ({
     setapproverGroupFlow((prev) => {
       const newArr = [...prev];
       const [moved] = newArr.splice(from, 1);
-      // ถ้าลากจากตำแหน่งก่อน -> หลัง ให้ adjust index
-      const insertIndex = from < to ? to - 1 : to;
-      newArr.splice(insertIndex, 0, moved);
+      newArr.splice(to, 0, moved);
       return newArr;
     });
 
@@ -401,13 +424,6 @@ const MainDeviceModal = ({
 
   const handleDragEnd = () => {
     dragItemIndex.current = dragOverIndex.current = null;
-  };
-
-  // ปุ่มลบ — เอา item ที่มี value ตรงกับที่กดออก
-  const handleDelete = (e: React.MouseEvent, value: number) => {
-    // หยุด propagation เพื่อไม่ให้เกิด drag/drop หรือ onClick ของ parent
-    e.stopPropagation();
-    setapproverGroupFlow((prev) => prev.filter((g) => g.value !== value));
   };
 
   return (
@@ -421,7 +437,6 @@ const MainDeviceModal = ({
             รายละเอียดข้อมูลอุปกรณ์
           </p>
         </div>
-
         {/* กรอกรายละเอียดอุปกรณ์ */}
         <div className="flex flex-col gap-[20px] w-[853px]">
           <div className="flex gap-[20px]">
@@ -470,7 +485,7 @@ const MainDeviceModal = ({
               value={selectedSection}
               className="!w-[264px]"
               label="ฝ่ายย่อย"
-              items={sectionList}
+              items={sectionItems}
               onChange={(item) => setSelectedSection(item)}
               placeholder="ฝ่ายย่อย"
             />
@@ -754,25 +769,25 @@ const MainDeviceModal = ({
                       value={selectedDepartment}
                       className="max-w-[166px]"
                       label=""
-                      items={departmentList}
+                      items={treasury}
                       onChange={handleApproverGroup}
-                      placeholder="แผนก"
+                      placeholder="เจ้าหน้าที่คลัง"
                     />
                     <DropDown
                       value={selectedDepartment}
                       className="max-w-[166px]"
                       label=""
-                      items={departmentList}
+                      items={departmentItems}
                       onChange={handleApproverGroup}
-                      placeholder="แผนก"
+                      placeholder="หัวหน้าแผนก"
                     />
                     <DropDown
                       value={selectedSection}
                       className="max-w-[166px]"
                       label=""
-                      items={departmentList}
+                      items={sectionItems}
                       onChange={handleApproverGroup}
-                      placeholder="ฝ่ายย่อย"
+                      placeholder="หัวหน้าฝ่ายย่อย"
                     />
                   </div>
                   <div className=" space-y-[7px]">
@@ -790,8 +805,7 @@ const MainDeviceModal = ({
                         key={g.value}
                         draggable
                         onDragStart={(e) => handleDragStart(e, idx)}
-                        onDragEnter={(e) => handleDragEnter(e, idx)}
-                        onDragOver={handleDragOverStep}
+                        onDragOver={(e) => handleDragOverStep(e, idx)}
                         onDrop={handleDropStep}
                         onDragEnd={handleDragEnd}
                         className="flex"
@@ -809,15 +823,16 @@ const MainDeviceModal = ({
                           <div className="w-full border-2 border-[#D8D8D8] border-x-0 py-[9px]">
                             {g.label}
                           </div>
-                          <button type="button"
+                          <button
+                            type="button"
                             onClick={() => handleDeleteApproverGroup(g.label)}
-                            className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[9px] bg-[#F5222D] ">
+                            className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[9px] bg-[#F5222D] "
+                          >
                             <Icon
                               icon="solar:trash-bin-trash-linear"
                               width="24"
                               height="24"
                               className="text-white"
-
                             />
                           </button>
                         </div>

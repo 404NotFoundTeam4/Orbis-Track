@@ -17,18 +17,28 @@ const createAccessoriesSchema = z.object({
     acc_de_id:z.number()
 });
 
-const createApprovalFlowsPayload = z.object({
-    af_name: z.string().min(1).max(100),
-    af_is_active: z.boolean().default(true),
-    af_us_id: z.coerce.number().int().positive(),
-
-});
 
 const createApprovalFlowsStepPayload = z.object({
     afs_step_approve: z.coerce.number().int().positive(),
     afs_dept_id: z.coerce.number().int().positive(),
     afs_sec_id: z.coerce.number().int().positive().nullable().optional(),
     afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
+});
+
+export const createApprovalFlowsPayload = z.object({
+    af_name: z.string().min(1).max(100),
+    af_is_active: z.boolean().default(true),
+    af_us_id: z.coerce.number().int().positive(),
+    approvalflowssteppayload: z.preprocess((val) => {
+        if (typeof val === "string") {
+            try {
+                return JSON.parse(val);
+            } catch {
+                return val;
+            }
+        }
+        return val;
+    }, z.array(createApprovalFlowsStepPayload).min(1))
 });
 
 export const createDevicePayload = z.object({
@@ -38,6 +48,7 @@ export const createDevicePayload = z.object({
     de_location: z.string().min(1).max(200),
     de_max_borrow_days: z.coerce.number().int().positive(),
     de_images: z.string().nullable().optional(),
+    de_af_id: z.coerce.number().int().positive(),
     de_ca_id: z.coerce.number().int().positive(),
     de_us_id: z.coerce.number().int().positive(),
     de_sec_id: z.coerce.number().int().positive().nullable().optional(),
@@ -52,27 +63,28 @@ export const createDevicePayload = z.object({
         }
         return val;
     }, z.array(createAccessoriesPayload).optional()),
-    approvalflowspayload: createApprovalFlowsPayload,
-
-    approvalflowssteppayload: z.preprocess((val) => {
-        if (typeof val === "string") {
-            try {
-                return JSON.parse(val);
-            } catch {
-                return val;
-            }
-        }
-        return val;
-    }, z.array(createApprovalFlowsStepPayload).min(1))
-
 });
 
-export const approvalFlowResponseSchema = z.object({
-    af_id: z.number(),
-    af_name: z.string(),
-    af_is_active: z.boolean(),
-    af_us_id: z.number(),
+
+export const getApprovalFlowStepResponseSchema = z.object({
+    afs_id: z.number(),
+    afs_step_approve: z.number(),
+    afs_dept_id: z.number(),
+    afs_sec_id: z.number().nullable(),
+    afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
+    afs_af_id: z.number(),
 });
+
+export const getApprovalFlowSchema = z.object({
+    approval_flows: z.array(
+        z.object({
+            af_id: z.number(),
+            af_name: z.string(),
+            af_is_active: z.boolean(),
+        })
+    )
+});
+
 
 export const approvalFlowStepResponseSchema = z.object({
     afs_id: z.number(),
@@ -81,6 +93,14 @@ export const approvalFlowStepResponseSchema = z.object({
     afs_sec_id: z.number().nullable(),
     afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
     afs_af_id: z.number(),
+});
+
+export const createApprovalFlowResponseSchema = z.object({
+    af_id: z.number(),
+    af_name: z.string(),
+    af_is_active: z.boolean(),
+    af_us_id: z.number(),
+    flowstep:z.array(approvalFlowStepResponseSchema)
 });
 
 export const createDeviceResponseSchema = z.object({
@@ -97,9 +117,9 @@ export const createDeviceResponseSchema = z.object({
     de_sec_id: z.number().nullable(),
     de_acc_id: z.number().nullable(),
     accessories:z.array(createAccessoriesSchema),
-    approvalflow: approvalFlowResponseSchema,
-    approvalflowsteps: z.array(approvalFlowStepResponseSchema),
 });
+
+
 
 export const categoriesSchema = z.object({
     ca_id: z.number(),
@@ -179,6 +199,12 @@ export type IdParamDto = z.infer<typeof idParamSchema>;
 export type GetDeviceWithChildsSchema = z.infer<typeof getDeviceWithChildsSchema>;
 
 export type GetDeviceWithSchema = z.infer<typeof getDeviceWithSchema>;
+
+export type GetApprovalFlowSchema = z.infer<typeof getApprovalFlowSchema>;
+
+export type CreateApprovalFlowsPayload = z.infer<typeof createApprovalFlowsPayload>;
+
+export type CreateApprovalFlowResponseSchema = z.infer<typeof createApprovalFlowResponseSchema>;
 
 export type CreateDevicePayload = z.infer<typeof createDevicePayload>;
 

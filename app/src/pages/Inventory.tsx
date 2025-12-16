@@ -1,3 +1,10 @@
+/**
+ * Page: Inventory.
+ * Features:
+ *  - UI หน้าจัดการคลังอุปกรณ์หลัก
+ *
+ * Author: Worrawat Namwat (Wave) 66160372
+ */
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
@@ -10,13 +17,13 @@ import { AlertDialog } from "../components/AlertDialog.js";
 import api from "../api/axios.js";
 
 const API_BASE_URL = "http://localhost:4041/api/v1";
-
+// type อุปกรณ์ย่อย
 type DeviceChild = {
   dec_id: number;
   dec_serial_number: string;
   dec_status: "READY" | "BORROWED" | "REPAIRING" | "DAMAGED" | "LOST";
 };
-
+// type อุปกรณ์หลัก
 type Equipment = {
   id: number;
   serial_number: string;
@@ -41,7 +48,10 @@ type DropdownOption = {
   label: string;
   value: string;
 };
-
+/**
+ * Description:ฟังก์ชันช่วยดึงค่า Unique จาก Data เพื่อนำไปสร้าง Options สำหรับ Dropdown
+ * Author: Worrawat Namwat (Wave) 66160372
+ */
 const extractOptions = (
   data: Equipment[],
   key: keyof Equipment
@@ -65,22 +75,24 @@ export const Inventory = () => {
   const location = useLocation();
   const isStaff = location.pathname.includes("/staff");
 
-  // --- States ---
+  //States: Data & UI
   const [items, setItems] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const toast = useToast();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  //States: Selection & Deletion
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  //States: Dropdown Options
   const [deptOptions, setDeptOptions] = useState<DropdownOption[]>([]);
   const [subSecOptions, setSubSecOptions] = useState<DropdownOption[]>([]);
   const [catOptions, setCatOptions] = useState<DropdownOption[]>([]);
 
+  //States: Filters & Sorting 
   const [deptFilter, setDeptFilter] = useState<DropdownOption | null>(null);
   const [subSecFilter, setSubSecFilter] = useState<DropdownOption | null>(null);
   const [catFilter, setCatFilter] = useState<DropdownOption | null>(null);
@@ -90,22 +102,20 @@ export const Inventory = () => {
     "last_edited"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  //States: Pagination
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  // --- Handlers ---
+  //Handler: Modal Actions
   const handleOpenAddModal = () => console.log("Open Add Modal");
   const handleOpenEditModal = (item: Equipment) =>
     console.log("Open Edit Modal", item);
 
+  //Handlers: Delete Logic
   const handleDeleteSelected = () => {
     if (selectedItems.length === 0) return;
-    setDeleteId(null);
-    setIsAlertOpen(true);
-  };
-
-  const handleDeleteRow = (id: number) => {
-    setDeleteId(id);
+    setDeleteId(null); // null แปลว่าลบหลายรายการตาม selectedItems
     setIsAlertOpen(true);
   };
 
@@ -180,6 +190,7 @@ export const Inventory = () => {
     fetchEquipment();
   }, [refreshTrigger, isStaff]);
 
+  //แปลงวันที่เป็น format ไทย
   const FormatThaiDate = (iso: string | Date) => {
     if (!iso) return "-";
     const d = new Date(iso);
@@ -192,6 +203,7 @@ export const Inventory = () => {
         });
   };
 
+  //จัดการ Sort
   const HandleSort = (field: keyof Equipment | "status_text") => {
     if (sortField === field)
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -201,6 +213,7 @@ export const Inventory = () => {
     }
   };
 
+  // Logic การกรองและการเรียงลำดับข้อมูล
   const filtered = useMemo(() => {
     const search = searchFilter.search?.trim().toLowerCase() || "";
     let result = items.filter((item) => {
@@ -250,16 +263,20 @@ export const Inventory = () => {
     () => filtered.slice((page - 1) * pageSize, page * pageSize),
     [filtered, page, pageSize]
   );
+
+  // Reset หน้าและ Selection เมื่อมีการเปลี่ยน Filter
   useEffect(() => {
     setPage(1);
     setSelectedItems([]);
   }, [searchFilter, deptFilter, subSecFilter, catFilter]);
 
+  //Selection Logic
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
+      // เลือกเฉพาะรายการที่สถานะไม่ใช่ BORROWED (ยืมอยู่)
       const validItems = filtered
         .filter((item) => item.status_type !== "BORROWED")
-        .map((i) => i.id);
+        .map((item) => item.id);
       setSelectedItems(validItems);
     } else {
       setSelectedItems([]);
@@ -267,12 +284,11 @@ export const Inventory = () => {
   };
   const handleSelectItem = (id: number) => {
     setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((prevId) => prevId !== id) : [...prev, id]
     );
   };
-  const selectableItemsCount = filtered.filter(item => item.status_type !== "BORROWED").length;
-
-
+// จำนวนรายการที่สามารถเลือกได้
+const selectableItemsCount = filtered.filter(item => item.status_type !== "BORROWED").length;
 const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selectableItemsCount;
 
   const gridCols = "1.8fr 1fr 1fr 1fr 0.7fr 1fr 1fr";
@@ -587,7 +603,7 @@ const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selec
                 <button
                   onClick={handleDeleteSelected}
                   disabled={selectedItems.length === 0}
-                  className="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-colors h-[40px] shadow-sm bg-[#fc0400] hover:bg-[#D32F2F] text-white disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-colors h-[40px] shadow-sm bg-[#fc0400] hover:bg-[#D32F2F] text-white cursor-pointer disabled:cursor-not-allowed"
                 >
                   <Icon
                     icon="solar:trash-bin-trash-bold"
@@ -686,6 +702,7 @@ const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selec
           </div>
         </div>
       </div>
+      {/* Delete Confirmation Modal */}
       <AlertDialog
         open={isAlertOpen}
         title={

@@ -196,7 +196,7 @@ export function AlertDialog({
           >
             <Button
               variant="secondary"
-              className={cx("rounded-full", `!text-[${buttonTextPx}px]`)}
+              className={cx("rounded-full cursor-pointer", `!text-[${buttonTextPx}px]`)}
               onClick={() => {
                 onCancel?.();
                 onOpenChange?.(false);
@@ -210,7 +210,7 @@ export function AlertDialog({
             <Button
               variant={tone === "danger" ? "danger" : "primary"}
               className={cx(
-                "rounded-full",
+                "rounded-full cursor-pointer",
                 confirmCls,
                 `!text-[${buttonTextPx}px]`
               )}

@@ -11,10 +11,10 @@ const createAccessoriesPayload = z.object({
 });
 
 const createAccessoriesSchema = z.object({
-    acc_id:z.number(),
+    acc_id: z.number(),
     acc_name: z.string().min(1).max(100),
     acc_quantity: z.coerce.number().int().nonnegative(),
-    acc_de_id:z.number()
+    acc_de_id: z.number()
 });
 
 
@@ -41,12 +41,19 @@ export const createApprovalFlowsPayload = z.object({
     }, z.array(createApprovalFlowsStepPayload).min(1))
 });
 
+export const serialNumbersPayload = z.object({
+    id: z.coerce.number().int().positive(),
+    value: z.string()
+})
+
+
 export const createDevicePayload = z.object({
     de_serial_number: z.string().min(1).max(100),
     de_name: z.string().min(1).max(200),
     de_description: z.string().max(200).nullable().optional(),
     de_location: z.string().min(1).max(200),
     de_max_borrow_days: z.coerce.number().int().positive(),
+    totalQuantity: z.coerce.number().int().positive(),
     de_images: z.string().nullable().optional(),
     de_af_id: z.coerce.number().int().positive(),
     de_ca_id: z.coerce.number().int().positive(),
@@ -63,6 +70,17 @@ export const createDevicePayload = z.object({
         }
         return val;
     }, z.array(createAccessoriesPayload).optional()),
+    serialNumbers: z.preprocess((val) => {
+        if (!val) return undefined;
+        if (typeof val === "string") {
+            try {
+                return JSON.parse(val);
+            } catch {
+                return undefined;
+            }
+        }
+        return val;
+    }, z.array(serialNumbersPayload).optional()),
 });
 
 
@@ -100,8 +118,17 @@ export const createApprovalFlowResponseSchema = z.object({
     af_name: z.string(),
     af_is_active: z.boolean(),
     af_us_id: z.number(),
-    flowstep:z.array(approvalFlowStepResponseSchema)
+    flowstep: z.array(approvalFlowStepResponseSchema)
 });
+
+export const serialNumbersSchma = z.object({
+    dec_id: z.number(),
+    dec_serial_number: z.string().nullable(),
+    dec_asset_code: z.string().nullable(),
+    dec_status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS),
+    dec_has_serial_number: z.boolean(),
+    dec_de_id: z.number(),
+})
 
 export const createDeviceResponseSchema = z.object({
     de_id: z.number(),
@@ -116,7 +143,8 @@ export const createDeviceResponseSchema = z.object({
     de_us_id: z.number(),
     de_sec_id: z.number().nullable(),
     de_acc_id: z.number().nullable(),
-    accessories:z.array(createAccessoriesSchema),
+    accessories: z.array(createAccessoriesSchema),
+    serial_number:z.array(serialNumbersSchma)
 });
 
 
@@ -159,6 +187,7 @@ export const deviceWithChildsSchema = z.object({
 export const getDeviceWithChildsSchema = z.object({
     device: deviceWithChildsSchema.nullable(),
 });
+
 
 // ข้อมูลที่ส่งเข้ามาตอนเพิ่มอุปกรณ์ลูก
 export const createDeviceChildPayload = z.object({

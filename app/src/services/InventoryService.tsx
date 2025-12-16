@@ -58,6 +58,30 @@ export interface getAllDevices {
     categories: Category[];
   };
 }
+export interface Accessory {
+  acc_name: string;
+  acc_quantity: number;
+}
+
+export interface CreateDeviceResponse {
+  message: string;
+}
+
+export interface CreateDevicePayload {
+  de_serial_number: string;
+  de_name: string;
+  de_description: string;
+  de_location: string;
+  de_max_borrow_days: number;
+  de_images: string | null;
+
+  de_af_id: number;
+  de_ca_id: number;
+  de_us_id: number;
+  de_sec_id: number;
+
+  accessories: Accessory[];
+}
 
 export const DeviceService = {
 
@@ -114,9 +138,20 @@ export const DeviceService = {
 
   getAllDevices: async ():Promise<getAllDevices>=>{
     const {data} = await api.get("/inventory/add")
-
     return data;
-  }
-}
+  },
+
+  createDevices: async (
+    payload: CreateDevicePayload
+  ): Promise<CreateDeviceResponse> => {
+   
+    const res = await api.post<CreateDeviceResponse>(
+      "/inventory/add",
+      payload,
+    );
+    return res.data;
+  },
+};
+
 
   

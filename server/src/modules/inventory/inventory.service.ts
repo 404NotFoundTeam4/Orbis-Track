@@ -309,23 +309,19 @@ async function deleteDeviceChild(payload: DeleteDeviceChildPayload) {
 
 async function createDevice(payload: CreateDevicePayload, images?: string) {
     const { accessories,
-
+        serialNumbers,
+        totalQuantity,
         de_images: payloadImages,
         ...deviceData
     } = payload;
-
     const finalImages = images ?? payloadImages ?? null;
 
     return prisma.$transaction(async (tx) => {
-
-
 
         const device = await tx.devices.create({
             data: {
                 ...deviceData,
                 de_images: finalImages,
-                de_description: deviceData.de_description ?? null,
-                de_sec_id: deviceData.de_sec_id ?? null,
                 created_at: new Date(),
             },
         });
@@ -339,6 +335,28 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
                     created_at: new Date(),
                 })),
             });
+        }
+        if (totalQuantity > 0) {
+
+            const assetParts = device.de_serial_number.split("-")[0];
+            const ASSET_PREFIX = assetParts
+
+            const data = Array.from({ length: totalQuantity }, (_, index) => {
+                const serialNumber = String(index + 1).padStart(3, "0");
+                const dec = serialNumbers?.[index];
+
+                return {
+                    dec_serial_number: dec?.value || null,  
+                    dec_asset_code: `ASSET-${ASSET_PREFIX}-${serialNumber}`,
+                    dec_has_serial_number: Boolean(dec?.value),
+                    dec_status: $Enums.DEVICE_CHILD_STATUS.READY,
+                    dec_de_id: device.de_id,
+                    created_at: new Date(),
+                };
+            });
+
+
+            await tx.device_childs.createMany({ data });
         }
 
         return {
@@ -431,7 +449,7 @@ async function getAllApproves() {
         }),
     ])
     return {
-         approval_flows
+        approval_flows
     }
 }
 

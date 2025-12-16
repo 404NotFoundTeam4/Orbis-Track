@@ -8,6 +8,9 @@ import QuantityInput from "./QuantityInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useInventorys } from "../hooks/useInventory";
+import { AlertDialog } from "../components/AlertDialog";
+import { useToast } from "../components/Toast";
+
 
 // โครงสร้างข้อมูลของแผนก
 interface Department {
@@ -29,6 +32,11 @@ interface Section {
   label: string;
   value: number;
 }
+type ApproverPayload = {
+  sec_id: number;
+  dept_id: number;
+  value: string;
+};
 
 interface ApproverItem {
   id: number;
@@ -105,7 +113,9 @@ const MainDeviceModal = ({
   const [totalQuantity, setTotalQuantity] = useState<number>(0);
   const [departments, setDepartments] = useState([]);
   const [categorys, setCategory] = useState([]);
-  const [sections, setSection] = useState([]);
+  const [sections, setSection] = useState([])
+  const [titleApprove, setTitleApprove] = useState("")
+  const [imageFile, setImageFile] = useState<File | null>(null);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -120,7 +130,11 @@ const MainDeviceModal = ({
 
     fetchData();
   }, []);
-  console.log(sections)
+
+
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [pendingData, setPendingData] = useState<any>(null);
+
   const departmentItems: DepartmentDropdownItem[] = departments.map((dept) => ({
     id: dept.dept_id,
     label: dept.dept_name,
@@ -139,33 +153,33 @@ const MainDeviceModal = ({
     value: sec.sec_id,
   }));
 
-const buildStaffOptions = (
-  data: { sec_id: number; sec_name: string }[]
-) => {
-  const seen = new Set<string>();
-  let idCounter = 1;
+  const buildStaffOptions = (
+    data: { sec_id: number; sec_name: string }[]
+  ) => {
+    const seen = new Set<string>();
+    let idCounter = 1;
 
-  return data.reduce<{ id: number; name: string; value: number }[]>(
-    (acc, item) => {
-      const letter = item.sec_name.match(/([A-Z])$/)?.[1];
-      if (!letter || seen.has(letter)) return acc;
-      seen.add(letter);
-      acc.push({
-        id: idCounter,
-        label: `เจ้าหน้าที่คลัง ${letter}`,
-        value: idCounter,
-      });
+    return data.reduce<{ id: number; name: string; value: number }[]>(
+      (acc, item) => {
+        const letter = item.sec_name.match(/([A-Z])$/)?.[1];
+        if (!letter || seen.has(letter)) return acc;
+        seen.add(letter);
+        acc.push({
+          id: idCounter,
+          label: `เจ้าหน้าที่คลัง ${letter}`,
+          value: idCounter,
+        });
 
-      idCounter++;
-      return acc;
-    },
-    []
-  );
-};
+        idCounter++;
+        return acc;
+      },
+      []
+    );
+  };
 
-const treasury = buildStaffOptions(sections);
+  const treasury = buildStaffOptions(sections);
 
-console.log(treasury)
+
 
   // รูปภาพอุปกรณ์
   const [preview, setPreview] = useState<string | null>(null);
@@ -173,7 +187,10 @@ console.log(treasury)
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
     if (!file) return;
-    const url = URL.createObjectURL(file); // แปลงเป็น url
+
+    setImageFile(file);
+
+    const url = URL.createObjectURL(file);
     setPreview(url);
   };
 
@@ -214,22 +231,22 @@ console.log(treasury)
     null
   );
 
+
+
   // modal สำหรับจัดการลำดับการอนุมัติ
   const [isApproverModalOpen, setIsApproverModalOpen] = useState(true);
   const [approverGroupFlow, setapproverGroupFlow] = useState([]);
   const handleApproverGroup = (item) => {
     setapproverGroupFlow(
       (prev) =>
-        prev.some((v) => v.value === item.value)
-          ? prev // มีอยู่แล้ว → คงเดิม
-          : [...prev, item] // ยังไม่มี → เพิ่ม
+        prev.some((v) => v.label === item.label)
+          ? prev
+          : [...prev, item]
     );
   };
   const handleDeleteApproverGroup = (value) => {
     setapproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
   };
-
-  console.log(approverGroupFlow)
 
   // เปิด modal
   const openApproverModal = () => {
@@ -366,26 +383,166 @@ console.log(treasury)
     }
   }, [mode, defaultValues]);
 
+
+  const mappedAccessories = accessories
+    .filter(a => a.name && a.qty)
+    .map(a => ({
+      acc_name: a.name,
+      acc_quantity: Number(a.qty),
+    }));
+
+  const mappedSerialNumbers = checked
+    ? serialNumbers
+      .filter(sn => sn.value.trim() !== "")
+      .map(sn => ({
+        id: sn.id,
+        value: sn.value.trim(),
+      }))
+    : [];
+
   // ส่งข้อมูล
   const handleSubmit = () => {
-    const payload = {
-      device_name: deviceName,
-      device_code: deviceCode,
-      department: selectedDepartment,
-      category: selectedCategory,
-      section: selectedSection,
-      location,
-      maxBorrowDays,
-      totalQuantity,
-      description,
-      serialNumbers,
-      accessories,
-      approverGroup: selectedApprovers,
-      imageUrl: preview,
-    };
 
-    onSubmit(payload);
+    const value = {
+      data: "devices",
+      mode: mode,
+      "de_serial_number": "DV-MEDIA-001",
+      "de_name": "กล้องถ่ายวิดีโอ Sony FX3",
+      "de_description": "กล้องสำหรับงานถ่ายทำของแผนก Media",
+      "de_location": "ห้องสตูดิโอ ชั้น 2",
+      "de_max_borrow_days": 7,
+      "totalQuantity": 5,
+      "de_images": "https://example.com/images/sony-fx3.jpg",
+      "de_af_id": 1,
+      "de_ca_id": 2,
+      "de_us_id": 1,
+      "de_sec_id": 1,
+      "accessories": [
+        {
+          "acc_name": "แบตเตอรี่ NP-FZ100",
+          "acc_quantity": 2
+        }
+      ],
+      "serialNumbers": [
+        {
+          "id": 1,
+          "value": "DV-MEDIA-A"
+        },
+        {
+          "id": 2,
+          "value": "DV-MEDIA-B"
+        },
+        {
+          "id": 3,
+          "value": "DV-MEDIA-C"
+        }
+      ]
+    }
+    //  const payload = {
+    //       data: "devices",
+    //       mode: mode,
+    //       device_name: deviceName,
+    //       device_code: deviceCode,
+    //       department: selectedDepartment,
+    //       category: selectedCategory,
+    //       section: selectedSection,
+    //       location,
+    //       maxBorrowDays,
+    //       totalQuantity,
+    //       description,
+    //       serialNumbers,
+    //       accessories,
+    //       imageUrl: preview,
+
+    // const payload = {
+    //   data: "devices",
+    //   mode: mode,
+    //   "de_serial_number": deviceCode,
+    //   "de_name": deviceName,
+    //   "de_description": description,
+    //   "de_location": location,
+    //   "de_max_borrow_days": maxBorrowDays,
+    //   "totalQuantity": totalQuantity,
+    //   "de_images": preview,
+    //   "de_af_id": 1,
+    //   "de_ca_id": selectedCategory?.value,
+    //   "de_us_id": 1,
+    //   "de_sec_id": selectedSection?.value,
+    //   "accessories": mappedAccessories,
+    //   "serialNumbers": mappedSerialNumbers
+    // }
+    // console.log(payload)
+    const formData = new FormData();
+
+    // 👇 เอาไว้ใช้ชั่วคราว
+    formData.append("data", "devices");
+    formData.append("mode", mode);
+
+    formData.append("de_serial_number", deviceCode);
+    formData.append("de_name", deviceName);
+    formData.append("de_description", description ?? "");
+    formData.append("de_location", location);
+    formData.append("de_max_borrow_days", String(maxBorrowDays));
+    formData.append("totalQuantity", String(totalQuantity));
+    formData.append("de_af_id", "1");
+    formData.append("de_ca_id", String(selectedCategory?.value ?? ""));
+    formData.append("de_us_id", "1");
+    formData.append("de_sec_id", String(selectedSection?.value ?? ""));
+
+    // 👇 array ต้อง stringify
+    formData.append("accessories", JSON.stringify(mappedAccessories));
+    formData.append("serialNumbers", JSON.stringify(mappedSerialNumbers));
+
+    // 👇 รูป (สำคัญที่สุด)
+    if (imageFile) {
+      formData.append("de_images", imageFile); // ✅ ชื่อตรงกับ upload.single("de_images")
+    }
+    onSubmit(formData);
   };
+
+  const handleSumbitApprove = () => {
+    console.log(approverGroupFlow)
+    const index_s = approverGroupFlow.findIndex(item => item.label.includes("ฝ่ายย่อย"));
+    const section_index = sections.findIndex(item => item.sec_name.includes(approverGroupFlow[index_s].label))
+    const index_d = approverGroupFlow.findIndex(item => item.label.includes("หัวหน้าแผนก"));
+    const department_index = departments.findIndex(item => item.dept_name.includes(approverGroupFlow[index_d].label))
+    
+    const approver: valueApprove[] = approverGroupFlow.map((ap, indexvalue) => {
+      if (ap.label.includes("เจ้าหน้าที่")) {
+        return {
+          afs_step_approve: indexvalue + 1,
+          afs_dept_id: sections[section_index].sec_dept_id,
+          afs_sec_id: sections[section_index].sec_dept_id,
+          afs_role: "STAFF"
+        };
+
+      }
+      else if (ap.label.includes("หัวหน้าแผนก")) {
+        return {
+          afs_step_approve: indexvalue + 1,
+          afs_dept_id: departments[department_index].dept_id,
+          afs_sec_id: sections[section_index].sec_dept_id,
+          afs_role: "HOD"
+        };
+      }
+      else {
+
+        return {
+          afs_step_approve: indexvalue + 1,
+          afs_dept_id: sections[section_index].sec_dept_id,
+          afs_sec_id: sections[section_index].sec_dept_id,
+          afs_role: "HOS"
+        };
+      }
+
+    });
+   console.log(approver)
+    // const payload = {
+    //   approverGroupFlow
+    // }
+    // onSubmit(payload)
+  }
+
 
   const dragItemIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
@@ -731,7 +888,7 @@ console.log(treasury)
         <Button className="bg-[#D8D8D8] border border-[#CDCDCD] text-black hover:bg-gray-200">
           ยกเลิก
         </Button>
-        <Button onClick={handleSubmit} className="bg-[#1890FF]">
+        <Button onClick={() => setOpenConfirm(true)} className="bg-[#1890FF]">
           {mode === "create" ? "เพิ่มอุปกรณ์" : "บันทึก"}
         </Button>
       </div>
@@ -750,8 +907,8 @@ console.log(treasury)
                 </p>
                 <div>
                   <Input
-                    value={deviceName}
-                    onChange={(e) => setDeviceName(e.target.value)}
+                    value={titleApprove}
+                    onChange={(e) => setTitleApprove(e.target.value)}
                     label="ชื่อลำดับการอนุมัติ"
                     placeholder="ชื่อของอุปกรณ์"
                     size="md"
@@ -848,12 +1005,27 @@ console.log(treasury)
                 >
                   ยกเลิก
                 </Button>
-                <Button className="bg-[#1890FF]">บันทึก</Button>
+                <Button onClick={handleSumbitApprove} className="bg-[#1890FF]">บันทึก</Button>
               </div>
             </div>
           </div>
         </div>
       )}
+      <AlertDialog
+        open={openConfirm}
+        onOpenChange={setOpenConfirm}
+        tone="success"
+        title="ยืนยันการบันทึก"
+        description="คุณต้องการบันทึกข้อมูลอุปกรณ์นี้ใช่หรือไม่"
+        confirmText="บันทึก"
+        cancelText="ยกเลิก"
+        onConfirm={async () => {
+          handleSubmit()
+        }}
+        onCancel={() => {
+
+        }}
+      />
     </div>
   );
 };

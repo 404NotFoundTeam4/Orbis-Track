@@ -18,8 +18,40 @@ import Requests from "./Requests";
 import { Cart } from "./Cart";
 import EditCart from "./EditCart";
 import RoleRoute from "../middlewares/RoleRoute";
+import { ROLE_BASE_PATH, type Role } from "../constants/rolePath";
+import RolePathRedirect from "../components/RolePathRedirect";
 
 function App() {
+  const ADMIN_ONLY: Role[] = ["ADMIN"];
+
+  const DASHBOARD_ROLE: Role[] = ["ADMIN", "HOD", "HOS", "STAFF"];
+
+  // route ที่ทุก role สามารถใช้งานได้
+  const commonRoutes = (
+    <>
+      <Route path="home" element={<Home />} />
+      <Route path="requests" element={<Requests />} />
+      <Route path="list-devices/cart" element={<Cart />} />
+      <Route path="list-devices/cart/edit" element={<EditCart />} />
+    </>
+  );
+
+  // route เฉพาะแอดมิน
+  const adminRoutes = (
+    <>
+      <Route path="account-management" element={<Users />} />
+      <Route path="users" element={<Users />} />
+      <Route path="departments-management" element={<Departments />} />
+    </>
+  );
+
+  // route หน้า dashboard
+  const dashboardRoutes = (
+    <>
+      <Route path="dashboard" element={<Dashboard />} />
+    </>
+  );
+
   return (
     <ToastProvider>
       <BrowserRouter>
@@ -34,29 +66,23 @@ function App() {
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Navbar />}>
-              {/* แอดมิน */}
-              <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
-                <Route
-                  path="/administrator/account-management"
-                  element={<Users />}
-                />
-                <Route path="/users" element={<Users />} />
-                <Route
-                  path="/administrator/departments-management"
-                  element={<Departments />}
-                />
-              </Route>
 
-              {/* แอดมิน, หัวหน้า, เจ้าหน้าที่คลัง */}
-              <Route
-                element={
-                  <RoleRoute allowedRoles={["ADMIN", "HOD", "HOS", "STAFF"]} />
-                }
-              >
-                <Route path="/dashboard" element={<Dashboard />} />
-              </Route>
+              {
+                // วนลูปสร้าง routes ของแต่ละ role
+                Object.entries(ROLE_BASE_PATH).map(([role, base]) => (
+                  // ป้องกันให้เข้าได้เฉพาะ role ที่อนุญาต
+                  <Route key={role} element={<RoleRoute allowedRoles={[role as Role]} />}>
+                    {/* กำหนด base path */}
+                    <Route path={base ? `/${base}` : "/"}>
+                      {commonRoutes}
+                      {ADMIN_ONLY.includes(role as Role) && adminRoutes}
+                      {DASHBOARD_ROLE.includes(role as Role) && dashboardRoutes}
+                    </Route>
+                  </Route>
+                ))
+              }
 
-              {/* ผู้ใช้งานทั้งหมด */}
+              {/* Gateway routes (เติม prefix ด้านหน้า) */}
               <Route
                 element={
                   <RoleRoute
@@ -65,16 +91,15 @@ function App() {
                       "HOD",
                       "HOS",
                       "TECHNICAL",
-                      "STAFF",
-                      "EMPLOYEE",
+                      "STAFF"
                     ]}
                   />
                 }
               >
-                <Route path="/home" element={<Home />} />
-                <Route path="/requests" element={<Requests />} />
-                <Route path="/list-devices/cart" element={<Cart />} />
-                <Route path="/list-devices/cart/edit" element={<EditCart />} />
+                <Route path="/home" element={<RolePathRedirect />} />
+                <Route path="/requests" element={<RolePathRedirect />} />
+                <Route path="/list-devices/cart" element={<RolePathRedirect />} />
+                <Route path="/list-devices/cart/edit" element={<RolePathRedirect />} />
               </Route>
 
               <Route path="/example-component" element={<TestDropDown />} />

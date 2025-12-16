@@ -1,3 +1,11 @@
+/**
+ * Description: Zod Schema สำหรับ Borrow-Return Tickets API
+ * - Query params: page, limit, status, search, sortField, sortDirection
+ * - Response schemas: TicketItem, TicketDetail
+ * Input : -
+ * Output : Zod types สำหรับ validation
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { z } from "zod";
 import {
   BRT_STATUS,
@@ -15,17 +23,8 @@ export const getBorrowTicketQuery = z.object({
   limit: z.coerce.number().optional().nullable(),
   status: z.nativeEnum(BRT_STATUS).optional().nullable(),
   search: z.string().optional().nullable(),
-  type: z
-    .enum([
-      "ALL",
-      "MY_ACTIVE",
-      "MY_REQUEST",
-      "MY_APPROVAL",
-      "MY_HISTORY",
-      "MY_APPROVAL_HISTORY",
-    ])
-    .optional()
-    .default("ALL"),
+  sortField: z.enum(["device_name", "quantity", "category", "requester", "request_date", "status"]).optional().nullable(),
+  sortDirection: z.enum(["asc", "desc"]).optional().nullable(),
 });
 
 const requesterSchema = z.object({
@@ -39,28 +38,17 @@ const requesterSchema = z.object({
 const deviceSummarySchema = z.object({
   name: z.string(),
   serial_number: z.string(),
+  description: z.string().nullable(),
   location: z.string(),
+  max_borrow_days: z.union([z.coerce.number(), z.string()]).nullable(),
   image: z.string().nullable(),
   category: z.string(),
-  section: z.union([z.object({ sec_name: z.string() }), z.string(), z.null()]),
+  section: z.string(),
+  department: z.string(),
   total_quantity: z.coerce.number(),
-  more_count: z.coerce.number(),
 });
 
-const deviceChildSchema = z.object({
-  serial_number: z.string(),
-  asset_code: z.string(),
-  has_serial_number: z.union([z.boolean(), z.string()]),
-  status: z.union([z.nativeEnum(DEVICE_CHILD_STATUS), z.string()]),
-});
-
-const currentStageSchema = z
-  .object({
-    name: z.string(),
-    step: z.coerce.number(),
-    status: z.string(),
-  })
-  .nullable();
+// device_child และ current_stage ถูกลบออกจาก list response แล้ว
 
 export const ticketItemSchema = z.object({
   id: z.coerce.number(),
@@ -69,8 +57,6 @@ export const ticketItemSchema = z.object({
   request_date: z.date().nullable(),
   requester: requesterSchema,
   device_summary: deviceSummarySchema,
-  device_child: deviceChildSchema,
-  current_stage: currentStageSchema,
 });
 
 const ticketDetailsSchema = z.object({
@@ -89,6 +75,7 @@ const ticketDetailsSchema = z.object({
     return: z.string().nullable(),
   }),
   reject_reason: z.string().nullable(),
+  reject_date: z.date().nullable(),
 });
 
 const ticketRequesterSchema = z.object({
@@ -106,14 +93,18 @@ const ticketRequesterSchema = z.object({
   section: z.string().nullable().optional(),
 });
 
+const accessorySchema = z.object({
+  acc_id: z.coerce.number(),
+  acc_name: z.string(),
+  acc_quantity: z.coerce.number(),
+});
+
 const ticketDeviceSchema = z.object({
   child_id: z.coerce.number(),
-  name: z.string(),
   asset_code: z.string(),
   serial: z.string(),
-  image: z.string().nullable(),
-  category: z.string(),
   current_status: z.nativeEnum(DEVICE_CHILD_STATUS),
+  has_serial_number: z.boolean(),
 });
 
 const ticketTimelineSchema = z.object({
@@ -135,6 +126,7 @@ export const borrowReturnTicketDetailSchema = z.object({
   details: ticketDetailsSchema,
   requester: ticketRequesterSchema,
   devices: z.array(ticketDeviceSchema),
+  accessories: z.array(accessorySchema),
   timeline: z.array(ticketTimelineSchema),
 });
 

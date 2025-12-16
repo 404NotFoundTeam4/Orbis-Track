@@ -1,3 +1,11 @@
+/**
+ * Description: Socket.IO Server สำหรับ Real-time Communication
+ * - จัดการ Authentication ผ่าน JWT Middleware
+ * - Auto-join Room ตาม User และ Role
+ * Input : HttpServer
+ * Output : SocketIOServer instance
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { socketAuthMiddleware } from "./socket.middleware.js";
@@ -26,6 +34,7 @@ export const initSocket = (httpServer: HttpServer) => {
     socket.join(`user_${user?.sub}`);
     if (user?.role) {
       socket.join(`role_${user?.role}_${user?.dept}_${user?.sec}`);
+      console.log(`role_${user?.role}_${user?.dept}_${user?.sec}`);
     }
 
     // For Testing: Echo notification back to sender

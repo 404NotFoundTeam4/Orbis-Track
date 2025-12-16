@@ -1,237 +1,767 @@
+/**
+ * Description: Component แสดงรายการคำร้องยืมอุปกรณ์แบบ Expandable
+ * - แถวสรุป: อุปกรณ์, จำนวน, หมวดหมู่, ผู้ร้องขอ, วันที่, สถานะ, ปุ่มจัดการ
+ * - ส่วนขยาย: Timeline อนุมัติ, รูปภาพ, รายละเอียดการยืม
+ * - รองรับ Modal แสดงรายการอุปกรณ์ย่อย
+ * Input : RequestItemProps { ticket, ticketDetail, isLoadingDetail, onApprove, onReject, onExpand }
+ * Output : React Component
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faChevronUp, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import type { TicketItem, TicketDetail } from "../services/TicketsService";
+import Button from "./Button";
+import { Icon } from "@iconify/react";
+import getImageUrl from "../services/GetImage";
+import DeviceListModal from "./DeviceListModal";
 
 interface RequestItemProps {
-    request: {
-        id: string;
-        device_name: string;
-        device_image: string;
-        quantity: number;
-        category: string;
-        requester_name: string;
-        requester_id: string;
-        request_date: string;
-        request_time: string;
-        status: "pending" | "approved" | "rejected";
-        details: {
-            request_date_full: string;
-            return_date_full: string;
-            reason: string;
-            location: string;
-            phone: string;
-            accessories: string;
-        };
-    };
-    onApprove: (id: string) => void;
-    onReject: (id: string) => void;
+  ticket: TicketItem;
+  ticketDetail?: TicketDetail | null;
+  isLoadingDetail?: boolean;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onExpand: (id: number) => void;
 }
 
-const RequestItem = ({ request, onApprove, onReject }: RequestItemProps) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+// Status display configuration
+const statusConfig: Record<string, { label: string; className: string }> = {
+  PENDING: {
+    label: "รออนุมัติ",
+    className: "border-[#FBBF24] text-[#FBBF24]",
+  },
+  APPROVED: {
+    label: "อนุมัติแล้ว",
+    className: "border-[#73D13D] text-[#73D13D]",
+  },
+  REJECTED: {
+    label: "ปฏิเสธ",
+    className: "border-red-400 text-red-600 bg-red-50",
+  },
+  IN_USE: {
+    label: "กำลังใช้งาน",
+    className: "border-[#40A9FF] text-[#40A9FF]",
+  },
+  // COMPLETED: {
+  //   label: "คืนแล้ว",
+  //   className: "border-gray-400 text-gray-600 bg-gray-50",
+  // },
+};
 
-    const toggleExpand = () => {
-        setIsExpanded(!isExpanded);
-    };
+/**
+ * Description: แปลงวันที่เป็นรูปแบบภาษาไทย (DD/MM/YYYY)
+ * Input : dateStr - date string หรือ null
+ * Output : string (รูปแบบวันที่)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
+const formatDate = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("th-TH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
 
-    return (
-        <div className="bg-white border border-[#D9D9D9] rounded-[16px] mb-3 overflow-hidden transition-all duration-300">
-            {/* Summary Row */}
-            <div
-                className="grid [grid-template-columns:1.5fr_0.6fr_1fr_1.2fr_1fr_0.8fr_1fr_50px] items-center p-4 cursor-pointer hover:bg-gray-50"
-                onClick={toggleExpand}
-            >
-                {/* Device Name & ID */}
-                <div className="flex flex-col">
-                    <span className="font-semibold text-gray-800">{request.device_name}</span>
-                    <span className="text-sm text-gray-500">รหัส : {request.id}</span>
-                </div>
+/**
+ * Description: แปลงเวลาเป็นรูปแบบ HH:MM
+ * Input : dateStr - date string หรือ null
+ * Output : string (รูปแบบเวลา)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
+const formatTime = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  return date.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
-                {/* Quantity */}
-                <div className="text-gray-700">{request.quantity} ชิ้น</div>
+/**
+ * Description: แปลงวันที่เวลาแบบเต็ม (D / MMM / YYYY | HH:MM น.)
+ * Input : dateStr - date string หรือ null
+ * Output : string (รูปแบบวันที่เวลาเต็ม)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
+const formatFullDateTime = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const month = date.toLocaleDateString("th-TH", { month: "short" });
+  const year = date.getFullYear() + 543;
+  const time = date.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${day} / ${month} / ${year} | ${time} น.`;
+};
 
-                {/* Category */}
-                <div className="text-gray-700">{request.category}</div>
+const RequestItem = ({
+  ticket,
+  ticketDetail,
+  isLoadingDetail,
+  onApprove,
+  onReject,
+  onExpand,
+}: RequestItemProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
 
-                {/* Requester */}
-                <div className="flex flex-col">
-                    <span className="font-semibold text-gray-800">{request.requester_name}</span>
-                    <span className="text-sm text-gray-500">{request.requester_id}</span>
-                </div>
+  const getStepTicket = () => {
+    return ticketDetail?.status;
+  };
 
-                {/* Date & Time */}
-                <div className="flex flex-col">
-                    <span className="font-semibold text-gray-800">{request.request_date}</span>
-                    <span className="text-sm text-blue-500">เวลา : {request.request_time}</span>
-                </div>
+  const toggleExpand = () => {
+    const newExpanded = !isExpanded;
+    setIsExpanded(newExpanded);
+    if (newExpanded) {
+      onExpand(ticket.id);
+    }
+  };
 
-                {/* Status */}
-                <div>
-                    <span className="px-4 py-1 rounded-full border border-yellow-400 text-yellow-600 bg-yellow-50 text-sm font-medium">
-                        รออนุมัติ
-                    </span>
-                </div>
+  const status = statusConfig[ticket.status] || statusConfig.PENDING;
+  const deviceImage =
+    ticket.device_summary.image ||
+    "https://placehold.co/200x150/png?text=Device";
+  const sectionName =
+    typeof ticket.device_summary.section === "object" &&
+      ticket.device_summary.section
+      ? ticket.device_summary.section
+      : ticket.device_summary.section || "-";
 
-                {/* Actions */}
-                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    <button
-                        onClick={() => onApprove(request.id)}
-                        className="bg-[#73D13D] hover:bg-[#52c41a] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
-                    >
-                        อนุมัติ
-                    </button>
-                    <button
-                        onClick={() => onReject(request.id)}
-                        className="bg-[#FF4D4F] hover:bg-[#ff7875] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
-                    >
-                        ปฏิเสธ
-                    </button>
-                </div>
-
-                {/* Expand Icon */}
-                <div className="text-gray-400 flex justify-center">
-                    <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} />
-                </div>
-            </div>
-
-            {/* Expanded Details */}
-            <div
-                className={`transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[600px] opacity-100 border-t border-gray-100" : "max-h-0 opacity-0"
-                    }`}
-            >
-                <div className="p-6 bg-white flex gap-6">
-                    {/* 1. Progress Steps (Left) */}
-                    <div className="flex flex-col items-center gap-1 min-w-[60px] pt-2">
-                        {/* Step 1: Request */}
-                        <div className="w-8 h-8 rounded-full border-2 border-[#52c41a] flex items-center justify-center text-[#52c41a] bg-white z-10">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                        </div>
-                        <div className="h-12 w-[2px] bg-[#52c41a]"></div>
-                        <span className="text-xs text-[#52c41a] font-medium -mt-1 mb-2">ส่งคำร้อง</span>
-
-                        {/* Step 2: Approve */}
-                        <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-400 bg-white z-10">
-                            <FontAwesomeIcon icon={faPlus} className="transform rotate-45" />
-                        </div>
-                        <div className="h-12 w-[2px] bg-gray-200"></div>
-                        <span className="text-xs text-gray-400 font-medium -mt-1 mb-2">อนุมัติ</span>
-
-                        {/* Step 3: In Use */}
-                        <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-400 bg-white z-10">
-                        </div>
-                        <div className="h-12 w-[2px] bg-gray-200"></div>
-                        <span className="text-xs text-gray-400 font-medium -mt-1 mb-2">กำลังใช้งาน</span>
-
-                        {/* Step 4: Return */}
-                        <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-400 bg-white z-10">
-                        </div>
-                        <span className="text-xs text-gray-400 font-medium mt-1">คืนอุปกรณ์</span>
-                    </div>
-
-                    {/* 2. Image & Description Column */}
-                    <div className="w-[320px] flex flex-col gap-4">
-                        {/* Device Image */}
-                        <div className="w-full h-[200px] bg-white rounded-lg flex items-center justify-center overflow-hidden border border-gray-200 p-4">
-                            <img src={request.device_image} alt={request.device_name} className="max-w-full max-h-full object-contain" />
-                        </div>
-
-                        {/* Description Box */}
-                        <div className="bg-gray-100 p-3 rounded-lg border border-gray-200">
-                            <div className="font-semibold text-gray-700 mb-1 text-sm">รายละเอียด <span className="font-normal text-gray-500">— ประเภท: เลเซอร์ขาว-ดำ (Workgroup)</span></div>
-                            <div className="text-gray-500 text-xs leading-relaxed">
-                                • ความเร็ว 28-38 ppm (A4) • 1200x1200 dpi • A4/Letter/A5/Legal 60-163 gsm • USB 2.0 • Windows/macOS/Linux
-                            </div>
-                        </div>
-
-                        {/* Footer Alert */}
-                        <div className="bg-red-50 border border-red-200 text-red-500 px-4 py-2 rounded text-sm text-center">
-                            *อุปกรณ์นี้ถูกหยิบได้สูงสุด 3 วัน
-                        </div>
-                    </div>
-
-                    {/* 3. Info Columns Container */}
-                    <div className="flex-1 grid grid-cols-2 gap-8 pt-2">
-                        {/* Column 1 */}
-                        <div className="flex flex-col gap-4 text-sm">
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">ผู้ส่งคำร้อง</span>
-                                <span className="text-gray-600">{request.requester_name}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">ชื่ออุปกรณ์</span>
-                                <span className="text-gray-600">{request.device_name}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">หมวดหมู่</span>
-                                <span className="text-gray-600">{request.category}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">แผนก/ฝ่ายย่อย</span>
-                                <span className="text-gray-600">ไอที (IT) / A</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-center">
-                                <span className="font-semibold text-gray-700">รหัสอุปกรณ์</span>
-                                <div className="flex items-center gap-2 border border-gray-300 rounded px-2 py-1 w-fit">
-                                    <span className="bg-gray-200 px-2 py-0.5 rounded text-gray-700 text-xs">CH-001 <span className="cursor-pointer ml-1">×</span></span>
-                                    <button className="text-gray-400 hover:text-gray-600"><FontAwesomeIcon icon={faPlus} size="xs" /></button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline mt-auto">
-                                <span className="font-semibold text-gray-700">จำนวน</span>
-                                <span className="text-gray-600">{request.quantity} ชิ้น</span>
-                            </div>
-                        </div>
-
-                        {/* Column 2 */}
-                        <div className="flex flex-col gap-4 text-sm">
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">วันที่ยืม</span>
-                                <span className="text-gray-600">{request.details.request_date_full}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">วันที่คืน</span>
-                                <span className="text-gray-600">{request.details.return_date_full}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">เหตุผลในการยืม</span>
-                                <span className="text-gray-600">{request.details.reason}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">สถานที่ใช้งาน</span>
-                                <span className="text-gray-600">{request.details.location}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">เบอร์โทรศัพท์ผู้ยืม</span>
-                                <span className="text-gray-600">{request.details.phone}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-baseline">
-                                <span className="font-semibold text-gray-700">อุปกรณ์เสริม</span>
-                                <span className="text-gray-600">{request.details.accessories}</span>
-                            </div>
-
-                            <div className="grid grid-cols-[140px_1fr] items-start mt-auto">
-                                <span className="font-semibold text-gray-700 pt-2">สถานะที่รับอุปกรณ์</span>
-                                <textarea
-                                    className="w-full h-[100px] p-3 bg-gray-200 border-none rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700 placeholder-gray-500"
-                                    placeholder="กรอกสถานะที่รับอุปกรณ์"
-                                ></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="bg-white mb-2 overflow-hidden transition-all duration-300">
+      {/* Summary Row */}
+      <div
+        className="grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_1fr_70px] items-center p-4 pl-6 cursor-pointer"
+        onClick={toggleExpand}
+      >
+        {/* Device Name & ID */}
+        <div className="flex flex-col">
+          <span className="text-[#000000]">{ticket.device_summary.name}</span>
+          <span className="text-[#8C8C8C]">
+            รหัส : {ticket.device_summary.serial_number || ticket.id}
+          </span>
         </div>
-    );
+
+        {/* Quantity */}
+        <div className="text-[#000000]">
+          {ticket.device_summary.total_quantity} ชิ้น
+        </div>
+
+        {/* Category */}
+        <div className="text-[#000000]">{ticket.device_summary.category}</div>
+
+        {/* Requester */}
+        <div className="flex flex-col">
+          <span className="text-[#000000]">{ticket.requester.fullname}</span>
+          <span className="text-[#8C8C8C]">
+            {ticket.requester.empcode || "-"}
+          </span>
+        </div>
+
+        {/* Date & Time */}
+        <div className="flex flex-col">
+          <span className="text-[#000000]">
+            {formatDate(ticket.request_date)}
+          </span>
+          <span className="text-[#7BACFF]">
+            เวลา : {formatTime(ticket.request_date)}
+          </span>
+        </div>
+
+        {/* Status */}
+        <div>
+          <span
+            className={`flex items-center justify-center w-[99px] h-[34px] border rounded-full text-base ${status.className}`}
+          >
+            {status.label}
+          </span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          {(ticket.status === "PENDING" && (
+            <>
+              <Button
+                variant="accept"
+                onClick={() => onApprove(ticket.id)}
+                style={{ width: 105, height: 44, padding: "5px 15px" }}
+              >
+                อนุมัติ
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => onReject(ticket.id)}
+                style={{ width: 105, height: 44, padding: "5px 15px" }}
+              >
+                ปฏิเสธ
+              </Button>
+            </>
+          )) ||
+            ticket.status === "IN_USE" ||
+            (ticket.status === "APPROVED" && (
+              <>
+                <Button
+                  variant="primary"
+                  onClick={() => onApprove(ticket.id)}
+                  style={{ width: 105, height: 44, padding: "5px 15px" }}
+                >
+                  รับคืน
+                </Button>
+                <Button
+                  variant="manage"
+                  onClick={() => onReject(ticket.id)}
+                  style={{ width: 105, height: 44, padding: "5px 15px" }}
+                >
+                  จัดการ
+                </Button>
+              </>
+            ))}
+        </div>
+
+        {/* Expand Icon */}
+        <div className="text-gray-400 flex justify-center">
+          <FontAwesomeIcon
+            size="lg"
+            icon={faChevronDown}
+            className={`text-[#000000] transition-transform duration-200 ${isExpanded ? "transform rotate-180" : ""
+              }`}
+          />
+        </div>
+      </div>
+
+      {/* Expanded Details */}
+      <div
+        className={`transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+          }`}
+      >
+        {isLoadingDetail ? (
+          <div className="p-6 flex items-center justify-center">
+            <span className="text-gray-500">กำลังโหลด...</span>
+          </div>
+        ) : (
+          <>
+            {/* Rejection Banner */}
+            {ticket.status === "REJECTED" && ticketDetail && (
+              <div className="mx-6 mt-4 bg-[#FFF2F2] border  border-[#FF4D4F] rounded-xl p-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#FF4D4F] rounded-full flex items-center justify-center shrink-0">
+                    <Icon
+                      icon="ph:file-x-fill"
+                      width="30"
+                      height="30"
+                      color="white"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[#7B1F20] font-bold text-lg">
+                      คำขอถูกปฏิเสธ ({" "}
+                      {ticketDetail.details.reject_date
+                        ? new Date(
+                          ticketDetail.details.reject_date,
+                        ).toLocaleDateString("th-TH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        }) +
+                        " - " +
+                        new Date(
+                          ticketDetail.details.reject_date,
+                        ).toLocaleTimeString("th-TH", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }) +
+                        " น."
+                        : "-"}{" "}
+                      )
+                    </span>
+                    <span className="text-[#FF4D4F]">
+                      เหตุผล : {ticketDetail.details.reject_reason || "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="font-bold text-black px-6 py-4">
+              ข้อมูลการยืมอุปกรณ์
+            </div>
+            <div className="mx-6 pb-6 pt-2 bg-white flex gap-24 items-start border-b-1 border-[#D9D9D9]">
+              {/* --- COLUMN 1: Timeline (ซ้ายสุด) --- */}
+              <div className="min-w-[120px] flex flex-col pt-2">
+                {/* Step 1: Request */}
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
+                        ? "border-[#4CAF50] text-[#4CAF50]"
+                        : getStepTicket() === "APPROVED"
+                          ? "border-[#4CAF50] text-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
+                            ? "border-[#4CAF50] text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "border-[#4CAF50] text-[#4CAF50]"
+                              : "border-[#9E9E9E] text-[#9E9E9E]"
+                        }`}
+                    >
+                      <Icon
+                        icon="ic:sharp-check"
+                        width="20"
+                        height="20"
+                      // color="blue"
+                      />
+                    </div>
+                    <div
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
+                        ? "bg-[#4CAF50]"
+                        : getStepTicket() === "APPROVED"
+                          ? "bg-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
+                            ? "bg-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "bg-[#4CAF50]"
+                              : "bg-[#9E9E9E]"
+                        }`}
+                    ></div>
+                  </div>
+
+                  <div className="pt-2">
+                    <span
+                      className={`text-sm font-medium ${getStepTicket() === "PENDING"
+                        ? " text-[#4CAF50]"
+                        : getStepTicket() === "APPROVED"
+                          ? " text-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
+                            ? " text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : " text-[#9E9E9E]"
+                        }`}
+                    >
+                      ส่งคำร้อง
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step 2: Approve - with hover tooltip */}
+                <div className="flex gap-3 relative group">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
+                        ? "border-[#000000] text-[#000000]"
+                        : getStepTicket() === "APPROVED"
+                          ? "border-[#4CAF50] text-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
+                            ? "border-[#4CAF50] text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "border-[#4CAF50] text-[#4CAF50]"
+                              : getStepTicket() === "REJECTED"
+                                ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                : "border-[#9E9E9E] text-[#9E9E9E]"
+                        }`}
+                    >
+                      <Icon
+                        icon="streamline-ultimate:task-list-approve"
+                        width="20"
+                        height="20"
+                      />
+                    </div>
+                    <div
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
+                        ? "bg-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? "bg-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
+                            ? "bg-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "bg-[#4CAF50]"
+                              : "bg-[#9E9E9E]"
+                        }`}
+                    ></div>
+                  </div>
+                  <div className="pt-2">
+                    <span
+                      className={`cursor-pointer ${getStepTicket() === "PENDING"
+                        ? " text-[#000000]"
+                        : getStepTicket() === "APPROVED"
+                          ? " text-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
+                            ? " text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : getStepTicket() === "REJECTED"
+                                ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                : " text-[#9E9E9E]"
+                        }`}
+                    >
+                      อนุมัติ
+                    </span>
+                  </div>
+
+                  {/* Tooltip - Approval Hierarchy with Timeline Style */}
+                  {ticketDetail?.timeline &&
+                    ticketDetail.timeline.length > 0 && (
+                      <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[300px] max-h-[300px] overflow-y-auto">
+                          <div className="flex flex-col">
+                            {ticketDetail.timeline.map((stage, index) => {
+                              const isLast =
+                                index === ticketDetail.timeline.length - 1;
+                              const prevStage =
+                                index > 0
+                                  ? ticketDetail.timeline[index - 1]
+                                  : null;
+                              // If previous stage is APPROVED but current is PENDING, show black (next in queue)
+                              const isNextApprover =
+                                prevStage?.status === "APPROVED" &&
+                                stage.status === "PENDING";
+                              return (
+                                <div key={index} className="flex gap-3">
+                                  {/* Icon & Line */}
+                                  <div className="flex flex-col items-center">
+                                    <div
+                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
+                                        ? "border-[#4CAF50] text-[#4CAF50]"
+                                        : stage.status === "REJECTED"
+                                          ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                          : isNextApprover
+                                            ? "border-[#000000] text-[#000000]"
+                                            : "border-[#9E9E9E] text-[#9E9E9E]"
+                                        }`}
+                                    >
+                                      <Icon
+                                        icon="ic:sharp-check"
+                                        width="14"
+                                        height="14"
+                                      />
+                                    </div>
+                                    {/* Connecting Line - hide for last item */}
+                                    {!isLast && (
+                                      <div
+                                        className={`w-[2px] h-8 -my-1 ${stage.status === "APPROVED"
+                                          ? "bg-[#4CAF50]"
+                                          : stage.status === "REJECTED"
+                                            ? "bg-[#FF4D4F]"
+                                            : "bg-[#9E9E9E]"
+                                          }`}
+                                      ></div>
+                                    )}
+                                  </div>
+                                  {/* Text */}
+                                  <div
+                                    className={`pt-1 ${!isLast ? "pb-3" : ""} `}
+                                  >
+                                    <span
+                                      className={`text-sm ${stage.status === "APPROVED"
+                                        ? "text-[#4CAF50]"
+                                        : stage.status === "REJECTED"
+                                          ? "text-[#FF4D4F]"
+                                          : isNextApprover
+                                            ? "text-[#000000]"
+                                            : "text-[#9E9E9E]"
+                                        }`}
+                                    >
+                                      {stage.role_name}
+                                      {stage.dept_name && ` ${stage.dept_name}`}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                </div>
+
+                {/* Step 3: In Use */}
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
+                        ? "border-[#9E9E9E] text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? "border-[#000000] text-[#000000]"
+                          : getStepTicket() === "IN_USE"
+                            ? "border-[#4CAF50] text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "border-[#4CAF50] text-[#4CAF50]"
+                              : "border-[#9E9E9E] text-[#9E9E9E]"
+                        }`}
+                    >
+                      <Icon
+                        icon="material-symbols-light:devices-outline"
+                        width="23"
+                        height="23"
+                      // color="blue"
+                      />
+                    </div>
+                    <div
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
+                        ? "bg-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? "bg-[#9E9E9E]"
+                          : getStepTicket() === "IN_USE"
+                            ? "bg-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "bg-[#4CAF50]"
+                              : "bg-[#9E9E9E]"
+                        }`}
+                    ></div>
+                  </div>
+                  <div className="pt-2">
+                    <span
+                      className={`${getStepTicket() === "PENDING"
+                        ? " text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? " text-[#000000]"
+                          : getStepTicket() === "IN_USE"
+                            ? " text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : " text-[#9E9E9E]"
+                        }`}
+                    >
+                      กำลังใช้งาน
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step 4: Return */}
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
+                        ? "border-[#9E9E9E] text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? "border-[#9E9E9E] text-[#9E9E9E]"
+                          : getStepTicket() === "IN_USE"
+                            ? "border-[#000000] text-[#000000]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "border-[#4CAF50] text-[#4CAF50]"
+                              : "border-[#9E9E9E] text-[#9E9E9E]"
+                        }`}
+                    >
+                      <Icon
+                        icon="streamline:return-2"
+                        width="20"
+                        height="20"
+                      // color="blue"
+                      />
+                    </div>
+                  </div>
+                  <div className="pt-2">
+                    <span
+                      className={`${getStepTicket() === "PENDING"
+                        ? " text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? " text-[#9E9E9E]"
+                          : getStepTicket() === "IN_USE"
+                            ? " text-[#000000]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : " text-[#9E9E9E]"
+                        }`}
+                    >
+                      คืนอุปกรณ์
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* --- COLUMN 2: Image & Description (ตรงกลาง) --- */}
+              <div className="w-[300px] flex flex-col gap-2">
+                {/* Device Image */}
+                <div className="w-full h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden border border-[#D9D9D9] p-4">
+                  <img
+                    src={getImageUrl(deviceImage)}
+                    alt={ticket.device_summary.name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+
+                <div className="bg-[#F4F4F4] p-3 rounded-lg border border-[#D9D9D9]">
+                  <div className="font-bold text-[#000000] text-sm">
+                    รายละเอียด —{" "}
+                    <span className="text-sm text-[#636363]">
+                      {ticket.device_summary.description || "ไม่มีรายละเอียด"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Footer Alert */}
+                <div className="bg-[#FFE8E8] border border-[#FF4D4F] text-[#FF4D4F] p-1 rounded-lg text-sm text-center">
+                  *อุปกรณ์นี้ถูกยืมได้สูงสุด{" "}
+                  {ticket.device_summary.max_borrow_days ?? "-"} วัน
+                </div>
+              </div>
+
+              {/* --- COLUMN 3: Info & Fields (ขวาสุด) --- */}
+              <div className="flex-1 flex gap-10 pt-2">
+                {/* Left Column */}
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="grid grid-cols-[140px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">ผู้ส่งคำร้อง</span>
+                    <span className="text-[#636363] text-sm">
+                      {ticket.requester.fullname}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[140px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">ชื่ออุปกรณ์</span>
+                    <span className="text-[#636363] text-sm">
+                      {ticket.device_summary.name}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[140px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">หมวดหมู่</span>
+                    <span className="text-[#636363] text-sm">
+                      {ticket.device_summary.category}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[140px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">
+                      แผนก/ฝ่ายย่อย
+                    </span>
+                    <span className="text-[#636363] text-sm">
+                      {ticket.device_summary.department || "-"} / {sectionName}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[140px_1fr] items-start">
+                    <span className="text-[#000000] text-sm">รหัสอุปกรณ์</span>
+                    <div className="grid grid-cols-3 gap-1.5 w-fit">
+                      {ticketDetail?.devices?.slice(0, 8).map((d, index) => (
+                        <span
+                          key={d.child_id || index}
+                          className="bg-[#F0F0F0] border border-[#BFBFBF] px-2 py-0.5 rounded-full text-[#636363] text-xs text-center w-[100px] truncate"
+                          title={d.asset_code}
+                        >
+                          {d.asset_code || "CH-001"}
+                        </span>
+                      ))}
+                      {ticketDetail?.devices && (
+                        <button
+                          onClick={() => setIsDeviceModalOpen(true)}
+                          className="leading-none pb-2 bg-[#FFFFFF] border border-[#BFBFBF] px-2 py-0.5 rounded-full text-[#636363] text-xs flex justify-center items-center w-10 cursor-pointer hover:bg-gray-100"
+                        >
+                          ...
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[140px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">จำนวน</span>
+                    <span className="text-[#636363] text-sm">
+                      {ticket.device_summary.total_quantity} ชิ้น
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="grid grid-cols-[150px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">วันที่ยืม</span>
+                    <span className="text-[#636363] text-sm">
+                      {formatFullDateTime(
+                        ticketDetail?.details.dates.start || "-",
+                      )}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">วันที่คืน</span>
+                    <span className="text-[#636363] text-sm">
+                      {formatFullDateTime(
+                        ticketDetail?.details.dates.end || "-",
+                      )}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">
+                      เหตุผลในการยืม
+                    </span>
+                    <span className="text-[#636363] text-sm">
+                      {ticketDetail?.details.purpose || "-"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">
+                      สถานที่ใช้งาน
+                    </span>
+                    <span className="text-[#636363] text-sm">
+                      {ticketDetail?.details.location_use || "-"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr] items-baseline">
+                    <span className="text-[#000000] text-sm">
+                      เบอร์โทรศัพท์ผู้ยืม
+                    </span>
+                    <span className="text-[#636363] text-sm">
+                      {ticketDetail?.requester.us_phone
+                        ? ticketDetail.requester.us_phone.replace(
+                          /(\d{3})(\d{3})(\d{4})/,
+                          "$1-$2-$3",
+                        )
+                        : "000-000-0000"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[150px_1fr] items-baseline">
+                    <span className="text-[#000000] font-semibold text-md">
+                      อุปกรณ์เสริม
+                    </span>
+                    <span className="text-[#000000] font-semibold text-md">
+                      จำนวน
+                    </span>
+                  </div>
+                  {ticketDetail?.accessories &&
+                    ticketDetail.accessories.length > 0 ? (
+                    ticketDetail.accessories.map((acc, index) => (
+                      <div
+                        key={acc.acc_id || index}
+                        className="grid grid-cols-[150px_1fr] items-baseline"
+                      >
+                        <span className="text-[#636363] text-sm">
+                          - {acc.acc_name}
+                        </span>
+                        <span className="text-[#636363] text-sm">
+                          {acc.acc_quantity} ชิ้น
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="grid grid-cols-[150px_1fr] items-baseline">
+                      <span className="text-[#636363] text-sm">-ไม่มี</span>
+                      <span className="text-[#636363] text-sm">-</span>
+                    </div>
+                  )}
+
+                  {/* Textarea */}
+                  <div className="grid grid-cols-[150px_1fr] items-start">
+                    <span className="text-[#000000] text-sm">
+                      สถานะที่รับอุปกรณ์
+                    </span>
+                    <textarea
+                      className="w-[80%] h-[100px] p-3 bg-white border border-[#BFBFBF] rounded-xl resize-none text-sm"
+                      placeholder="กรอกสถานะที่รับอุปกรณ์"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Device List Modal */}
+      <DeviceListModal
+        isOpen={isDeviceModalOpen}
+        onClose={() => setIsDeviceModalOpen(false)}
+        devices={ticketDetail?.devices || []}
+      />
+    </div>
+  );
 };
 
 export default RequestItem;

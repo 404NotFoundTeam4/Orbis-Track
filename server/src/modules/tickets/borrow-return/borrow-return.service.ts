@@ -1,17 +1,56 @@
+/**
+ * Description: Service สำหรับจัดการ Borrow-Return Tickets
+ * - รองรับ Pagination, Filter by status, Search, และ Sorting
+ * - Query ข้อมูลจาก Prisma พร้อม role-based filtering
+ * Input : GetBorrowTicketQuery, IdParamDto
+ * Output : PaginatedResult หรือ TicketDetail
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { GetBorrowTicketQuery } from "./borrow-return.schema.js";
 import { Prisma, US_ROLE } from "@prisma/client";
 import { prisma } from "../../../infrastructure/database/client.js";
 import { IdParamDto } from "../../departments/departments.schema.js";
 
+/**
+ * Description: ดึงรายการ Borrow-Return Tickets ตาม query params
+ * Input : GetBorrowTicketQuery, role, dept_id, sec_id
+ * Output : { data, total, page, limit, paginated }
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function getBorrowReturnTicket(
   query: GetBorrowTicketQuery,
-  userId: number | undefined,
   role: string | undefined,
   dept_id: number | null | undefined,
   sec_id: number | null | undefined,
 ) {
-  const { page = 1, limit = 10, status, search, type = "ALL" } = query;
+  const { page = 1, limit = 10, status, search, sortField, sortDirection } = query;
   const skip = ((page || 1) - 1) * (limit || 10);
+
+  // สร้าง orderBy ตาม sortField (default: created_at desc)
+  let orderBy: Prisma.borrow_return_ticketsOrderByWithRelationInput = { created_at: "desc" };
+  if (sortField) {
+    const direction = sortDirection || "asc";
+    switch (sortField) {
+      case "device_name":
+        orderBy = { ticket_devices: { _count: direction } }; // จัดเรียงตามจำนวน devices (workaround)
+        break;
+      case "quantity":
+        orderBy = { brt_quantity: direction };
+        break;
+      case "requester":
+        orderBy = { requester: { us_firstname: direction } };
+        break;
+      case "request_date":
+        orderBy = { brt_start_date: direction };
+        break;
+      case "status":
+        orderBy = { brt_status: direction };
+        break;
+      default:
+        orderBy = { created_at: "desc" };
+    }
+  }
+
   const where: Prisma.borrow_return_ticketsWhereInput = {
     deleted_at: null,
     brt_status: {
@@ -19,10 +58,17 @@ async function getBorrowReturnTicket(
     },
   };
 
+  // Filter by status - ถ้ามี status จาก query ให้ใช้ตามนั้น ถ้าไม่มีใช้ default
   if (status) {
     where.brt_status = status;
+  } else {
+    // Default: แสดงเฉพาะ PENDING, IN_USE, APPROVED
+    where.brt_status = {
+      in: ["PENDING", "IN_USE", "APPROVED"],
+    };
   }
 
+  // Search filter
   if (search) {
     const searchNum = Number(search);
     where.OR = [
@@ -43,6 +89,19 @@ async function getBorrowReturnTicket(
           },
         },
       },
+      // ค้นหาจากรหัสอุปกรณ์ (serial number) เช่น PROJ-EPSON-001
+      {
+        ticket_devices: {
+          some: {
+            child: {
+              device: {
+                de_serial_number: { contains: search, mode: "insensitive" },
+              },
+            },
+          },
+        },
+      },
+      // ค้นหาจากหมวดหมู่
       {
         ticket_devices: {
           some: {
@@ -64,66 +123,21 @@ async function getBorrowReturnTicket(
     }
   }
 
-  switch (type) {
-    case "MY_ACTIVE":
-      where.brt_user_id = userId;
-      where.brt_status = "IN_USE";
-      break;
-
-    case "MY_REQUEST":
-      // รายการที่ฉันเป็นคนขอ
-      where.brt_user_id = userId;
-      break;
-
-    case "MY_APPROVAL":
-      // รายการที่ "รอฉันอนุมัติ"
-      where.brt_status = {
-        in: ["PENDING", "IN_USE", "APPROVED"],
-      };
-      where.stages = {
-        some: {
-          brts_status: {
-            in: ["PENDING", "APPROVED"],
-          },
-          brts_role: role as US_ROLE,
-
-          AND: [
-            {
-              OR: [{ brts_dept_id: null }, { brts_dept_id: dept_id }],
-            },
-            {
-              OR: [{ brts_sec_id: null }, { brts_sec_id: sec_id }],
-            },
-          ],
+  // Filter: เห็นเฉพาะ request ที่ stage ของตัวเอง = PENDING (ถึง turn แล้ว)
+  where.stages = {
+    some: {
+      brts_status: "PENDING", // เฉพาะ stage ที่รอตัวเองอนุมัติ (ถึง turn แล้ว)
+      brts_role: role as US_ROLE,
+      AND: [
+        {
+          OR: [{ brts_dept_id: null }, { brts_dept_id: dept_id }],
         },
-      };
-      break;
-
-    // case "HISTORY":
-    //   where.brt_status = { in: ["COMPLETED", "REJECTED"] };
-    //   break;
-
-    case "MY_HISTORY":
-      where.brt_user_id = userId;
-      where.brt_status = { in: ["COMPLETED", "REJECTED"] };
-      break;
-
-    case "MY_APPROVAL_HISTORY":
-      where.stages = {
-        some: {
-          brts_us_id: userId,
-          brts_status: { in: ["APPROVED", "REJECTED"] },
+        {
+          OR: [{ brts_sec_id: null }, { brts_sec_id: sec_id }],
         },
-      };
-      break;
-
-    case "ALL":
-    default:
-      if (role === "EMPLOYEE" || role === "STAFF") {
-        // where.brt_user_id = user.userId;
-      }
-      break;
-  }
+      ],
+    },
+  };
 
   const [total, items] = await Promise.all([
     prisma.borrow_return_tickets.count({ where }),
@@ -131,7 +145,7 @@ async function getBorrowReturnTicket(
       where,
       skip,
       take: limit || 10,
-      orderBy: { created_at: "desc" },
+      orderBy,
       include: {
         requester: {
           select: {
@@ -140,44 +154,55 @@ async function getBorrowReturnTicket(
             us_lastname: true,
             us_emp_code: true,
             us_images: true,
-            department: { select: { dept_name: true } },
+            department: { select: { dept_name: true, dept_id: true } },
+            section: { select: { sec_name: true, sec_id: true } },
           },
         },
         ticket_devices: {
           include: {
             child: {
               select: {
-                dec_serial_number: true,
-                dec_asset_code: true,
-                dec_has_serial_number: true,
-                dec_status: true,
+                // dec_serial_number: true,
+                // dec_asset_code: true,
+                // dec_has_serial_number: true,
+                // dec_status: true,
                 device: {
                   select: {
-                    de_name: true,
                     de_serial_number: true,
+                    de_name: true,
+                    de_description: true,
                     de_location: true,
+                    de_max_borrow_days: true,
                     de_images: true,
                     category: { select: { ca_name: true } },
-                    section: { select: { sec_name: true } },
+                    section: {
+                      select: {
+                        sec_name: true,
+                        department: {
+                          select: { dept_name: true },
+                        },
+                      },
+                    },
                   },
                 },
               },
             },
           },
         },
-        stages: {
-          orderBy: { brts_step_approve: "asc" },
-        },
+        // stages: {
+        //   orderBy: { brts_step_approve: "asc" },
+        // },
       },
     }),
   ]);
 
   const formattedData = items.map((item) => {
     const mainDevice = item.ticket_devices[0]?.child.device;
-    const deviceChild = item.ticket_devices[0]?.child;
+    // const deviceChild = item.ticket_devices[0]?.child;
     const deviceCount = item.brt_quantity;
+    const dept = mainDevice?.section?.department?.dept_name ?? "";
 
-    const currentStage = item.stages[0];
+    // const currentStage = item.stages[0];
 
     return {
       id: item.brt_id,
@@ -196,32 +221,34 @@ async function getBorrowReturnTicket(
       device_summary: {
         name: mainDevice ? mainDevice.de_name : "Unknown Device",
         serial_number: mainDevice ? mainDevice.de_serial_number : "-",
+        description: mainDevice ? mainDevice.de_description : "-",
         location: mainDevice ? mainDevice.de_location : "-",
-        image: mainDevice ? mainDevice.de_images : "-",
+        max_borrow_days: mainDevice ? mainDevice.de_max_borrow_days : "-",
+        image: mainDevice ? mainDevice.de_images : null,
         category: mainDevice ? mainDevice.category.ca_name : "-",
-        section: mainDevice ? mainDevice.section : "-",
+        section: mainDevice?.section?.sec_name.replace(dept, "").trim() ?? "-",
+        department: dept.replace(/แผนก/g, "").trim() ?? "-",
         total_quantity: deviceCount,
-        more_count: deviceCount > 1 ? deviceCount - 1 : 0,
       },
 
-      device_child: {
-        serial_number: deviceChild
-          ? (deviceChild.dec_serial_number ?? "-")
-          : "-",
-        asset_code: deviceChild ? deviceChild.dec_asset_code : "-",
-        has_serial_number: deviceChild
-          ? deviceChild.dec_has_serial_number
-          : "-",
-        status: deviceChild ? deviceChild.dec_status : "-",
-      },
+      // device_child: {
+      //   serial_number: deviceChild
+      //     ? (deviceChild.dec_serial_number ?? "-")
+      //     : "-",
+      //   asset_code: deviceChild ? deviceChild.dec_asset_code : "-",
+      //   has_serial_number: deviceChild
+      //     ? deviceChild.dec_has_serial_number
+      //     : "-",
+      //   status: deviceChild ? deviceChild.dec_status : "-",
+      // },
 
-      current_stage: currentStage
-        ? {
-            name: currentStage.brts_name,
-            step: currentStage.brts_step_approve,
-            status: currentStage.brts_status,
-          }
-        : null,
+      // current_stage: currentStage
+      //   ? {
+      //     name: currentStage.brts_name,
+      //     step: currentStage.brts_step_approve,
+      //     status: currentStage.brts_status,
+      //   }
+      //   : null,
     };
   });
 
@@ -234,6 +261,12 @@ async function getBorrowReturnTicket(
   };
 }
 
+/**
+ * Description: ดึงรายละเอียด Borrow-Return Ticket ตาม ID
+ * Input : IdParamDto { id }
+ * Output : TicketDetail พร้อมข้อมูล requester, devices, accessories, timeline
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 async function getBorrowReturnTicketById(params: IdParamDto) {
   const { id } = params;
   const ticket = await prisma.borrow_return_tickets.findUnique({
@@ -248,8 +281,8 @@ async function getBorrowReturnTicketById(params: IdParamDto) {
           us_images: true,
           us_email: true,
           us_phone: true,
-          department: { select: { dept_name: true, dept_id: true } },
-          section: { select: { sec_name: true, sec_id: true } },
+          // department: { select: { dept_name: true, dept_id: true } },
+          // section: { select: { sec_name: true, sec_id: true } },
         },
       },
 
@@ -260,16 +293,19 @@ async function getBorrowReturnTicketById(params: IdParamDto) {
               dec_id: true,
               dec_serial_number: true,
               dec_asset_code: true,
+              dec_has_serial_number: true, //
               dec_status: true,
               device: {
                 select: {
-                  de_id: true,
-                  de_name: true,
-                  de_images: true,
-                  de_location: true,
-                  category: { select: { ca_name: true } },
-                },
-              },
+                  accessories: {
+                    select: {
+                      acc_id: true,
+                      acc_name: true,
+                      acc_quantity: true,
+                    }
+                  }
+                }
+              }
             },
           },
         },
@@ -319,36 +355,39 @@ async function getBorrowReturnTicketById(params: IdParamDto) {
         return: ticket.brt_return_location,
       },
       reject_reason: ticket.brt_reject_reason,
+      reject_date: ticket.updated_at,
     },
 
     requester: {
       ...ticket.requester,
       fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
-      dept_id: ticket.requester.department?.dept_id,
-      dept: ticket.requester.department?.dept_name,
-      sec_id: ticket.requester.section?.sec_id,
-      section: ticket.requester.section?.sec_name,
+      // dept_id, dept, sec_id, section ถูก comment ออกจาก query
     },
 
     devices: ticket.ticket_devices.map((td) => ({
       child_id: td.child.dec_id,
-      name: td.child.device.de_name,
       asset_code: td.child.dec_asset_code,
       serial: td.child.dec_serial_number || "-",
-      image: td.child.device.de_images,
-      category: td.child.device.category.ca_name,
       current_status: td.child.dec_status,
+      has_serial_number: td.child.dec_has_serial_number,
     })),
 
+    // Accessories at top-level (shared across all device children from same parent device)
+    accessories: ticket.ticket_devices[0]?.child.device?.accessories?.map((acc) => ({
+      acc_id: acc.acc_id,
+      acc_name: acc.acc_name,
+      acc_quantity: acc.acc_quantity,
+    })) || [],
+
     timeline: ticket.stages.map((stage) => ({
-      step: stage.brts_step_approve,
       role_name: stage.brts_name, // e.g., "Manager Approval"
+      step: stage.brts_step_approve,
       required_role: stage.brts_role,
-      status: stage.brts_status, // PENDING, APPROVED, REJECTED
       dept_id: stage.brts_dept_id,
       dept_name: stage.brts_dept_name,
       sec_id: stage.brts_sec_id,
       sec_name: stage.brts_sec_name,
+      status: stage.brts_status, // PENDING, APPROVED, REJECTED
       approved_by: stage.approver
         ? `${stage.approver.us_firstname} ${stage.approver.us_lastname}`
         : null,

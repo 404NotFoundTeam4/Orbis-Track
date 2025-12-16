@@ -101,7 +101,6 @@ CREATE TABLE "devices" (
     "de_ca_id" INTEGER NOT NULL,
     "de_us_id" INTEGER NOT NULL,
     "de_sec_id" INTEGER,
-    "de_acc_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -172,6 +171,7 @@ CREATE TABLE "accessories" (
     "acc_id" SERIAL NOT NULL,
     "acc_name" VARCHAR(100) NOT NULL,
     "acc_quantity" INTEGER NOT NULL,
+    "acc_de_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -497,6 +497,9 @@ CREATE INDEX "idx_rt_user_exp" ON "refresh_tokens"("rt_us_id");
 CREATE INDEX "idx_rt_revoked" ON "refresh_tokens"("rt_revoked_at");
 
 -- CreateIndex
+CREATE INDEX "accessories_acc_de_id_idx" ON "accessories"("acc_de_id");
+
+-- CreateIndex
 CREATE INDEX "idx_steps_flow_step" ON "approval_flow_steps"("afs_af_id", "afs_step_approve");
 
 -- CreateIndex
@@ -605,9 +608,6 @@ ALTER TABLE "devices" ADD CONSTRAINT "devices_de_us_id_fkey" FOREIGN KEY ("de_us
 ALTER TABLE "devices" ADD CONSTRAINT "devices_de_sec_id_fkey" FOREIGN KEY ("de_sec_id") REFERENCES "sections"("sec_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "devices" ADD CONSTRAINT "devices_de_acc_id_fkey" FOREIGN KEY ("de_acc_id") REFERENCES "accessories"("acc_id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "device_childs" ADD CONSTRAINT "device_childs_dec_de_id_fkey" FOREIGN KEY ("dec_de_id") REFERENCES "devices"("de_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -621,6 +621,9 @@ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_dec_id_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_rt_us_id_fkey" FOREIGN KEY ("rt_us_id") REFERENCES "users"("us_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "accessories" ADD CONSTRAINT "accessories_acc_de_id_fkey" FOREIGN KEY ("acc_de_id") REFERENCES "devices"("de_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "approval_flows" ADD CONSTRAINT "approval_flows_af_us_id_fkey" FOREIGN KEY ("af_us_id") REFERENCES "users"("us_id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -1,3 +1,11 @@
+/**
+ * Description: Controller สำหรับ Borrow-Return Tickets API
+ * - GET / : ดึงรายการ tickets พร้อม pagination, filter, search, sort
+ * - GET /:id : ดึงรายละเอียด ticket ตาม ID
+ * Input : Express Request (auth required)
+ * Output : PaginatedResult<TicketItem> หรือ TicketDetail
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { BaseController } from "../../../core/base.controller.js";
 import type { Request, Response, NextFunction } from "express";
 import { BaseResponse } from "../../../core/base.response.js";
@@ -16,19 +24,23 @@ export class BorrowReturnController extends BaseController {
     super();
   }
 
+  /**
+   * Description: ดึงรายการ Borrow-Return Tickets พร้อม pagination
+   * Input : AuthRequest (query: page, limit, status, search, sortField, sortDirection)
+   * Output : PaginatedResult<TicketItemDto>
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
   async getBorrowReturnTicket(
     req: authSchema.AuthRequest,
     _res: Response,
     _next: NextFunction,
   ): Promise<PaginatedResult<TicketItemDto>> {
     const query = getBorrowTicketQuery.parse(req.query);
-    const userId = req.user?.sub;
     const role = req.user?.role;
     const dept_id = req.user?.dept;
     const sec_id = req.user?.sec;
     const result = await borrowReturnService.getBorrowReturnTicket(
       query,
-      userId,
       role,
       dept_id,
       sec_id,
@@ -37,6 +49,12 @@ export class BorrowReturnController extends BaseController {
     return result;
   }
 
+  /**
+   * Description: ดึงรายละเอียด Ticket ตาม ID
+   * Input : AuthRequest (params: id)
+   * Output : BaseResponse<BorrowReturnTicketDetailDto>
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
   async getBorrowReturnTicketById(
     req: authSchema.AuthRequest,
     _res: Response,

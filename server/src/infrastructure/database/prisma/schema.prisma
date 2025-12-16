@@ -239,7 +239,6 @@ model devices {
   de_ca_id           Int
   de_us_id           Int
   de_sec_id          Int?
-  de_acc_id          Int?
   deleted_at         DateTime? @db.Timestamptz(6)
   created_at         DateTime? @db.Timestamptz(6)
   updated_at         DateTime? @db.Timestamptz(6)
@@ -248,8 +247,8 @@ model devices {
   category      categories     @relation(fields: [de_ca_id], references: [ca_id])
   added_by      users          @relation("devices_added_by", fields: [de_us_id], references: [us_id])
   section       sections?      @relation(fields: [de_sec_id], references: [sec_id], onDelete: SetNull)
-  accessory     accessories?   @relation(fields: [de_acc_id], references: [acc_id])
 
+  accessories   accessories[]
   device_childs device_childs[]
   ticket_issues ticket_issues[]
 
@@ -333,11 +332,14 @@ model accessories {
   acc_id       Int       @id @default(autoincrement())
   acc_name     String    @db.VarChar(100)
   acc_quantity Int
+  acc_de_id    Int
   deleted_at   DateTime? @db.Timestamptz(6)
   created_at   DateTime? @db.Timestamptz(6)
   updated_at   DateTime? @db.Timestamptz(6)
 
-  devices devices[]
+  device devices @relation(fields: [acc_de_id], references: [de_id], onDelete: Cascade)
+
+  @@index([acc_de_id])
 }
 
 model categories {

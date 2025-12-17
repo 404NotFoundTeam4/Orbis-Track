@@ -182,9 +182,8 @@ const User = dataUser ? JSON.parse(dataUser) : null;
 
 
                 <Link
-                  to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  to="/inventory"
+                  className=" px-15 hover:bg-[#F0F0F0] rounded-[9px] h-[50px] flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                 >
                   <FontAwesomeIcon icon={faBoxArchive} />
                   <span>รายการอุปกรณ์</span>

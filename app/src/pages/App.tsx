@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Login } from "./Login"; // ✅ import ได้ปกติ
+import { Login } from "./Login";
 import "../styles/css/App.css";
 import { Users } from "./Users";
 
@@ -13,7 +13,7 @@ import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
-import Inventory from "./Inventory";
+import { Inventory } from "./Inventory";
 import ForgotPassword from "./ForgotPassword"
 
 function App() {
@@ -40,6 +40,17 @@ function App() {
                 path="/administrator/departments-management"
                 element={<Departments />}
               />
+
+              <Route 
+                path="/administrator/inventory" 
+                element={<Inventory />} 
+              />
+              <Route 
+                path="/staff/inventory" 
+                element={<Inventory />} 
+              />
+              <Route path="/inventory" element={<Inventory />} />
+
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />

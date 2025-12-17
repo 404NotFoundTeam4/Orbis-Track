@@ -7,16 +7,18 @@ import {
   type DeviceChild,
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
-import { useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const EditInventory = () => {
-  // ดึง parent id จาก URL
-  const { id } = useParams();
-  const parentId = Number(id);
+  // ดึง url ปัจจุบัน
+  const location = useLocation();
+  // ข้อมูลอุปกรณ์แม่ที่ส่งมา
+  const deviceFromState = location.state?.device;
+  // รหัสอุปกรณ์แม่
+  const parentId = deviceFromState?.id;
 
   // เก็บข้อมูลอุปกรณ์แม่
-  const [parentDevice, setParentDevice] =
-    useState<GetDeviceWithChildsResponse | null>(null);
+  const [parentDevice, setParentDevice] = useState<GetDeviceWithChildsResponse | null>(null);
   // เก็บข้อมูลอุปกรณ์ลูก
   const [deviceChilds, setDeviceChilds] = useState<DeviceChild[]>([]);
 
@@ -36,7 +38,7 @@ const EditInventory = () => {
   const { push } = useToast();
 
   // เพิ่มอุปกรณ์ลูก
-  const handleAddDeviceChild = async (parentId: number, quantity: number) => {
+  const handleAddDeviceChild = async (quantity: number) => {
     if (!quantity) {
       push({ tone: "warning", message: "กรุณาระบุจำนวนอุปกรณ์!" });
       return;
@@ -51,6 +53,8 @@ const EditInventory = () => {
 
   // ลบอุปกรณ์ลูก
   const handleDeleteDeviceChild = async (ids: number[]) => {
+    console.log(parentId);
+
     await DeviceService.deleteDeviceChild({ dec_id: ids });
     push({ tone: "danger", message: "ลบอุปกรณ์สำเร็จ!" });
     setDeviceChilds((prev) =>

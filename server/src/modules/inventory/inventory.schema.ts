@@ -6,7 +6,7 @@ export const idParamSchema = z.object({
 });
 
 // ข้อมูลอุปกรณ์ลูก
-export const deviceChildSchema = z.object({
+export const devicesChildSchema = z.object({
     dec_id: z.number(),
     dec_serial_number: z.string().nullable(),
     dec_asset_code: z.string().nullable(),
@@ -24,7 +24,7 @@ export const deviceWithChildsSchema = z.object({
     de_location: z.string(),
     de_max_borrow_days: z.number(),
     de_images: z.string().nullable(),
-    device_childs: z.array(deviceChildSchema)
+    device_childs: z.array(devicesChildSchema)
 });
 
 // ข้อมูลหลังจากทำการดึงข้อมูล

@@ -7,7 +7,7 @@
  */
 import "../styles/css/User.css";
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/Button.js";
 import SearchFilter from "../components/SearchFilter.js";
 import Dropdown from "../components/DropDown.js";
@@ -107,10 +107,19 @@ export const Inventory = () => {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
+  // เปลี่ยนหน้า
+  const navigate = useNavigate();
+
   //Handler: Modal Actions
   const handleOpenAddModal = () => console.log("Open Add Modal");
-  const handleOpenEditModal = (item: Equipment) =>
-    console.log("Open Edit Modal", item);
+  
+  const handleOpenEditModal = (item: Equipment) => {
+    navigate('/inventory/edit', {
+      state: {
+        device: item
+      }
+    });
+  }
 
   //Handlers: Delete Logic
   const handleDeleteSelected = () => {
@@ -197,10 +206,10 @@ export const Inventory = () => {
     return isNaN(d.getTime())
       ? "-"
       : d.toLocaleDateString("th-TH", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        });
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
   };
 
   //จัดการ Sort
@@ -287,9 +296,9 @@ export const Inventory = () => {
       prev.includes(id) ? prev.filter((prevId) => prevId !== id) : [...prev, id]
     );
   };
-// จำนวนรายการที่สามารถเลือกได้
-const selectableItemsCount = filtered.filter(item => item.status_type !== "BORROWED").length;
-const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selectableItemsCount;
+  // จำนวนรายการที่สามารถเลือกได้
+  const selectableItemsCount = filtered.filter(item => item.status_type !== "BORROWED").length;
+  const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selectableItemsCount;
 
   const gridCols = "1.8fr 1fr 1fr 1fr 0.7fr 1fr 1fr";
 
@@ -375,10 +384,10 @@ const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selec
                         ? "bx:sort-down"
                         : "bx:sort-up"
                       : "bx:sort-down"
-                      
+
                   }
                   width="24"
-                  height="24" 
+                  height="24"
                   onClick={() => HandleSort("name")}
                   className="cursor-pointer hover:text-blue-500 shrink-0"
                 />
@@ -456,7 +465,7 @@ const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selec
                 }
                 width="24"
                 height="24"
-                 onClick={() => HandleSort("quantity")}
+                onClick={() => HandleSort("quantity")}
                 className="cursor-pointer hover:text-blue-500"
               />
             </div>
@@ -523,7 +532,7 @@ const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selec
               pageRows.map((item) => (
                 <div
                   key={item.id}
-                  className="grid items-center hover:bg-gray-50 text-[16px] min-h-[70px]" 
+                  className="grid items-center hover:bg-gray-50 text-[16px] min-h-[70px]"
                   style={{ gridTemplateColumns: gridCols }}
                 >
                   {/* --- รวม Checkbox และ ชื่ออุปกรณ์ --- */}
@@ -631,11 +640,10 @@ const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selec
                 <button
                   type="button"
                   onClick={() => setPage(1)}
-                  className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                    page === 1
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1
                       ? "border-[#000000] text-[#000000]"
                       : "border-[#D9D9D9]"
-                  }`}
+                    }`}
                 >
                   1
                 </button>
@@ -657,11 +665,10 @@ const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selec
                   <button
                     type="button"
                     onClick={() => setPage(totalPages)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      page === totalPages
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages
                         ? "border-[#000000] text-[#000000]"
                         : "border-[#D9D9D9]"
-                    }`}
+                      }`}
                   >
                     {totalPages}
                   </button>

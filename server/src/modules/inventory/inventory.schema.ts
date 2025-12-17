@@ -28,12 +28,12 @@ const createApprovalFlowsStepPayload = z.object({
 export const createApprovalFlowsPayload = z.object({
     af_name: z.string().min(1).max(100),
     af_us_id: z.coerce.number().int().positive(),
-   approvalflowsstep: z.preprocess((val) => {
-  if (typeof val === "string") {
-    return JSON.parse(val);
-  }
-  return val;
-}, z.array(createApprovalFlowsStepPayload).min(1))
+    approvalflowsstep: z.preprocess((val) => {
+        if (typeof val === "string") {
+            return JSON.parse(val);
+        }
+        return val;
+    }, z.array(createApprovalFlowsStepPayload).min(1))
 });
 
 export const serialNumbersPayload = z.object({
@@ -80,28 +80,31 @@ export const createDevicePayload = z.object({
 
 
 export const getApprovalFlowStepResponseSchema = z.object({
-  afs_id: z.number(),
-  afs_step_approve: z.number(),
-  afs_dept_id: z.number(),
-  afs_sec_id: z.number().nullable(),
-  afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
-  afs_af_id: z.number(),
+    afs_id: z.number(),
+    afs_step_approve: z.number(),
+    afs_dept_id: z.number(),
+    afs_sec_id: z.number().nullable(),
+    afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
+    afs_af_id: z.number(),
 });
 
 
 export const getApprovalFlowOnlySchema = z.object({
-  af_id: z.number(),
-  af_name: z.string(),
-  af_is_active: z.boolean(),
+    af_id: z.number(),
+    af_name: z.string(),
+    af_is_active: z.boolean(),
+});
+
+export const getStaffSchema = z.object({
+    label:z.string()
 });
 
 export const getApprovalFlowSchema = z.object({
-  approval_flows: z.array(getApprovalFlowOnlySchema),
-  approval_flow_steps: z.array(getApprovalFlowStepResponseSchema),
+    sections: z.array(sectionSchema),
+    departments: z.array(departmentSchema),
+    staff:z.array(getStaffSchema)
 });
 
-
-    
 
 export const createapprovalFlowStepResponseSchema = z.object({
     afs_id: z.number(),
@@ -143,7 +146,7 @@ export const createDeviceResponseSchema = z.object({
     de_sec_id: z.number().nullable(),
     de_acc_id: z.number().nullable(),
     accessories: z.array(createAccessoriesSchema),
-    serial_number:z.array(serialNumbersSchma)
+    serial_number: z.array(serialNumbersSchma)
 });
 
 
@@ -156,7 +159,9 @@ export const categoriesSchema = z.object({
 export const getDeviceWithSchema = z.object({
     sections: z.array(sectionSchema),
     departments: z.array(departmentSchema),
-    categories: z.array(categoriesSchema)
+    categories: z.array(categoriesSchema),
+    approval_flows: z.array(getApprovalFlowOnlySchema),
+    approval_flow_steps: z.array(getApprovalFlowStepResponseSchema),
 });
 
 

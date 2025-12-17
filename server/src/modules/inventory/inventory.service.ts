@@ -346,7 +346,7 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
                 const dec = serialNumbers?.[index];
 
                 return {
-                    dec_serial_number: dec?.value || null,  
+                    dec_serial_number: dec?.value || null,
                     dec_asset_code: `ASSET-${ASSET_PREFIX}-${serialNumber}`,
                     dec_has_serial_number: Boolean(dec?.value),
                     dec_status: $Enums.DEVICE_CHILD_STATUS.READY,
@@ -365,7 +365,7 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
     });
 }
 async function getAllDevices() {
-    const [departments, sections, categories] = await Promise.all([
+    const [departments, sections, categories, approval_flows, approval_flow_steps] = await Promise.all([
         prisma.departments.findMany({
             select: {
                 dept_id: true,
@@ -385,6 +385,23 @@ async function getAllDevices() {
                 ca_name: true,
             },
         }),
+        prisma.approval_flows.findMany({
+            select: {
+                af_id: true,
+                af_name: true,
+                af_is_active: true,
+            },
+        }),
+        prisma.approval_flow_steps.findMany({
+            select: {
+                afs_id: true,
+                afs_step_approve: true,
+                afs_dept_id: true,
+                afs_sec_id: true,
+                afs_role: true,
+                afs_af_id: true,
+            },
+        }),
     ]);
 
     const departmentsWithHead = departments.map((dept) => ({
@@ -401,6 +418,8 @@ async function getAllDevices() {
         departments: departmentsWithHead,
         sections: sectionsWithHead,
         categories,
+        approval_flows,
+        approval_flow_steps,
     };
 
 }
@@ -414,7 +433,7 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
         const approvalFlow = await tx.approval_flows.create({
             data: {
                 af_name,
-                af_is_active:true,
+                af_is_active: true,
                 af_us_id,
                 created_at: new Date(),
             },
@@ -438,30 +457,64 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
     });
 }
 async function getAllApproves() {
-  const [approval_flows, approval_flow_steps] = await Promise.all([
-    prisma.approval_flows.findMany({
-      select: {
-        af_id: true,
-        af_name: true,
-        af_is_active: true,
-      },
-    }),
-    prisma.approval_flow_steps.findMany({
-      select: {
-        afs_id: true,
-        afs_step_approve: true,
-        afs_dept_id: true,
-        afs_sec_id: true,
-        afs_role: true,
-        afs_af_id: true,
-      },
-    }),
-  ]);
+    const [departments, sections,] = await Promise.all([
+        prisma.departments.findMany({
+            select: {
+                dept_id: true,
+                dept_name: true,
+            },
+        }),
+        prisma.sections.findMany({
+            select: {
+                sec_id: true,
+                sec_name: true,
+                sec_dept_id: true,
+            },
+        }),
 
-  return {
-    approval_flows,
-    approval_flow_steps,
-  };
+
+    ]);
+
+    const departmentsWithHead = departments.map((dept) => ({
+        ...dept,
+        dept_name: `หัวหน้า${dept.dept_name}`,
+    }));
+
+    const sectionsWithHead = sections.map((sec) => ({
+        ...sec,
+        sec_name: `หัวหน้า${sec.sec_name}`,
+    }));
+
+
+    const seen = new Set<string>();
+
+    const staffOptions = sections.reduce<{ label: string }[]>((acc, item) => {
+        // ดึงชื่อแผนก (หลังคำว่า "แผนก" ก่อน "ฝ่ายย่อย")
+        const deptMatch = item.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
+        const deptName = deptMatch?.[1]?.trim();
+
+        // ดึงตัวอักษร A-Z หลังคำว่า "ฝ่ายย่อย"
+        const letterMatch = item.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
+        const letter = letterMatch?.[1];
+
+        // กันกรณีข้อมูลไม่ครบ หรือซ้ำ
+        if (!deptName || !letter || seen.has(`${letter}-${deptName}`)) {
+            return acc;
+        }
+        seen.add(`${letter}-${deptName}`);
+        acc.push({
+            label: `เจ้าหน้าที่คลัง ${letter} ${deptName}`,
+        });
+
+        return acc;
+    }, []);
+
+
+    return {
+        departments: departmentsWithHead,
+        sections: sectionsWithHead,
+        staffOptions
+    };
 }
 
 

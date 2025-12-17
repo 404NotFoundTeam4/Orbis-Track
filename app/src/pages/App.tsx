@@ -14,7 +14,8 @@ import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
 import { Inventory } from "./Inventory";
-import ForgotPassword from "./ForgotPassword"
+import ForgotPassword from "./ForgotPassword";
+import EditInventory from "./EditInventory";
 
 function App() {
   return (
@@ -41,23 +42,12 @@ function App() {
                 element={<Departments />}
               />
 
-              <Route 
-                path="/administrator/inventory" 
-                element={<Inventory />} 
-              />
-              <Route 
-                path="/staff/inventory" 
-                element={<Inventory />} 
-              />
               <Route path="/inventory" element={<Inventory />} />
+              <Route path="/inventory/edit" element={<EditInventory />} />
 
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route
-                path="/administrator/inventory/edit/:id"
-                element={<Inventory/>}
-              />
             </Route>
           </Route>
         </Routes>

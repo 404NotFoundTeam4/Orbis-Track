@@ -34,7 +34,7 @@ const Requests = () => {
   // Pagination States (server-side)
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const pageSize = 2;
+  const pageSize = 7;
 
   // Sorting States (server-side)
   const [sortField, setSortField] = useState<SortField | null>(null);

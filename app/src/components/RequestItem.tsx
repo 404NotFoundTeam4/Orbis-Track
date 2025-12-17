@@ -36,7 +36,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     className: "border-[#73D13D] text-[#73D13D]",
   },
   REJECTED: {
-    label: "ปฏิเสธ",
+    label: "ถูกปฏิเสธ",
     className: "border-red-400 text-red-600 bg-red-50",
   },
   IN_USE: {
@@ -128,7 +128,7 @@ const RequestItem = ({
     "https://placehold.co/200x150/png?text=Device";
   const sectionName =
     typeof ticket.device_summary.section === "object" &&
-      ticket.device_summary.section
+    ticket.device_summary.section
       ? ticket.device_summary.section
       : ticket.device_summary.section || "-";
 
@@ -228,16 +228,18 @@ const RequestItem = ({
           <FontAwesomeIcon
             size="lg"
             icon={faChevronDown}
-            className={`text-[#000000] transition-transform duration-200 ${isExpanded ? "transform rotate-180" : ""
-              }`}
+            className={`text-[#000000] transition-transform duration-200 ${
+              isExpanded ? "transform rotate-180" : ""
+            }`}
           />
         </div>
       </div>
 
       {/* Expanded Details */}
       <div
-        className={`transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-          }`}
+        className={`transition-all duration-300 ease-in-out ${
+          isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+        }`}
       >
         {isLoadingDetail ? (
           <div className="p-6 flex items-center justify-center">
@@ -262,20 +264,20 @@ const RequestItem = ({
                       คำขอถูกปฏิเสธ ({" "}
                       {ticketDetail.details.reject_date
                         ? new Date(
-                          ticketDetail.details.reject_date,
-                        ).toLocaleDateString("th-TH", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        }) +
-                        " - " +
-                        new Date(
-                          ticketDetail.details.reject_date,
-                        ).toLocaleTimeString("th-TH", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }) +
-                        " น."
+                            ticketDetail.details.reject_date,
+                          ).toLocaleDateString("th-TH", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }) +
+                          " - " +
+                          new Date(
+                            ticketDetail.details.reject_date,
+                          ).toLocaleTimeString("th-TH", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }) +
+                          " น."
                         : "-"}{" "}
                       )
                     </span>
@@ -297,50 +299,59 @@ const RequestItem = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
-                        ? "border-[#4CAF50] text-[#4CAF50]"
-                        : getStepTicket() === "APPROVED"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
+                        getStepTicket() === "PENDING"
                           ? "border-[#4CAF50] text-[#4CAF50]"
-                          : getStepTicket() === "IN_USE"
+                          : getStepTicket() === "APPROVED"
                             ? "border-[#4CAF50] text-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
+                            : getStepTicket() === "IN_USE"
                               ? "border-[#4CAF50] text-[#4CAF50]"
-                              : "border-[#9E9E9E] text-[#9E9E9E]"
-                        }`}
+                              : getStepTicket() === "COMPLETED"
+                                ? "border-[#4CAF50] text-[#4CAF50]"
+                                : getStepTicket() === "REJECTED"
+                                  ? "border-[#4CAF50] text-[#4CAF50]"
+                                  : "border-[#9E9E9E] text-[#9E9E9E]"
+                      }`}
                     >
                       <Icon
                         icon="ic:sharp-check"
                         width="20"
                         height="20"
-                      // color="blue"
+                        // color="blue"
                       />
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
-                        ? "bg-[#4CAF50]"
-                        : getStepTicket() === "APPROVED"
+                      className={`w-[2px] h-12 -my-1 ${
+                        getStepTicket() === "PENDING"
                           ? "bg-[#4CAF50]"
-                          : getStepTicket() === "IN_USE"
+                          : getStepTicket() === "APPROVED"
                             ? "bg-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
+                            : getStepTicket() === "IN_USE"
                               ? "bg-[#4CAF50]"
-                              : "bg-[#9E9E9E]"
-                        }`}
+                              : getStepTicket() === "COMPLETED"
+                                ? "bg-[#4CAF50]"
+                                : getStepTicket() === "REJECTED"
+                                  ? "bg-[#4CAF50]"
+                                  : "bg-[#9E9E9E]"
+                      }`}
                     ></div>
                   </div>
 
                   <div className="pt-2">
                     <span
-                      className={`text-sm font-medium ${getStepTicket() === "PENDING"
-                        ? " text-[#4CAF50]"
-                        : getStepTicket() === "APPROVED"
+                      className={`text-sm font-medium ${
+                        getStepTicket() === "PENDING"
                           ? " text-[#4CAF50]"
-                          : getStepTicket() === "IN_USE"
+                          : getStepTicket() === "APPROVED"
                             ? " text-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
-                              ? "text-[#4CAF50]"
-                              : " text-[#9E9E9E]"
-                        }`}
+                            : getStepTicket() === "IN_USE"
+                              ? " text-[#4CAF50]"
+                              : getStepTicket() === "COMPLETED"
+                                ? "text-[#4CAF50]"
+                                : getStepTicket() === "REJECTED"
+                                  ? "text-[#4CAF50]"
+                                  : " text-[#9E9E9E]"
+                      }`}
                     >
                       ส่งคำร้อง
                     </span>
@@ -351,52 +362,59 @@ const RequestItem = ({
                 <div className="flex gap-3 relative group">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
-                        ? "border-[#000000] text-[#000000]"
-                        : getStepTicket() === "APPROVED"
-                          ? "border-[#4CAF50] text-[#4CAF50]"
-                          : getStepTicket() === "IN_USE"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${
+                        getStepTicket() === "PENDING"
+                          ? "border-[#000000] text-[#000000]"
+                          : getStepTicket() === "APPROVED"
                             ? "border-[#4CAF50] text-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
+                            : getStepTicket() === "IN_USE"
                               ? "border-[#4CAF50] text-[#4CAF50]"
-                              : getStepTicket() === "REJECTED"
-                                ? "border-[#FF4D4F] text-[#FF4D4F]"
-                                : "border-[#9E9E9E] text-[#9E9E9E]"
-                        }`}
+                              : getStepTicket() === "COMPLETED"
+                                ? "border-[#4CAF50] text-[#4CAF50]"
+                                : getStepTicket() === "REJECTED"
+                                  ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                  : "border-[#9E9E9E] text-[#9E9E9E]"
+                      }`}
                     >
-                      <Icon
-                        icon="streamline-ultimate:task-list-approve"
-                        width="20"
-                        height="20"
-                      />
+                      {getStepTicket() !== "REJECTED" ? (
+                        <Icon
+                          icon="streamline-ultimate:task-list-approve"
+                          width="20"
+                          height="20"
+                        />
+                      ) : (
+                        <Icon icon="mdi:close" width="20" height="20" />
+                      )}
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
-                        ? "bg-[#9E9E9E]"
-                        : getStepTicket() === "APPROVED"
-                          ? "bg-[#4CAF50]"
-                          : getStepTicket() === "IN_USE"
+                      className={`w-[2px] h-12 -my-1 ${
+                        getStepTicket() === "PENDING"
+                          ? "bg-[#9E9E9E]"
+                          : getStepTicket() === "APPROVED"
                             ? "bg-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
+                            : getStepTicket() === "IN_USE"
                               ? "bg-[#4CAF50]"
-                              : "bg-[#9E9E9E]"
-                        }`}
+                              : getStepTicket() === "COMPLETED"
+                                ? "bg-[#4CAF50]"
+                                : "bg-[#9E9E9E]"
+                      }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`cursor-pointer ${getStepTicket() === "PENDING"
-                        ? " text-[#000000]"
-                        : getStepTicket() === "APPROVED"
-                          ? " text-[#4CAF50]"
-                          : getStepTicket() === "IN_USE"
+                      className={`cursor-pointer ${
+                        getStepTicket() === "PENDING"
+                          ? " text-[#000000]"
+                          : getStepTicket() === "APPROVED"
                             ? " text-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
-                              ? "text-[#4CAF50]"
-                              : getStepTicket() === "REJECTED"
-                                ? "border-[#FF4D4F] text-[#FF4D4F]"
-                                : " text-[#9E9E9E]"
-                        }`}
+                            : getStepTicket() === "IN_USE"
+                              ? " text-[#4CAF50]"
+                              : getStepTicket() === "COMPLETED"
+                                ? "text-[#4CAF50]"
+                                : getStepTicket() === "REJECTED"
+                                  ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                  : " text-[#9E9E9E]"
+                      }`}
                     >
                       อนุมัติ
                     </span>
@@ -424,30 +442,38 @@ const RequestItem = ({
                                   {/* Icon & Line */}
                                   <div className="flex flex-col items-center">
                                     <div
-                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
-                                        ? "border-[#4CAF50] text-[#4CAF50]"
-                                        : stage.status === "REJECTED"
-                                          ? "border-[#FF4D4F] text-[#FF4D4F]"
-                                          : isNextApprover
-                                            ? "border-[#000000] text-[#000000]"
-                                            : "border-[#9E9E9E] text-[#9E9E9E]"
-                                        }`}
+                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
+                                        stage.status === "APPROVED"
+                                          ? "border-[#4CAF50] text-[#4CAF50]"
+                                          : stage.status === "REJECTED"
+                                            ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                            : isNextApprover
+                                              ? "border-[#000000] text-[#000000]"
+                                              : "border-[#9E9E9E] text-[#9E9E9E]"
+                                      }`}
                                     >
-                                      <Icon
-                                        icon="ic:sharp-check"
-                                        width="14"
-                                        height="14"
-                                      />
+                                      {getStepTicket() !== "REJECTED" ? (
+                                        <Icon
+                                          icon="ic:sharp-check"
+                                          width="14"
+                                          height="14"
+                                        />
+                                      ) : (
+                                        <Icon
+                                          icon="mdi:close"
+                                          width="14"
+                                          height="14"
+                                        />
+                                      )}
                                     </div>
                                     {/* Connecting Line - hide for last item */}
                                     {!isLast && (
                                       <div
-                                        className={`w-[2px] h-8 -my-1 ${stage.status === "APPROVED"
-                                          ? "bg-[#4CAF50]"
-                                          : stage.status === "REJECTED"
-                                            ? "bg-[#FF4D4F]"
+                                        className={`w-[2px] h-8 -my-1 ${
+                                          stage.status === "APPROVED"
+                                            ? "bg-[#4CAF50]"
                                             : "bg-[#9E9E9E]"
-                                          }`}
+                                        }`}
                                       ></div>
                                     )}
                                   </div>
@@ -456,14 +482,15 @@ const RequestItem = ({
                                     className={`pt-1 ${!isLast ? "pb-3" : ""} `}
                                   >
                                     <span
-                                      className={`text-sm ${stage.status === "APPROVED"
-                                        ? "text-[#4CAF50]"
-                                        : stage.status === "REJECTED"
-                                          ? "text-[#FF4D4F]"
-                                          : isNextApprover
-                                            ? "text-[#000000]"
-                                            : "text-[#9E9E9E]"
-                                        }`}
+                                      className={`text-sm ${
+                                        stage.status === "APPROVED"
+                                          ? "text-[#4CAF50]"
+                                          : stage.status === "REJECTED"
+                                            ? "text-[#FF4D4F]"
+                                            : isNextApprover
+                                              ? "text-[#000000]"
+                                              : "text-[#9E9E9E]"
+                                      }`}
                                     >
                                       {stage.role_name}
                                       {stage.dept_name && ` ${stage.dept_name}`}
@@ -482,49 +509,52 @@ const RequestItem = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
-                        ? "border-[#9E9E9E] text-[#9E9E9E]"
-                        : getStepTicket() === "APPROVED"
-                          ? "border-[#000000] text-[#000000]"
-                          : getStepTicket() === "IN_USE"
-                            ? "border-[#4CAF50] text-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
+                        getStepTicket() === "PENDING"
+                          ? "border-[#9E9E9E] text-[#9E9E9E]"
+                          : getStepTicket() === "APPROVED"
+                            ? "border-[#000000] text-[#000000]"
+                            : getStepTicket() === "IN_USE"
                               ? "border-[#4CAF50] text-[#4CAF50]"
-                              : "border-[#9E9E9E] text-[#9E9E9E]"
-                        }`}
+                              : getStepTicket() === "COMPLETED"
+                                ? "border-[#4CAF50] text-[#4CAF50]"
+                                : "border-[#9E9E9E] text-[#9E9E9E]"
+                      }`}
                     >
                       <Icon
                         icon="material-symbols-light:devices-outline"
                         width="23"
                         height="23"
-                      // color="blue"
+                        // color="blue"
                       />
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
-                        ? "bg-[#9E9E9E]"
-                        : getStepTicket() === "APPROVED"
+                      className={`w-[2px] h-12 -my-1 ${
+                        getStepTicket() === "PENDING"
                           ? "bg-[#9E9E9E]"
-                          : getStepTicket() === "IN_USE"
-                            ? "bg-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
+                          : getStepTicket() === "APPROVED"
+                            ? "bg-[#9E9E9E]"
+                            : getStepTicket() === "IN_USE"
                               ? "bg-[#4CAF50]"
-                              : "bg-[#9E9E9E]"
-                        }`}
+                              : getStepTicket() === "COMPLETED"
+                                ? "bg-[#4CAF50]"
+                                : "bg-[#9E9E9E]"
+                      }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`${getStepTicket() === "PENDING"
-                        ? " text-[#9E9E9E]"
-                        : getStepTicket() === "APPROVED"
-                          ? " text-[#000000]"
-                          : getStepTicket() === "IN_USE"
-                            ? " text-[#4CAF50]"
-                            : getStepTicket() === "COMPLETED"
-                              ? "text-[#4CAF50]"
-                              : " text-[#9E9E9E]"
-                        }`}
+                      className={`${
+                        getStepTicket() === "PENDING"
+                          ? " text-[#9E9E9E]"
+                          : getStepTicket() === "APPROVED"
+                            ? " text-[#000000]"
+                            : getStepTicket() === "IN_USE"
+                              ? " text-[#4CAF50]"
+                              : getStepTicket() === "COMPLETED"
+                                ? "text-[#4CAF50]"
+                                : " text-[#9E9E9E]"
+                      }`}
                     >
                       กำลังใช้งาน
                     </span>
@@ -535,37 +565,39 @@ const RequestItem = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
-                        ? "border-[#9E9E9E] text-[#9E9E9E]"
-                        : getStepTicket() === "APPROVED"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
+                        getStepTicket() === "PENDING"
                           ? "border-[#9E9E9E] text-[#9E9E9E]"
-                          : getStepTicket() === "IN_USE"
-                            ? "border-[#000000] text-[#000000]"
-                            : getStepTicket() === "COMPLETED"
-                              ? "border-[#4CAF50] text-[#4CAF50]"
-                              : "border-[#9E9E9E] text-[#9E9E9E]"
-                        }`}
+                          : getStepTicket() === "APPROVED"
+                            ? "border-[#9E9E9E] text-[#9E9E9E]"
+                            : getStepTicket() === "IN_USE"
+                              ? "border-[#000000] text-[#000000]"
+                              : getStepTicket() === "COMPLETED"
+                                ? "border-[#4CAF50] text-[#4CAF50]"
+                                : "border-[#9E9E9E] text-[#9E9E9E]"
+                      }`}
                     >
                       <Icon
                         icon="streamline:return-2"
                         width="20"
                         height="20"
-                      // color="blue"
+                        // color="blue"
                       />
                     </div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`${getStepTicket() === "PENDING"
-                        ? " text-[#9E9E9E]"
-                        : getStepTicket() === "APPROVED"
+                      className={`${
+                        getStepTicket() === "PENDING"
                           ? " text-[#9E9E9E]"
-                          : getStepTicket() === "IN_USE"
-                            ? " text-[#000000]"
-                            : getStepTicket() === "COMPLETED"
-                              ? "text-[#4CAF50]"
-                              : " text-[#9E9E9E]"
-                        }`}
+                          : getStepTicket() === "APPROVED"
+                            ? " text-[#9E9E9E]"
+                            : getStepTicket() === "IN_USE"
+                              ? " text-[#000000]"
+                              : getStepTicket() === "COMPLETED"
+                                ? "text-[#4CAF50]"
+                                : " text-[#9E9E9E]"
+                      }`}
                     >
                       คืนอุปกรณ์
                     </span>
@@ -701,9 +733,9 @@ const RequestItem = ({
                     <span className="text-[#636363] text-sm">
                       {ticketDetail?.requester.us_phone
                         ? ticketDetail.requester.us_phone.replace(
-                          /(\d{3})(\d{3})(\d{4})/,
-                          "$1-$2-$3",
-                        )
+                            /(\d{3})(\d{3})(\d{4})/,
+                            "$1-$2-$3",
+                          )
                         : "000-000-0000"}
                     </span>
                   </div>
@@ -716,7 +748,7 @@ const RequestItem = ({
                     </span>
                   </div>
                   {ticketDetail?.accessories &&
-                    ticketDetail.accessories.length > 0 ? (
+                  ticketDetail.accessories.length > 0 ? (
                     ticketDetail.accessories.map((acc, index) => (
                       <div
                         key={acc.acc_id || index}

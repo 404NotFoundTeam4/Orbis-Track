@@ -11,140 +11,129 @@ import type { TicketDevice } from "../services/TicketsService";
 import Button from "./Button";
 
 interface DeviceListModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    devices: TicketDevice[];
-    onConfirm?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  devices: TicketDevice[];
+  onConfirm?: () => void;
 }
 
 // Status display configuration (matching Figma)
 const statusConfig: Record<string, { label: string; className: string }> = {
-    READY: {
-        label: "พร้อมใช้งาน",
-        className: "border-[#73D13D] text-[#73D13D]",
-    },
-    IN_USE: {
-        label: "กำลังใช้งาน",
-        className: "border-[#40A9FF] text-[#40A9FF]",
-    },
-    REPAIRING: {
-        label: "กำลังซ่อม",
-        className: "border-[#FDBA74] text-[#C2410C]",
-    },
-    BROKEN: {
-        label: "ชำรุด",
-        className: "border-[#FCA5A5] text-[#B91C1C]",
-    },
-    LOST: {
-        label: "สูญหาย",
-        className: "border-[#9CA3AF] text-[#111827]",
-    },
+  READY: {
+    label: "พร้อมใช้งาน",
+    className: "border-[#73D13D] text-[#73D13D]",
+  },
+  IN_USE: {
+    label: "กำลังใช้งาน",
+    className: "border-[#40A9FF] text-[#40A9FF]",
+  },
+  REPAIRING: {
+    label: "กำลังซ่อม",
+    className: "border-[#FDBA74] text-[#C2410C]",
+  },
+  BROKEN: {
+    label: "ชำรุด",
+    className: "border-[#FCA5A5] text-[#B91C1C]",
+  },
+  LOST: {
+    label: "สูญหาย",
+    className: "border-[#9CA3AF] text-[#111827]",
+  },
 };
 
 const DeviceListModal = ({
-    isOpen,
-    onClose,
-    devices,
-    onConfirm,
+  isOpen,
+  onClose,
+  devices,
+  onConfirm,
 }: DeviceListModalProps) => {
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    // Check if any device has serial number
-    const hasSerialNumber = devices.some(
-        (d) => d.serial && d.serial.trim() !== "",
-    );
+  // Check if any device has serial number
+  const hasSerialNumber = devices.some(
+    (d) => d.serial && d.serial.trim() !== "",
+  );
 
-    // const hasSerialNumber = null;
+  // const hasSerialNumber = null;
 
-    const getStatusStyle = (status: string) => {
-        return (
-            statusConfig[status] || {
-                label: status,
-                className: "border-[#1890FF] text-[#1890FF]",
-            }
-        );
-    };
-
+  const getStatusStyle = (status: string) => {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/50" onClick={onClose}></div>
-
-            {/* Modal - Fixed size 1025x920 */}
-            <div className="relative bg-white rounded-2xl shadow-xl w-[1025px] h-[920px]  max-h-[920px] overflow-y-auto flex flex-col px-[43px] py-[25px]">
-                {/* Header */}
-                <div className="flex items-center justify-between pb-4">
-                    <h2 className="text-2xl font-bold text-black">รายการอุปกรณ์</h2>
-                    <button
-                        onClick={onClose}
-                        className="w-8 h-8 rounded-full border border-black flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                        <Icon icon="mdi:close" width="20" height="20" />
-                    </button>
-                </div>
-
-                {/* Table with div-based layout */}
-                <div className="flex-1 overflow-auto">
-                    {/* Table Header - Rounded */}
-                    <div className="bg-[#F5F5F5] rounded-full text-black sticky top-0 flex py-3 px-6">
-                        <div className="font-medium w-[100px]">ลำดับ</div>
-                        {!hasSerialNumber && <div className="text-black flex-1"></div>}
-                        <div className={`font-medium flex-1`}>รหัสอุปกรณ์</div>
-                        {!hasSerialNumber && <div className="text-black flex-1"></div>}
-                        {hasSerialNumber && (
-                            <div className="font-medium flex-1">Serial Number</div>
-                        )}
-                        <div className="font-medium w-[120px] text-left">สถานะ</div>
-                    </div>
-
-                    {/* Table Body */}
-                    <div>
-                        {devices.map((device, index) => {
-                            const statusStyle = getStatusStyle(device.current_status);
-                            return (
-                                <div
-                                    key={device.child_id || index}
-                                    className="flex border-b border-gray-100 items-center py-4 px-6"
-                                >
-                                    <div className="text-black w-[100px]">{index + 1}</div>
-                                    {!hasSerialNumber && (
-                                        <div className="text-black flex-1"></div>
-                                    )}
-                                    <div className={`text-black flex-1`}>{device.asset_code}</div>
-                                    {!hasSerialNumber && (
-                                        <div className="text-black flex-1"></div>
-                                    )}
-                                    {hasSerialNumber && (
-                                        <div className="text-black flex-1">
-                                            {device.serial || "-"}
-                                        </div>
-                                    )}
-                                    <div className="w-[120px] flex justify-start">
-                                        <span
-                                            className={`flex items-center justify-center px-4 py-2 border rounded-full text-sm whitespace-nowrap ${statusStyle.className}`}
-                                        >
-                                            {statusStyle.label}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="pt-4 flex justify-end">
-                    <Button
-                        variant="primary"
-                        onClick={onConfirm || onClose}
-                        style={{ width: 105, height: 46, padding: "5px 15px" }}
-                    >
-                        ยืนยัน
-                    </Button>
-                </div>
-            </div>
-        </div>
+      statusConfig[status] || {
+        label: status,
+        className: "border-[#1890FF] text-[#1890FF]",
+      }
     );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose}></div>
+
+      {/* Modal - Fixed size 1025x920 */}
+      <div className="relative bg-white rounded-2xl shadow-xl w-[1025px] h-[920px]  max-h-[920px] overflow-y-auto flex flex-col px-[43px] py-[25px]">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4">
+          <h2 className="text-2xl font-bold text-black">รายการอุปกรณ์</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full border border-black flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            <Icon icon="mdi:close" width="20" height="20" />
+          </button>
+        </div>
+
+        {/* Table with div-based layout */}
+        <div className="flex-1 overflow-auto">
+          {/* Table Header - Rounded */}
+          <div className="bg-[#F5F5F5] rounded-full text-black sticky top-0 flex py-3 px-6">
+            <div className="font-medium w-[100px]">ลำดับ</div>
+            {!hasSerialNumber && <div className="text-black flex-1"></div>}
+            <div className={`font-medium flex-1`}>รหัสอุปกรณ์</div>
+            {!hasSerialNumber && <div className="text-black flex-1"></div>}
+            {hasSerialNumber && (
+              <div className="font-medium flex-1">Serial Number</div>
+            )}
+            <div className="font-medium w-[120px] text-left">สถานะ</div>
+          </div>
+
+          {/* Table Body */}
+          <div>
+            {devices.map((device, index) => {
+              const statusStyle = getStatusStyle(device.current_status);
+              return (
+                <div
+                  key={device.child_id || index}
+                  className="flex border-b border-gray-100 items-center py-4 px-6"
+                >
+                  <div className="text-black w-[100px]">{index + 1}</div>
+                  {!hasSerialNumber && (
+                    <div className="text-black flex-1"></div>
+                  )}
+                  <div className={`text-black flex-1`}>{device.asset_code}</div>
+                  {!hasSerialNumber && (
+                    <div className="text-black flex-1"></div>
+                  )}
+                  {hasSerialNumber && (
+                    <div className="text-black flex-1">
+                      {device.serial || "-"}
+                    </div>
+                  )}
+                  <div className="w-[120px] flex justify-start">
+                    <span
+                      className={`flex items-center justify-center px-4 py-2 border rounded-full text-sm whitespace-nowrap ${statusStyle.className}`}
+                    >
+                      {statusStyle.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default DeviceListModal;

@@ -7,6 +7,7 @@ import { Icon } from "@iconify/react";
 import api from "../api/axios.js";
 import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
+import getImageUrl from "../services/GetImage.js";
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -167,90 +168,70 @@ export const Users = () => {
     setSelectedUser(null);
   };
   const handleSaveUser = async (updatedData: Partial<User>) => {
-    console.log(updatedData);
-    // 1. ตรวจสอบ us_id
     if (!updatedData.us_id) {
       console.error("Cannot save user: missing us_id for update");
       return;
     }
-    const {
-      us_emp_code,
-      us_firstname,
-      us_lastname,
-      us_username,
-      us_email,
-      us_phone,
-      us_images,
-      us_role,
-      us_dept_id,
-      us_sec_id,
-    } = updatedData;
-    const updateNewData = {
-      us_emp_code,
-      us_firstname,
-      us_lastname,
-      us_username,
-      us_email,
-      us_phone,
-      us_images,
-      us_role,
-      us_dept_id,
-      us_sec_id,
-    };
 
     try {
+      const formData = new FormData();
+
+      (Object.keys(updatedData) as (keyof User)[]).forEach((key) => {
+        const value = updatedData[key];
+
+        if (value !== undefined && value !== null) {
+          if (key === "us_images") {
+            if (value instanceof File) {
+              formData.append(key, value);
+            }
+            return;
+          }
+
+          // key อื่นๆ (ชื่อ, นามสกุล) ส่งปกติ
+          formData.append(key, value as any);
+        }
+      });
       //ส่ง Request (PATCH)
-      const res = await api.patch(
-        `/accounts/${updatedData.us_id}`,
-        updateNewData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      const res = await api.patch(`/accounts/${updatedData.us_id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
-      console.log("✅ PATCH Response:", res.data);
-      // จัดการ Response
+      });
+
       if (res.data?.success) {
         toast.push({ message: "การแก้ไขสำเร็จ!", tone: "confirm" });
+
+        // อัปเดต State ให้รูปเปลี่ยนทันทีโดยไม่ต้องรีเฟรช
         setusers((prevUsers) => {
           return prevUsers.map((user) => {
             if (user.us_id === updatedData.us_id) {
-              // ผสานข้อมูลที่แก้ไขเข้ามา
               const mergedUser = { ...user, ...updatedData };
 
-              // หาชื่อแผนกและฝ่ายย่อยใหม่
-              const dept = departments.find(
-                (d) => d.dept_id === mergedUser.us_dept_id,
-              );
-              const sec = sections.find(
-                (s) => s.sec_id === mergedUser.us_sec_id,
-              );
-
-              // กำหนดชื่อแผนกและฝ่ายย่อย (โดยให้ฝ่ายย่อยเป็น '-' ได้)
-              const newDeptName = dept ? dept.dept_name : user.us_dept_name;
-              const newSecName = sec
-                ? sec.sec_name
-                : updatedData.us_sec_id === 0 || !updatedData.us_sec_id
-                  ? "-"
-                  : user.us_sec_name;
+              // Logic โชว์รูป Preview ทันที
+              let newImage = user.us_images;
+              if (updatedData.us_images instanceof File) {
+                newImage = URL.createObjectURL(updatedData.us_images);
+              }
 
               return {
                 ...mergedUser,
-                us_dept_name: newDeptName,
-                us_sec_name: newSecName,
+                // ... update logic อื่นๆ ...
+                us_dept_name:
+                  departments.find((d) => d.dept_id === mergedUser.us_dept_id)
+                    ?.dept_name || user.us_dept_name,
+                us_sec_name:
+                  sections.find((s) => s.sec_id === mergedUser.us_sec_id)
+                    ?.sec_name ||
+                  (mergedUser.us_sec_id ? user.us_sec_name : "-"),
+                us_images: newImage,
               };
             }
             return user;
           });
         });
-        return;
+      } else {
+        toast.push({ message: "เกิดข้อผิดพลาด", tone: "danger" });
       }
-
-      toast.push({
-        message: "เกิดข้อผิดพลาด ไม่สามารถบันทึกได้",
-        tone: "danger",
-      });
     } catch (err: any) {
       console.error("❌ Error (catch):", err);
 
@@ -276,41 +257,45 @@ export const Users = () => {
   // ฟังก์ชันเพิ่มผู้ใช้ใหม่
   const handleAddUser = async (newUserData: NewUserPayload) => {
     console.log(newUserData);
-    // เรียก API POST เพื่อเพิ่มผู้ใช้ใหม่
-    const {
-      us_emp_code,
-      us_firstname,
-      us_lastname,
-      us_username,
-      us_password,
-      us_email,
-      us_phone,
-      us_images,
-      us_role,
-      us_dept_id,
-      us_sec_id,
-      us_is_active,
-    } = newUserData;
-    const newUser = {
-      us_emp_code,
-      us_firstname,
-      us_lastname,
-      us_username,
-      us_password,
-      us_email,
-      us_phone,
-      us_images,
-      us_role,
-      us_dept_id,
-      us_sec_id,
-      us_is_active,
-    };
 
     try {
-      await api.post(`/accounts`, newUser);
-      setRefreshTrigger((prev) => prev + 1);
+      const formData = new FormData();
 
+      (Object.keys(newUserData) as (keyof NewUserPayload)[]).forEach((key) => {
+        const value = newUserData[key];
+        // เช็คว่ามีค่าไหม ถ้ามีให้ยัดลงไป
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as any);
+        }
+      });
 
+      const response = await api.post(`/accounts`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setusers((prevUsers) => {
+        const newUser = {
+          ...newUserData,
+          us_id: response.data.data?.us_id || response.data.id || Date.now(),
+          us_dept_name:
+            departments.find((d) => d.dept_id === newUserData.us_dept_id)
+              ?.dept_name || "",
+          us_sec_name:
+            sections.find((s) => s.sec_id === newUserData.us_sec_id)
+              ?.sec_name || "-",
+          created_at: new Date(),
+          us_is_active: true,
+          // ถ้าเป็นไฟล์ ให้สร้าง URL หลอกๆ มาโชว์ก่อนรีเฟรช
+          us_images:
+            newUserData.us_images instanceof File
+              ? URL.createObjectURL(newUserData.us_images)
+              : null,
+        } as User;
+
+        return [...prevUsers, newUser];
+      });
       // แสดงข้อความสำเร็จ
 
       toast.push({
@@ -318,14 +303,12 @@ export const Users = () => {
         tone: "confirm",
         
       });
-      handleCloseModal();
     } catch {
       // จัดการข้อผิดพลาด
       toast.push({
         message: "เกิดข้อผิดพลาด ไม่สามารถเพิ่มบัญชีผู้ใช้ได้",
         tone: "danger",
       });
-      handleCloseModal();
     } finally {
       // ปิด Modal
       handleCloseModal();
@@ -380,7 +363,7 @@ export const Users = () => {
       try {
         const res = await api.get("/accounts");
         const data = res.data;
-        console.log(res)
+
         setSections(data.data.sections || []);
         setDepartments(data.data.departments || []);
         setusers(data.data.accountsWithDetails || []);
@@ -515,7 +498,7 @@ export const Users = () => {
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
-  const pageSize = 20; // 10/20/50 ก็ได้
+  const pageSize = 10; // 10/20/50 ก็ได้
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   useEffect(() => {
@@ -715,14 +698,14 @@ export const Users = () => {
                 <div className="py-2 px-4 flex items-center">
                   {u.us_images ? (
                     <img
-                      src={u.us_images}
+                      src={getImageUrl(u.us_images)}
                       alt={u.us_firstname}
                       className="w-10 h-10 rounded-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).onerror = null;
-                        (e.target as HTMLImageElement).src =
-                          `https://placehold.co/40x40/E0E7FF/3B82F6?text=${u.us_firstname.charAt(0)}`;
-                      }}
+                      // onError={(e) => {
+                      //   (e.target as HTMLImageElement).onerror = null;
+                      //   (e.target as HTMLImageElement).src =
+                      //     `https://placehold.co/40x40/E0E7FF/3B82F6?text=${u.us_firstname.charAt(0)}`;
+                      // }}
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">

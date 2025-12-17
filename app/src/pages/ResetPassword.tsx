@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { verifyEmail } from "../hooks/verifyEmail.js"
 import { Icon } from "@iconify/react";
-export function Resetpassword() {
+export function ResetPassword() {
   const { ResetPW } = verifyEmail();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -23,13 +23,18 @@ export function Resetpassword() {
     upper: /[A-Z]/.test(password),
     lower: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
-    special:  /^(?=.*[!@#$%^&*()_\-+=<>?{}])\S+$/.test(password),
-    noThai: !/[ก-๙]/.test(password),
+    special: /^(?=.*[!@#$%^&*()_\-+=<>?{}])/.test(password),
+    noSpace: !/\s/.test(password),
   };
 
   const allValid = Object.values(validations).every(Boolean);
   const match = password && password === confirm;
-
+  const getNewPassword = (Password, ConfrimPassword) => {
+    const query = new URLSearchParams(location.search);
+    const token = query.get("token") || "";
+    console.log(token, Password, ConfrimPassword)
+    ResetPW(token, Password, ConfrimPassword)
+  }
   return (
     <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
       {/* ==== พื้นหลัง ==== */}
@@ -203,7 +208,7 @@ export function Resetpassword() {
                 </li>
                 <li
                   className={
-                    validations.noThai ? "text-[#73D13D]" : "text-[#CDCDCD]"
+                    validations.noSpace ? "text-[#73D13D]" : "text-[#CDCDCD]"
                   }
                 >
                   • ห้ามมีการเว้นวรรค
@@ -251,11 +256,11 @@ export function Resetpassword() {
             <div className="flex items-center justify-center">
               <button
                 className={`w-[225px] h-[76px] py-2 rounded-full text-white font-bold text-[32px]  transition ${allValid && match
-                    ? "bg-sky-500 hover:bg-sky-600"
-                    : "bg-gray-300 cursor-not-allowed"
+                  ? "bg-sky-500 hover:bg-sky-600"
+                  : "bg-gray-300 cursor-not-allowed"
                   }`}
                 disabled={!allValid || !match}
-                onClick={() => ResetPW(email, password, confirm)}
+                onClick={() => getNewPassword(password, confirm)}
               >
                 บันทึก
               </button>
@@ -266,4 +271,4 @@ export function Resetpassword() {
     </div>
   );
 }
-export default Resetpassword;
+export default ResetPassword;

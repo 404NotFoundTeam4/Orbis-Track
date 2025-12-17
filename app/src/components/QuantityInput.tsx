@@ -4,7 +4,8 @@ interface QuantityInputProps {
   label?: string; // ข้อความ
   min?: number; // จำนวนต่ำสุด
   max?: number; // จำนวนสูงสุด
-  value: number;
+  value: number | null;
+  width?: number;
   onChange?: (value: number) => void; // เปลี่ยนแปลงค่า
 }
 
@@ -14,6 +15,7 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
   min = 0,
   max = 99,
   value,
+  width = "260",
   onChange,
 }) => {
   // ค่าในช่อง input
@@ -65,9 +67,13 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
       {/* Label */}
       <label className="text-[16px]">{label}</label>
       {/* Input Box */}
-      <div className="flex items-center overflow-hidden border border-[#A2A2A2] rounded-[8px] w-[260px] h-[46px] py-[8px]">
+      <div
+        className="flex items-center overflow-hidden border border-[#A2A2A2] rounded-[8px] h-[46px] py-[8px]"
+        style={{ width: width }}
+      >
         {/* ลดจำนวน */}
         <button
+          type="button"
           onClick={decreaseValue}
           className="flex justify-center items-center text-2xl border-r border-[#A2A2A2] w-[46px] h-[46px] hover:bg-gray-100"
         >
@@ -83,6 +89,7 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
         ></input>
         {/* เพิ่มจำนวน */}
         <button
+          type="button"
           onClick={increaseValue}
           className="flex justify-center items-center text-2xl border-l border-[#A2A2A2] w-[46px] h-[46px] hover:bg-gray-100"
         >

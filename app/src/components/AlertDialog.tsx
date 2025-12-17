@@ -48,7 +48,7 @@ export type AlertDialogProps = {
 };
 
 const TONE_HEX: Record<AlertTone, string> = {
-  success: "#FFC53D",
+  success: "#52C41A",
   warning: "#FFC53D",
   danger: "#FF4D4F",
   devicewarning: "#FFC53D",

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/userStore";
 import { Login, UserData } from "../services/AccountService.js";
-import { SaveToken, GetValidToken, ClearToken } from "../services/remember.js";
+import { SaveToken, GetValidToken, ClearToken } from "../services/Remember.js";
 
 /**
  * Class: useLogin สำหรับนำไปเรียกใช้
@@ -38,13 +38,17 @@ export const useLogin = () => {
           return;
         }
         const User = await UserData(validToken);
+        setUser(User); // เก็บ user ลงใน store เพื่อให้หน้าอื่นใช้งานได้
+
         if (isRemember) {
-          localStorage.setItem("rememberUser", JSON.stringify(User));
+          localStorage.setItem("User", JSON.stringify(User));
         } else {
-          localStorage.removeItem("rememberUser");
+          localStorage.removeItem("User");
+          sessionStorage.setItem("User", JSON.stringify(User));
+
         }
 
-        navigate("/users", { state: { user: User } });
+        navigate("/users");
         return res?.success;
       }
     } catch {

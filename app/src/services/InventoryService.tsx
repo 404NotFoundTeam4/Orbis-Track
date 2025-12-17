@@ -63,6 +63,19 @@ export interface Accessory {
   acc_quantity: number;
 }
 
+export interface ApprovalFlowStepPayload {
+  afs_step_approve: number;
+  afs_dept_id: number | null;
+  afs_sec_id: number | null;
+  afs_role: "STAFF" | "HOD" | "HOS";
+}
+
+export interface CreateApprovalFlowPayload {
+  af_name: string;
+  af_us_id: number;
+  approvalflowsstep: ApprovalFlowStepPayload[];
+}
+
 export interface CreateDeviceResponse {
   message: string;
 }
@@ -137,7 +150,7 @@ export const DeviceService = {
   },
 
   getAllDevices: async ():Promise<getAllDevices>=>{
-    const {data} = await api.get("/inventory/add")
+    const {data} = await api.get("/inventory/add-devices")
     return data;
   },
 
@@ -146,11 +159,24 @@ export const DeviceService = {
   ): Promise<CreateDeviceResponse> => {
    
     const res = await api.post<CreateDeviceResponse>(
-      "/inventory/add",
+      "/inventory/devices",
       payload,
     );
     return res.data;
   },
+
+  createApprove:async(
+    payload:CreateApprovalFlowPayload
+  ):Promise<CreateDeviceResponse>=>{
+      const res = api.post("inventory/approval",payload)
+      return res
+  },
+
+  getApprove: async() =>{
+    const {data} = await api.get("/inventory/add-approval")
+    return data;
+  }
+  
 };
 
 

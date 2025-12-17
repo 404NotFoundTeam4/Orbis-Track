@@ -20,25 +20,20 @@ const createAccessoriesSchema = z.object({
 
 const createApprovalFlowsStepPayload = z.object({
     afs_step_approve: z.coerce.number().int().positive(),
-    afs_dept_id: z.coerce.number().int().positive(),
+    afs_dept_id: z.coerce.number().int().positive().nullable().optional(),
     afs_sec_id: z.coerce.number().int().positive().nullable().optional(),
     afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
 });
 
 export const createApprovalFlowsPayload = z.object({
     af_name: z.string().min(1).max(100),
-    af_is_active: z.boolean().default(true),
     af_us_id: z.coerce.number().int().positive(),
-    approvalflowssteppayload: z.preprocess((val) => {
-        if (typeof val === "string") {
-            try {
-                return JSON.parse(val);
-            } catch {
-                return val;
-            }
-        }
-        return val;
-    }, z.array(createApprovalFlowsStepPayload).min(1))
+   approvalflowsstep: z.preprocess((val) => {
+  if (typeof val === "string") {
+    return JSON.parse(val);
+  }
+  return val;
+}, z.array(createApprovalFlowsStepPayload).min(1))
 });
 
 export const serialNumbersPayload = z.object({
@@ -85,26 +80,30 @@ export const createDevicePayload = z.object({
 
 
 export const getApprovalFlowStepResponseSchema = z.object({
-    afs_id: z.number(),
-    afs_step_approve: z.number(),
-    afs_dept_id: z.number(),
-    afs_sec_id: z.number().nullable(),
-    afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
-    afs_af_id: z.number(),
+  afs_id: z.number(),
+  afs_step_approve: z.number(),
+  afs_dept_id: z.number(),
+  afs_sec_id: z.number().nullable(),
+  afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
+  afs_af_id: z.number(),
+});
+
+
+export const getApprovalFlowOnlySchema = z.object({
+  af_id: z.number(),
+  af_name: z.string(),
+  af_is_active: z.boolean(),
 });
 
 export const getApprovalFlowSchema = z.object({
-    approval_flows: z.array(
-        z.object({
-            af_id: z.number(),
-            af_name: z.string(),
-            af_is_active: z.boolean(),
-        })
-    )
+  approval_flows: z.array(getApprovalFlowOnlySchema),
+  approval_flow_steps: z.array(getApprovalFlowStepResponseSchema),
 });
 
 
-export const approvalFlowStepResponseSchema = z.object({
+    
+
+export const createapprovalFlowStepResponseSchema = z.object({
     afs_id: z.number(),
     afs_step_approve: z.number(),
     afs_dept_id: z.number(),
@@ -118,7 +117,7 @@ export const createApprovalFlowResponseSchema = z.object({
     af_name: z.string(),
     af_is_active: z.boolean(),
     af_us_id: z.number(),
-    flowstep: z.array(approvalFlowStepResponseSchema)
+    flowstep: z.array(createapprovalFlowStepResponseSchema)
 });
 
 export const serialNumbersSchma = z.object({

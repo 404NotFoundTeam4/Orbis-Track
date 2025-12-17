@@ -18,8 +18,8 @@ import {
 
 const inventoryController = new InventoryController();
 const router = new Router(undefined, '/inventory');
-router.postDoc("/add", { tag: "Inventory", body: createDevicePayload, res: createDeviceResponseSchema, auth: true }, upload.single("de_images"), inventoryController.createDevice);
-router.getDoc("/add", { tag: "Inventory", res: getDeviceWithSchema, auth: true }, inventoryController.getDevices);
+router.postDoc("/devices", { tag: "Inventory", body: createDevicePayload, res: createDeviceResponseSchema, auth: true }, upload.single("de_images"), inventoryController.createDevice);
+router.getDoc("/add-devices", { tag: "Inventory", res: getDeviceWithSchema, auth: true }, inventoryController.getDevices);
 
 router.postDoc("/approval", { tag: "Inventory", body:createApprovalFlowsPayload   , res: createApprovalFlowResponseSchema, auth: true }, inventoryController.createFlows);
 router.getDoc("/add-approval", { tag: "Inventory", res: getApprovalFlowSchema, auth: true }, inventoryController.getFlows);

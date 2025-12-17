@@ -89,10 +89,7 @@ export class InventoryController extends BaseController {
   ): Promise<BaseResponse<CreateDevicePayload>> {
 
     const payload = createDevicePayload.parse(req.body);
-
-
     const imagePath = req.file?.path;
-
 
     const result = await inventoryService.createDevice(payload, imagePath);
 
@@ -113,10 +110,15 @@ export class InventoryController extends BaseController {
       return { data: result };
   }
 
+async getFlows(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<BaseResponse<GetApprovalFlowSchema>> {
 
-  async getFlows(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetApprovalFlowSchema>> {
+  const result = await inventoryService.getAllApproves();
 
-    const result = await inventoryService.getAllApproves();
-    return { data: result }
-  }
+  return { data: result };
+}
+
 }

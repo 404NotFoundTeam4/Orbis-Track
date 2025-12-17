@@ -316,7 +316,7 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
     } = payload;
     const finalImages = images ?? payloadImages ?? null;
 
-    return prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
 
         const device = await tx.devices.create({
             data: {
@@ -407,24 +407,23 @@ async function getAllDevices() {
 async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
     const {
         af_name,
-        af_is_active,
         af_us_id,
-        approvalflowssteppayload, } = payload;
-    return prisma.$transaction(async (tx) => {
+        approvalflowsstep, } = payload;
+    return await prisma.$transaction(async (tx) => {
 
         const approvalFlow = await tx.approval_flows.create({
             data: {
                 af_name,
-                af_is_active,
+                af_is_active:true,
                 af_us_id,
                 created_at: new Date(),
             },
         });
 
         const steps = await tx.approval_flow_steps.createMany({
-            data: approvalflowssteppayload.map(step => ({
+            data: approvalflowsstep.map(step => ({
                 afs_step_approve: step.afs_step_approve,
-                afs_dept_id: step.afs_dept_id,
+                afs_dept_id: step.afs_dept_id ?? null,
                 afs_sec_id: step.afs_sec_id ?? null,
                 afs_role: step.afs_role,
                 afs_af_id: approvalFlow.af_id,
@@ -439,18 +438,31 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
     });
 }
 async function getAllApproves() {
-    const [approval_flows] = await Promise.all([
-        prisma.approval_flows.findMany({
-            select: {
-                af_id: true,
-                af_name: true,
-                af_is_active: true,
-            },
-        }),
-    ])
-    return {
-        approval_flows
-    }
+  const [approval_flows, approval_flow_steps] = await Promise.all([
+    prisma.approval_flows.findMany({
+      select: {
+        af_id: true,
+        af_name: true,
+        af_is_active: true,
+      },
+    }),
+    prisma.approval_flow_steps.findMany({
+      select: {
+        afs_id: true,
+        afs_step_approve: true,
+        afs_dept_id: true,
+        afs_sec_id: true,
+        afs_role: true,
+        afs_af_id: true,
+      },
+    }),
+  ]);
+
+  return {
+    approval_flows,
+    approval_flow_steps,
+  };
 }
+
 
 export const inventoryService = { createApprovesFlows, getAllApproves, getAllDevices, createDevice, getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild }

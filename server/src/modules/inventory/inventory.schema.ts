@@ -86,6 +86,7 @@ export const getApprovalFlowStepResponseSchema = z.object({
     afs_sec_id: z.number().nullable(),
     afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
     afs_af_id: z.number(),
+    afs_name: z.string().nullable(), 
 });
 
 
@@ -96,13 +97,15 @@ export const getApprovalFlowOnlySchema = z.object({
 });
 
 export const getStaffSchema = z.object({
-    label:z.string()
+    st_sec_id: z.number(),
+    st_name: z.string(),
+    st_dept_id: z.number()
 });
 
 export const getApprovalFlowSchema = z.object({
     sections: z.array(sectionSchema),
     departments: z.array(departmentSchema),
-    staff:z.array(getStaffSchema)
+    staff: z.array(getStaffSchema)
 });
 
 
@@ -156,13 +159,19 @@ export const categoriesSchema = z.object({
     ca_name: z.string()
 });
 
+export const approvalFlowWithStepsSchema = z.object({
+    af_id: z.number(),
+    steps: z.array(getApprovalFlowStepResponseSchema),
+});
+
 export const getDeviceWithSchema = z.object({
     sections: z.array(sectionSchema),
     departments: z.array(departmentSchema),
     categories: z.array(categoriesSchema),
-    approval_flows: z.array(getApprovalFlowOnlySchema),
-    approval_flow_steps: z.array(getApprovalFlowStepResponseSchema),
+    approval_flows:z.array(getApprovalFlowOnlySchema),
+    approval_flow_step: z.array(approvalFlowWithStepsSchema),
 });
+
 
 
 // ข้อมูลอุปกรณ์ลูก

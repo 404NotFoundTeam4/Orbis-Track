@@ -48,7 +48,6 @@ export default function AddInventory() {
       }
       try {
         const res = await useInventorys.createApprovedata(payload);
-        console.log(res)
         push({
           tone: "confirm",
           message: "เพิ่มการอนุมัติเรียบร้อยแล้ว",
@@ -64,11 +63,11 @@ export default function AddInventory() {
   }
 
   return (
-    <>
+    <div className="p-4">
       {/* ===== Modal ส่งข้อมูลมา ===== */}
       <MainDeviceModal mode="create" onSubmit={(data) => { handleSubmit(data); }} />
 
       {/* ===== Alert ยืนยัน ===== */}
-    </>
+    </div>
   );
 }

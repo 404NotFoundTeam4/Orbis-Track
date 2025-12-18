@@ -404,6 +404,68 @@ async function getAllDevices() {
         }),
     ]);
 
+    const flow_steps = approval_flow_steps.map((afs) => {
+        let name_role;
+        if (afs.afs_role == "STAFF") {
+            let name = sections.find(
+                (sec) =>
+                    sec.sec_id === afs.afs_sec_id ||
+                    sec.sec_dept_id === afs.afs_dept_id
+            );
+
+            // ดึงชื่อแผนก (หลังคำว่า "แผนก" ก่อน "ฝ่ายย่อย")
+            const deptMatch = name.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
+            const deptName = deptMatch?.[1]?.trim();
+
+            // ดึงตัวอักษร A-Z หลังคำว่า "ฝ่ายย่อย"
+            const letterMatch = name.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
+            const letter = letterMatch?.[1];
+
+            name_role = `เจ้าหน้าที่คลัง ${letter} ฝ่ายย่อย ${deptName}`
+        }
+        else if (afs.afs_role == "HOD") {
+           name_role = departments.find(
+                (dept) =>
+                    dept.dept_id === afs.afs_dept_id
+            ).dept_name;
+        }
+        else if (afs.afs_role == "HOS") {
+           name_role = sections.find(
+                (sec) =>
+                    sec.sec_id === afs.afs_sec_id &&
+                    sec.sec_dept_id === afs.afs_dept_id
+            ).sec_name;
+
+        }
+
+
+
+        return {
+            ...afs,
+            afs_name: name_role ?? null,
+        };
+    });
+
+    const flowMap = new Map<number, any[]>();
+
+    for (const step of flow_steps) {
+        if (!flowMap.has(step.afs_af_id)) {
+            flowMap.set(step.afs_af_id, []);
+        }
+        flowMap.get(step.afs_af_id)!.push(step);
+    }
+const approvalFlowsWithSteps = approval_flows.map(flow => {
+    const { af_name, af_is_active, ...rest } = flow;
+
+    return {
+        ...rest,
+        steps: flowMap.get(flow.af_id) ?? [],
+    };
+});
+
+
+
+
     const departmentsWithHead = departments.map((dept) => ({
         ...dept,
         dept_name: `หัวหน้า${dept.dept_name}`,
@@ -414,13 +476,14 @@ async function getAllDevices() {
         sec_name: `หัวหน้า${sec.sec_name}`,
     }));
 
-    return {
-        departments: departmentsWithHead,
-        sections: sectionsWithHead,
-        categories,
-        approval_flows,
-        approval_flow_steps,
-    };
+  return {
+    departments: departmentsWithHead,
+    sections: sectionsWithHead,
+    categories,
+    approval_flows: approval_flows,
+    approval_flow_step: approvalFlowsWithSteps,
+};
+
 
 }
 async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
@@ -472,23 +535,14 @@ async function getAllApproves() {
             },
         }),
 
-
     ]);
-
-    const departmentsWithHead = departments.map((dept) => ({
-        ...dept,
-        dept_name: `หัวหน้า${dept.dept_name}`,
-    }));
-
-    const sectionsWithHead = sections.map((sec) => ({
-        ...sec,
-        sec_name: `หัวหน้า${sec.sec_name}`,
-    }));
-
-
     const seen = new Set<string>();
+    const staffOptions = sections.reduce<{
+        st_sec_id: number;
+        st_name: string;
+        st_dept_id: number;
 
-    const staffOptions = sections.reduce<{ label: string }[]>((acc, item) => {
+    }[]>((acc, item) => {
         // ดึงชื่อแผนก (หลังคำว่า "แผนก" ก่อน "ฝ่ายย่อย")
         const deptMatch = item.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
         const deptName = deptMatch?.[1]?.trim();
@@ -503,17 +557,29 @@ async function getAllApproves() {
         }
         seen.add(`${letter}-${deptName}`);
         acc.push({
-            label: `เจ้าหน้าที่คลัง ${letter} ${deptName}`,
+            st_sec_id: item.sec_id,
+            st_name: `เจ้าหน้าที่คลัง ${letter} ฝ่ายย่อย ${deptName}`,
+            st_dept_id: item.sec_dept_id,
         });
 
         return acc;
     }, []);
 
 
+    const departmentsWithHead = departments.map((dept) => ({
+        ...dept,
+        dept_name: `หัวหน้า${dept.dept_name}`,
+    }));
+
+    const sectionsWithHead = sections.map((sec) => ({
+        ...sec,
+        sec_name: `หัวหน้า${sec.sec_name}`,
+    }));
+
     return {
         departments: departmentsWithHead,
         sections: sectionsWithHead,
-        staffOptions
+        staff: staffOptions
     };
 }
 

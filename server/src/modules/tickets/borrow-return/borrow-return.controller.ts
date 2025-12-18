@@ -9,7 +9,7 @@
 import { BaseController } from "../../../core/base.controller.js";
 import type { Request, Response, NextFunction } from "express";
 import { BaseResponse } from "../../../core/base.response.js";
-import { borrowReturnService } from "./index.js";
+import { BorrowReturnService } from "./borrow-return.service.js";
 import {
   BorrowReturnTicketDetailDto,
   getBorrowTicketQuery,
@@ -20,7 +20,7 @@ import { PaginatedResult } from "../../../core/paginated-result.interface.js";
 import { idParamSchema } from "../../departments/departments.schema.js";
 
 export class BorrowReturnController extends BaseController {
-  constructor() {
+  constructor(private readonly borrowReturnService: BorrowReturnService) {
     super();
   }
 
@@ -39,7 +39,7 @@ export class BorrowReturnController extends BaseController {
     const role = req.user?.role;
     const dept_id = req.user?.dept;
     const sec_id = req.user?.sec;
-    const result = await borrowReturnService.getBorrowReturnTicket(
+    const result = await this.borrowReturnService.getBorrowReturnTicket(
       query,
       role,
       dept_id,
@@ -61,7 +61,7 @@ export class BorrowReturnController extends BaseController {
     _next: NextFunction,
   ): Promise<BaseResponse<BorrowReturnTicketDetailDto>> {
     const id = idParamSchema.parse(req.params);
-    const result = await borrowReturnService.getBorrowReturnTicketById(id);
+    const result = await this.borrowReturnService.getBorrowReturnTicketById(id);
 
     return { data: result };
   }

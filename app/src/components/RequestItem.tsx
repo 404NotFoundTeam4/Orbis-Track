@@ -99,6 +99,20 @@ const formatFullDateTime = (dateStr: string | null): string => {
   return `${day} / ${month} / ${year} | ${time} น.`;
 };
 
+const formatUpdateByDateTime = (dateStr: string | null): string => {
+  if (!dateStr || dateStr === "-") return "-";
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const month = date.toLocaleDateString("th-TH", { month: "short" });
+  const year = date.getFullYear() + 543;
+  const time = date.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (!day && !month && !year && !time) return "-";
+  return `${day} ${month} ${year} ${time} น.`;
+};
+
 const RequestItem = ({
   ticket,
   ticketDetail,
@@ -424,7 +438,7 @@ const RequestItem = ({
                   {ticketDetail?.timeline &&
                     ticketDetail.timeline.length > 0 && (
                       <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
-                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[300px] max-h-[300px] overflow-y-auto">
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[330px] max-h-[300px] overflow-y-auto">
                           <div className="flex flex-col">
                             {ticketDetail.timeline.map((stage, index) => {
                               const isLast =
@@ -452,15 +466,15 @@ const RequestItem = ({
                                               : "border-[#9E9E9E] text-[#9E9E9E]"
                                       }`}
                                     >
-                                      {getStepTicket() !== "REJECTED" ? (
+                                      {stage.status === "REJECTED" ? (
                                         <Icon
-                                          icon="ic:sharp-check"
+                                          icon="mdi:close"
                                           width="14"
                                           height="14"
                                         />
                                       ) : (
                                         <Icon
-                                          icon="mdi:close"
+                                          icon="ic:sharp-check"
                                           width="14"
                                           height="14"
                                         />
@@ -469,7 +483,7 @@ const RequestItem = ({
                                     {/* Connecting Line - hide for last item */}
                                     {!isLast && (
                                       <div
-                                        className={`w-[2px] h-8 -my-1 ${
+                                        className={`w-0.5 h-12 -my-1 ${
                                           stage.status === "APPROVED"
                                             ? "bg-[#4CAF50]"
                                             : "bg-[#9E9E9E]"
@@ -479,7 +493,7 @@ const RequestItem = ({
                                   </div>
                                   {/* Text */}
                                   <div
-                                    className={`pt-1 ${!isLast ? "pb-3" : ""} `}
+                                    className={`${stage.status === "APPROVED" || stage.status === "REJECTED" ? "" : "pt-1"} ${!isLast ? "pb-3" : ""} `}
                                   >
                                     <span
                                       className={`text-sm ${
@@ -495,6 +509,32 @@ const RequestItem = ({
                                       {stage.role_name}
                                       {stage.dept_name && ` ${stage.dept_name}`}
                                     </span>
+                                    {stage.status === "APPROVED" ||
+                                    stage.status === "REJECTED" ? (
+                                      <>
+                                        <div
+                                          className={`text-xs text-[#9E9E9E]`}
+                                        >
+                                          {stage.status === "APPROVED"
+                                            ? "ผู้อนุมัติ"
+                                            : ""}{" "}
+                                          {stage.status === "REJECTED"
+                                            ? "ผู้ดำเนินการ"
+                                            : ""}{" "}
+                                          : {stage.approved_by}
+                                        </div>
+                                        <div
+                                          className={`text-xs text-[#9E9E9E]`}
+                                        >
+                                          เวลา :{" "}
+                                          {formatUpdateByDateTime(
+                                            stage.updated_at || "-",
+                                          )}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      ""
+                                    )}
                                   </div>
                                 </div>
                               );

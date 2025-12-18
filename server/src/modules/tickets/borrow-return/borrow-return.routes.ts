@@ -7,7 +7,9 @@ import {
   borrowReturnTicketDetailSchema,
 } from "./borrow-return.schema.js";
 
-const borrowReturnController = new BorrowReturnController();
+import { borrowReturnService } from "./borrow-return.provider.js";
+
+const borrowReturnController = new BorrowReturnController(borrowReturnService);
 const router = new Router(undefined, "/tickets/borrow-return");
 
 router.getDoc(

@@ -30,5 +30,19 @@ export const inventoryService = {
         const { data } = await api.get(`/inventory/devices`);
         return data.data;
     }
+    ,
+    /**
+   * Description: ดึงข้อมูลอุปกรณ์ตาม ID (filter จาก list)
+   * Input     : deviceId
+   * Output    : Promise<GetInventory | undefined>
+   * Endpoint  : GET /api/inventory/devices
+   * Author    : Niyada Butcham (Da) 66160361
+   */
+   getInventoryById: async (
+    deviceId: number
+  ): Promise<GetInventory | undefined> => {
+    const inventories = await inventoryService.getInventory();
+    return inventories.find(item => item.de_id === deviceId);
+  }
 
 }

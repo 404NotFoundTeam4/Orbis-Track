@@ -10,13 +10,13 @@ import TimePickerField from "./TimePickerField";
 interface EquipmentDetail {
     id: number;
     name: string;
+    total: number;
     category: string;
     department: string;
     section: string;
     imageUrl?: string;
     storageLocation: string;
     remain: number;
-    total: number;
     maxBorrowDays: number;
     accessories: {
         name: string;

@@ -1,6 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { UserData } from "../services/AccountService.js";
+
+export type Role =
+  | "ADMIN"
+  | "HOD"
+  | "HOS"
+  | "TECHNICAL"
+  | "STAFF"
+  | "EMPLOYEE"
+
 interface User {
   us_id?: number;
   us_emp_code?: string;
@@ -8,7 +17,7 @@ interface User {
   us_firstname?: string;
   us_lastname?: string;
   us_phone?: string;
-  us_role?: string;
+  us_role?: Role;
 }
 
 interface UserStore {
@@ -46,6 +55,7 @@ export const useUserStore = create<UserStore>()(
       logout: () => {
         localStorage.removeItem("token");
         localStorage.removeItem("rememberUser");
+        sessionStorage.removeItem("token");
         set({ user: null });
       },
     }),

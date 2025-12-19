@@ -44,10 +44,11 @@ export const useLogin = () => {
           localStorage.setItem("User", JSON.stringify(User));
         } else {
           localStorage.removeItem("User");
-          sessionStorage.setItem("User", JSON.stringify(User));
+          // Force save user to localStorage as requested, ensuring consistent persistence
+          localStorage.setItem("User", JSON.stringify(User));
         }
 
-        navigate("/users");
+        navigate("/home");
         return res?.success;
       }
     } catch {

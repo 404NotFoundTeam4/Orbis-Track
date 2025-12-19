@@ -19,7 +19,7 @@ const httpServer = createServer(app);
 
 initSocket(httpServer);
 
-const server = app.listen(env.PORT, () => {
+const server = httpServer.listen(env.PORT, () => {
   const base = env.API_URL ?? `http://localhost:${env.PORT}`;
   logger.info(`API running on ${base}/api/v1`);
 });

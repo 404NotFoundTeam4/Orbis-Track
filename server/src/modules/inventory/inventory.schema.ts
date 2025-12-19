@@ -78,6 +78,11 @@ export const createDevicePayload = z.object({
     }, z.array(serialNumbersPayload).optional()),
 });
 
+export const approvalStepUserSchema = z.object({
+    us_id: z.number(),
+    fullname: z.string(),
+});
+
 
 export const getApprovalFlowStepResponseSchema = z.object({
     afs_id: z.number(),
@@ -86,7 +91,8 @@ export const getApprovalFlowStepResponseSchema = z.object({
     afs_sec_id: z.number().nullable(),
     afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]),
     afs_af_id: z.number(),
-    afs_name: z.string().nullable(), 
+    afs_name: z.string().nullable(),
+    users: z.array(approvalStepUserSchema),
 });
 
 

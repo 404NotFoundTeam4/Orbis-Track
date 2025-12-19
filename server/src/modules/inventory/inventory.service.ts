@@ -365,7 +365,17 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
     });
 }
 async function getAllDevices() {
-    const [departments, sections, categories, approval_flows, approval_flow_steps] = await Promise.all([
+    const [users, departments, sections, categories, approval_flows, approval_flow_steps] = await Promise.all([
+        await prisma.users.findMany({
+            select: {
+                us_id: true,
+                us_firstname: true,
+                us_lastname: true,
+                us_role: true,
+                us_dept_id: true,
+                us_sec_id: true,
+            },
+        }),
         prisma.departments.findMany({
             select: {
                 dept_id: true,
@@ -405,44 +415,81 @@ async function getAllDevices() {
     ]);
 
     const flow_steps = approval_flow_steps.map((afs) => {
-        let name_role;
-        if (afs.afs_role == "STAFF") {
-            let name = sections.find(
-                (sec) =>
-                    sec.sec_id === afs.afs_sec_id ||
-                    sec.sec_dept_id === afs.afs_dept_id
-            );
+        let name_role: string | null = null;
+        let users_selected: any[] = [];
 
-            // ดึงชื่อแผนก (หลังคำว่า "แผนก" ก่อน "ฝ่ายย่อย")
-            const deptMatch = name.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
-            const deptName = deptMatch?.[1]?.trim();
-
-            // ดึงตัวอักษร A-Z หลังคำว่า "ฝ่ายย่อย"
-            const letterMatch = name.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
-            const letter = letterMatch?.[1];
-
-            name_role = `เจ้าหน้าที่คลัง ${letter} ฝ่ายย่อย ${deptName}`
-        }
-        else if (afs.afs_role == "HOD") {
-           name_role = departments.find(
-                (dept) =>
-                    dept.dept_id === afs.afs_dept_id
-            ).dept_name;
-        }
-        else if (afs.afs_role == "HOS") {
-           name_role = sections.find(
+        /** ================= STAFF ================= */
+        if (afs.afs_role === "STAFF") {
+            const section = sections.find(
                 (sec) =>
                     sec.sec_id === afs.afs_sec_id &&
                     sec.sec_dept_id === afs.afs_dept_id
-            ).sec_name;
+            );
 
+            if (section) {
+                const deptMatch = section.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
+                const deptName = deptMatch?.[1]?.trim();
+
+                const letterMatch = section.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
+                const letter = letterMatch?.[1];
+
+                name_role = `เจ้าหน้าที่คลัง ${deptName} ฝ่ายย่อย ${letter}`;
+            }
+
+            users_selected = users
+                .filter(
+                    (u) =>
+                        u.us_role === "STAFF" &&
+                        u.us_sec_id === afs.afs_sec_id &&
+                        u.us_dept_id === afs.afs_dept_id
+                )
+                .slice(0, 3);
         }
 
+        /** ================= HOD ================= */
+        else if (afs.afs_role === "HOD") {
+            const dept = departments.find(
+                (d) => d.dept_id === afs.afs_dept_id
+            );
 
+            const name = dept?.dept_name ?? null;
+            name_role = `หัวหน้า${name}`
+            users_selected = users
+                .filter(
+                    (u) =>
+                        u.us_role === "HOD" &&
+                        u.us_dept_id === afs.afs_dept_id
+                )
+                .slice(0, 3);
+        }
+
+        /** ================= HOS ================= */
+        else if (afs.afs_role === "HOS") {
+            const section = sections.find(
+                (sec) =>
+                    sec.sec_id === afs.afs_sec_id &&
+                    sec.sec_dept_id === afs.afs_dept_id
+            );
+            const name = section?.sec_name ?? null;
+            name_role = `หัวหน้า${name}`
+
+            users_selected = users
+                .filter(
+                    (u) =>
+                        u.us_role === "HOS" &&
+                        u.us_sec_id === afs.afs_sec_id &&
+                        u.us_dept_id === afs.afs_dept_id
+                )
+                .slice(0, 3);
+        }
 
         return {
             ...afs,
-            afs_name: name_role ?? null,
+            afs_name: name_role,
+            users: users_selected.map(u => ({
+                us_id: u.us_id,
+                fullname: `${u.us_firstname} ${u.us_lastname}`,
+            })),
         };
     });
 
@@ -454,14 +501,14 @@ async function getAllDevices() {
         }
         flowMap.get(step.afs_af_id)!.push(step);
     }
-const approvalFlowsWithSteps = approval_flows.map(flow => {
-    const { af_name, af_is_active, ...rest } = flow;
+    const approvalFlowsWithSteps = approval_flows.map(flow => {
+        const { af_name, af_is_active, ...rest } = flow;
 
-    return {
-        ...rest,
-        steps: flowMap.get(flow.af_id) ?? [],
-    };
-});
+        return {
+            ...rest,
+            steps: flowMap.get(flow.af_id) ?? [],
+        };
+    });
 
 
 
@@ -476,13 +523,13 @@ const approvalFlowsWithSteps = approval_flows.map(flow => {
         sec_name: `หัวหน้า${sec.sec_name}`,
     }));
 
-  return {
-    departments: departmentsWithHead,
-    sections: sectionsWithHead,
-    categories,
-    approval_flows: approval_flows,
-    approval_flow_step: approvalFlowsWithSteps,
-};
+    return {
+        departments: departmentsWithHead,
+        sections: sectionsWithHead,
+        categories,
+        approval_flows: approval_flows,
+        approval_flow_step: approvalFlowsWithSteps,
+    };
 
 
 }
@@ -558,7 +605,7 @@ async function getAllApproves() {
         seen.add(`${letter}-${deptName}`);
         acc.push({
             st_sec_id: item.sec_id,
-            st_name: `เจ้าหน้าที่คลัง ${letter} ฝ่ายย่อย ${deptName}`,
+            st_name: `เจ้าหน้าที่คลัง ${deptName} ฝ่ายย่อย ${letter}`,
             st_dept_id: item.sec_dept_id,
         });
 

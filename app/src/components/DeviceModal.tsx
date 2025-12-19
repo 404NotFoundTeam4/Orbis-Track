@@ -118,6 +118,7 @@ const MainDeviceModal = ({
   const [approvalflows, setApprovalFlows] = useState([]);
   const [approvalFlowSteps, setapprovalFlowSteps] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [openStepId, setOpenStepId] = useState<number | null>(null);
 
   const fetchDataDevices = async () => {
     try {
@@ -791,38 +792,67 @@ const MainDeviceModal = ({
               </Button>
             </div>
             {selectedApprovers &&
-              (() => {
-                const steps =
-                  approvalFlowSteps?.find(
-                    (item) => item.af_id === selectedApprovers.value
-                  )?.steps ?? [];
+  (() => {
+    const steps =
+      approvalFlowSteps?.find(
+        (item) => item.af_id === selectedApprovers.value
+      )?.steps ?? [];
 
-                return (
-                  <div
-                    className="
-          flex flex-wrap items-center gap-x-[6px] gap-y-[4px]
+    return (
+      <div
+        className="
+          flex flex-wrap items-start gap-x-[6px] gap-y-[8px]
           max-w-[800px]
         "
-                  >
-                    {steps.map((ap, index) => (
-                      <div
-                        key={ap.afs_id}
-                        className="flex items-center whitespace-nowrap"
-                      >
-                        <span className="text-[16px] text-[#7BACFF]">
-                          {ap.afs_name}
-                        </span>
+      >
+        {steps.map((ap, index) => (
+          <div key={ap.afs_id} className="flex flex-col">
+            {/* ===== ชื่อขั้น ===== */}
+            <div className="flex items-center whitespace-nowrap">
+              <span
+                className="
+                  text-[16px] text-[#7BACFF] cursor-pointer
+                  hover:underline
+                "
+                onClick={() =>
+                  setOpenStepId(
+                    openStepId === ap.afs_id ? null : ap.afs_id
+                  )
+                }
+              >
+                {ap.afs_name}
+              </span>
 
-                        {index < steps.length - 1 && (
-                          <span className="mx-[4px] text-[16px] text-[#7BACFF]">
-                            ›
-                          </span>
-                        )}
-                      </div>
-                    ))}
+              {index < steps.length - 1 && (
+                <span className="mx-[4px] text-[16px] text-[#7BACFF]">›</span>
+              )}
+            </div>
+
+            {/* ===== รายชื่อผู้ใช้ ===== */}
+            {openStepId === ap.afs_id && (
+              <div className="mt-[6px] ml-[8px] space-y-[2px]">
+                {ap.users?.length ? (
+                  ap.users.map((u) => (
+                    <div
+                      key={u.us_id}
+                      className="text-[14px] text-gray-600"
+                    >
+                      • {u.fullname}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[14px] text-gray-400 italic">
+                    ไม่มีผู้ใช้งาน
                   </div>
-                );
-              })()}
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  })()}
+
           </div>
         </div>
       </div>

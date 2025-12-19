@@ -6,17 +6,38 @@ import {
   faChartLine,
   faClockRotateLeft,
   faGear,
+  faCartShopping,
+  faBell,
+  faChevronUp
 } from "@fortawesome/free-solid-svg-icons";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { UserRole } from "./role.enum";
+import Logo from "../../assets/images/navbar/Logo.png"
+import LogoGiga from "../../assets/images/navbar/logo-giga.png";
+
+
+
+export const Icons: { [key: string]: IconDefinition } = {
+  FASHOPPING: faCartShopping,
+  FABELL: faBell,
+};
+
+export const Images: { [key: string]: string } = {
+  LOGO: Logo,
+  LOGO_GIGA: LogoGiga,
+};
 
 export type MenuItem = {
   key: string;
   label: string;
   path?: string;
-  icon?: any;
+  icon?: IconDefinition;       // icon ด้านซ้าย
+  iconRight?: IconDefinition;  // icon ด้านขวา
   roles: UserRole[];
   children?: MenuItem[];
 };
+
+
 
 export const MENU_CONFIG: MenuItem[] = [
   {
@@ -28,8 +49,9 @@ export const MENU_CONFIG: MenuItem[] = [
   },
   {
     key: "management",
-    label: "การจัดการ",
+    label: "จัดการ",
     icon: faServer,
+    iconRight: faChevronUp,
     roles: [UserRole.ADMIN],
     children: [
       {
@@ -40,16 +62,34 @@ export const MENU_CONFIG: MenuItem[] = [
       },
       {
         key: "departments",
-        label: "แผนกและฝ่ายย่อย",
+        label: "บัญชีผู้ใช้",
         path: "/administrator/departments-management",
         roles: [UserRole.ADMIN],
       },
       {
         key: "categories",
-        label: "หมวดหมู่อุปกรณ์",
+        label: "คลังอุปกรณ์",
         path: "/categories",
         roles: [UserRole.ADMIN],
       },
+      {
+        key: "departments",
+        label: "แชทบอท",
+        path: "/administrator/departments-management",
+        roles: [UserRole.ADMIN],
+      },
+      {
+        key: "departments",
+        label: "แผนกและฝ่ายย่อย",
+        path: "/administrator/departments-management",
+        roles: [UserRole.ADMIN],
+      },
+      {
+        key: "departments",
+        label: "หมวดหมู่อุปกรณ์",
+        path: "/administrator/departments-management",
+        roles: [UserRole.ADMIN],
+      }
     ],
   },
   {
@@ -64,7 +104,7 @@ export const MENU_CONFIG: MenuItem[] = [
     label: "แจ้งซ่อม",
     path: "/repair",
     icon: faWrench,
-    roles: [UserRole.USER, UserRole.STAFF],
+    roles: [UserRole.USER, UserRole.STAFF, UserRole.ADMIN],
   },
   {
     key: "dashboard",
@@ -102,7 +142,7 @@ export const filterMenuByRole = (
       ...menu,
       children: menu.children
         ? menu.children.filter((child) =>
-            child.roles.includes(role)
-          )
+          child.roles.includes(role)
+        )
         : undefined,
     }));

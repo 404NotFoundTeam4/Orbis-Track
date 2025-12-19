@@ -93,8 +93,8 @@ const passwordValidation = z
     .refine((val) => /\d/.test(val), {
         message: 'เลขอย่างน้อยน้อย 1 ตัว'
     })
-    .refine((val) => /[&*()\-_=+{};]/.test(val), {
-        message: 'อักขระพิเศษอย่างน้อย 1 ตัว & * ( ) - _ = + { } ;'
+    .refine((val) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val), {
+        message: 'อักขระพิเศษอย่างน้อย 1 ตัว เช่น ! @ # $ % ^ & * ( ) _ - + = { } [ ] ; : " \' < > , . ? / |'
     })
     .refine((val) => !/\s/.test(val), {
         message: 'ห้ามมีการเว้นวรรค'

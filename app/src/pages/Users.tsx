@@ -1,5 +1,5 @@
 import "../styles/css/User.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
@@ -8,6 +8,7 @@ import api from "../api/axios.js";
 import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
 import getImageUrl from "../services/GetImage.js";
+import { getAccount } from "../hooks/useAccount.js";
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -117,15 +118,26 @@ export const Users = () => {
 
   const [users, setusers] = useState<User[]>([]);
   //ตั้งข้อมูล role ไว้ใช้ใน filter
+  // const roleOptions = [
+  //   { id: "", label: "ทั้งหมด", value: "" },
+  //   ...Array.from(
+  //     new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
+  //   ).map((r, index) => ({
+  //     id: index + 1,
+  //     label: roleTranslation[r] || r,
+  //     value: r,
+  //   })),
+  // ];
+  const baseRoleOptions = Array.from(
+    new Set(users.map((u) => u.us_role)) // ตัด role ที่ซ้ำ
+  ).map((r, index) => ({
+    id: index + 1,
+    label: roleTranslation[r] || r,
+    value: r,
+  }));
   const roleOptions = [
-    { id: "", label: "ประเภทตำแหน่ง", value: "" },
-    ...Array.from(
-      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
-    ).map((r, index) => ({
-      id: index + 1,
-      label: roleTranslation[r] || r,
-      value: r,
-    })),
+    { id: "", label: "ทั้งหมด", value: "" },
+    ...baseRoleOptions,
   ];
   const [roleFilter, setRoleFilter] = useState<{
     id: number | string;
@@ -229,6 +241,7 @@ export const Users = () => {
             return user;
           });
         });
+        getAccount();
       } else {
         toast.push({ message: "เกิดข้อผิดพลาด", tone: "danger" });
       }
@@ -302,6 +315,9 @@ export const Users = () => {
         message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
         tone: "confirm",
       });
+
+      //  refreshTrigger จะทำให้ fetch ใหม่ → newUserIds ถูกคำนวณอัตโนมัติ
+      setRefreshTrigger((p) => p + 1);
     } catch {
       // จัดการข้อผิดพลาด
       toast.push({
@@ -353,6 +369,12 @@ export const Users = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  // เก็บ user id รอบก่อนหน้า
+  const prevUserIdsRef = useRef<Set<number>>(new Set());
+
+  //เก็บ user id ที่ "เพิ่มใหม่" → ใช้ดันไปท้ายสุดตอน sort
+  const [newUserIds, setNewUserIds] = useState<Set<number>>(new Set());
+
   /**
    * Description: ดึงข้อมูลผู้ใช้/แผนก/ฝ่ายย่อยจาก API
    * Author: Nontapat Sinthum (Guitar) 66160104
@@ -363,9 +385,25 @@ export const Users = () => {
         const res = await api.get("/accounts");
         const data = res.data;
 
+        const usersData: User[] = data.data.accountsWithDetails || [];
+
+        // ตรวจจับ user ที่ "เพิ่มใหม่" - id ที่อยู่ในรอบใหม่ แต่ไม่อยู่ในรอบก่อน
+        const nextIds = new Set<number>(usersData.map((u) => u.us_id));
+        const prevIds = prevUserIdsRef.current;
+
+        const added = new Set<number>();
+        for (const id of nextIds) {
+          if (!prevIds.has(id)) added.add(id);
+        }
+
+        setNewUserIds(added);
+        prevUserIdsRef.current = nextIds;
+
+        setusers(usersData);
+
         setSections(data.data.sections || []);
         setDepartments(data.data.departments || []);
-        setusers(data.data.accountsWithDetails || []);
+        // setusers(data.data.accountsWithDetails || []);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -390,7 +428,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "created_at",
+    "us_id"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -401,6 +439,7 @@ export const Users = () => {
    * Author : Nontapat Sinhum (Guitar) 66160104
    */
   const HandleSort = (field: keyof User | "statusText") => {
+    setNewUserIds(new Set());
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -443,6 +482,13 @@ export const Users = () => {
 
     //เริ่มทำการ sort
     result = [...result].sort((a, b) => {
+      // user ที่อยู่ใน newUserIds → ไปท้ายสุดเสมอ
+      // - ทำก่อน sort ปกติ
+      const aIsNew = newUserIds.has(a.us_id);
+      const bIsNew = newUserIds.has(b.us_id);
+      if (aIsNew !== bIsNew) return aIsNew ? 1 : -1;
+      /* ===================================================== */
+
       let valA: any;
       let valB: any;
 
@@ -493,6 +539,7 @@ export const Users = () => {
     sectionFilter,
     sortField,
     sortDirection,
+    newUserIds,
   ]);
 
   //จัดการแบ่งแต่ละหน้า
@@ -507,7 +554,7 @@ export const Users = () => {
     roleFilter,
     departmentFilter,
     sectionFilter,
-    sortDirection,
+    // sortDirection,
   ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
   const pageRows = useMemo(() => {
@@ -515,8 +562,24 @@ export const Users = () => {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
+  const getSortIcon = (
+    currentField: string,
+    targetField: string,
+    direction: "asc" | "desc"
+  ) => {
+    // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
+    if (currentField !== targetField) {
+      return "bx:sort-down";
+    }
+
+    // ถ้าเป็น asc
+    if (direction === "asc") return "bx:sort-up";
+
+    // ถ้าเป็น desc
+    return "bx:sort-down";
+  };
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
+    <div className="w-full h-full flex flex-col p-4">
       <div className="flex-1">
         {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">
@@ -571,23 +634,18 @@ export const Users = () => {
         </div>
 
         {/* ตาราง */}
-        <div className="w-auto">
+        <div className="w-full overflow-x-auto">
           {/* หัวตาราง */}
           <div
-            className="grid grid-cols-[400px_130px_203px_230px_160px_150px_180px_81px]
-              bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
+            className="grid grid-cols-[minmax(300px,2fr)_repeat(6,minmax(120px,1fr))_auto]
+                      bg-white border border-[#D9D9D9] font-semibold text-gray-700
+                      rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
               <button type="button" onClick={() => HandleSort("us_firstname")}>
                 <Icon
-                  icon={
-                    sortField === "us_firstname"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_firstname", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -598,13 +656,7 @@ export const Users = () => {
               ตำแหน่ง
               <button type="button" onClick={() => HandleSort("us_role")}>
                 <Icon
-                  icon={
-                    sortField === "us_role"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_role", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -615,13 +667,7 @@ export const Users = () => {
               แผนก
               <button type="button" onClick={() => HandleSort("us_dept_name")}>
                 <Icon
-                  icon={
-                    sortField === "us_dept_name"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_dept_name", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -632,13 +678,7 @@ export const Users = () => {
               ฝ่ายย่อย
               <button type="button" onClick={() => HandleSort("us_sec_name")}>
                 <Icon
-                  icon={
-                    sortField === "us_sec_name"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_sec_name", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -652,13 +692,7 @@ export const Users = () => {
               วันที่เพิ่ม
               <button type="button" onClick={() => HandleSort("created_at")}>
                 <Icon
-                  icon={
-                    sortField === "created_at"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "created_at", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
@@ -669,29 +703,25 @@ export const Users = () => {
               สถานะ
               <button type="button" onClick={() => HandleSort("us_is_active")}>
                 <Icon
-                  icon={
-                    sortField === "us_is_active"
-                      ? sortDirection === "asc"
-                        ? "bx:sort-down"
-                        : "bx:sort-up"
-                      : "bx:sort-down" //default icon
-                  }
+                  icon={getSortIcon(sortField, "us_is_active", sortDirection)}
                   width="24"
                   height="24"
                   className="ml-1"
                 />
               </button>
             </div>
-            <div className="py-2 px-4 text-left flex items-center">จัดการ</div>
+            <div className="py-2 px-4 text-left flex items-center w-[150px]">
+              จัดการ
+            </div>
           </div>
 
-          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px]">
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] min-h-[679px] flex flex-col">
             {/* แถวข้อมูล */}
             {pageRows.map((u) => (
               <div
                 key={u.us_id}
-                className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
-                 items-center hover:bg-gray-50 text-[16px] gap-3"
+                className="grid grid-cols-[minmax(300px,2fr)_repeat(6,minmax(120px,1fr))_auto]
+                          items-center gap-3 hover:bg-gray-50 py-2"
               >
                 {/* ชื่อผู้ใช้ */}
                 <div className="py-2 px-4 flex items-center">
@@ -700,11 +730,6 @@ export const Users = () => {
                       src={getImageUrl(u.us_images)}
                       alt={u.us_firstname}
                       className="w-10 h-10 rounded-full object-cover"
-                      // onError={(e) => {
-                      //   (e.target as HTMLImageElement).onerror = null;
-                      //   (e.target as HTMLImageElement).src =
-                      //     `https://placehold.co/40x40/E0E7FF/3B82F6?text=${u.us_firstname.charAt(0)}`;
-                      // }}
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
@@ -742,12 +767,14 @@ export const Users = () => {
                   )}
                 </div>
 
-                <div>
-                  {u.us_is_active ? (
-                    <div className="py-2 px-4 flex items-center gap-3">
+                <div className="py-2 px-4 flex items-center gap-3 w-[150px]">
+                  {u.us_is_active && (
+                    <>
                       <button
                         onClick={() => handleOpenEditModal(u)}
-                        className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
+                        className="w-[34px] h-[34px] flex items-center justify-center
+                          text-[#1890FF] hover:bg-[#40A9FF] hover:text-[#FFFFFF]
+                          rounded-[8px] cursor-pointer transition-all duration-150"
                         title="แก้ไข"
                       >
                         <Icon
@@ -756,9 +783,12 @@ export const Users = () => {
                           height="22"
                         />
                       </button>
+
                       <button
                         onClick={() => handleOpenDeleteModal(u)}
-                        className="text-[#FF4D4F] hover:text-[#FF4D4F] cursor-pointer"
+                        className="w-[34px] h-[34px] flex items-center justify-center
+                          text-[#FF4D4F] hover:bg-[#FF7875] hover:text-[#FFFFFF]
+                          rounded-[8px] cursor-pointer transition-all duration-150"
                         title="ลบ"
                       >
                         <Icon
@@ -767,16 +797,14 @@ export const Users = () => {
                           height="22"
                         />
                       </button>
-                    </div>
-                  ) : (
-                    <div></div>
+                    </>
                   )}
                 </div>
               </div>
             ))}
 
             {/* ปุ่มหน้า */}
-            <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+            <div className="mt-auto mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
               {/* ขวา: ตัวแบ่งหน้า */}
               <div className="flex items-center gap-2">
                 {/* ปุ่มก่อนหน้า */}
@@ -860,6 +888,7 @@ export const Users = () => {
           </div>
         </div>
       </div>
+
       {isModalOpen && (
         <UserModal
           typeform={modalType}
@@ -877,7 +906,8 @@ export const Users = () => {
           keyvalue="all"
           departmentsList={departments}
           sectionsList={sections}
-          rolesList={roleOptions}
+          rolesList={baseRoleOptions}
+          allUsers={users}
         />
       )}
     </div>

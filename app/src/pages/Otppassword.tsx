@@ -189,6 +189,9 @@ export function Otppassword() {
                         : "ขอ OTP"}
                   </button>
                 </div>
+                <div className={`${errorEmail ? "text-[#F74E57]" : ""}`}>
+                  {errorEmail && "กรุณากรอกอีเมล"}
+                </div>
               </div>
               <div className="">
                 {/* Label */}

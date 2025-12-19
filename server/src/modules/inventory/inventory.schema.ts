@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { $Enums } from "@prisma/client";
 import { UserRole } from "../../core/roles.enum.js";
-import { sectionSchema, departmentSchema } from "../accounts/accounts.schema.js";
+
 export const idParamSchema = z.object({
     id: z.coerce.number().positive()
 });
@@ -100,12 +100,29 @@ export const getApprovalFlowOnlySchema = z.object({
     af_id: z.number(),
     af_name: z.string(),
     af_is_active: z.boolean(),
+
 });
 
 export const getStaffSchema = z.object({
     st_sec_id: z.number(),
     st_name: z.string(),
-    st_dept_id: z.number()
+    st_dept_id: z.number(),
+    users: z.array(approvalStepUserSchema)
+});
+
+// สำหรับตรวจสอบข้อมูลแผนก
+export const departmentSchema = z.object({
+    dept_id: z.coerce.number(),
+    dept_name: z.string(),
+  
+});
+
+// สำหรับตรวจสอบข้อมูลฝ่ายย่อย
+export const sectionSchema = z.object({
+    sec_id: z.coerce.number(),
+    sec_name: z.string(),
+    sec_dept_id: z.coerce.number(),
+  
 });
 
 export const getApprovalFlowSchema = z.object({
@@ -174,7 +191,7 @@ export const getDeviceWithSchema = z.object({
     sections: z.array(sectionSchema),
     departments: z.array(departmentSchema),
     categories: z.array(categoriesSchema),
-    approval_flows:z.array(getApprovalFlowOnlySchema),
+    approval_flows: z.array(getApprovalFlowOnlySchema),
     approval_flow_step: z.array(approvalFlowWithStepsSchema),
 });
 

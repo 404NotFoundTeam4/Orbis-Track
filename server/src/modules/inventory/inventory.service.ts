@@ -366,7 +366,7 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
 }
 async function getAllDevices() {
     const [users, departments, sections, categories, approval_flows, approval_flow_steps] = await Promise.all([
-        await prisma.users.findMany({
+        prisma.users.findMany({
             select: {
                 us_id: true,
                 us_firstname: true,
@@ -439,7 +439,7 @@ async function getAllDevices() {
             users_selected = users
                 .filter(
                     (u) =>
-                        u.us_role === "STAFF" &&
+                        u.us_role === "HOS" &&
                         u.us_sec_id === afs.afs_sec_id &&
                         u.us_dept_id === afs.afs_dept_id
                 )
@@ -460,7 +460,7 @@ async function getAllDevices() {
                         u.us_role === "HOD" &&
                         u.us_dept_id === afs.afs_dept_id
                 )
-                .slice(0, 3);
+                .slice(0, 3);   
         }
 
         /** ================= HOS ================= */
@@ -567,68 +567,133 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
     });
 }
 async function getAllApproves() {
-    const [departments, sections,] = await Promise.all([
-        prisma.departments.findMany({
-            select: {
-                dept_id: true,
-                dept_name: true,
-            },
-        }),
-        prisma.sections.findMany({
-            select: {
-                sec_id: true,
-                sec_name: true,
-                sec_dept_id: true,
-            },
-        }),
+  const [departments, sections, users] = await Promise.all([
+    prisma.departments.findMany({
+      select: {
+        dept_id: true,
+        dept_name: true,
+      },
+    }),
+    prisma.sections.findMany({
+      select: {
+        sec_id: true,
+        sec_name: true,
+        sec_dept_id: true,
+      },
+    }),
+    prisma.users.findMany({
+      select: {
+        us_id: true,
+        us_firstname: true,
+        us_lastname: true,
+        us_dept_id: true,
+        us_sec_id: true,
+        us_role: true,
+      },
+    }),
+  ]);
 
-    ]);
-    const seen = new Set<string>();
-    const staffOptions = sections.reduce<{
-        st_sec_id: number;
-        st_name: string;
-        st_dept_id: number;
+  const getUserName = (u: any) => `${u.us_firstname} ${u.us_lastname}`;
 
-    }[]>((acc, item) => {
-        // ดึงชื่อแผนก (หลังคำว่า "แผนก" ก่อน "ฝ่ายย่อย")
-        const deptMatch = item.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
-        const deptName = deptMatch?.[1]?.trim();
+  /* ===============================
+     1) STAFF (เฉพาะ role STAFF)
+  =============================== */
+  const seen = new Set<string>();
 
-        // ดึงตัวอักษร A-Z หลังคำว่า "ฝ่ายย่อย"
-        const letterMatch = item.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
-        const letter = letterMatch?.[1];
+  const staffOptions = sections.reduce<
+    {
+      st_sec_id: number;
+      st_dept_id: number;
+      st_name: string;
+      users: {
+        us_id: number;
+        us_name: string;
+      }[];
+    }[]
+  >((acc, sec) => {
+    const deptMatch = sec.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
+    const deptName = deptMatch?.[1]?.trim();
 
-        // กันกรณีข้อมูลไม่ครบ หรือซ้ำ
-        if (!deptName || !letter || seen.has(`${letter}-${deptName}`)) {
-            return acc;
-        }
-        seen.add(`${letter}-${deptName}`);
-        acc.push({
-            st_sec_id: item.sec_id,
-            st_name: `เจ้าหน้าที่คลัง ${deptName} ฝ่ายย่อย ${letter}`,
-            st_dept_id: item.sec_dept_id,
-        });
+    const letterMatch = sec.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
+    const letter = letterMatch?.[1];
 
-        return acc;
-    }, []);
+    if (!deptName || !letter || seen.has(`${deptName}-${letter}`)) {
+      return acc;
+    }
 
+    seen.add(`${deptName}-${letter}`);
 
-    const departmentsWithHead = departments.map((dept) => ({
-        ...dept,
-        dept_name: `หัวหน้า${dept.dept_name}`,
-    }));
+    const staffUsers = users.filter(
+      (u) =>
+        u.us_role === 'HOS' &&               
+        u.us_sec_id === sec.sec_id &&
+        u.us_dept_id === sec.sec_dept_id
+    ).slice(0, 3);
 
-    const sectionsWithHead = sections.map((sec) => ({
-        ...sec,
-        sec_name: `หัวหน้า${sec.sec_name}`,
-    }));
+    acc.push({
+      st_sec_id: sec.sec_id,
+      st_dept_id: sec.sec_dept_id,
+      st_name: `เจ้าหน้าที่คลังแผนก ${deptName} ฝ่ายย่อย ${letter}`,
+      users: staffUsers.map((u) => ({
+        us_id: u.us_id,
+        us_name: getUserName(u),
+      })),
+    });
+
+    return acc;
+  }, []);
+
+  /* ===============================
+     2) DEPARTMENTS (HOD)
+  =============================== */
+  const departmentsWithHead = departments.map((dept) => {
+    const deptUsers = users.filter(
+      (u) =>
+        u.us_role === 'HOD' &&                
+        u.us_dept_id === dept.dept_id
+    ).slice(0, 3);
 
     return {
-        departments: departmentsWithHead,
-        sections: sectionsWithHead,
-        staff: staffOptions
+      dept_id: dept.dept_id,
+      dept_name: `หัวหน้า${dept.dept_name}`,
+      users: deptUsers.map((u) => ({
+        us_id: u.us_id,
+        us_name: getUserName(u),
+      })),
     };
+  });
+
+  /* ===============================
+     3) SECTIONS (HOS)
+  =============================== */
+  const sectionsWithHead = sections.map((sec) => {
+    const secUsers = users.filter(
+      (u) =>
+        u.us_role === 'HOS' &&                 
+        u.us_sec_id === sec.sec_id
+    ).slice(0, 3);
+
+    return {
+      sec_id: sec.sec_id,
+      sec_dept_id: sec.sec_dept_id,
+      sec_name: `หัวหน้า${sec.sec_name}`,
+      users: secUsers.map((u) => ({
+        us_id: u.us_id,
+        us_name: getUserName(u),
+      })),
+    };
+  });
+
+  /* ===============================
+     4) RETURN
+  =============================== */
+  return {
+    departments: departmentsWithHead,
+    sections: sectionsWithHead,
+    staff: staffOptions,
+  };
 }
+
 
 
 export const inventoryService = { createApprovesFlows, getAllApproves, getAllDevices, createDevice, getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild }

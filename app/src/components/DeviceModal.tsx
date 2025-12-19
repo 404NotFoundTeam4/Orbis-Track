@@ -118,7 +118,10 @@ const MainDeviceModal = ({
   const [approvalflows, setApprovalFlows] = useState([]);
   const [approvalFlowSteps, setapprovalFlowSteps] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [sectionsApprove, setSectionsApprove] = useState([]);
+  const [departmentsApprove, setDepartmentsApprove] = useState([]);
   const [openStepId, setOpenStepId] = useState<number | null>(null);
+  const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
 
   const fetchDataDevices = async () => {
     try {
@@ -129,7 +132,7 @@ const MainDeviceModal = ({
       setApprovalFlows(res.data.approval_flows);
       setapprovalFlowSteps(res.data.approval_flow_step);
 
-      console.log(res);
+ console.log(res.data)
     } catch (error) {
       console.error("โหลดข้อมูลไม่สำเร็จ", error);
     }
@@ -141,7 +144,9 @@ const MainDeviceModal = ({
   const fetchDataApprove = async () => {
     try {
       const ap = await useInventorys.getApproveAll();
-      // console.log(ap.data.staff);
+      console.log(ap.data)
+      setDepartmentsApprove(ap.data.departments);
+      setSectionsApprove(ap.data.sections);
       setStaff(ap.data.staff);
     } catch (error) {
       console.error("fetchDataApprove โหลดข้อมูลไม่สำเร็จ", error);
@@ -386,18 +391,18 @@ const MainDeviceModal = ({
 
   const mappedSerialNumbers = checked
     ? serialNumbers
-        .filter((sn) => sn.value.trim() !== "")
-        .map((sn) => ({
-          id: sn.id,
-          value: sn.value.trim(),
-        }))
+      .filter((sn) => sn.value.trim() !== "")
+      .map((sn) => ({
+        id: sn.id,
+        value: sn.value.trim(),
+      }))
     : [];
 
   // ส่งข้อมูล
   const handleSubmit = () => {
     const formData = new FormData();
 
-    // 👇 เอาไว้ใช้ชั่วคราว
+    //  เอาไว้ใช้ชั่วคราว
     formData.append("data", "devices");
     formData.append("mode", mode);
 
@@ -412,13 +417,13 @@ const MainDeviceModal = ({
     formData.append("de_us_id", "1");
     formData.append("de_sec_id", String(selectedSection?.value ?? ""));
 
-    // 👇 array ต้อง stringify
+
     formData.append("accessories", JSON.stringify(mappedAccessories));
     formData.append("serialNumbers", JSON.stringify(mappedSerialNumbers));
 
-    // 👇 รูป (สำคัญที่สุด)
+
     if (imageFile) {
-      formData.append("de_images", imageFile); // ✅ ชื่อตรงกับ upload.single("de_images")
+      formData.append("de_images", imageFile);
     }
     onSubmit(formData);
   };
@@ -508,6 +513,31 @@ const MainDeviceModal = ({
   const handleDragEnd = () => {
     dragItemIndex.current = dragOverIndex.current = null;
   };
+
+  const getUsersByLabel = (data: string) => {
+    // เจ้าหน้าที่คลัง ไป staff
+    if (data.includes("เจ้าหน้าที่คลัง")) {
+      return staff.find((s) => s.st_name === data)?.users ?? [];
+    }
+    // หัวหน้า + !ฝ่ายย่อย ไป sections
+    else if (
+      data.includes("หัวหน้า") &&
+      !data.includes("ฝ่ายย่อย")
+    ) {
+      return departmentsApprove.find((dept) => dept.dept_name === data)?.users ?? [];
+    }
+    // หัวหน้า + ฝ่ายย่อย ไป sections
+    else if (
+      data.includes("หัวหน้าแผนก") &&
+      data.includes("ฝ่ายย่อย")
+    ) {
+     
+      return sectionsApprove.find((s) => s.sec_name === data)?.users ?? [];
+    }
+
+    return [];
+  };
+
 
   return (
     <div className="flex flex-col gap-[60px] bg-[#FFFFFF] border border-[#BFBFBF] w-[1660px] rounded-[16px] px-[60px] py-[60px]">
@@ -792,66 +822,66 @@ const MainDeviceModal = ({
               </Button>
             </div>
             {selectedApprovers &&
-  (() => {
-    const steps =
-      approvalFlowSteps?.find(
-        (item) => item.af_id === selectedApprovers.value
-      )?.steps ?? [];
+              (() => {
+                const steps =
+                  approvalFlowSteps?.find(
+                    (item) => item.af_id === selectedApprovers.value
+                  )?.steps ?? [];
 
-    return (
-      <div
-        className="
+                return (
+                  <div
+                    className="
           flex flex-wrap items-start gap-x-[6px] gap-y-[8px]
           max-w-[800px]
         "
-      >
-        {steps.map((ap, index) => (
-          <div key={ap.afs_id} className="flex flex-col">
-            {/* ===== ชื่อขั้น ===== */}
-            <div className="flex items-center whitespace-nowrap">
-              <span
-                className="
+                  >
+                    {steps.map((ap, index) => (
+                      <div key={ap.afs_id} className="flex flex-col">
+                        {/* ===== ชื่อขั้น ===== */}
+                        <div className="flex items-center whitespace-nowrap">
+                          <span
+                            className="
                   text-[16px] text-[#7BACFF] cursor-pointer
                   hover:underline
                 "
-                onClick={() =>
-                  setOpenStepId(
-                    openStepId === ap.afs_id ? null : ap.afs_id
-                  )
-                }
-              >
-                {ap.afs_name}
-              </span>
+                            onClick={() =>
+                              setOpenStepId(
+                                openStepId === ap.afs_id ? null : ap.afs_id
+                              )
+                            }
+                          >
+                            {ap.afs_name}
+                          </span>
 
-              {index < steps.length - 1 && (
-                <span className="mx-[4px] text-[16px] text-[#7BACFF]">›</span>
-              )}
-            </div>
+                          {index < steps.length - 1 && (
+                            <span className="mx-[4px] text-[16px] text-[#7BACFF]">›</span>
+                          )}
+                        </div>
 
-            {/* ===== รายชื่อผู้ใช้ ===== */}
-            {openStepId === ap.afs_id && (
-              <div className="mt-[6px] ml-[8px] space-y-[2px]">
-                {ap.users?.length ? (
-                  ap.users.map((u) => (
-                    <div
-                      key={u.us_id}
-                      className="text-[14px] text-gray-600"
-                    >
-                      • {u.fullname}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-[14px] text-gray-400 italic">
-                    ไม่มีผู้ใช้งาน
+                        {/* ===== รายชื่อผู้ใช้ ===== */}
+                        {openStepId === ap.afs_id && (
+                          <div className="mt-[6px] ml-[8px] space-y-[2px]">
+                            {ap.users?.length ? (
+                              ap.users.map((u) => (
+                                <div
+                                  key={u.us_id}
+                                  className="text-[14px] text-gray-600"
+                                >
+                                  • {u.fullname}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-[14px] text-gray-400 italic">
+                                ไม่มีผู้ใช้งาน
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  })()}
+                );
+              })()}
 
           </div>
         </div>
@@ -931,9 +961,9 @@ const MainDeviceModal = ({
                     </p>
                   </div>
                   <div className="max-h-[300px] overflow-y-auto space-y-2.5 text-[16px]">
-                    {approverGroupFlow.map((g, idx) => (
+                    {approverGroupFlow.map((data, idx) => (
                       <div
-                        key={g.label}
+                        key={data.label}
                         draggable
                         onDragStart={(e) => handleDragStart(e, idx)}
                         onDragOver={(e) => handleDragOverStep(e, idx)}
@@ -941,26 +971,62 @@ const MainDeviceModal = ({
                         onDragEnd={handleDragEnd}
                         className="flex"
                       >
-                        <div className="m-2.5 cursor-grab">
+                        <div className="m-2 cursor-grab py-3">
                           <FontAwesomeIcon
                             icon={faBars}
-                            className="text-[13px]"
+                            className="text-[14px]"
                           />
                         </div>
 
                         <div className="flex items-center overflow-hidden w-full">
-                          <div className="border-2 border-[#D8D8D8] border-r-0 rounded-l-2xl px-[15px] py-[9px]">
+                          <div className="border-2 border-[#D8D8D8] border-r-0 rounded-l-2xl px-[15px] py-[12.5px]">
                             {idx + 1}
                           </div>
 
-                          <div className="w-full border-2 border-[#D8D8D8] border-x-0 py-[9px] truncate">
-                            {g.label}
+                          <div className="w-full border-2 border-[#D8D8D8] border-x-0 py-0.5">
+
+                            <div className="font-medium truncate">
+                              {data.label}
+                            </div>
+
+                            {(() => {
+                              const users = getUsersByLabel(data.label);
+                              const MAX_SHOW = 2;
+
+                              if (!users || users.length === 0) return (
+                                <div className="text-[14px] text-gray-500 flex flex-wrap items-center">
+                                <div className="">
+                                    ไม่มีผู้ใช้งานในตำแหน่งนี้
+                                </div>
+                                </div>
+                              )
+                              
+                              ;
+
+                              const previewNames = users
+                                .slice(0, MAX_SHOW)
+                                .map((u: any) => u.us_name)
+                                .join(" , ");
+
+                              return (
+                                <div className=" text-[14px] text-gray-500 flex flex-wrap items-center">
+                                  <p className="text-gray-400">
+                                    ผู้ใช้งานในตำแหน่งนี้ :
+                                  </p>
+                                  <p className="truncate max-w-[220px]">
+                                    {previewNames}
+                                  </p>
+
+
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           <button
                             type="button"
-                            onClick={() => handleDeleteApproverGroup(g.label)}
-                            className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[9px] bg-[#F5222D]"
+                            onClick={() => handleDeleteApproverGroup(data.label)}
+                            className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[12px] bg-[#F5222D]"
                           >
                             <Icon
                               icon="solar:trash-bin-trash-linear"
@@ -1004,7 +1070,7 @@ const MainDeviceModal = ({
         onConfirm={async () => {
           handleSubmit();
         }}
-        onCancel={() => {}}
+        onCancel={() => { }}
       />
       <AlertDialog
         open={openConfirmApprove}
@@ -1020,7 +1086,7 @@ const MainDeviceModal = ({
             window.location.reload();
           }, 100); // หน่วง 1 วินาที
         }}
-        onCancel={() => {}}
+        onCancel={() => { }}
       />
     </div>
   );

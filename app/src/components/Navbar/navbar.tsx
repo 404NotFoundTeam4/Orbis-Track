@@ -102,12 +102,12 @@ const Navbar = () => {
             )}
             {menu.label}
             {menu.iconRight && (
-              <FontAwesomeIcon icon={menu.iconRight} className={`mt-1 transform transition-all duration-800 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
+              <FontAwesomeIcon icon={menu.iconRight} className={`mt-1 transform transition-all duration-500 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
                 }`} />
             )}
           </div>
           <div
-            className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col  gap-1
+            className={`overflow-hidden transition-all duration-500 ease-in-out flex flex-col  gap-1
     ${openMenu === menu.key
                 ? "max-h-[500px] opacity-100 py-2.5"
                 : "max-h-0 opacity-0"
@@ -117,9 +117,9 @@ const Navbar = () => {
               <Link
                 key={child.key}
                 to={child.path!}
-                onClick={() => handleSubMenuClick(child.key)}
+                onClick={() => handleSubMenuClick(child.label)}
                 className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap
-        ${activeSubMenu === child.key
+        ${activeSubMenu === child.label
                     ? "bg-[#EBF3FE] text-[#40A9FF]"
                     : "hover:bg-[#F0F0F0]"
                   }`}

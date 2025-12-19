@@ -8,14 +8,12 @@ import {
   faGear,
   faCartShopping,
   faBell,
-  faChevronUp
+  faChevronUp,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { UserRole } from "./role.enum";
-import Logo from "../../assets/images/navbar/Logo.png"
+import Logo from "../../assets/images/navbar/Logo.png";
 import LogoGiga from "../../assets/images/navbar/logo-giga.png";
-
-
 
 export const Icons: { [key: string]: IconDefinition } = {
   FASHOPPING: faCartShopping,
@@ -31,13 +29,11 @@ export type MenuItem = {
   key: string;
   label: string;
   path?: string;
-  icon?: IconDefinition;       // icon ด้านซ้าย
-  iconRight?: IconDefinition;  // icon ด้านขวา
+  icon?: IconDefinition; // icon ด้านซ้าย
+  iconRight?: IconDefinition; // icon ด้านขวา
   roles: UserRole[];
   children?: MenuItem[];
 };
-
-
 
 export const MENU_CONFIG: MenuItem[] = [
   {
@@ -45,7 +41,20 @@ export const MENU_CONFIG: MenuItem[] = [
     label: "หน้าแรก",
     path: "/home",
     icon: faHome,
-    roles: [UserRole.ADMIN, UserRole.USER, UserRole.STAFF],
+    roles: [
+      UserRole.ADMIN,
+      UserRole.USER,
+      UserRole.STAFF,
+      UserRole.HOD,
+      UserRole.HOS,
+    ],
+  },
+  {
+    key: "management",
+    label: "จัดการคำร้อง",
+    path: "/home",
+    icon: faServer,
+    roles: [UserRole.HOD, UserRole.HOS],
   },
   {
     key: "management",
@@ -89,7 +98,7 @@ export const MENU_CONFIG: MenuItem[] = [
         label: "หมวดหมู่อุปกรณ์",
         path: "/administrator/departments-management",
         roles: [UserRole.ADMIN],
-      }
+      },
     ],
   },
   {
@@ -97,35 +106,41 @@ export const MENU_CONFIG: MenuItem[] = [
     label: "รายการอุปกรณ์",
     path: "/devices",
     icon: faBoxArchive,
-    roles: [UserRole.ADMIN, UserRole.USER],
+    roles: [UserRole.ADMIN, UserRole.USER, UserRole.HOD, UserRole.HOS],
   },
   {
     key: "repair",
     label: "แจ้งซ่อม",
     path: "/repair",
     icon: faWrench,
-    roles: [UserRole.USER, UserRole.STAFF, UserRole.ADMIN],
+    roles: [
+      UserRole.USER,
+      UserRole.STAFF,
+      UserRole.ADMIN,
+      UserRole.HOD,
+      UserRole.HOS,
+    ],
   },
   {
     key: "dashboard",
     label: "แดชบอร์ด",
     path: "/dashboard",
     icon: faChartLine,
-    roles: [UserRole.ADMIN],
+    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS],
   },
   {
     key: "history",
     label: "ดูประวัติ",
     path: "/history",
     icon: faClockRotateLeft,
-    roles: [UserRole.ADMIN, UserRole.USER],
+    roles: [UserRole.ADMIN, UserRole.USER, UserRole.HOD, UserRole.HOS],
   },
   {
     key: "setting",
     label: "การตั้งค่า",
     path: "/setting",
     icon: faGear,
-    roles: [UserRole.ADMIN],
+    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS],
   },
 ];
 
@@ -141,8 +156,6 @@ export const filterMenuByRole = (
     .map((menu) => ({
       ...menu,
       children: menu.children
-        ? menu.children.filter((child) =>
-          child.roles.includes(role)
-        )
+        ? menu.children.filter((child) => child.roles.includes(role))
         : undefined,
     }));

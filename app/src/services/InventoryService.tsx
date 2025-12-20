@@ -30,5 +30,4 @@ export const inventoryService = {
         const { data } = await api.get(`/inventory/devices`);
         return data.data;
     }
-
 }

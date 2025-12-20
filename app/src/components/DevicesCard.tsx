@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { GetInventory } from "../services/InventoryService"
 import Button from "./Button"
 
@@ -7,6 +7,18 @@ interface DevicesCardProps {
 }
 
 const DevicesCard = ({ device }: DevicesCardProps) => {
+  // ใช้สำหรับเปลี่ยนหน้า
+  const navigate = useNavigate();
+
+  // เมื่อทำการกดปุ่มยืม
+  const handleBorrow = () => {
+    navigate("/list-devices/borrow", {
+      state: {
+        deviceId: device.de_id
+      }
+    });
+  }
+
   return (
     <div className="w-[308px] min-h-[313px] rounded-[16px] bg-white shadow-md border border-gray-200 overflow-hidden flex flex-col">
 
@@ -46,12 +58,12 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
               คงเหลือ : {device.available} / {device.total} ชิ้น
             </p>
 
-            <Button
-              className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm">
-              <Link to="/list-devices/borrow">
+              <Button
+                className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm cursor-pointer"
+                onClick={handleBorrow}
+              >
                 ยืม
-              </Link>
-            </Button>
+              </Button>
           </div>
         </div>
       </div>

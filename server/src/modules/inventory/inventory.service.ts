@@ -6,7 +6,8 @@ import {
     CreateDeviceChildPayload,
     DeleteDeviceChildPayload,
     IdParamDto,
-    UploadFileDeviceChildPayload
+    UploadFileDeviceChildPayload,
+    UpdateDevicePayload
 } from "./inventory.schema.js";
 
 /**
@@ -312,7 +313,6 @@ async function deleteDeviceChild(payload: DeleteDeviceChildPayload) {
  */
 async function getDeviceById(params: IdParamDto) {
     const { id } = params;
-    // Query ข้อมูลจากฐานข้อมูล พร้อม include ตารางที่เกี่ยวข้อง
     const device = await prisma.devices.findUnique({ 
         where: { de_id: id },
         include: {
@@ -330,7 +330,6 @@ async function getDeviceById(params: IdParamDto) {
     
     if (!device) throw new Error("Device not found");
 
-    // Logic: ตัดชื่อแผนกออกจากชื่อฝ่ายย่อย เพื่อไม่ให้แสดงผลซ้ำซ้อน
     const deptName = device.section?.department?.dept_name || "";
     let subSecName = device.section?.sec_name || "-";
     if (deptName && subSecName.startsWith(deptName)) {
@@ -342,6 +341,11 @@ async function getDeviceById(params: IdParamDto) {
         category_name: device.category?.ca_name || "-",
         sub_section_name: subSecName, 
         department_name: deptName, 
+
+        dept_id: device.section?.department?.dept_id || null,
+        ca_id: device.de_ca_id,
+        sec_id: device.de_sec_id,
+        af_id: device.de_af_id,
         
         quantity: device.device_childs.length, 
         device_childs: device.device_childs 
@@ -366,7 +370,8 @@ async function getAllDevices() {
                     dec_serial_number: true,
                     dec_status: true 
                 }
-            }
+            },
+            approval_flow: true
         },
         orderBy: { created_at: 'desc' }
     });
@@ -399,6 +404,11 @@ async function getAllDevices() {
             sub_section_name: subSecName, // ชื่อฝ่ายย่อยที่ตัดแล้ว
             department_name: deptName,    
             
+            dept_id: item.section?.department?.dept_id || null, 
+            ca_id: item.de_ca_id, 
+            sec_id: item.de_sec_id,
+            af_id: item.de_af_id,
+
             quantity: totalQuantity, 
             status_type: statusType,
             device_childs: item.device_childs
@@ -426,4 +436,37 @@ export async function softDeleteDevice(de_id: number) {
     return { de_id: updated.de_id, deletedAt: updated.deleted_at };
 }
 
-export const inventoryService = { getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild, getDeviceById, getAllDevices, softDeleteDevice }
+/** * Description: แก้ไขข้อมูลอุปกรณ์
+ * Input: id (number) - รหัสอุปกรณ์
+ *        data (UpdateDevicePayload) - ข้อมูลอุปกรณ์ที่ต้องการแก้ไข
+ * Output: ข้อมูลอุปกรณ์ที่ถูกแก้ไขแล้ว
+ * Author: Worrawat Namwat (Wave) 66160372
+ */
+export async function updateDevice(id: number, data: UpdateDevicePayload) {
+    const existing = await prisma.devices.findUnique({ where: { de_id: id } });
+    if (!existing) throw new Error("Device not found");
+ //ทำการ Update (Map ให้ตรงกับ Schema)
+    const updated = await prisma.devices.update({
+        where: { de_id: id },
+        data: {
+            // ข้อมูลทั่วไป
+            de_name: data.device_name,
+            de_serial_number: data.device_code,
+            de_location: data.location,
+            de_description: data.description,
+            de_max_borrow_days: data.maxBorrowDays,
+            de_images: data.imageUrl,
+            
+            // Foreign Keys (ต้อง Map จาก Payload มาเป็นชื่อ Field ใน DB)
+            de_ca_id: data.category_id ? Number(data.category_id) : undefined,      // Category
+            de_sec_id: data.sub_section_id ? Number(data.sub_section_id) : undefined, // Section (ฝ่ายย่อย)
+            de_af_id: data.approver_flow_id ? Number(data.approver_flow_id) : undefined, // Approval Flow
+
+            // อัปเดตเวลาล่าสุด
+            updated_at: new Date()
+        }
+    });
+    return updated;
+}
+
+export const inventoryService = { getDeviceWithChilds, createDeviceChild, uploadFileDeviceChild, deleteDeviceChild, getDeviceById, getAllDevices, softDeleteDevice ,updateDevice}

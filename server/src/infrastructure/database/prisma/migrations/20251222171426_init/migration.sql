@@ -100,8 +100,7 @@ CREATE TABLE "devices" (
     "de_af_id" INTEGER NOT NULL,
     "de_ca_id" INTEGER NOT NULL,
     "de_us_id" INTEGER NOT NULL,
-    "de_sec_id" INTEGER,
-    "de_acc_id" INTEGER,
+    "de_sec_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -147,12 +146,25 @@ CREATE TABLE "cart_items" (
     "cti_start_date" TIMESTAMPTZ(6),
     "cti_end_date" TIMESTAMPTZ(6),
     "cti_ct_id" INTEGER NOT NULL,
-    "cti_dec_id" INTEGER NOT NULL,
+    "cti_de_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "cart_items_pkey" PRIMARY KEY ("cti_id")
+);
+
+-- CreateTable
+CREATE TABLE "cart_device_childs" (
+    "cdc_id" SERIAL NOT NULL,
+    "cdc_cti_id" INTEGER NOT NULL,
+    "cdc_dec_id" INTEGER NOT NULL,
+    "deleted_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6),
+    "updated_at" TIMESTAMPTZ(6),
+    "reserved_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "cart_device_childs_pkey" PRIMARY KEY ("cdc_id")
 );
 
 -- CreateTable
@@ -172,6 +184,7 @@ CREATE TABLE "accessories" (
     "acc_id" SERIAL NOT NULL,
     "acc_name" VARCHAR(100) NOT NULL,
     "acc_quantity" INTEGER NOT NULL,
+    "acc_de_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -263,6 +276,11 @@ CREATE TABLE "borrow_return_ticket_stages" (
     "brts_status" "BRTS_STATUS" NOT NULL,
     "brts_name" VARCHAR(191) NOT NULL,
     "brts_step_approve" INTEGER NOT NULL,
+    "brts_role" "US_ROLE" NOT NULL,
+    "brts_dept_id" INTEGER,
+    "brts_sec_id" INTEGER,
+    "brts_dept_name" VARCHAR(200),
+    "brts_sec_name" VARCHAR(200),
     "brts_brt_id" INTEGER NOT NULL,
     "brts_us_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
@@ -277,6 +295,7 @@ CREATE TABLE "ticket_devices" (
     "td_id" SERIAL NOT NULL,
     "td_brt_id" INTEGER NOT NULL,
     "td_dec_id" INTEGER NOT NULL,
+    "td_origin_cti_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -297,7 +316,7 @@ CREATE TABLE "ticket_issues" (
     "ti_result" "TI_RESULT" NOT NULL,
     "ti_damaged_reason" VARCHAR(255),
     "ti_resolved_note" TEXT,
-    "recive_at" TIMESTAMPTZ(6),
+    "receive_at" TIMESTAMPTZ(6),
     "success_at" TIMESTAMPTZ(6),
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -477,10 +496,10 @@ CREATE INDEX "idx_cart_user_status" ON "carts"("ct_us_id");
 CREATE INDEX "idx_ct_item_cart" ON "cart_items"("cti_ct_id");
 
 -- CreateIndex
-CREATE INDEX "idx_ct_item_device" ON "cart_items"("cti_dec_id");
+CREATE INDEX "idx_ct_item_device" ON "cart_items"("cti_de_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "uq_ct_item_device" ON "cart_items"("cti_ct_id", "cti_dec_id");
+CREATE UNIQUE INDEX "uq_ct_item_device" ON "cart_items"("cti_ct_id", "cti_de_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "refresh_tokens_rt_token_hash_key" ON "refresh_tokens"("rt_token_hash");
@@ -490,6 +509,9 @@ CREATE INDEX "idx_rt_user_exp" ON "refresh_tokens"("rt_us_id");
 
 -- CreateIndex
 CREATE INDEX "idx_rt_revoked" ON "refresh_tokens"("rt_revoked_at");
+
+-- CreateIndex
+CREATE INDEX "accessories_acc_de_id_idx" ON "accessories"("acc_de_id");
 
 -- CreateIndex
 CREATE INDEX "idx_steps_flow_step" ON "approval_flow_steps"("afs_af_id", "afs_step_approve");
@@ -514,6 +536,9 @@ CREATE INDEX "idx_brts_brt_step" ON "borrow_return_ticket_stages"("brts_id", "br
 
 -- CreateIndex
 CREATE INDEX "idx_brts_status" ON "borrow_return_ticket_stages"("brts_status");
+
+-- CreateIndex
+CREATE INDEX "idx_brts_pending_lookup" ON "borrow_return_ticket_stages"("brts_status", "brts_role", "brts_dept_id", "brts_sec_id");
 
 -- CreateIndex
 CREATE INDEX "idx_ticket_device_brt" ON "ticket_devices"("td_brt_id");
@@ -597,9 +622,6 @@ ALTER TABLE "devices" ADD CONSTRAINT "devices_de_us_id_fkey" FOREIGN KEY ("de_us
 ALTER TABLE "devices" ADD CONSTRAINT "devices_de_sec_id_fkey" FOREIGN KEY ("de_sec_id") REFERENCES "sections"("sec_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "devices" ADD CONSTRAINT "devices_de_acc_id_fkey" FOREIGN KEY ("de_acc_id") REFERENCES "accessories"("acc_id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "device_childs" ADD CONSTRAINT "device_childs_dec_de_id_fkey" FOREIGN KEY ("dec_de_id") REFERENCES "devices"("de_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -609,10 +631,19 @@ ALTER TABLE "carts" ADD CONSTRAINT "carts_ct_us_id_fkey" FOREIGN KEY ("ct_us_id"
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_ct_id_fkey" FOREIGN KEY ("cti_ct_id") REFERENCES "carts"("ct_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_dec_id_fkey" FOREIGN KEY ("cti_dec_id") REFERENCES "device_childs"("dec_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_de_id_fkey" FOREIGN KEY ("cti_de_id") REFERENCES "devices"("de_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_device_childs" ADD CONSTRAINT "cart_device_childs_cdc_cti_id_fkey" FOREIGN KEY ("cdc_cti_id") REFERENCES "cart_items"("cti_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_device_childs" ADD CONSTRAINT "cart_device_childs_cdc_dec_id_fkey" FOREIGN KEY ("cdc_dec_id") REFERENCES "device_childs"("dec_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_rt_us_id_fkey" FOREIGN KEY ("rt_us_id") REFERENCES "users"("us_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "accessories" ADD CONSTRAINT "accessories_acc_de_id_fkey" FOREIGN KEY ("acc_de_id") REFERENCES "devices"("de_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "approval_flows" ADD CONSTRAINT "approval_flows_af_us_id_fkey" FOREIGN KEY ("af_us_id") REFERENCES "users"("us_id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -646,6 +677,12 @@ ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_s
 
 -- AddForeignKey
 ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_stages_brts_us_id_fkey" FOREIGN KEY ("brts_us_id") REFERENCES "users"("us_id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_stages_brts_dept_id_fkey" FOREIGN KEY ("brts_dept_id") REFERENCES "departments"("dept_id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "borrow_return_ticket_stages" ADD CONSTRAINT "borrow_return_ticket_stages_brts_sec_id_fkey" FOREIGN KEY ("brts_sec_id") REFERENCES "sections"("sec_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ticket_devices" ADD CONSTRAINT "ticket_devices_td_brt_id_fkey" FOREIGN KEY ("td_brt_id") REFERENCES "borrow_return_tickets"("brt_id") ON DELETE RESTRICT ON UPDATE CASCADE;

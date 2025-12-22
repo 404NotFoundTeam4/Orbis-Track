@@ -130,31 +130,25 @@ export class InventoryController extends BaseController {
 
   // ดึงข้อมูลแผนก
   async getDepartments(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await prisma.departments.findMany();
+    const data = await inventoryService.getDepartments();
     return { data };
   }
 
   // ดึงข้อมูลหมวดหมู่
   async getCategories(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await prisma.categories.findMany();
+    const data = await inventoryService.getCategories();
     return { data };
   }
 
   // ดึงข้อมูลฝ่ายย่อย
   async getSubSections(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await prisma.sections.findMany();
+    const data = await inventoryService.getSubSections();
     return { data };
   }
 
   // ดึงข้อมูลลำดับการอนุมัติ
   async getApprovalFlows(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await prisma.approval_flows.findMany({
-      include: {
-        steps: {
-            orderBy: { afs_step_approve: 'asc' } // เรียงลำดับ step
-        }
-      }
-    });
+    const data = await inventoryService.getApprovalFlows(); 
     return { data };
   }
 

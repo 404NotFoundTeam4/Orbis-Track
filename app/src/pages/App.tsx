@@ -16,8 +16,10 @@ import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
 import { Cart } from "./Cart";
-import EditCart from "./EditCart";
+// import EditCart from "./EditCart";
 import ListDevices from "./ListDevices";
+import BorrowDevicefrom from "./BorrowDevice";
+import BorrowDevice from "./BorrowDevice";
 
 function App() {
   return (
@@ -50,6 +52,7 @@ function App() {
               <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/list-devices" element={<ListDevices />} />
+              <Route path="/list-devices/borrow" element={<BorrowDevice />} />
             </Route>
           </Route>
         </Routes>

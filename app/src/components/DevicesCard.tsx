@@ -7,6 +7,10 @@ interface DevicesCardProps {
 }
 
 const DevicesCard = ({ device }: DevicesCardProps) => {
+
+  const deviceID = device.de_id;
+  const deviceName = device.de_name;
+
   return (
     <div className="w-[308px] min-h-[313px] rounded-[16px] bg-white shadow-md border border-gray-200 overflow-hidden flex flex-col">
 
@@ -46,12 +50,13 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
               คงเหลือ : {device.available} / {device.total} ชิ้น
             </p>
 
-            <Button
-              className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm">
-              <Link to="/list-devices/borrow">
-                ยืม
+              <Link to="/list-devices/borrow" state={{deviceID : deviceID,deviceName : deviceName}}>
+                <Button className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm">
+                  ยืม
+                </Button>
+
               </Link>
-            </Button>
+            
           </div>
         </div>
       </div>

@@ -114,7 +114,7 @@ export const getStaffSchema = z.object({
 export const departmentSchema = z.object({
     dept_id: z.coerce.number(),
     dept_name: z.string(),
-  
+   users: z.array(approvalStepUserSchema)
 });
 
 // สำหรับตรวจสอบข้อมูลฝ่ายย่อย
@@ -122,7 +122,7 @@ export const sectionSchema = z.object({
     sec_id: z.coerce.number(),
     sec_name: z.string(),
     sec_dept_id: z.coerce.number(),
-  
+     users: z.array(approvalStepUserSchema)
 });
 
 export const getApprovalFlowSchema = z.object({

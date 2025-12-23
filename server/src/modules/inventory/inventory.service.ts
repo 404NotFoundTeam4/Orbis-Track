@@ -307,6 +307,30 @@ async function deleteDeviceChild(payload: DeleteDeviceChildPayload) {
     return { message: "Delete device child successfully" }
 }
 
+/**
+ * Description: สร้างอุปกรณ์หลัก พร้อมอุปกรณ์เสริมและอุปกรณ์ลูก
+ * Input     :
+ *   - payload: CreateDevicePayload
+ *       - ข้อมูลอุปกรณ์หลัก
+ *       - accessories (optional)
+ *       - serialNumbers (optional)
+ *       - totalQuantity จำนวนอุปกรณ์ลูก
+ *   - images (optional): string - รูปภาพอุปกรณ์ (override payload)
+ * Output    :
+ *   - device: ข้อมูลอุปกรณ์หลักที่สร้างแล้ว
+ *   - accessories: รายการอุปกรณ์เสริม
+ * Logic     :
+ *   - แยกข้อมูล accessories, serialNumbers, totalQuantity ออกจาก payload
+ *   - เลือกรูปภาพจาก images → payload → null
+ *   - ใช้ Prisma Transaction
+ *     - สร้าง devices
+ *     - ถ้ามี accessories → createMany ลง accessories
+ *     - ถ้า totalQuantity > 0
+ *         - สร้าง device_childs ตามจำนวน
+ *         - สร้าง asset code และ serial number อัตโนมัติ
+ * Author    : Panyapon Phollert (Ton) 66160086
+ */
+
 async function createDevice(payload: CreateDevicePayload, images?: string) {
     const { accessories,
         serialNumbers,
@@ -364,6 +388,29 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
         };
     });
 }
+
+/**
+ * Description: ดึงข้อมูลอุปกรณ์ทั้งหมด พร้อม approval flow และขั้นตอนอนุมัติ
+ * Input     : -
+ * Output    :
+ *   - departments: แผนก (เติม prefix หัวหน้า)
+ *   - sections: ฝ่ายย่อย (เติม prefix หัวหน้า)
+ *   - categories: หมวดหมู่อุปกรณ์
+ *   - approval_flows: flow การอนุมัติ
+ *   - approval_flow_step: flow พร้อม steps และผู้อนุมัติ
+ * Logic     :
+ *   - ดึง users, departments, sections, categories,
+ *     approval_flows และ approval_flow_steps พร้อมกัน
+ *   - แปลง approval_flow_steps
+ *     - STAFF → ผูกกับ section + dept
+ *     - HOD → ผูกกับ department
+ *     - HOS → ผูกกับ section
+ *   - map ผู้ใช้ตาม role (แสดงสูงสุด 3 คน)
+ *   - group steps ตาม af_id
+ *   - รวม approval_flows กับ steps
+ * Author : Panyapon Phollert (Ton) 66160086
+ */
+
 async function getAllDevices() {
     const [users, departments, sections, categories, approval_flows, approval_flow_steps] = await Promise.all([
         prisma.users.findMany({
@@ -534,6 +581,25 @@ async function getAllDevices() {
 
 
 }
+
+/**
+ * Description: สร้าง Approval Flow และขั้นตอนการอนุมัติ
+ * Input     :
+ *   - payload: CreateApprovalFlowsPayload
+ *       - af_name: ชื่อ flow
+ *       - af_us_id: ผู้สร้าง flow
+ *       - approvalflowsstep: รายการขั้นตอนการอนุมัติ
+ * Output    :
+ *   - approvalflow: ข้อมูล flow ที่สร้าง
+ *   - steps: จำนวนขั้นตอนที่สร้าง
+ * Logic     :
+ *   - ใช้ Prisma Transaction
+ *     - สร้าง approval_flows
+ *     - สร้าง approval_flow_steps แบบ createMany
+ *     - ผูก afs_af_id กับ flow ที่สร้างใหม่
+ * Author    : Panyapon Phollert (Ton) 66160086
+ */
+
 async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
     const {
         af_name,
@@ -567,6 +633,27 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
         };
     });
 }
+
+/**
+ * Description: ดึงข้อมูลสำหรับตั้งค่า Approval (STAFF / HOD / HOS)
+ * Input     : -
+ * Output    :
+ *   - departments: หัวหน้าแผนก (HOD)
+ *   - sections: หัวหน้าฝ่ายย่อย (HOS)
+ *   - staff: เจ้าหน้าที่คลัง แยกตามฝ่ายย่อย
+ * Logic     :
+ *   - ดึง departments, sections, users
+ *   - STAFF
+ *     - รวม section ที่ซ้ำกันด้วย Set
+ *     - map ผู้ใช้ role HOS
+ *   - HOD
+ *     - map ตาม department
+ *   - HOS
+ *     - map ตาม section
+ *   - แสดงผู้ใช้สูงสุด 3 คนต่อกลุ่ม
+ * Author   : Panyapon Phollert (Ton) 66160086
+ */
+
 async function getAllApproves() {
     const [departments, sections, users] = await Promise.all([
         prisma.departments.findMany({

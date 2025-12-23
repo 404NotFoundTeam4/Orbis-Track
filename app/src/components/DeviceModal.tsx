@@ -410,8 +410,6 @@ const MainDeviceModal = ({
 
     //  เอาไว้ใช้ชั่วคราว
     formData.append("data", "devices");
-    formData.append("mode", mode);
-
     formData.append("de_serial_number", deviceCode);
     formData.append("de_name", deviceName);
     formData.append("de_description", description ?? "");
@@ -466,11 +464,9 @@ const MainDeviceModal = ({
         }
       }
     );
-
+    console.log(approver)
     const formData = new FormData();
     formData.append("data", "approve");
-    formData.append("mode", mode);
-
     formData.append("af_name", titleApprove);
     formData.append("af_us_id", userId);
 
@@ -1079,9 +1075,7 @@ const MainDeviceModal = ({
         cancelText="ยกเลิก"
         onConfirm={async () => {
           handleSumbitApprove();
-          setTimeout(() => {
-            window.location.reload();
-          }, 100); // หน่วง 1 วินาที
+     
         }}
         onCancel={() => {}}
       />

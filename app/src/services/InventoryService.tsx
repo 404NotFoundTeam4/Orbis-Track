@@ -97,87 +97,122 @@ export interface CreateDevicePayload {
 }
 
 export const DeviceService = {
-
   /**
-  * Description: ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
-  * Input     : id - รหัสอุปกรณ์แม่
-  * Output    : data - ข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
-  * Endpoint  : GET /api/inventory/devices/:id
-  * Author    : Thakdanai Makmi (Ryu) 66160355
-  */
-  getDeviceWithChilds: async (id: number): Promise<GetDeviceWithChildsResponse> => {
+   * Description: ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
+   * Input     : id - รหัสอุปกรณ์แม่
+   * Output    : data - ข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
+   * Endpoint  : GET /api/inventory/devices/:id
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  getDeviceWithChilds: async (
+    id: number
+  ): Promise<GetDeviceWithChildsResponse> => {
     const { data } = await api.get(`/inventory/devices/${id}`);
     return data.data;
   },
 
   /**
-  * Description: เพิ่มอุปกรณ์ลูก
-  * Input     : payload (dec_de_id, quantity) - รหัสอุปกรณ์แม่และจำนวนอุปกรณ์ลูกที่ต้องการเพิ่ม
-  * Output    : data - ข้อมูลอุปกรณ์ลูกที่เพิ่มใหม่
-  * Endpoint  : POST /api/inventory/devices-childs
-  * Author    : Thakdanai Makmi (Ryu) 66160355
-  */
-  createDeviceChild: async (payload: CreateDeviceChildPayload): Promise<{ message: string }> => {
+   * Description: เพิ่มอุปกรณ์ลูก
+   * Input     : payload (dec_de_id, quantity) - รหัสอุปกรณ์แม่และจำนวนอุปกรณ์ลูกที่ต้องการเพิ่ม
+   * Output    : data - ข้อมูลอุปกรณ์ลูกที่เพิ่มใหม่
+   * Endpoint  : POST /api/inventory/devices-childs
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  createDeviceChild: async (
+    payload: CreateDeviceChildPayload
+  ): Promise<{ message: string }> => {
     const { data } = await api.post(`/inventory/devices-childs`, payload);
     return data;
   },
 
   /**
-  * Description: ลบอุปกรณ์ลูก
-  * Input     : payload (dec_id) - รหัสอุปกรณ์ลูก (รองรับหลายรายการ)
-  * Output    : data - ผลการลบอุปกรณ์ลูก
-  * Endpoint  : DELETE /api/inventory/devices-childs
-  * Author    : Thakdanai Makmi (Ryu) 66160355
-  */
-  deleteDeviceChild: async (payload: DeleteDeviceChlidsPayload): Promise<{ message: string }> => {
+   * Description: ลบอุปกรณ์ลูก
+   * Input     : payload (dec_id) - รหัสอุปกรณ์ลูก (รองรับหลายรายการ)
+   * Output    : data - ผลการลบอุปกรณ์ลูก
+   * Endpoint  : DELETE /api/inventory/devices-childs
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  deleteDeviceChild: async (
+    payload: DeleteDeviceChlidsPayload
+  ): Promise<{ message: string }> => {
     const { data } = await api.delete(`/inventory/devices-childs`, {
-      data: payload
+      data: payload,
     });
     return data;
   },
 
   /**
-  * Description: เพิ่มอุปกรณ์ลูกด้วยไฟล์ Excel / CSV
-  * Input     : id - รหัสอุปกรณ์แม่, formData - ไฟล์อุปกรณ์ลูก
-  * Output    : จำนวนอุปกรณ์ลูกที่เพิ่ม
-  * Endpoint  : POST /api/inventory/devices/:id/upload-childs
-  * Author    : Thakdanai Makmi (Ryu) 66160355
-  */
-  uploadFileDeviceChild: async (id: number, formData: FormData): Promise<UploadFileDeviceChildResponse> => {
+   * Description: เพิ่มอุปกรณ์ลูกด้วยไฟล์ Excel / CSV
+   * Input     : id - รหัสอุปกรณ์แม่, formData - ไฟล์อุปกรณ์ลูก
+   * Output    : จำนวนอุปกรณ์ลูกที่เพิ่ม
+   * Endpoint  : POST /api/inventory/devices/:id/upload-childs
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  uploadFileDeviceChild: async (
+    id: number,
+    formData: FormData
+  ): Promise<UploadFileDeviceChildResponse> => {
     return await api.post(`/inventory/devices/${id}/upload-childs`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
 
-  getAllDevices: async ():Promise<getAllDevices>=>{
-    const {data} = await api.get("/inventory/add-devices")
+  /**
+   * Description: ดึงข้อมูลอุปกรณ์ทั้งหมด สำหรับหน้าเพิ่ม / แสดงอุปกรณ์
+   * Input     : -
+   * Output    : ข้อมูลอุปกรณ์, หมวดหมู่, แผนก, ฝ่ายย่อย และ approval flow
+   * Endpoint  : GET /api/inventory/add-devices
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
+
+  getAllDevices: async (): Promise<getAllDevices> => {
+    const { data } = await api.get("/inventory/add-devices");
     return data;
   },
+
+  /**
+   * Description: เพิ่มอุปกรณ์หลัก พร้อมอุปกรณ์เสริมและอุปกรณ์ลูก
+   * Input     : payload - ข้อมูลอุปกรณ์ที่ต้องการสร้าง
+   * Output    : ผลลัพธ์การสร้างอุปกรณ์
+   * Endpoint  : POST /api/inventory/devices
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
 
   createDevices: async (
     payload: CreateDevicePayload
   ): Promise<CreateDeviceResponse> => {
-   
     const res = await api.post<CreateDeviceResponse>(
       "/inventory/devices",
-      payload,
+      payload
     );
     return res.data;
   },
 
-  createApprove:async(
-    payload:CreateApprovalFlowPayload
-  ):Promise<CreateDeviceResponse>=>{
-      const res = api.post("inventory/approval",payload)
-      return res
+  /**
+   * Description: สร้าง Approval Flow และขั้นตอนการอนุมัติ
+   * Input     : payload - ข้อมูล approval flow และ steps
+   * Output    : ผลลัพธ์การสร้าง approval flow
+   * Endpoint  : POST /api/inventory/approval
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
+
+  createApprove: async (
+    payload: CreateApprovalFlowPayload
+  ): Promise<CreateDeviceResponse> => {
+    const res = api.post("inventory/approval", payload);
+    return res;
   },
 
-  getApprove: async() =>{
-    const {data} = await api.get("/inventory/add-approval")
+  /**
+   * Description: ดึงข้อมูล Approval สำหรับหน้าเพิ่ม / ตั้งค่า Flow
+   * Input     : -
+   * Output    : ข้อมูล departments, sections และ staff
+   * Endpoint  : GET /api/inventory/add-approval
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
+
+  getApprove: async () => {
+    const { data } = await api.get("/inventory/add-approval");
     return data;
-  }
-  
+  },
 };
-
-
-  

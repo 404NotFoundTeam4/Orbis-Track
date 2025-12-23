@@ -12,7 +12,6 @@ export default function AddInventory() {
 
   const handleSubmit = async (formData: FormData) => {
     const data = formData.get("data") as string | null;
-    const mode = formData.get("mode") as string | null;
     if (data === "devices") {
       // ใช้ก่อน
 
@@ -27,6 +26,9 @@ export default function AddInventory() {
           tone: "confirm",
           message: "เพิ่มอุปกรณ์เรียบร้อยแล้ว",
         });
+             setTimeout(() => {
+            window.location.reload();
+          }, 1500); // หน่วง 1 วินาที
       } catch (e) {
         console.log(e);
         push({
@@ -37,7 +39,6 @@ export default function AddInventory() {
     } else if (data === "approve") {
       // ลบทิ้งก่อนส่ง backend
       formData.delete("data");
-      formData.delete("mode");
       const payload = {
         af_name: formData.get("af_name"),
         af_us_id: user?.us_id,
@@ -49,6 +50,9 @@ export default function AddInventory() {
           tone: "confirm",
           message: "เพิ่มการอนุมัติเรียบร้อยแล้ว",
         });
+             setTimeout(() => {
+            window.location.reload();
+          }, 1500); // หน่วง 1 วินาที
       } catch (e) {
         console.log(e);
         push({

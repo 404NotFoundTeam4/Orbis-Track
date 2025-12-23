@@ -20,13 +20,13 @@ CREATE TYPE "TI_RESULT" AS ENUM ('SUCCESS', 'FAILED', 'IN_PROGRESS');
 CREATE TYPE "DA_STATUS" AS ENUM ('ACTIVE', 'COMPLETED');
 
 -- CreateEnum
-CREATE TYPE "BASE_EVENT" AS ENUM ('DEVICE_CREATED', 'TICKET_CREATED', 'TICKET_APPROVED', 'TICKET_REJECTED', 'TICKET_STAGE_PASSED', 'TICKET_RETURNED', 'TICKET_DUE_SOON', 'TICKET_OVERDUE', 'ISSUE_REPORTED', 'ISSUE_ASSIGNED', 'ISSUE_RESOLVED', 'ISSUE_MARK_DAMAGED');
+CREATE TYPE "BASE_EVENT" AS ENUM ('DEVICE_CREATED', 'APPROVAL_REQUESTED', 'NOTIFICATION_FULFILLED', 'NOTIFICATION_RESOLVED', 'TICKET_CREATED', 'TICKET_APPROVED', 'TICKET_REJECTED', 'TICKET_STAGE_PASSED', 'TICKET_RETURNED', 'TICKET_DUE_SOON', 'TICKET_OVERDUE', 'ISSUE_REPORTED', 'ISSUE_ASSIGNED', 'ISSUE_RESOLVED', 'ISSUE_MARK_DAMAGED');
 
 -- CreateEnum
 CREATE TYPE "NR_STATUS" AS ENUM ('UNREAD', 'READ', 'DISMISSED');
 
 -- CreateEnum
-CREATE TYPE "NR_EVENT" AS ENUM ('APPROVAL_REQUESTED', 'YOUR_TICKET_APPROVED', 'YOUR_TICKET_REJECTED', 'YOUR_TICKET_IN_USE', 'YOUR_TICKET_RETURNED', 'DUE_SOON_REMINDER', 'OVERDUE_ALERT', 'ISSUE_NEW_FOR_TECH', 'ISSUE_ASSIGNED_TO_YOU', 'ISSUE_RESOLVED_FOR_REPORTER');
+CREATE TYPE "NR_EVENT" AS ENUM ('APPROVAL_REQUESTED', 'REQUEST_FULFILLED', 'REQUEST_RESOLVED', 'YOUR_TICKET_APPROVED', 'YOUR_TICKET_STAGE_APPROVED', 'YOUR_TICKET_REJECTED', 'YOUR_TICKET_IN_USE', 'YOUR_TICKET_RETURNED', 'DUE_SOON_REMINDER', 'OVERDUE_ALERT', 'ISSUE_NEW_FOR_TECH', 'ISSUE_ASSIGNED_TO_YOU', 'ISSUE_RESOLVED_FOR_REPORTER');
 
 -- CreateEnum
 CREATE TYPE "CM_ROLE" AS ENUM ('user', 'assistant', 'system', 'tool', 'admin');
@@ -48,7 +48,7 @@ CREATE TABLE "departments" (
     "dept_id" SERIAL NOT NULL,
     "dept_name" VARCHAR(200) NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "departments_pkey" PRIMARY KEY ("dept_id")
@@ -60,7 +60,7 @@ CREATE TABLE "sections" (
     "sec_name" VARCHAR(50) NOT NULL,
     "sec_dept_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "sections_pkey" PRIMARY KEY ("sec_id")
@@ -82,7 +82,7 @@ CREATE TABLE "users" (
     "us_sec_id" INTEGER,
     "us_is_active" BOOLEAN NOT NULL DEFAULT true,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("us_id")
@@ -91,19 +91,19 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "devices" (
     "de_id" SERIAL NOT NULL,
-    "de_serial_number" TEXT NOT NULL,
-    "de_name" TEXT NOT NULL,
-    "de_description" TEXT,
-    "de_location" TEXT NOT NULL,
+    "de_serial_number" VARCHAR(100) NOT NULL,
+    "de_name" VARCHAR(200) NOT NULL,
+    "de_description" VARCHAR(250),
+    "de_location" VARCHAR(200) NOT NULL,
     "de_max_borrow_days" INTEGER NOT NULL,
-    "de_images" TEXT,
+    "de_images" VARCHAR(200),
     "de_af_id" INTEGER NOT NULL,
     "de_ca_id" INTEGER NOT NULL,
     "de_us_id" INTEGER NOT NULL,
-    "de_sec_id" INTEGER,
-    "deleted_at" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3),
-    "updated_at" TIMESTAMP(3),
+    "de_sec_id" INTEGER NOT NULL,
+    "deleted_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "devices_pkey" PRIMARY KEY ("de_id")
 );
@@ -117,7 +117,7 @@ CREATE TABLE "device_childs" (
     "dec_status" "DEVICE_CHILD_STATUS" NOT NULL,
     "dec_de_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "device_childs_pkey" PRIMARY KEY ("dec_id")
@@ -129,7 +129,7 @@ CREATE TABLE "carts" (
     "ct_quantity" INTEGER NOT NULL DEFAULT 1,
     "ct_us_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "carts_pkey" PRIMARY KEY ("ct_id")
@@ -146,12 +146,25 @@ CREATE TABLE "cart_items" (
     "cti_start_date" TIMESTAMPTZ(6),
     "cti_end_date" TIMESTAMPTZ(6),
     "cti_ct_id" INTEGER NOT NULL,
-    "cti_dec_id" INTEGER NOT NULL,
+    "cti_de_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "cart_items_pkey" PRIMARY KEY ("cti_id")
+);
+
+-- CreateTable
+CREATE TABLE "cart_device_childs" (
+    "cdc_id" SERIAL NOT NULL,
+    "cdc_cti_id" INTEGER NOT NULL,
+    "cdc_dec_id" INTEGER NOT NULL,
+    "deleted_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6),
+    "reserved_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "cart_device_childs_pkey" PRIMARY KEY ("cdc_id")
 );
 
 -- CreateTable
@@ -160,7 +173,7 @@ CREATE TABLE "refresh_tokens" (
     "rt_us_id" INTEGER NOT NULL,
     "rt_token_hash" VARCHAR(255) NOT NULL,
     "rt_revoked_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("rt_id")
@@ -171,10 +184,10 @@ CREATE TABLE "accessories" (
     "acc_id" SERIAL NOT NULL,
     "acc_name" VARCHAR(100) NOT NULL,
     "acc_quantity" INTEGER NOT NULL,
-    "acc_de_id" INTEGER NOT NULL,
-    "deleted_at" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3),
-    "updated_at" TIMESTAMP(3),
+    "acc_de_id" INTEGER,
+    "deleted_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "accessories_pkey" PRIMARY KEY ("acc_id")
 );
@@ -184,7 +197,7 @@ CREATE TABLE "categories" (
     "ca_id" SERIAL NOT NULL,
     "ca_name" VARCHAR(100) NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "categories_pkey" PRIMARY KEY ("ca_id")
@@ -197,7 +210,7 @@ CREATE TABLE "approval_flows" (
     "af_is_active" BOOLEAN NOT NULL DEFAULT true,
     "af_us_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "approval_flows_pkey" PRIMARY KEY ("af_id")
@@ -212,7 +225,7 @@ CREATE TABLE "approval_flow_steps" (
     "afs_role" "US_ROLE" NOT NULL,
     "afs_af_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "approval_flow_steps_pkey" PRIMARY KEY ("afs_id")
@@ -227,7 +240,7 @@ CREATE TABLE "device_availabilities" (
     "da_end" TIMESTAMPTZ(6) NOT NULL,
     "da_status" "DA_STATUS" NOT NULL DEFAULT 'ACTIVE',
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL,
 
     CONSTRAINT "device_availabilities_pkey" PRIMARY KEY ("da_id")
 );
@@ -251,7 +264,7 @@ CREATE TABLE "borrow_return_tickets" (
     "brt_user_id" INTEGER NOT NULL,
     "brt_staff_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "borrow_return_tickets_pkey" PRIMARY KEY ("brt_id")
@@ -271,7 +284,7 @@ CREATE TABLE "borrow_return_ticket_stages" (
     "brts_brt_id" INTEGER NOT NULL,
     "brts_us_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "borrow_return_ticket_stages_pkey" PRIMARY KEY ("brts_id")
@@ -282,8 +295,9 @@ CREATE TABLE "ticket_devices" (
     "td_id" SERIAL NOT NULL,
     "td_brt_id" INTEGER NOT NULL,
     "td_dec_id" INTEGER NOT NULL,
+    "td_origin_cti_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "ticket_devices_pkey" PRIMARY KEY ("td_id")
@@ -306,7 +320,7 @@ CREATE TABLE "ticket_issues" (
     "success_at" TIMESTAMPTZ(6),
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL,
 
     CONSTRAINT "ticket_issues_pkey" PRIMARY KEY ("ti_id")
 );
@@ -461,6 +475,9 @@ CREATE INDEX "idx_users_active" ON "users"("us_is_active");
 CREATE UNIQUE INDEX "devices_de_serial_number_key" ON "devices"("de_serial_number");
 
 -- CreateIndex
+CREATE INDEX "idx_devices_category" ON "devices"("de_ca_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "device_childs_dec_serial_number_key" ON "device_childs"("dec_serial_number");
 
 -- CreateIndex
@@ -479,10 +496,10 @@ CREATE INDEX "idx_cart_user_status" ON "carts"("ct_us_id");
 CREATE INDEX "idx_ct_item_cart" ON "cart_items"("cti_ct_id");
 
 -- CreateIndex
-CREATE INDEX "idx_ct_item_device" ON "cart_items"("cti_dec_id");
+CREATE INDEX "idx_ct_item_device" ON "cart_items"("cti_de_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "uq_ct_item_device" ON "cart_items"("cti_ct_id", "cti_dec_id");
+CREATE UNIQUE INDEX "uq_ct_item_device" ON "cart_items"("cti_ct_id", "cti_de_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "refresh_tokens_rt_token_hash_key" ON "refresh_tokens"("rt_token_hash");
@@ -614,7 +631,13 @@ ALTER TABLE "carts" ADD CONSTRAINT "carts_ct_us_id_fkey" FOREIGN KEY ("ct_us_id"
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_ct_id_fkey" FOREIGN KEY ("cti_ct_id") REFERENCES "carts"("ct_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_dec_id_fkey" FOREIGN KEY ("cti_dec_id") REFERENCES "device_childs"("dec_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_de_id_fkey" FOREIGN KEY ("cti_de_id") REFERENCES "devices"("de_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_device_childs" ADD CONSTRAINT "cart_device_childs_cdc_cti_id_fkey" FOREIGN KEY ("cdc_cti_id") REFERENCES "cart_items"("cti_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_device_childs" ADD CONSTRAINT "cart_device_childs_cdc_dec_id_fkey" FOREIGN KEY ("cdc_dec_id") REFERENCES "device_childs"("dec_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_rt_us_id_fkey" FOREIGN KEY ("rt_us_id") REFERENCES "users"("us_id") ON DELETE RESTRICT ON UPDATE CASCADE;

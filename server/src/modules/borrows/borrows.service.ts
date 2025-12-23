@@ -1,5 +1,5 @@
 import { prisma } from "../../infrastructure/database/client.js";
-import { CreateBorrowTicketPayload, IdParamDto } from "./borrows.schema.js";
+import { AddToCartPayload, CreateBorrowTicketPayload, IdParamDto } from "./borrows.schema.js";
 
 /**
  * Description: ดึงข้อมูลทอุปกรณ์
@@ -79,6 +79,12 @@ async function getInventory() {
     return result;
 }
 
+/**
+ * Description : ดึงข้อมูลรายการอุปกรณ์ที่ใช้สำหรับการยืม
+ * Input : params - รหัสอุปกรณ์แม่
+ * Output : ข้อมูลอุปกรณ์แม่, หมวดหมู่, อุปกรณ์เสริม, แผนก, ฝ่ายย่อย และอุปกรณ์ลูก
+ * Author: Thakdanai Makmi (Ryu) 66160355
+ */
 async function getDeviceForBorrow(params: IdParamDto) {
     const { id } = params;
 
@@ -127,6 +133,16 @@ async function getDeviceForBorrow(params: IdParamDto) {
                 select: {
                     dec_id: true,
                     dec_status: true,
+
+                    availabilities: {
+                        where: {
+                            da_status: "ACTIVE"
+                        },
+                        select: {
+                            da_start: true,
+                            da_end: true
+                        }
+                    }
                 }
             }
         }
@@ -146,15 +162,34 @@ async function getDeviceForBorrow(params: IdParamDto) {
         }
     }
 
+    // แยก department และ section หลังจากใช้งานฟังก์ชัน extractDepartmentAndSection
     const { department, section } = extractDepartmentAndSection(device.section?.sec_name ?? "");
+    // ตัด device_childs เดิมออก
+    const { device_childs, ...deviceWithoutChilds } = device;
+    // สร้าง device_childs ใหม่ โดยแปลง availabilities เป็น activeBorrows
+    const deviceChilds = device.device_childs.map(child => ({
+        dec_id: child.dec_id,
+        dec_status: child.dec_status,
+        activeBorrows: child.availabilities.map(a => ({
+            start: a.da_start,
+            end: a.da_end,
+        })),
+    }));
 
     return {
-        ...device,
+        ...deviceWithoutChilds,
         department,
-        section
+        section,
+        device_childs: deviceChilds
     };
 }
 
+/**
+ * Description : สร้าง ticket คำร้องยืมอุปกรณ์
+ * Input : payload - ข้อมูลในการยืมอุปกรณ์
+ * Output : รหัสคำร้องการยืมอุปกรณ์ สถานะ วันที่เริ่มยืม วันสิ้นสุด และอุปกรณ์ลูก
+ * Author: Thakdanai Makmi (Ryu) 66160355
+ */
 async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId: number }) {
     const {
         userId,
@@ -190,15 +225,76 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
                 brt_current_stage: 1,
                 brt_af_id: device?.de_af_id,
                 brt_status: "PENDING",
-                created_at: new Date()
+                created_at: new Date(),
+                updated_at: new Date()
             },
+        });
+
+        // ดึงข้อมูลลำดับการอนุมัติ
+        const stages = await tx.approval_flow_steps.findMany({
+            where: {
+                afs_af_id: device?.de_af_id,
+                deleted_at: null,
+            },
+            orderBy: {
+                afs_step_approve: "asc",
+            }
+        });
+
+        // ดึงข้อมูลแผนกทั้งหมด
+        const departments = await tx.departments.findMany({
+            where: {
+                deleted_at: null
+            },
+            select: {
+                dept_id: true,
+                dept_name: true
+            },
+        });
+
+        // ดึงข้อมูลฝ่ายย่อยทั้งหมด
+        const sections = await tx.sections.findMany({
+            where: {
+                deleted_at: null
+            },
+            select: {
+                sec_id: true,
+                sec_name: true
+            },
+        });
+
+        // ดึงชื่อแผนกจาก dept_id
+        const getDeptName = (deptId?: number | null) =>
+            departments.find((d) => d.dept_id === deptId)?.dept_name ?? null;
+
+        // ดึงชื่อฝ่ายย่อยจาก sec_id
+        const getSecName = (secId?: number | null) =>
+            sections.find((s) => s.sec_id === secId)?.sec_name ?? null;
+
+        // สร้าง borrow return ticket stages
+        await tx.borrow_return_ticket_stages.createMany({
+            data: stages.map((flow) => ({
+                brts_status: "PENDING",
+                brts_name: flow.afs_role,
+                brts_step_approve: flow.afs_step_approve,
+                brts_role: flow.afs_role,
+                brts_dept_id: flow.afs_dept_id,
+                brts_sec_id: flow.afs_sec_id,
+                brts_dept_name: getDeptName(flow.afs_dept_id),
+                brts_sec_name: getSecName(flow.afs_sec_id),
+                brts_brt_id: ticket.brt_id,
+                created_at: new Date(),
+                updated_at: new Date()
+            }))
         });
 
         // สร้าง ticket device
         await tx.ticket_devices.createMany({
             data: deviceChilds.map((decId) => ({
                 td_brt_id: ticket.brt_id,
-                td_dec_id: decId
+                td_dec_id: decId,
+                created_at: new Date(),
+                updated_at: new Date()
             }))
         });
 
@@ -224,4 +320,107 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
 
 }
 
-export const borrowService = { getInventory, getDeviceForBorrow, createBorrowTicket };
+/**
+ * Description : เพิ่มอุปกรณ์ลงรถเข็น
+ * Input : payload - ข้อมูลในการยืมอุปกรณ์
+ * Output : รหัสรถเข็น และรหัสรายการอุปกรณ์ในรถเข็น
+ * Author: Thakdanai Makmi (Ryu) 66160355
+ */
+async function addToCart(payload: AddToCartPayload & { userId: number }) {
+    const {
+        userId,
+        deviceId,
+        borrower,
+        phone,
+        reason,
+        placeOfUse,
+        quantity,
+        borrowStart,
+        borrowEnd,
+        deviceChilds
+    } = payload;
+
+    // ให้การเขียนข้อมูลหลายตาราง "สำเร็จพร้อมกัน" ถ้าขั้นตอนไหนพัง จะ rollback ทั้งหมด
+    return prisma.$transaction(async (tx) => {
+
+        // ค้นหารถเข็นล่าสุดของผู้ใช้
+        let cart = await tx.carts.findFirst({
+            where: {
+                ct_us_id: userId,
+                deleted_at: null
+            },
+            orderBy: {
+                ct_id: "desc"
+            }
+        });
+
+        // ถ้ายังไม่มีรถเข็น ให้สร้างใหม่
+        if (!cart) {
+            cart = await tx.carts.create({
+                data: {
+                    ct_us_id: userId,
+                    created_at: new Date()
+                }
+            });
+        }
+
+        // ถ้ามีอุปกรณ์แม่เดิมอยู่ในรถเข็น -> update, ถ้ายังไม่มี -> create
+        const cartItem = await tx.cart_items.upsert({
+            where: {
+                cti_ct_id_cti_de_id: {
+                    cti_ct_id: cart.ct_id,
+                    cti_de_id: deviceId
+                }
+            },
+            update: {
+                cti_us_name: borrower,
+                cti_phone: phone,
+                cti_note: reason,
+                cti_usage_location: placeOfUse,
+                cti_quantity: quantity,
+                cti_start_date: borrowStart,
+                cti_end_date: borrowEnd
+            },
+            create: {
+                cti_us_name: borrower,
+                cti_phone: phone,
+                cti_note: reason,
+                cti_usage_location: placeOfUse,
+                cti_quantity: quantity,
+                cti_start_date: borrowStart,
+                cti_end_date: borrowEnd,
+                cti_ct_id: cart.ct_id,
+                cti_de_id: deviceId,
+                created_at: new Date()
+            }
+        })
+
+        // ถ้ามีอุปกรณ์ลูก
+        if (deviceChilds.length) {
+            // ลบรายการเดิมออก ป้องกันอุปกรณ์ซ้ำ หรือจองเกินจำนวน
+            await tx.cart_device_childs.deleteMany({
+                where: {
+                    cdc_cti_id: cartItem.cti_id
+                }
+            });
+
+            // เพิ่มรายการอุปกรณ์ลูก
+            await tx.cart_device_childs.createMany({
+                // วนลูปสร้างรายการอุปกรณ์ลูก
+                data: deviceChilds.map((decId: number) => ({
+                    cdc_cti_id: cartItem.cti_id,
+                    cdc_dec_id: decId,
+                    created_at: new Date()
+                })),
+            });
+        }
+
+        return {
+            cartId: cart.ct_id,
+            cartItemId: cartItem.cti_id
+        };
+
+    });
+}
+
+export const borrowService = { getInventory, getDeviceForBorrow, createBorrowTicket, addToCart };

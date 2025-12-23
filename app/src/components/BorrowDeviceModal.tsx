@@ -46,7 +46,7 @@ interface BorrowEquipmentModalProps {
         data: BorrowFormData
     }) => void; // ฟังก์ชันส่งข้อมูลตอน “ส่งคำร้อง” หรือ “บันทึก”
     onAddToCart?: (data: {
-        data: BorrowFormData
+        data: any
     }) => void; // ฟังก์ชันเพิ่มไปยังรถเข็น
 }
 
@@ -152,6 +152,10 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
 
     // เพิ่มไปยังรถเข็น
     const handleAddToCard = () => {
+        if (!validate()) {
+            return;
+        }
+
         onAddToCart?.({
             data: form
         });

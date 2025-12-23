@@ -3,6 +3,7 @@ import { borrowService } from "./borrows.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
+  addToCartPayload,
   createBorrowTicketPayload,
   GetDeviceForBorrowSchema,
   GetInventorySchema,
@@ -46,6 +47,12 @@ export class BorrowController extends BaseController {
     return { data: device }
   }
 
+  /**
+  * Description: สร้าง ticket คำร้องยืมอุปกรณ์
+  * Input     : req.body - ข้อมูลในการยืมอุปกรณ์
+  * Output    : { data: result } - รหัสคำร้องการยืมอุปกรณ์ สถานะ วันที่เริ่มยืม วันสิ้นสุด และอุปกรณ์ลูก
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
   async createBorrowTicket(
     req: AuthRequest,
     res: Response,
@@ -64,6 +71,34 @@ export class BorrowController extends BaseController {
       userId,
       ...payload
     })
+
+    return { data: result }
+  }
+
+  /**
+  * Description: เพิ่มอุปกรณ์ลงรถเข็น
+  * Input     : req.body - ข้อมูลในการยืมอุปกรณ์
+  * Output    : { data: result } - รหัสรถเข็น และรหัสรายการอุปกรณ์ในรถเข็น
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  async addToCart(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+
+    if (!req.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const userId = req.user.sub;
+
+    const payload = addToCartPayload.parse(req.body);
+
+    const result = await borrowService.addToCart({
+      userId,
+      ...payload,
+    });
 
     return { data: result }
   }

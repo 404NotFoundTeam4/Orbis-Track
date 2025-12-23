@@ -22,6 +22,7 @@ export const idParamSchema = z.object({
     id: z.coerce.number().int().positive(),
 });
 
+// โครงสร้างข้อมูลที่ตอบกลับหลังจากดึงข้อมูลอุปกรณ์สำหรับการยืม
 export const getDeviceForBorrowSchema = z.object({
     // อุปกรณ์แม่
     de_serial_number: z.string(),
@@ -52,11 +53,19 @@ export const getDeviceForBorrowSchema = z.object({
     device_childs: z.array(
         z.object({
             dec_id: z.number(),
-            dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"])
+            dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]),
+            // ช่วงเวลาที่ถูกยืมอยู่
+            activeBorrows: z.array(
+                z.object({
+                    start: z.date(),
+                    end: z.date()
+                })
+            )
         })
     ).optional(),
 });
 
+// โครงสร้างข้อมูลที่ส่งมาตอนส่งคำร้อง
 export const createBorrowTicketPayload = z.object({
     deviceChilds: z.array(z.number()).min(1),
     borrowStart: z.coerce.date(),
@@ -65,12 +74,32 @@ export const createBorrowTicketPayload = z.object({
     placeOfUse: z.string(),
 });
 
+// โครงสร้างข้อมูลที่ตอบกลับหลังจากสร้างคำร้อง
 export const createBorrowTicketSchema = z.object({
-  brt_id: z.number(),
-  brt_status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
-  brt_start_date: z.date(),
-  brt_end_date: z.date(),
-  brt_quantity: z.number(),
+    brt_id: z.number(),
+    brt_status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
+    brt_start_date: z.date(),
+    brt_end_date: z.date(),
+    brt_quantity: z.number(),
+});
+
+// โครงสร้างข้อมูลที่ส่งมาตอนเพิ่มอุปกรณ์ลงระเข็น
+export const addToCartPayload = z.object({
+    deviceId: z.number().int().positive(),
+    borrower: z.string().min(1),
+    phone: z.string().length(10),
+    reason: z.string().optional(),
+    placeOfUse: z.string().min(1),
+    quantity: z.number().int().positive(),
+    borrowStart: z.coerce.date(),
+    borrowEnd: z.coerce.date(),
+    deviceChilds: z.array(z.number()).min(1)
+});
+
+// โครงสร้างข้อมูลที่ตอบกลับหลังจากเพิ่มอุปกรณ์ลงรถเข็น
+export const addToCartSchema = z.object({
+    cartId: z.number(),
+    cartItemId: z.number()
 });
 
 export type GetInventorySchema = z.infer<typeof getInventorySchema>;
@@ -82,3 +111,5 @@ export type GetDeviceForBorrowSchema = z.infer<typeof getDeviceForBorrowSchema>;
 export type CreateBorrowTicketPayload = z.infer<typeof createBorrowTicketPayload>;
 
 export type CreateBorrowTicketSchema = z.infer<typeof createBorrowTicketSchema>;
+
+export type AddToCartPayload = z.infer<typeof addToCartPayload>;

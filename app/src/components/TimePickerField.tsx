@@ -16,8 +16,17 @@ const TimePickerField = ({
     width = 137,
     onChange
 }: TimePickerFieldProps) => {
-    const hours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]; // เวลาที่สามารถเลือกได้ภายใน Popup
-    const [tempTime, setTempTime] = useState<string>(value); // เก็บเวลาที่เลือก
+    const hours = [
+        "09:00", "09:30",
+        "10:00", "10:30",
+        "11:00", "11:30",
+        "12:00", "12:30",
+        "13:00", "13:30",
+        "14:00", "14:30",
+        "15:00", "15:30",
+        "16:00", "16:30",
+        "17:00"
+    ]; // เวลาที่สามารถเลือกได้ภายใน Popup
 
     return (
         <div className="flex flex-col gap-1">
@@ -44,33 +53,21 @@ const TimePickerField = ({
                         {
                             // ลูปแสดงเวลา
                             hours.map((hour) => (
-                                <button
-                                    type="button"
-                                    key={hour}
-                                    onClick={() => setTempTime(hour)}
-                                    className={`py-2 rounded-xl text-[18px]
-                                    ${tempTime === hour
-                                        ? "bg-[#40A9FF] text-white"
-                                        : "hover:bg-blue-100"
-                                    }
+                                <Popover.Close asChild>
+                                    <button
+                                        type="button"
+                                        key={hour}
+                                        onClick={() => onChange(hour)}
+                                        className={`py-2 rounded-xl text-[18px]
+                                    ${value === hour
+                                                ? "bg-[#40A9FF] text-white"
+                                                : "hover:bg-blue-100"
+                                            }
                 `               }>
-                                    {hour}
-                                </button>
+                                        {hour}
+                                    </button>
+                                </Popover.Close>
                             ))}
-                    </div>
-                    <div className="flex justify-end">
-                        {/* ปิด Popover */}
-                        <Popover.Close asChild>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onChange(tempTime) // เปลี่ยนเวลาที่เลือกและส่งไปตัวที่เรียกใช้งาน
-                                }}
-                                className="bg-[#40A9FF] border border-[#1890FF] text-white w-[38px] h-[26px] rounded-full hover:bg-blue-500"
-                            >
-                                OK
-                            </button>
-                        </Popover.Close>
                     </div>
                 </Popover.Content>
             </Popover.Root>

@@ -4,9 +4,15 @@ export interface GetDeviceForBorrowPayload {
     de_id: number;
 }
 
+export interface ActiveBorrow {
+    start: string;
+    end: string;
+}
+
 export interface DeviceChild {
     dec_id: number;
     dec_status: "READY" | "BORROWED" | "REPAIRING" | "DAMAGED" | "LOST";
+    activeBorrows: ActiveBorrow[];
 }
 
 export interface GetDeviceForBorrow {
@@ -34,11 +40,23 @@ export interface GetDeviceForBorrow {
 }
 
 export interface CreateBorrowTicketPayload {
-    deviceChilds: number[];
-    borrowStart: string;
-    borrowEnd: string;
     reason: string;
     placeOfUse: string;
+    borrowStart: string;
+    borrowEnd: string;
+    deviceChilds: number[];
+}
+
+export interface AddToCartPayload {
+    deviceId: number;
+    borrower: string;
+    phone: string;
+    reason: string;
+    placeOfUse: string;
+    borrowStart: string;
+    borrowEnd: string;
+    quantity: number;
+    deviceChilds: number[];
 }
 
 export const borrowService = {
@@ -52,4 +70,9 @@ export const borrowService = {
         const { data } = await api.post(`/borrow/send-ticket`, payload);
         return data;
     },
+
+    addToCart: async (payload: AddToCartPayload) => {
+        const { data } = await api.post('/borrow/add-cart', payload);
+        return data;
+    }
 }

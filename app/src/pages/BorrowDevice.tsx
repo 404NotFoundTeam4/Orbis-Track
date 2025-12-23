@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import BorrowEquipmentModal from "../components/BorrowDeviceModal"
 import { borrowService, type GetDeviceForBorrow } from "../services/BorrowService";
 import { useEffect, useState } from "react";
@@ -13,7 +13,21 @@ interface BorrowForm {
     returnTime: string;
 }
 
+interface AddToCart {
+    deviceId: number;
+    borrower: string;
+    phone: string,
+    reason: string,
+    placeOfUse: string,
+    quantity: number,
+    dateRange: [Date | null, Date | null];
+    borrowTime: string;
+    returnTime: string;
+}
+
 const BorrowDevice = () => {
+    const navigate = useNavigate();
+
     const location = useLocation();
     // รับรหัสอุปกรณ์แม่ที่ส่งมาจาก state ของ navigate
     const de_id = location.state?.deviceId;
@@ -68,6 +82,17 @@ const BorrowDevice = () => {
         return ready.slice(0, quantity).map(d => d.dec_id);
     }
 
+    // ฟังก์ชันสำหรับรวมวันที่และเวลาเป็น Date (ISO)
+    const buildDateTime = (date: Date, time: string) => {
+        // แยกชั่วโมงและนาที
+        const [hh, mm] = time.split(":").map(Number);
+        // clone วันที่
+        const d = new Date(date);
+        // ตั้งค่าเวลาให้วันที่
+        d.setHours(hh, mm, 0, 0);
+        return d;
+    };
+
     // ส่งคำร้องยืมอุปกรณ์
     const handleSubmit = async ({ data }: { data: BorrowForm }) => {
         try {
@@ -76,15 +101,9 @@ const BorrowDevice = () => {
             // วันที่คืน (กรณียืมวันเดียว)
             const returnDate = returnDateRaw ?? borrowDate;
 
-            const buildDateTime = (date: Date, time: string) => {
-                const [hh, mm] = time.split(":").map(Number);
-                const d = new Date(date);
-                d.setHours(hh, mm, 0, 0);
-                return d;
-            };
-
             if (!borrowDate || !returnDate) return;
 
+            // รวมวันเวลาที่ยืมและคืนเป็น Date
             const borrowStart = buildDateTime(borrowDate, data.borrowTime);
             const borrowEnd = buildDateTime(returnDate, data.returnTime);
 
@@ -105,11 +124,54 @@ const BorrowDevice = () => {
             await borrowService.createBorrowTicket(payload);
 
             push({ tone: "success", message: "ส่งคำร้องเสร็จสิ้น!" });
+
         } catch (error) {
             push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง!" });
+        } finally {
+            navigate('/list-devices'); // กลับไปหน้ารายการอุปกรณ์
         }
 
     };
+
+    const handleAddToCard = async ({ data }: { data: AddToCart }) => {
+        try {
+            // วันที่ยืมและวันที่คืน
+            const [borrowDate, returnDateRaw] = data.dateRange;
+            // วันที่คืน (กรณียืมวันเดียว)
+            const returnDate = returnDateRaw ?? borrowDate;
+
+            if (!borrowDate || !returnDate) return;
+
+            const borrowStart = buildDateTime(borrowDate, data.borrowTime);
+            const borrowEnd = buildDateTime(returnDate, data.returnTime);
+
+            // หาอุปกรณ์ลูกที่พร้อมให้ยืม
+            const deviceChilds = getReadyDeviceChilds(
+                device.device_childs ?? [],
+                data.quantity
+            );
+
+            const payload = {
+                deviceId: de_id,
+                borrower: data.borrower,
+                phone: data.phone,
+                reason: data.reason,
+                placeOfUse: data.placeOfUse,
+                quantity: data.quantity,
+                borrowStart: borrowStart.toISOString(),
+                borrowEnd: borrowEnd.toISOString(),
+                deviceChilds,
+            }
+
+            await borrowService.addToCart(payload);
+
+            push({ tone: "success", message: "เพิ่มไปยังรถเข็นเสร็จสิ้น!" });
+        } catch (error) {
+            push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มไปยังรถเข็น!" });
+        } finally {
+            navigate('/list-devices'); // กลับไปหน้ารายการอุปกรณ์
+        }
+    }
 
     return (
         <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] px-[20px] py-[20px]">
@@ -125,9 +187,10 @@ const BorrowDevice = () => {
             </div>
 
             <BorrowEquipmentModal
-                mode="edit-detail"
+                mode="borrow-equipment"
                 equipment={equipment}
                 onSubmit={handleSubmit}
+                onAddToCart={handleAddToCard}
             />
         </div>
     )

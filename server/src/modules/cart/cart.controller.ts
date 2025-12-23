@@ -5,19 +5,23 @@ import { CartItemSchema, idParamSchema, CartItemListResponse, createBorrowTicket
 import { cartsService } from "./cart.service.js";
 
 /**
- * Description : Controller สำหรับจัดการ Cart และการส่งคำร้องขอยืมอุปกรณ์
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description: Controller สำหรับจัดการ Cart และการส่งคำร้องขอยืมอุปกรณ์
+* Input : -
+* Output : CartController (class)
+* Author : Nontapat Sinhum (Guitar) 66160104
+**/
 export class CartController extends BaseController {
   constructor() {
     super();
   }
 
   /**
-   * Description : ดึงรายการอุปกรณ์ทั้งหมดในรถเข็นตาม Cart ID
-   * Trigger : เมื่อเรียก GET /borrow/cart/:id
-   * Author : Nontapat Sinhum (Guitar) 66160104
-   */
+  * Description: ฟังก์ชันดึงรายการอุปกรณ์ทั้งหมดในรถเข็นตาม Cart ID
+  * Trigger : เมื่อเรียก GET /borrow/cart/:id
+  * Input : req.params (ผ่าน idParamSchema) = { id: number }
+  * Output : Promise<BaseResponse<CartItemListResponse>> = { data: { itemData: [...] } }
+  * Author : Nontapat Sinhum (Guitar) 66160104
+  **/
   async getCartItemList(
     req: Request,
     res: Response,
@@ -29,10 +33,12 @@ export class CartController extends BaseController {
   }
 
   /**
-   * Description : ลบอุปกรณ์ออกจากรถเข็นตาม Cart Item ID
-   * Trigger : เมื่อเรียก DELETE /borrow/cart/:id
-   * Author : Nontapat Sinhum (Guitar) 66160104
-   */
+  * Description: ฟังก์ชันลบอุปกรณ์ออกจากรถเข็นตาม Cart Item ID
+  * Trigger : เมื่อเรียก DELETE /borrow/cart/:id
+  * Input : req.params (ผ่าน idParamSchema) = { id: number }
+  * Output : Promise<BaseResponse> = { message: string }
+  * Author : Nontapat Sinhum (Guitar) 66160104
+  **/
   async deleteCartItem(
     req: Request,
     res: Response,
@@ -44,20 +50,35 @@ export class CartController extends BaseController {
   }
 
   /**
-  * Description : สร้าง Borrow Return Ticket จากรายการอุปกรณ์ที่เลือกในรถเข็น
+  * Description: ฟังก์ชันสร้าง Borrow Return Ticket จากรายการอุปกรณ์ที่เลือกในรถเข็น
+  * กระบวนการ: สร้าง ticket -> สร้าง ticket_devices + device_availabilities -> สร้าง stages ของการอนุมัติ
   * Trigger : เมื่อเรียก POST /borrow/cart/:id
+  * Input : req.body (ผ่าน createBorrowTicketPayload) = { cartItemId: number }
+  * Output : Promise<BaseResponse> = { data: borrowTicket }
   * Author : Nontapat Sinhum (Guitar) 66160104
-  */
+  **/
   async create(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<BaseResponse> {
     const params = createBorrowTicketPayload.parse(req.body);
-    // เรียกใช้งาน service เพื่อบันทึกข้อมูลลงฐานข้อมูล
-    const result = await cartsService.createBorrowTecket(params);
+    // สร้างคำร้อง (Borrow Ticket)    
+    const borrowTicket = await cartsService.createBorrowTecket(params);
 
-    // คืนค่าบัญชีผู้ใช้ใหม่
-    return { data: result };
+    // สร้างรายการอุปกรณ์ใน ticket + ตารางช่วงเวลา availability
+    const ticketDevice = await cartsService.createTecketDevice({
+      cartItemId: params.cartItemId,
+      borrowTicketId: borrowTicket.brt_id,
+    })
+
+    // สร้างขั้นตอนการอนุมัติ (Stages)
+    const borrowTicketStep = await cartsService.createBorrowTecketStages({
+      cartItemId: params.cartItemId,
+      borrowTicketId: borrowTicket.brt_id,
+    })
+
+    // คืนค่าข้อมูลคำร้อง
+    return { data: borrowTicket };
   }
 }

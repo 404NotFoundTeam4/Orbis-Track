@@ -35,12 +35,25 @@ export const cartItemSchema = z.object({
     cti_start_date: z.date().nullable(),
     cti_end_date: z.date().nullable(),
     cti_ct_id: z.coerce.number().int().positive().nullable().optional(),
-    cti_dec_id: z.coerce.number().int().positive().nullable().optional(),
+    cti_de_id: z.coerce.number().int().positive().nullable().optional(),
     created_at: z.date().nullable(),
     updated_at: z.date().nullable(),
     deleted_at: z.date().nullable(),
 });
 
+/**
+ * Description: Schema โครงสร้างข้อมูล Cart Device Child (ความสัมพันธ์ Cart Item กับ Device Child)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+export const cartDeviceChildSchema = z.object({
+    cdc_id: z.coerce.number(),
+    cdc_cti_id: z.coerce.number(),
+    cdc_dec_id: z.coerce.number(),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable(),
+    deleted_at: z.date().nullable(),
+    reserved_at: z.date().nullable(),
+})
 /**
  * Description : Schema โครงสร้างข้อมูล Device Child
  * Author : Nontapat Sinhum (Guitar) 66160104
@@ -79,7 +92,6 @@ export const deviceSchema = z.object({
     de_ca_id: z.coerce.number().int().positive().nullable().optional(),
     de_us_id: z.coerce.number().int().positive().nullable().optional(),
     de_sec_id: z.coerce.number().int().positive().nullable().optional(),
-    de_acc_id: z.coerce.number().int().positive().nullable().optional(),
     created_at: z.date().nullable(),
     updated_at: z.date().nullable(),
     deleted_at: z.date().nullable(),
@@ -105,6 +117,7 @@ export const accessoriesSchema = z.object({
     acc_id: z.coerce.number(),
     acc_name: z.string().min(1).max(120),
     acc_quantity: z.coerce.number().int().positive().nullable().optional(),
+    acc_de_id: z.coerce.number(),
     created_at: z.date().nullable(),
     updated_at: z.date().nullable(),
     deleted_at: z.date().nullable(),
@@ -206,6 +219,7 @@ export const approvalFlowsSchema = z.object({
 export const approvalFlowStepsSchema = z.object({
     afs_id: z.coerce.number().nullable(),
     afs_step_approve: z.coerce.number(),
+    afs_af_id: z.coerce.number(),
     afs_dept_id: z.coerce.number().nullable(),
     afs_sec_id: z.coerce.number().nullable(),
     afs_role: z.enum([
@@ -237,14 +251,52 @@ export const ticketDevicesSchema = z.object({
     td_id: z.coerce.number(),
     td_brt_id: z.coerce.number(),
     td_dec_id: z.coerce.number(),
+    td_origin_cti_id: z.coerce.number(),
     created_at: z.date().nullable(),
     updated_at: z.date().nullable(),
     deleted_at: z.date().nullable(),
 })
 
+/**
+ * Description: Schema Payload สำหรับสร้าง TicketDevice (ผูก borrowTicketId กับ cartItemId)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+export const createTicketDevicePayload = z.object({
+    cartItemId: z.coerce.number(),
+    borrowTicketId: z.coerce.number(),
+})
+
+/**
+ * Description: Schema Payload สำหรับสร้าง BorrowTicketStages
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+export const createBorrowTicketStagePayload = z.object({
+    cartItemId: z.coerce.number(),
+    borrowTicketId: z.coerce.number(),
+})
+
+/**
+ * Description: Schema โครงสร้างข้อมูล Device Availabilities (ช่วงเวลาที่อุปกรณ์ถูกจอง/ถูกยืม)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+export const deviceAvailabilitiesSchema = z.object({
+    da_id: z.coerce.number(),
+    da_dec_id: z.coerce.number(),
+    da_brt_id: z.coerce.number(),
+    da_start: z.date(),
+    da_end: z.date(),
+    da_status: z.enum([
+        "ACTIVE",
+        "COMPLETED",
+    ]),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable(),
+})
+
 export type IdParamDto = z.infer<typeof idParamSchema>;
 export type CartSchema = z.infer<typeof cartSchema>;
 export type CartItemSchema = z.infer<typeof cartItemSchema>;
+export type CartDeviceChildSchema = z.infer<typeof cartDeviceChildSchema>;
 export type DeviceChildSchema = z.infer<typeof deviceChildSchema>;
 export type DeviceSchema = z.infer<typeof deviceSchema>;
 export type CategoriesSchema = z.infer<typeof categoriesSchema>;
@@ -256,3 +308,6 @@ export type ApprovalFlowsSchema = z.infer<typeof approvalFlowsSchema>;
 export type ApprovalFlowStepsSchema = z.infer<typeof approvalFlowStepsSchema>;
 export type CreateBorrowTicketPayload = z.infer<typeof createBorrowTicketPayload>;
 export type TicketDevicesSchema = z.infer<typeof ticketDevicesSchema>;
+export type CreateTicketDevicePayload = z.infer<typeof createTicketDevicePayload>;
+export type CreateBorrowTicketStagePayload = z.infer<typeof createBorrowTicketStagePayload>;
+export type DeviceAvailabilitiesSchema = z.infer<typeof deviceAvailabilitiesSchema>;

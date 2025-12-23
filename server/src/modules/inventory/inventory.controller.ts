@@ -9,9 +9,12 @@ import {
   GetDeviceWithChildsSchema,
   idParamSchema,
   InventorySchema,
-  UploadFileDeviceChildSchema
+  UploadFileDeviceChildSchema,
+  updateDevicePayload
 } from "./inventory.schema.js";
 import { ValidationError } from "../../errors/errors.js";
+import { prisma } from "../../infrastructure/database/client.js";
+
 export class InventoryController extends BaseController {
   constructor() {
     super();
@@ -123,5 +126,42 @@ export class InventoryController extends BaseController {
       data: { de_id: result.de_id, deletedAt: result.deletedAt },
       message: "Device soft-deleted successfully",
     };
+  }
+
+  // ดึงข้อมูลแผนก
+  async getDepartments(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    const data = await inventoryService.getDepartments();
+    return { data };
+  }
+
+  // ดึงข้อมูลหมวดหมู่
+  async getCategories(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    const data = await inventoryService.getCategories();
+    return { data };
+  }
+
+  // ดึงข้อมูลฝ่ายย่อย
+  async getSubSections(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    const data = await inventoryService.getSubSections();
+    return { data };
+  }
+
+  // ดึงข้อมูลลำดับการอนุมัติ
+  async getApprovalFlows(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    const data = await inventoryService.getApprovalFlows(); 
+    return { data };
+  }
+
+  /**
+   * Description: แก้ไขข้อมูลอุปกรณ์
+   * Method: PUT /inventory/:id
+   * author: Worrawat Namwat (Wave) 66160372
+   */
+  async update(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    const { id } = idParamSchema.parse(req.params); 
+    const body = updateDevicePayload.parse(req.body);
+    
+    const result = await inventoryService.updateDevice(id, body);
+    return { data: result };
   }
 }

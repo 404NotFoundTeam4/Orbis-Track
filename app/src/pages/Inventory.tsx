@@ -41,6 +41,10 @@ type Equipment = {
   status_type: "READY" | "BORROWED" | "OUT_OF_STOCK";
   created_at: string | Date;
   device_childs: DeviceChild[];
+  dept_id: number | null;
+  ca_id: number | null;
+  sec_id: number | null;
+  af_id: number | null;
 };
 
 type DropdownOption = {
@@ -92,7 +96,7 @@ export const Inventory = () => {
   const [subSecOptions, setSubSecOptions] = useState<DropdownOption[]>([]);
   const [catOptions, setCatOptions] = useState<DropdownOption[]>([]);
 
-  //States: Filters & Sorting 
+  //States: Filters & Sorting
   const [deptFilter, setDeptFilter] = useState<DropdownOption | null>(null);
   const [subSecFilter, setSubSecFilter] = useState<DropdownOption | null>(null);
   const [catFilter, setCatFilter] = useState<DropdownOption | null>(null);
@@ -112,14 +116,14 @@ export const Inventory = () => {
 
   //Handler: Modal Actions
   const handleOpenAddModal = () => console.log("Open Add Modal");
-  
+
   const handleOpenEditModal = (item: Equipment) => {
-    navigate('/inventory/edit', {
+    navigate("/inventory/edit", {
       state: {
-        device: item
-      }
+        device: item,
+      },
     });
-  }
+  };
 
   //Handlers: Delete Logic
   const handleDeleteSelected = () => {
@@ -174,6 +178,11 @@ export const Inventory = () => {
             category: item.category_name || "-",
             sub_section: item.sub_section_name || "-",
 
+            dept_id: item.dept_id,
+            ca_id: item.ca_id,
+            sec_id: item.sec_id,
+            af_id: item.af_id,
+
             quantity: item.quantity,
 
             max_borrow_days: item.de_max_borrow_days || 7,
@@ -206,10 +215,10 @@ export const Inventory = () => {
     return isNaN(d.getTime())
       ? "-"
       : d.toLocaleDateString("th-TH", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
   };
 
   //จัดการ Sort
@@ -297,8 +306,11 @@ export const Inventory = () => {
     );
   };
   // จำนวนรายการที่สามารถเลือกได้
-  const selectableItemsCount = filtered.filter(item => item.status_type !== "BORROWED").length;
-  const isAllSelected = selectableItemsCount > 0 && selectedItems.length === selectableItemsCount;
+  const selectableItemsCount = filtered.filter(
+    (item) => item.status_type !== "BORROWED"
+  ).length;
+  const isAllSelected =
+    selectableItemsCount > 0 && selectedItems.length === selectableItemsCount;
 
   const gridCols = "1.8fr 1fr 1fr 1fr 0.7fr 1fr 1fr";
 
@@ -373,9 +385,7 @@ export const Inventory = () => {
                 onChange={handleSelectAll}
                 disabled={isLoading}
               />
-              <div
-                className="flex items-center cursor-pointer truncate"
-              >
+              <div className="flex items-center cursor-pointer truncate">
                 ชื่ออุปกรณ์
                 <Icon
                   icon={
@@ -384,7 +394,6 @@ export const Inventory = () => {
                         ? "bx:sort-down"
                         : "bx:sort-up"
                       : "bx:sort-down"
-
                   }
                   width="24"
                   height="24"
@@ -394,9 +403,7 @@ export const Inventory = () => {
               </div>
             </div>
 
-            <div
-              className="py-2 px-4 text-left flex items-center"
-            >
+            <div className="py-2 px-4 text-left flex items-center">
               แผนก{" "}
               <Icon
                 icon={
@@ -413,9 +420,7 @@ export const Inventory = () => {
               />
             </div>
 
-            <div
-              className="py-2 px-4 text-left flex items-center"
-            >
+            <div className="py-2 px-4 text-left flex items-center">
               หมวดหมู่{" "}
               <Icon
                 icon={
@@ -432,9 +437,7 @@ export const Inventory = () => {
               />
             </div>
 
-            <div
-              className="py-2 px-4 text-left flex items-center"
-            >
+            <div className="py-2 px-4 text-left flex items-center">
               ฝ่ายย่อย{" "}
               <Icon
                 icon={
@@ -451,9 +454,7 @@ export const Inventory = () => {
               />
             </div>
 
-            <div
-              className="py-2 px-4 text-left flex items-center whitespace-nowrap"
-            >
+            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap">
               จำนวนคงเหลือ(ชิ้น)
               <Icon
                 icon={
@@ -470,9 +471,7 @@ export const Inventory = () => {
               />
             </div>
 
-            <div
-              className="py-2 px-4 text-left flex items-center justify-center"
-            >
+            <div className="py-2 px-4 text-left flex items-center justify-center">
               แก้ไขล่าสุด{" "}
               <Icon
                 icon={
@@ -488,9 +487,7 @@ export const Inventory = () => {
                 className="cursor-pointer hover:text-blue-500"
               />
             </div>
-            <div
-              className="py-2 px-4 text-left flex items-center whitespace-nowrap "
-            >
+            <div className="py-2 px-4 text-left flex items-center whitespace-nowrap ">
               การใช้งาน{" "}
               <Icon
                 icon={
@@ -640,10 +637,11 @@ export const Inventory = () => {
                 <button
                   type="button"
                   onClick={() => setPage(1)}
-                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${
+                    page === 1
                       ? "border-[#000000] text-[#000000]"
                       : "border-[#D9D9D9]"
-                    }`}
+                  }`}
                 >
                   1
                 </button>
@@ -665,10 +663,11 @@ export const Inventory = () => {
                   <button
                     type="button"
                     onClick={() => setPage(totalPages)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
+                      page === totalPages
                         ? "border-[#000000] text-[#000000]"
                         : "border-[#D9D9D9]"
-                      }`}
+                    }`}
                   >
                     {totalPages}
                   </button>

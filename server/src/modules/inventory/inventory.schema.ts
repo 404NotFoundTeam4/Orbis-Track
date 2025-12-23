@@ -117,6 +117,29 @@ export const softDeleteResponseSchema = z.object({
   deletedAt: z.date(),
 });
 
+/**
+ * Description:แก้ไขอุปกรณ์แม่
+ * Author: Worrawat Namwat (Wave) 66160372
+ */
+export const updateDevicePayload = z.object({
+    device_name: z.string().optional(),
+    device_code: z.string().optional(), // รหัสอุปกรณ์ (Serial Number แม่)
+    location: z.string().optional(),
+    description: z.string().optional(),
+    maxBorrowDays: z.coerce.number().optional(),
+    totalQuantity: z.coerce.number().optional(),
+    imageUrl: z.string().nullable().optional(),
+
+    // Foreign Keys
+    department_id: z.coerce.number().nullable().optional(),
+    category_id: z.coerce.number().nullable().optional(),
+    sub_section_id: z.coerce.number().nullable().optional(),
+    approver_flow_id: z.coerce.number().nullable().optional(),
+    
+    serialNumbers: z.array(z.any()).optional(), 
+    accessories: z.array(z.any()).optional(),
+});
+
 export type InventorySchema = z.infer<typeof inventorySchema>;
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
@@ -134,3 +157,5 @@ export type UploadFileDeviceChildPayload = z.infer<typeof uploadFileDeviceChildP
 export type UploadFileDeviceChildSchema = z.infer<typeof uploadFileDeviceChildSchema>;
 
 export type DeleteDeviceChildPayload = z.infer<typeof deleteDeviceChildPayload>;
+
+export type UpdateDevicePayload = z.infer<typeof updateDevicePayload>;

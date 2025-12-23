@@ -9,7 +9,7 @@ import {
     idParamSchema,
     uploadFileDeviceChildSchema,
     inventorySchema,
-    softDeleteResponseSchema 
+    softDeleteResponseSchema
 } from "./inventory.schema.js";
 
 const inventoryController = new InventoryController();

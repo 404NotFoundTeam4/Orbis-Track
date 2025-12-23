@@ -8,6 +8,8 @@ import {
     IdParamDto,
     UploadFileDeviceChildPayload
 } from "./inventory.schema.js";
+import { constants } from "buffer";
+import { create } from "domain";
 
 /**
  * Description: ดึงข้อมูลอุปกรณ์แม่พร้อมอุปกรณ์ลูก

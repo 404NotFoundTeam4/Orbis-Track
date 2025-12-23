@@ -99,8 +99,8 @@ export const getApprovalFlowStepResponseSchema = z.object({
 export const getApprovalFlowOnlySchema = z.object({
     af_id: z.number(),
     af_name: z.string(),
+    af_us_id:z.number(),
     af_is_active: z.boolean(),
-
 });
 
 export const getStaffSchema = z.object({

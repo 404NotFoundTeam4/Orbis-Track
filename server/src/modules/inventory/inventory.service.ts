@@ -399,6 +399,7 @@ async function getAllDevices() {
             select: {
                 af_id: true,
                 af_name: true,
+                af_us_id: true,
                 af_is_active: true,
             },
         }),
@@ -460,7 +461,7 @@ async function getAllDevices() {
                         u.us_role === "HOD" &&
                         u.us_dept_id === afs.afs_dept_id
                 )
-                .slice(0, 3);   
+                .slice(0, 3);
         }
 
         /** ================= HOS ================= */
@@ -567,131 +568,131 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
     });
 }
 async function getAllApproves() {
-  const [departments, sections, users] = await Promise.all([
-    prisma.departments.findMany({
-      select: {
-        dept_id: true,
-        dept_name: true,
-      },
-    }),
-    prisma.sections.findMany({
-      select: {
-        sec_id: true,
-        sec_name: true,
-        sec_dept_id: true,
-      },
-    }),
-    prisma.users.findMany({
-      select: {
-        us_id: true,
-        us_firstname: true,
-        us_lastname: true,
-        us_dept_id: true,
-        us_sec_id: true,
-        us_role: true,
-      },
-    }),
-  ]);
+    const [departments, sections, users] = await Promise.all([
+        prisma.departments.findMany({
+            select: {
+                dept_id: true,
+                dept_name: true,
+            },
+        }),
+        prisma.sections.findMany({
+            select: {
+                sec_id: true,
+                sec_name: true,
+                sec_dept_id: true,
+            },
+        }),
+        prisma.users.findMany({
+            select: {
+                us_id: true,
+                us_firstname: true,
+                us_lastname: true,
+                us_dept_id: true,
+                us_sec_id: true,
+                us_role: true,
+            },
+        }),
+    ]);
 
-  const getUserName = (u: any) => `${u.us_firstname} ${u.us_lastname}`;
+    const getUserName = (u: any) => `${u.us_firstname} ${u.us_lastname}`;
 
-  /* ===============================
-     1) STAFF (เฉพาะ role STAFF)
-  =============================== */
-  const seen = new Set<string>();
+    /* ===============================
+       1) STAFF (เฉพาะ role STAFF)
+    =============================== */
+    const seen = new Set<string>();
 
-  const staffOptions = sections.reduce<
-    {
-      st_sec_id: number;
-      st_dept_id: number;
-      st_name: string;
-      users: {
-        us_id: number;
-        us_name: string;
-      }[];
-    }[]
-  >((acc, sec) => {
-    const deptMatch = sec.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
-    const deptName = deptMatch?.[1]?.trim();
+    const staffOptions = sections.reduce<
+        {
+            st_sec_id: number;
+            st_dept_id: number;
+            st_name: string;
+            users: {
+                us_id: number;
+                us_name: string;
+            }[];
+        }[]
+    >((acc, sec) => {
+        const deptMatch = sec.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
+        const deptName = deptMatch?.[1]?.trim();
 
-    const letterMatch = sec.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
-    const letter = letterMatch?.[1];
+        const letterMatch = sec.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
+        const letter = letterMatch?.[1];
 
-    if (!deptName || !letter || seen.has(`${deptName}-${letter}`)) {
-      return acc;
-    }
+        if (!deptName || !letter || seen.has(`${deptName}-${letter}`)) {
+            return acc;
+        }
 
-    seen.add(`${deptName}-${letter}`);
+        seen.add(`${deptName}-${letter}`);
 
-    const staffUsers = users.filter(
-      (u) =>
-        u.us_role === 'HOS' &&               
-        u.us_sec_id === sec.sec_id &&
-        u.us_dept_id === sec.sec_dept_id
-    ).slice(0, 3);
+        const staffUsers = users.filter(
+            (u) =>
+                u.us_role === 'HOS' &&
+                u.us_sec_id === sec.sec_id &&
+                u.us_dept_id === sec.sec_dept_id
+        ).slice(0, 3);
 
-    acc.push({
-      st_sec_id: sec.sec_id,
-      st_dept_id: sec.sec_dept_id,
-      st_name: `เจ้าหน้าที่คลังแผนก ${deptName} ฝ่ายย่อย ${letter}`,
-      users: staffUsers.map((u) => ({
-        us_id: u.us_id,
-        us_name: getUserName(u),
-      })),
+        acc.push({
+            st_sec_id: sec.sec_id,
+            st_dept_id: sec.sec_dept_id,
+            st_name: `เจ้าหน้าที่คลังแผนก ${deptName} ฝ่ายย่อย ${letter}`,
+            users: staffUsers.map((u) => ({
+                us_id: u.us_id,
+                us_name: getUserName(u),
+            })),
+        });
+
+        return acc;
+    }, []);
+
+    /* ===============================
+       2) DEPARTMENTS (HOD)
+    =============================== */
+    const departmentsWithHead = departments.map((dept) => {
+        const deptUsers = users.filter(
+            (u) =>
+                u.us_role === 'HOD' &&
+                u.us_dept_id === dept.dept_id
+        ).slice(0, 3);
+
+        return {
+            dept_id: dept.dept_id,
+            dept_name: `หัวหน้า${dept.dept_name}`,
+            users: deptUsers.map((u) => ({
+                us_id: u.us_id,
+                us_name: getUserName(u),
+            })),
+        };
     });
 
-    return acc;
-  }, []);
+    /* ===============================
+       3) SECTIONS (HOS)
+    =============================== */
+    const sectionsWithHead = sections.map((sec) => {
+        const secUsers = users.filter(
+            (u) =>
+                u.us_role === 'HOS' &&
+                u.us_sec_id === sec.sec_id
+        ).slice(0, 3);
 
-  /* ===============================
-     2) DEPARTMENTS (HOD)
-  =============================== */
-  const departmentsWithHead = departments.map((dept) => {
-    const deptUsers = users.filter(
-      (u) =>
-        u.us_role === 'HOD' &&                
-        u.us_dept_id === dept.dept_id
-    ).slice(0, 3);
+        return {
+            sec_id: sec.sec_id,
+            sec_dept_id: sec.sec_dept_id,
+            sec_name: `หัวหน้า${sec.sec_name}`,
+            users: secUsers.map((u) => ({
+                us_id: u.us_id,
+                us_name: getUserName(u),
+            })),
+        };
+    });
 
+    /* ===============================
+       4) RETURN
+    =============================== */
     return {
-      dept_id: dept.dept_id,
-      dept_name: `หัวหน้า${dept.dept_name}`,
-      users: deptUsers.map((u) => ({
-        us_id: u.us_id,
-        us_name: getUserName(u),
-      })),
+        departments: departmentsWithHead,
+        sections: sectionsWithHead,
+        staff: staffOptions,
     };
-  });
-
-  /* ===============================
-     3) SECTIONS (HOS)
-  =============================== */
-  const sectionsWithHead = sections.map((sec) => {
-    const secUsers = users.filter(
-      (u) =>
-        u.us_role === 'HOS' &&                 
-        u.us_sec_id === sec.sec_id
-    ).slice(0, 3);
-
-    return {
-      sec_id: sec.sec_id,
-      sec_dept_id: sec.sec_dept_id,
-      sec_name: `หัวหน้า${sec.sec_name}`,
-      users: secUsers.map((u) => ({
-        us_id: u.us_id,
-        us_name: getUserName(u),
-      })),
-    };
-  });
-
-  /* ===============================
-     4) RETURN
-  =============================== */
-  return {
-    departments: departmentsWithHead,
-    sections: sectionsWithHead,
-    staff: staffOptions,
-  };
 }
 
 

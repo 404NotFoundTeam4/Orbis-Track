@@ -17,6 +17,7 @@ import ForgotPassword from "./ForgotPassword";
 import Requests from "./Requests";
 import Inventory from "./Inventory";
 import AddInventory from "./AddInventory";
+import ModalToggleExample from "./ModalToggleExample";
 
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         <Routes>
           {/* Public Route */}
           <Route path="/login" element={<Login />} />
+           <Route path="/date" element={<ModalToggleExample />} />
           <Route path="/otp" element={<Otppassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -122,17 +122,23 @@ const MainDeviceModal = ({
   const [departmentsApprove, setDepartmentsApprove] = useState([]);
   const [openStepId, setOpenStepId] = useState<number | null>(null);
   const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
-
+  const data = localStorage.getItem("User") || sessionStorage.getItem("User");
+   const userId = JSON.parse(data).us_id;
   const fetchDataDevices = async () => {
     try {
       const res = await useInventorys.getDevicesAll();
       setDepartments(res.data.departments);
       setCategory(res.data.categories);
       setSection(res.data.sections);
-      setApprovalFlows(res.data.approval_flows);
+      // us_id ที่รับมา เช่น 1
+  
+      const filteredApprovalFlows = res.data.approval_flows.filter(
+        (af: any) => af.af_us_id === userId
+      );
+      setApprovalFlows(filteredApprovalFlows);
       setapprovalFlowSteps(res.data.approval_flow_step);
 
- console.log(res.data)
+      console.log(res.data);
     } catch (error) {
       console.error("โหลดข้อมูลไม่สำเร็จ", error);
     }
@@ -144,7 +150,7 @@ const MainDeviceModal = ({
   const fetchDataApprove = async () => {
     try {
       const ap = await useInventorys.getApproveAll();
-      console.log(ap.data)
+      console.log(ap.data);
       setDepartmentsApprove(ap.data.departments);
       setSectionsApprove(ap.data.sections);
       setStaff(ap.data.staff);
@@ -391,11 +397,11 @@ const MainDeviceModal = ({
 
   const mappedSerialNumbers = checked
     ? serialNumbers
-      .filter((sn) => sn.value.trim() !== "")
-      .map((sn) => ({
-        id: sn.id,
-        value: sn.value.trim(),
-      }))
+        .filter((sn) => sn.value.trim() !== "")
+        .map((sn) => ({
+          id: sn.id,
+          value: sn.value.trim(),
+        }))
     : [];
 
   // ส่งข้อมูล
@@ -414,13 +420,11 @@ const MainDeviceModal = ({
     formData.append("totalQuantity", String(totalQuantity));
     formData.append("de_af_id", String(selectedApprovers?.value ?? ""));
     formData.append("de_ca_id", String(selectedCategory?.value ?? ""));
-    formData.append("de_us_id", "1");
+    formData.append("de_us_id",userId);
     formData.append("de_sec_id", String(selectedSection?.value ?? ""));
-
 
     formData.append("accessories", JSON.stringify(mappedAccessories));
     formData.append("serialNumbers", JSON.stringify(mappedSerialNumbers));
-
 
     if (imageFile) {
       formData.append("de_images", imageFile);
@@ -468,7 +472,7 @@ const MainDeviceModal = ({
     formData.append("mode", mode);
 
     formData.append("af_name", titleApprove);
-    formData.append("af_us_id", "1");
+    formData.append("af_us_id", userId);
 
     formData.append("approvalflowsstep", JSON.stringify(approver));
 
@@ -520,24 +524,18 @@ const MainDeviceModal = ({
       return staff.find((s) => s.st_name === data)?.users ?? [];
     }
     // หัวหน้า + !ฝ่ายย่อย ไป sections
-    else if (
-      data.includes("หัวหน้า") &&
-      !data.includes("ฝ่ายย่อย")
-    ) {
-      return departmentsApprove.find((dept) => dept.dept_name === data)?.users ?? [];
+    else if (data.includes("หัวหน้า") && !data.includes("ฝ่ายย่อย")) {
+      return (
+        departmentsApprove.find((dept) => dept.dept_name === data)?.users ?? []
+      );
     }
     // หัวหน้า + ฝ่ายย่อย ไป sections
-    else if (
-      data.includes("หัวหน้าแผนก") &&
-      data.includes("ฝ่ายย่อย")
-    ) {
-     
+    else if (data.includes("หัวหน้าแผนก") && data.includes("ฝ่ายย่อย")) {
       return sectionsApprove.find((s) => s.sec_name === data)?.users ?? [];
     }
 
     return [];
   };
-
 
   return (
     <div className="flex flex-col gap-[60px] bg-[#FFFFFF] border border-[#BFBFBF] w-[1660px] rounded-[16px] px-[60px] py-[60px]">
@@ -697,7 +695,7 @@ const MainDeviceModal = ({
                 isChecked={checked}
                 onClick={() => setChecked(!checked)}
               />
-              <p>อุปกรณ์มี Serail Number</p>
+              <p  onClick={() => setChecked(!checked)}>อุปกรณ์มี Serail Number</p>
             </div>
             {/* อุปกรณ์ที่มี Serail Number */}
             {checked && (
@@ -854,7 +852,9 @@ const MainDeviceModal = ({
                           </span>
 
                           {index < steps.length - 1 && (
-                            <span className="mx-[4px] text-[16px] text-[#7BACFF]">›</span>
+                            <span className="mx-[4px] text-[16px] text-[#7BACFF]">
+                              ›
+                            </span>
                           )}
                         </div>
 
@@ -882,7 +882,6 @@ const MainDeviceModal = ({
                   </div>
                 );
               })()}
-
           </div>
         </div>
       </div>
@@ -960,7 +959,7 @@ const MainDeviceModal = ({
                       สามารถลากเพื่อสลับลำดับผู้อนุมัติได้
                     </p>
                   </div>
-                  <div className="max-h-[300px] overflow-y-auto space-y-2.5 text-[16px]">
+                  <div className="max-h-[300px] overflow-y-auto  text-[16px]">
                     {approverGroupFlow.map((data, idx) => (
                       <div
                         key={data.label}
@@ -984,7 +983,6 @@ const MainDeviceModal = ({
                           </div>
 
                           <div className="w-full border-2 border-[#D8D8D8] border-x-0 py-0.5">
-
                             <div className="font-medium truncate">
                               {data.label}
                             </div>
@@ -993,15 +991,14 @@ const MainDeviceModal = ({
                               const users = getUsersByLabel(data.label);
                               const MAX_SHOW = 2;
 
-                              if (!users || users.length === 0) return (
-                                <div className="text-[14px] text-gray-500 flex flex-wrap items-center">
-                                <div className="">
-                                    ไม่มีผู้ใช้งานในตำแหน่งนี้
-                                </div>
-                                </div>
-                              )
-                              
-                              ;
+                              if (!users || users.length === 0)
+                                return (
+                                  <div className="text-[14px] text-gray-500 flex flex-wrap items-center">
+                                    <div className="">
+                                      ไม่มีผู้ใช้งานในตำแหน่งนี้
+                                    </div>
+                                  </div>
+                                );
 
                               const previewNames = users
                                 .slice(0, MAX_SHOW)
@@ -1016,8 +1013,6 @@ const MainDeviceModal = ({
                                   <p className="truncate max-w-[220px]">
                                     {previewNames}
                                   </p>
-
-
                                 </div>
                               );
                             })()}
@@ -1025,7 +1020,9 @@ const MainDeviceModal = ({
 
                           <button
                             type="button"
-                            onClick={() => handleDeleteApproverGroup(data.label)}
+                            onClick={() =>
+                              handleDeleteApproverGroup(data.label)
+                            }
                             className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[12px] bg-[#F5222D]"
                           >
                             <Icon
@@ -1070,7 +1067,7 @@ const MainDeviceModal = ({
         onConfirm={async () => {
           handleSubmit();
         }}
-        onCancel={() => { }}
+        onCancel={() => {}}
       />
       <AlertDialog
         open={openConfirmApprove}
@@ -1086,7 +1083,7 @@ const MainDeviceModal = ({
             window.location.reload();
           }, 100); // หน่วง 1 วินาที
         }}
-        onCancel={() => { }}
+        onCancel={() => {}}
       />
     </div>
   );

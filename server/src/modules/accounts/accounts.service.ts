@@ -6,7 +6,8 @@ import { hashPassword } from "../../utils/password.js";
 import { OneTimeTokenUtil } from "../../utils/token.js";
 import { CreateAccountsPayload, EditAccountSchema, IdParamDto } from "./accounts.schema.js";
 import redisUtils from "../../infrastructure/redis.cjs";
-import emailService from "../../utils/email/email.service.js";
+import { jobDispatcher } from "../../infrastructure/queue/job.dispatcher.js";
+import { JobType } from "../../infrastructure/queue/job.types.js";
 
 const { redisSet } = redisUtils;
 
@@ -206,8 +207,6 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
             us_images: images,
             us_dept_id,
             us_sec_id,
-            created_at: new Date(),
-            updated_at: new Date(),
         },
         select: {
             us_id: true,
@@ -238,8 +237,9 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
     // สร้าง URL สำหรับหน้า reset password พร้อม token
     const welcomeUrl = `${env.FRONTEND_URL}/reset-password?token=${plainTextToken}`;
 
-    // ส่งอีเมล welcome พร้อม link สำหรับตั้งรหัสผ่านให้ผู้ใช้ใหม่
-    await emailService.sendWelcome(newUser.us_email, {
+    // ส่งอีเมล welcome ผ่าน Job Dispatcher (Pro way)
+    await jobDispatcher.dispatch(JobType.EMAIL_WELCOME, {
+        email: newUser.us_email,
         name: newUser.us_firstname,
         username: newUser.us_username,
         resetPasswordUrl: welcomeUrl,
@@ -264,7 +264,6 @@ async function updateAccount(params: IdParamDto, body: EditAccountSchema, images
     const updateData: any = {
         us_images: images,
         ...body,
-        updated_at: new Date(),
     }
 
     await prisma.users.update({

@@ -41,7 +41,7 @@ function App() {
               />
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
-              <Route path="/request-borrow-ticket" element={<Requests />} />
+              <Route path="/request-borrow-ticket/:id?" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Route>

@@ -8,13 +8,11 @@
  */
 import { Icon } from "@iconify/react";
 import type { TicketDevice } from "../services/TicketsService";
-import Button from "./Button";
 
 interface DeviceListModalProps {
   isOpen: boolean;
   onClose: () => void;
   devices: TicketDevice[];
-  onConfirm?: () => void;
 }
 
 // Status display configuration (matching Figma)
@@ -23,7 +21,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "พร้อมใช้งาน",
     className: "border-[#73D13D] text-[#73D13D]",
   },
-  IN_USE: {
+  BORROWED: {
     label: "กำลังใช้งาน",
     className: "border-[#40A9FF] text-[#40A9FF]",
   },
@@ -31,7 +29,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "กำลังซ่อม",
     className: "border-[#FDBA74] text-[#C2410C]",
   },
-  BROKEN: {
+  DAMAGED: {
     label: "ชำรุด",
     className: "border-[#FCA5A5] text-[#B91C1C]",
   },
@@ -45,7 +43,6 @@ const DeviceListModal = ({
   isOpen,
   onClose,
   devices,
-  onConfirm,
 }: DeviceListModalProps) => {
   if (!isOpen) return null;
 
@@ -70,8 +67,8 @@ const DeviceListModal = ({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose}></div>
 
-      {/* Modal - Fixed size 1025x920 */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-[1025px] h-[920px]  max-h-[920px] overflow-y-auto flex flex-col px-[43px] py-[25px]">
+      {/* Modal - Responsive sizing */}
+      <div className="relative bg-white rounded-2xl shadow-xl w-[95%] max-w-[1025px] h-full max-h-[90vh] overflow-hidden flex flex-col sm:px-[43px] px-6 sm:py-[25px] py-6 m-4">
         {/* Header */}
         <div className="flex items-center justify-between pb-4">
           <h2 className="text-2xl font-bold text-black">รายการอุปกรณ์</h2>
@@ -83,52 +80,60 @@ const DeviceListModal = ({
           </button>
         </div>
 
-        {/* Table with div-based layout */}
-        <div className="flex-1 overflow-auto">
-          {/* Table Header - Rounded */}
-          <div className="bg-[#F5F5F5] rounded-full text-black sticky top-0 flex py-3 px-6">
-            <div className="font-medium w-[100px]">ลำดับ</div>
-            {!hasSerialNumber && <div className="text-black flex-1"></div>}
-            <div className={`font-medium flex-1`}>รหัสอุปกรณ์</div>
-            {!hasSerialNumber && <div className="text-black flex-1"></div>}
-            {hasSerialNumber && (
-              <div className="font-medium flex-1">Serial Number</div>
-            )}
-            <div className="font-medium w-[120px] text-left">สถานะ</div>
-          </div>
+        {/* Table content area */}
+        <div className="flex-1 overflow-auto mt-4">
+          <div className="min-w-[600px]">
+            {/* Table Header - Rounded */}
+            <div className="bg-[#F5F5F5] rounded-full text-black sticky top-0 flex py-3 px-6 z-10">
+              <div className="font-medium w-[80px] sm:w-[100px]">ลำดับ</div>
+              {!hasSerialNumber && <div className="text-black flex-1"></div>}
+              <div className={`font-medium flex-1`}>รหัสอุปกรณ์</div>
+              {!hasSerialNumber && <div className="text-black flex-1"></div>}
+              {hasSerialNumber && (
+                <div className="font-medium flex-1">Serial Number</div>
+              )}
+              <div className="font-medium w-[100px] sm:w-[120px] text-left">
+                สถานะ
+              </div>
+            </div>
 
-          {/* Table Body */}
-          <div>
-            {devices.map((device, index) => {
-              const statusStyle = getStatusStyle(device.current_status);
-              return (
-                <div
-                  key={device.child_id || index}
-                  className="flex border-b border-gray-100 items-center py-4 px-6"
-                >
-                  <div className="text-black w-[100px]">{index + 1}</div>
-                  {!hasSerialNumber && (
-                    <div className="text-black flex-1"></div>
-                  )}
-                  <div className={`text-black flex-1`}>{device.asset_code}</div>
-                  {!hasSerialNumber && (
-                    <div className="text-black flex-1"></div>
-                  )}
-                  {hasSerialNumber && (
-                    <div className="text-black flex-1">
-                      {device.serial || "-"}
+            {/* Table Body */}
+            <div className="mt-2">
+              {devices.map((device, index) => {
+                const statusStyle = getStatusStyle(device.current_status);
+                return (
+                  <div
+                    key={device.child_id || index}
+                    className="flex border-b border-gray-100 items-center py-4 px-6 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="text-black w-[80px] sm:w-[100px]">
+                      {index + 1}
                     </div>
-                  )}
-                  <div className="w-[120px] flex justify-start">
-                    <span
-                      className={`flex items-center justify-center px-4 py-2 border rounded-full text-sm whitespace-nowrap ${statusStyle.className}`}
-                    >
-                      {statusStyle.label}
-                    </span>
+                    {!hasSerialNumber && (
+                      <div className="text-black flex-1"></div>
+                    )}
+                    <div className={`text-black flex-1`}>
+                      {device.asset_code}
+                    </div>
+                    {!hasSerialNumber && (
+                      <div className="text-black flex-1"></div>
+                    )}
+                    {hasSerialNumber && (
+                      <div className="text-black flex-1">
+                        {device.serial || "-"}
+                      </div>
+                    )}
+                    <div className="w-[100px] sm:w-[120px] flex justify-start">
+                      <span
+                        className={`flex items-center justify-center px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full text-xs sm:text-sm whitespace-nowrap ${statusStyle.className}`}
+                      >
+                        {statusStyle.label}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

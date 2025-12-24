@@ -13,6 +13,7 @@ import Dropdown from "../components/DropDown";
 import RequestItem from "../components/RequestItem";
 import Pagination from "../components/Pagination";
 import { Icon } from "@iconify/react";
+import { useLocation, useParams } from "react-router-dom";
 import {
   ticketsService,
   type TicketItem,
@@ -22,6 +23,9 @@ import {
   type SortField,
   type SortDirection,
 } from "../services/TicketsService";
+import { AlertDialog } from "../components/AlertDialog";
+import { useToast } from "../components/Toast";
+import { socketService } from "../services/SocketService";
 
 const Requests = () => {
   const [searchFilter, setSearchFilter] = useState({ search: "" });
@@ -30,6 +34,10 @@ const Requests = () => {
     label: string;
     value: string;
   } | null>(null);
+
+  const dataUser =
+    localStorage.getItem("User") || sessionStorage.getItem("User");
+  const user = dataUser ? JSON.parse(dataUser) : null;
 
   // Pagination States (server-side)
   const [page, setPage] = useState(1);
@@ -52,15 +60,55 @@ const Requests = () => {
   const [loadingDetails, setLoadingDetails] = useState<Record<number, boolean>>(
     {},
   );
+  const [pickupLocations, setPickupLocations] = useState<
+    Record<number, string>
+  >({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<number, boolean>
+  >({});
+  const [expandTriggers, setExpandTriggers] = useState<Record<number, number>>(
+    {},
+  );
 
-  const statusOptions = [
-    { id: "all", label: "ทั้งหมด", value: "" },
-    { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
-    { id: "APPROVED", label: "อนุมัติแล้ว", value: "APPROVED" },
-    { id: "IN_USE", label: "กำลังใช้งาน", value: "IN_USE" },
-    { id: "REJECTED", label: "ปฏิเสธ", value: "REJECTED" },
-    { id: "COMPLETED", label: "คืนแล้ว", value: "COMPLETED" },
-  ];
+  const { push } = useToast();
+  const { id } = useParams();
+  const location = useLocation();
+  const expandId = id
+    ? parseInt(id)
+    : (location.state as { expandId?: number })?.expandId;
+
+  // Confirm Dialog State
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmData, setConfirmData] = useState<{
+    title: string;
+    description: string;
+    onConfirm: () => Promise<void>;
+    tone: "success" | "warning" | "danger";
+  }>({
+    title: "",
+    description: "",
+    onConfirm: async () => {},
+    tone: "success",
+  });
+
+  let statusOptions;
+
+  if (user.us_role === "STAFF") {
+    statusOptions = [
+      { id: "all", label: "ทั้งหมด", value: "" },
+      { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
+      { id: "APPROVED", label: "อนุมัติแล้ว", value: "APPROVED" },
+      { id: "IN_USE", label: "กำลังใช้งาน", value: "IN_USE" },
+      // { id: "REJECTED", label: "ปฏิเสธ", value: "REJECTED" },
+      // { id: "COMPLETED", label: "คืนแล้ว", value: "COMPLETED" },
+      { id: "OVERDUE", label: "เลยกำหนด", value: "OVERDUE" },
+    ];
+  } else {
+    statusOptions = [
+      { id: "all", label: "ทั้งหมด", value: "" },
+      { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
+    ];
+  }
 
   /**
    * Description: จัดการการคลิก sort บน header
@@ -120,6 +168,7 @@ const Requests = () => {
       }
 
       const result = await ticketsService.getTickets(params);
+      console.log(result);
       setTickets(result.data);
       // ใช้ maxPage จาก backend โดยตรง
       setTotalPages(result.maxPage || 1);
@@ -145,20 +194,28 @@ const Requests = () => {
    * Output : void (อัปเดต ticketDetails state)
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
-  const fetchTicketDetail = async (id: number) => {
-    if (ticketDetails[id]) return; // Already loaded
+  const fetchTicketDetail = useCallback(
+    async (id: number, isManual?: boolean) => {
+      // เมื่อกางออกเอง ให้รีเซ็ต Validation Error ของตัวนั้นๆ
+      if (isManual) {
+        setValidationErrors((prev) => ({ ...prev, [id]: false }));
+      }
 
-    setLoadingDetails((prev) => ({ ...prev, [id]: true }));
-    try {
-      const detail = await ticketsService.getTicketById(id);
-      setTicketDetails((prev) => ({ ...prev, [id]: detail }));
-      console.log(detail);
-    } catch (err) {
-      console.error(`Failed to fetch ticket detail ${id}:`, err);
-    } finally {
-      setLoadingDetails((prev) => ({ ...prev, [id]: false }));
-    }
-  };
+      if (ticketDetails[id]) return; // Already loaded
+
+      setLoadingDetails((prev) => ({ ...prev, [id]: true }));
+      try {
+        const detail = await ticketsService.getTicketById(id);
+        setTicketDetails((prev) => ({ ...prev, [id]: detail }));
+        console.log(detail);
+      } catch (err) {
+        console.error(`Failed to fetch ticket detail ${id}:`, err);
+      } finally {
+        setLoadingDetails((prev) => ({ ...prev, [id]: false }));
+      }
+    },
+    [ticketDetails],
+  );
 
   useEffect(() => {
     fetchTickets();
@@ -169,15 +226,122 @@ const Requests = () => {
     setPage(1);
   }, [searchFilter, statusFilter]);
 
+  // Socket Listeners
+  useEffect(() => {
+    const onRefreshRequest = () => fetchTickets();
+    const onNotificationDismissed = (payload: { ticketId: number }) => {
+      const { ticketId } = payload;
+      setTicketDetails((prev) => {
+        const next = { ...prev };
+        delete next[ticketId];
+        return next;
+      });
+      console.log("Heeee");
+      fetchTickets();
+    };
+
+    socketService.on("REFRESH_REQUEST_PAGE", onRefreshRequest);
+    socketService.on("TICKET_PROCESSED", onNotificationDismissed);
+
+    return () => {
+      socketService.off("REFRESH_REQUEST_PAGE", onRefreshRequest);
+      socketService.off("TICKET_PROCESSED", onNotificationDismissed);
+    };
+  }, [fetchTickets]);
+
   /**
    * Description: อนุมัติคำร้อง
    * Input : id - ticket ID
    * Output : void
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
-  const handleApprove = (id: number) => {
-    console.log("Approved:", id);
-    // TODO: Implement approve API call when available
+  const handleApprove = async (id: number) => {
+    try {
+      // ตรวจสอบว่ามีข้อมูลรายละเอียดหรือไม่ ถ้าไม่มีให้โหลดก่อน
+      let detail = ticketDetails[id];
+      if (!detail) {
+        setLoadingDetails((prev) => ({ ...prev, [id]: true }));
+        detail = await ticketsService.getTicketById(id);
+        setTicketDetails((prev) => ({ ...prev, [id]: detail }));
+        setLoadingDetails((prev) => ({ ...prev, [id]: false }));
+      }
+
+      // ดึงขั้นตอนปัจจุบัน ถ้าไม่มีให้เริ่มที่ 1
+      const currentStage = detail?.details?.current_stage || 1;
+      const stageLength = detail?.timeline?.length || 0;
+      const isLastStage = currentStage === stageLength;
+
+      // เพิ่ม Validation: ถ้าเป็น Stage สุดท้าย ต้องกรอกสถานที่รับอุปกรณ์
+      if (isLastStage) {
+        const pLocation = pickupLocations[id] || "";
+        if (!pLocation.trim()) {
+          setValidationErrors((prev) => ({ ...prev, [id]: true }));
+          setExpandTriggers((prev) => ({ ...prev, [id]: Date.now() })); // สั่งกางออก (ใช้ timestamp เพื่อให้ trigger ทุกครั้ง)
+          push({
+            tone: "warning",
+            message: "กรุณาระบุสถานที่รับอุปกรณ์",
+            description: "สำหรับขั้นตอนสุดท้าย จำเป็นต้องระบุสถานที่รับของ",
+          });
+          return;
+        }
+      }
+
+      setConfirmData({
+        title: "ต้องการอนุมัติคำร้องนี้?",
+        description: `โปรดตรวจสอบก่อนยืนยันการอนุมัติ`,
+        tone: "success",
+        onConfirm: async () => {
+          try {
+            await ticketsService.approveTicket({
+              ticketId: id,
+              currentStage: currentStage,
+              pickupLocation: pickupLocations[id],
+            });
+
+            push({
+              tone: "success",
+              message: "อนุมัติเสร็จสิ้น!",
+            });
+
+            // ล้างข้อมูล State ที่เกี่ยวกับ ticket นี้
+            setPickupLocations((prev) => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
+            setValidationErrors((prev) => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
+            setExpandTriggers((prev) => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
+
+            // รีเฟรชรายการและรายละเอียด
+            delete ticketDetails[id];
+            fetchTickets();
+          } catch (err) {
+            console.error("Failed to approve ticket:", err);
+            push({
+              tone: "danger",
+              message: "อนุมัติไม่สำเร็จ",
+              description: "เกิดข้อผิดพลาดในการอนุมัติ กรุณาลองใหม่อีกครั้ง",
+            });
+          }
+        },
+      });
+      setConfirmOpen(true);
+    } catch (err) {
+      console.error("Failed to prepare approval:", err);
+      push({
+        tone: "danger",
+        message: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถโหลดข้อมูลเพื่ออนุมัติได้",
+      });
+    }
   };
 
   /**
@@ -187,8 +351,20 @@ const Requests = () => {
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
   const handleReject = (id: number) => {
-    console.log("Rejected:", id);
-    // TODO: Implement reject API call when available
+    setConfirmData({
+      title: "ยืนยันการปฏิเสธ",
+      description: `คุณต้องการปฏิเสธคำร้องหมายเลข #${id} ใช่หรือไม่?`,
+      tone: "danger",
+      onConfirm: async () => {
+        // TODO: Implement reject API call
+        push({
+          tone: "info",
+          message: "Coming Soon",
+          description: "ระบบการปฏิเสธคำร้องกำลังอยู่ระหว่างการพัฒนา",
+        });
+      },
+    });
+    setConfirmOpen(true);
   };
 
   return (
@@ -333,6 +509,21 @@ const Requests = () => {
                   onApprove={handleApprove}
                   onReject={handleReject}
                   onExpand={fetchTicketDetail}
+                  forceExpand={
+                    ticket.id === expandId || !!expandTriggers[ticket.id]
+                  }
+                  expandTrigger={expandTriggers[ticket.id]}
+                  pickupLocation={pickupLocations[ticket.id]}
+                  onPickupLocationChange={(tid, val) => {
+                    setPickupLocations((prev) => ({ ...prev, [tid]: val }));
+                    if (val.trim()) {
+                      setValidationErrors((prev) => ({
+                        ...prev,
+                        [tid]: false,
+                      }));
+                    }
+                  }}
+                  isInvalid={validationErrors[ticket.id]}
                 />
               ))}
 
@@ -348,6 +539,18 @@ const Requests = () => {
           )}
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={confirmData.title}
+        description={confirmData.description}
+        onConfirm={confirmData.onConfirm}
+        tone={confirmData.tone}
+        confirmText="ตกลง"
+        cancelText="ยกเลิก"
+      />
     </div>
   );
 };

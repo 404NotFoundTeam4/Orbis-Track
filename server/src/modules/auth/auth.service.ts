@@ -132,7 +132,7 @@ async function fetchMe(user: AccessTokenPayload) {
  */
 async function sendOtp(payload: SendOtpPayload) {
     const { email } = payload;
-    
+
     // หา user จากอีเมล
     const user = await prisma.users.findUnique({
         where: { us_email: email },
@@ -172,7 +172,7 @@ async function sendOtp(payload: SendOtpPayload) {
         // ถ้าส่งเมลไม่ได้ ควร throw error หรือ return error message
         throw new Error('ไม่สามารถส่ง OTP ได้ กรุณาลองใหม่อีกครั้ง');
     }
-    
+
     return {
         message: 'หากอีเมลนี้มีอยู่ในระบบ เราจะส่งรหัส OTP ไปให้',
     };
@@ -249,10 +249,10 @@ async function forgotPassword(payload: ForgotPasswordPayload) {
 
     const result = await prisma.users.update({
         where: { us_email: email, us_is_active: true },
-        data: { us_password: await hashPassword(newPassword), updated_at: new Date() },
+        data: { us_password: await hashPassword(newPassword) },
         select: { us_email: true, us_username: true, us_firstname: true },
     })
-    
+
     // ลบ OTP ออกจาก Redis (เพราะใช้งานเสร็จแล้ว)
     await redisDel(redisKey);
 
@@ -280,40 +280,40 @@ async function forgotPassword(payload: ForgotPasswordPayload) {
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 async function resetPassword(payload: ResetPasswordPayload) {
-  const { token, newPassword, confirmNewPassword } = payload;
-  if (newPassword !== confirmNewPassword) {
-      throw new ValidationError("Passwords do not match");
-  }
-  const redisKey = `welcome-token:${token}`;
-  const userId = await redisGet(redisKey);
-  
-  // ถ้าไม่เจอ Key ใน Redis แสดงว่า Token ผิด หรือหมดอายุไปแล้ว
-  if (!userId) {
-    throw new HttpError(HttpStatus.UNAUTHORIZED, "Token ไม่ถูกต้องหรือหมดอายุแล้ว");
-  }
-  
-  const newPasswordHash = await hashPassword(newPassword);
-  const result = await prisma.users.update({
-    where: { us_id: Number(userId) },
-    data: { us_password: newPasswordHash, updated_at: new Date() },
-    select: { us_email: true, us_username: true, us_firstname: true },
-  });
-      
-  await redisDel(redisKey);
-      
-  if (result.us_username && result.us_email && result.us_firstname) {
-    await emailService.sendPasswordChanged(
-      result.us_email,
-      {
-        name: result.us_firstname,
-        username: result.us_username,
-      }
-    );
-  }
-      
-  return {
-    message: 'รีเซ็ตรหัสผ่านสำเร็จ คุณสามารถใช้รหัสผ่านใหม่เข้าสู่ระบบได้',
-  };
+    const { token, newPassword, confirmNewPassword } = payload;
+    if (newPassword !== confirmNewPassword) {
+        throw new ValidationError("Passwords do not match");
+    }
+    const redisKey = `welcome-token:${token}`;
+    const userId = await redisGet(redisKey);
+
+    // ถ้าไม่เจอ Key ใน Redis แสดงว่า Token ผิด หรือหมดอายุไปแล้ว
+    if (!userId) {
+        throw new HttpError(HttpStatus.UNAUTHORIZED, "Token ไม่ถูกต้องหรือหมดอายุแล้ว");
+    }
+
+    const newPasswordHash = await hashPassword(newPassword);
+    const result = await prisma.users.update({
+        where: { us_id: Number(userId) },
+        data: { us_password: newPasswordHash },
+        select: { us_email: true, us_username: true, us_firstname: true },
+    });
+
+    await redisDel(redisKey);
+
+    if (result.us_username && result.us_email && result.us_firstname) {
+        await emailService.sendPasswordChanged(
+            result.us_email,
+            {
+                name: result.us_firstname,
+                username: result.us_username,
+            }
+        );
+    }
+
+    return {
+        message: 'รีเซ็ตรหัสผ่านสำเร็จ คุณสามารถใช้รหัสผ่านใหม่เข้าสู่ระบบได้',
+    };
 }
 
 export const authService = { checkLogin, logout, sendOtp, verifyOtp, forgotPassword, fetchMe, resetPassword };

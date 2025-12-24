@@ -52,7 +52,7 @@ const SCHEME: Record<
   // ตัวอื่นๆ เผื่อเรียกใช้งาน
   warning: { accent: "#FFC53D", bar: "#FFE58F", icon: "mdi:alert-outline" },
   info: { accent: "#40A9FF", bar: "#91CAFF", icon: "mdi:information-outline" },
-  notification: { accent: "#2989F4", bar: "#7EC4F8", icon: "mdi:bell" },
+  notification: { accent: "#2989F4", bar: "#7EC4F8", icon: "mdi:bell-circle" },
 };
 
 const ToastCtx = createContext<{
@@ -259,8 +259,20 @@ function ToastCard({
           className="flex-1 flex flex-col justify-center"
           style={{ color: "#686868" }}
         >
-          <div className="font-medium" style={{ fontSize: 16, color: "#686868" }}>{message}</div>
-          {description && <div className="font-medium" style={{ fontSize: 12, color: "#AAAAAA" }}>{description}</div>}
+          <div
+            className="font-medium"
+            style={{ fontSize: 16, color: "#686868" }}
+          >
+            {message}
+          </div>
+          {description && (
+            <div
+              className="font-medium"
+              style={{ fontSize: 12, color: "#AAAAAA" }}
+            >
+              {description}
+            </div>
+          )}
         </div>
 
         {/* ปุ่มปิด 23×23 */}

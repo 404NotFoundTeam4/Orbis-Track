@@ -15,6 +15,8 @@ export type NotificationType =
   | "request_new"
   | "request_pending"
   | "rejected"
+  | "request_fulfill"
+  | "request_resolve"
   | "general";
 
 /**
@@ -93,6 +95,13 @@ const getIconAndColor = (type: NotificationType) => {
         color: "bg-[#FF4D4F]",
         iconColor: "text-white",
       }; // Red for rejected
+    case "request_resolve":
+    case "request_fulfill":
+      return {
+        icon: "material-symbols:check-rounded",
+        color: "bg-[#737373]",
+        iconColor: "text-white",
+      };
     case "general":
     default:
       return {
@@ -122,8 +131,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!isRead ? "bg-white" : "bg-[#F8FAFC]"
-        }`}
+      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+        !isRead ? "bg-white" : "bg-[#F8FAFC]"
+      }`}
     >
       {/* Icon Circle */}
       <div
@@ -142,9 +152,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             {timestamp}
           </span>
         </div>
-        <div className="text-base text-gray-600 break-words line-clamp-2">
-          {description}
-        </div>
+        <div className="text-base text-gray-600 break-words">{description}</div>
       </div>
     </div>
   );

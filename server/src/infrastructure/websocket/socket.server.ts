@@ -33,8 +33,9 @@ export const initSocket = (httpServer: HttpServer) => {
     // Join Room อัตโนมัติ
     socket.join(`user_${user?.sub}`);
     if (user?.role) {
+      if (user.role === "HOD") socket.join(`role_${user?.role}_${user?.dept}`);
       socket.join(`role_${user?.role}_${user?.dept}_${user?.sec}`);
-      console.log(`role_${user?.role}_${user?.dept}_${user?.sec}`);
+      console.log(`User ${user.sub} joined rooms: role_${user.role}_${user.dept}, role_${user.role}_${user.dept}_${user.sec}`);
     }
 
     // For Testing: Echo notification back to sender

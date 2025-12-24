@@ -5,6 +5,7 @@ import {
   getBorrowTicketQuery,
   ticketItemSchema,
   borrowReturnTicketDetailSchema,
+  approveTicket,
 } from "./borrow-return.schema.js";
 
 import { borrowReturnService } from "./borrow-return.provider.js";
@@ -32,6 +33,18 @@ router.getDoc(
     auth: true,
   },
   borrowReturnController.getBorrowReturnTicketById,
+);
+
+router.patchDoc(
+  "/:id/approve",
+  {
+    tag: "Borrow Return",
+    params: idParamSchema,
+    body: approveTicket,
+    // res: borrowReturnTicketDetailSchema,
+    auth: true,
+  },
+  borrowReturnController.approveTicketById,
 );
 
 export default router.instance;

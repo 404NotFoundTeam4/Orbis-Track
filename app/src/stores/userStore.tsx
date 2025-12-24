@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { UserData } from "../services/AccountService.js";
+import { socketService } from "../services/SocketService.js";
 interface User {
   us_id?: number;
   us_emp_code?: string;
@@ -47,6 +48,7 @@ export const useUserStore = create<UserStore>()(
         localStorage.removeItem("token");
         localStorage.removeItem("rememberUser");
         sessionStorage.removeItem("token");
+        socketService.disconnect()
         set({ user: null });
       },
     }),

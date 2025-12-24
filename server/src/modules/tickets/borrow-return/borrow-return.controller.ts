@@ -11,6 +11,7 @@ import type { Request, Response, NextFunction } from "express";
 import { BaseResponse } from "../../../core/base.response.js";
 import { BorrowReturnService } from "./borrow-return.service.js";
 import {
+  approveTicket,
   BorrowReturnTicketDetailDto,
   getBorrowTicketQuery,
   TicketItemDto,
@@ -39,11 +40,13 @@ export class BorrowReturnController extends BaseController {
     const role = req.user?.role;
     const dept_id = req.user?.dept;
     const sec_id = req.user?.sec;
+    const user_id = req.user?.sub;
     const result = await this.borrowReturnService.getBorrowReturnTicket(
       query,
       role,
       dept_id,
       sec_id,
+      user_id,
     );
 
     return result;
@@ -62,6 +65,30 @@ export class BorrowReturnController extends BaseController {
   ): Promise<BaseResponse<BorrowReturnTicketDetailDto>> {
     const id = idParamSchema.parse(req.params);
     const result = await this.borrowReturnService.getBorrowReturnTicketById(id);
+
+    return { data: result };
+  }
+
+  /**
+   * Description: อนุมัติ Ticket ตาม ID โดยผู้มีสิทธิ์อนุมัติ
+   * Input     : AuthRequest { params: id, body: ApproveTicket { currentStage, pickupLocation? } }
+   * Output    : BaseResponse<void> - ผลลัพธ์การอนุมัติ
+   * Note      : ตรวจสอบสิทธิ์ผู้อนุมัติตาม Role/Dept/Sec และส่งแจ้งเตือนไปยังผู้เกี่ยวข้อง
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async approveTicketById(
+    req: authSchema.AuthRequest,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<void>> {
+    const user = req.user;
+    const ticketId = idParamSchema.parse(req.params);
+    const payload = approveTicket.parse(req.body);
+    const result = await this.borrowReturnService.approveTicketById(
+      ticketId,
+      user,
+      payload,
+    );
 
     return { data: result };
   }

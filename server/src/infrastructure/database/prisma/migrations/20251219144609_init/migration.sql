@@ -100,7 +100,7 @@ CREATE TABLE "devices" (
     "de_af_id" INTEGER NOT NULL,
     "de_ca_id" INTEGER NOT NULL,
     "de_us_id" INTEGER NOT NULL,
-    "de_sec_id" INTEGER,
+    "de_sec_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -146,12 +146,25 @@ CREATE TABLE "cart_items" (
     "cti_start_date" TIMESTAMPTZ(6),
     "cti_end_date" TIMESTAMPTZ(6),
     "cti_ct_id" INTEGER NOT NULL,
-    "cti_dec_id" INTEGER NOT NULL,
+    "cti_de_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "cart_items_pkey" PRIMARY KEY ("cti_id")
+);
+
+-- CreateTable
+CREATE TABLE "cart_device_childs" (
+    "cdc_id" SERIAL NOT NULL,
+    "cdc_cti_id" INTEGER NOT NULL,
+    "cdc_dec_id" INTEGER NOT NULL,
+    "deleted_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6),
+    "updated_at" TIMESTAMPTZ(6),
+    "reserved_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "cart_device_childs_pkey" PRIMARY KEY ("cdc_id")
 );
 
 -- CreateTable
@@ -171,7 +184,7 @@ CREATE TABLE "accessories" (
     "acc_id" SERIAL NOT NULL,
     "acc_name" VARCHAR(100) NOT NULL,
     "acc_quantity" INTEGER NOT NULL,
-    "acc_de_id" INTEGER NOT NULL,
+    "acc_de_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -282,6 +295,7 @@ CREATE TABLE "ticket_devices" (
     "td_id" SERIAL NOT NULL,
     "td_brt_id" INTEGER NOT NULL,
     "td_dec_id" INTEGER NOT NULL,
+    "td_origin_cti_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6),
     "updated_at" TIMESTAMPTZ(6),
@@ -482,10 +496,10 @@ CREATE INDEX "idx_cart_user_status" ON "carts"("ct_us_id");
 CREATE INDEX "idx_ct_item_cart" ON "cart_items"("cti_ct_id");
 
 -- CreateIndex
-CREATE INDEX "idx_ct_item_device" ON "cart_items"("cti_dec_id");
+CREATE INDEX "idx_ct_item_device" ON "cart_items"("cti_de_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "uq_ct_item_device" ON "cart_items"("cti_ct_id", "cti_dec_id");
+CREATE UNIQUE INDEX "uq_ct_item_device" ON "cart_items"("cti_ct_id", "cti_de_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "refresh_tokens_rt_token_hash_key" ON "refresh_tokens"("rt_token_hash");
@@ -617,7 +631,13 @@ ALTER TABLE "carts" ADD CONSTRAINT "carts_ct_us_id_fkey" FOREIGN KEY ("ct_us_id"
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_ct_id_fkey" FOREIGN KEY ("cti_ct_id") REFERENCES "carts"("ct_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_dec_id_fkey" FOREIGN KEY ("cti_dec_id") REFERENCES "device_childs"("dec_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cti_de_id_fkey" FOREIGN KEY ("cti_de_id") REFERENCES "devices"("de_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_device_childs" ADD CONSTRAINT "cart_device_childs_cdc_cti_id_fkey" FOREIGN KEY ("cdc_cti_id") REFERENCES "cart_items"("cti_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_device_childs" ADD CONSTRAINT "cart_device_childs_cdc_dec_id_fkey" FOREIGN KEY ("cdc_dec_id") REFERENCES "device_childs"("dec_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_rt_us_id_fkey" FOREIGN KEY ("rt_us_id") REFERENCES "users"("us_id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -48,7 +48,8 @@ export type TicketStatus =
   | "APPROVED"
   | "REJECTED"
   | "IN_USE"
-  | "COMPLETED";
+  | "COMPLETED"
+  | "OVERDUE";
 
 export interface TicketItem {
   id: number;
@@ -134,15 +135,23 @@ export interface TicketDetail {
   timeline: TicketTimelineItem[];
 }
 
-// Note: Backend router wraps response with different field names
+// Note: Backend responses are now standardized
 export interface PaginatedResult<T> {
   data: T[];
-  totalNum: number;      // backend uses "totalNum" instead of "total"
-  maxPage: number;       // backend uses "maxPage" instead of calculating from limit
-  currentPage: number;   // backend uses "currentPage" instead of "page"
+  total: number;
+  page: number;
+  limit: number;
+  maxPage: number;
+  paginated: true;
 }
 
-export type SortField = "device_name" | "quantity" | "category" | "requester" | "request_date" | "status";
+export type SortField =
+  | "device_name"
+  | "quantity"
+  | "category"
+  | "requester"
+  | "request_date"
+  | "status";
 export type SortDirection = "asc" | "desc";
 
 export interface GetTicketsParams {
@@ -152,6 +161,12 @@ export interface GetTicketsParams {
   search?: string;
   sortField?: SortField;
   sortDirection?: SortDirection;
+}
+
+export interface ApproveTicketPayload {
+  ticketId: number;
+  currentStage: number;
+  pickupLocation?: string;
 }
 
 // Tickets API Service
@@ -178,5 +193,19 @@ export const ticketsService = {
   getTicketById: async (id: number): Promise<TicketDetail> => {
     const { data } = await api.get(`/tickets/borrow-return/${id}`);
     return data.data;
+  },
+
+  /**
+   * Description: อนุมัติ Ticket ตาม ID และ Stage
+   * Input: payload - { ticketId, currentStage }
+   * Output: Promise<void>
+   * Endpoint: PATCH /tickets/borrow-return/:id/approve
+   */
+  approveTicket: async (payload: ApproveTicketPayload): Promise<void> => {
+    const { ticketId, currentStage, pickupLocation } = payload;
+    await api.patch(`/tickets/borrow-return/${ticketId}/approve`, {
+      currentStage,
+      pickupLocation,
+    });
   },
 };

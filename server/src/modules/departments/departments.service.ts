@@ -452,8 +452,6 @@ async function addDepartments(payload: AddDepartmentsPayload) {
   return await prisma.departments.create({
     data: {
       dept_name: newDept,
-      created_at: new Date(),
-      updated_at: new Date(),
     },
   });
 }

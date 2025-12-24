@@ -23,7 +23,17 @@ export const getBorrowTicketQuery = z.object({
   limit: z.coerce.number().optional().nullable(),
   status: z.nativeEnum(BRT_STATUS).optional().nullable(),
   search: z.string().optional().nullable(),
-  sortField: z.enum(["device_name", "quantity", "category", "requester", "request_date", "status"]).optional().nullable(),
+  sortField: z
+    .enum([
+      "device_name",
+      "quantity",
+      "category",
+      "requester",
+      "request_date",
+      "status",
+    ])
+    .optional()
+    .nullable(),
   sortDirection: z.enum(["asc", "desc"]).optional().nullable(),
 });
 
@@ -129,6 +139,14 @@ export const borrowReturnTicketDetailSchema = z.object({
   accessories: z.array(accessorySchema),
   timeline: z.array(ticketTimelineSchema),
 });
+
+export const approveTicket = z.object({
+  // ticketId: z.coerce.number(),
+  currentStage: z.coerce.number(),
+  pickupLocation: z.string().nullable().optional(),
+});
+
+export type ApproveTicket = z.infer<typeof approveTicket>;
 
 export type BorrowReturnTicketDetailDto = z.infer<
   typeof borrowReturnTicketDetailSchema

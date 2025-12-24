@@ -172,7 +172,7 @@ const User = dataUser ? JSON.parse(dataUser) : null;
                   </Link>
 
                   <Link
-                    to="/users"
+                    to="/administrator/category"
                     className=" px-15 hover:bg-[#F0F0F0] rounded-[9px]  py-[11px]  flex items-center w-full whitespace-nowrap focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
                   >
                     หมวดหมู่อุปกรณ์

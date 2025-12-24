@@ -17,7 +17,7 @@ import { SocketEmitter } from "../../../infrastructure/websocket/socket.emitter.
 import { logger } from "../../../infrastructure/logger.js";
 
 export class BorrowReturnService {
-  constructor(private readonly repository: BorrowReturnRepository) { }
+  constructor(private readonly repository: BorrowReturnRepository) {}
 
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อมรายละเอียดสำหรับแต่ละรายการ
@@ -153,16 +153,16 @@ export class BorrowReturnService {
       accessories:
         ticket.ticket_devices[0]?.child.device?.accessories?.length > 0
           ? [
-            {
-              acc_id:
-                ticket.ticket_devices[0].child.device.accessories[0].acc_id,
-              acc_name:
-                ticket.ticket_devices[0].child.device.accessories[0].acc_name,
-              acc_quantity:
-                ticket.ticket_devices[0].child.device.accessories[0]
-                  .acc_quantity,
-            },
-          ]
+              {
+                acc_id:
+                  ticket.ticket_devices[0].child.device.accessories[0].acc_id,
+                acc_name:
+                  ticket.ticket_devices[0].child.device.accessories[0].acc_name,
+                acc_quantity:
+                  ticket.ticket_devices[0].child.device.accessories[0]
+                    .acc_quantity,
+              },
+            ]
           : [],
 
       timeline: ticket.stages.map((stage: any) => ({
@@ -220,13 +220,13 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-        currentStageData.brts_sec_id === approvalUser?.sec;
+          currentStageData.brts_sec_id === approvalUser?.sec;
 
-    // if (!isGrantApproveUser)
-    //   throw new HttpError(
-    //     HttpStatus.FORBIDDEN,
-    //     "You Don't Have Permission to Approve this Ticket!",
-    //   );
+    if (!isGrantApproveUser)
+      throw new HttpError(
+        HttpStatus.FORBIDDEN,
+        "You Don't Have Permission to Approve this Ticket!",
+      );
 
     // ดำเนินการอนุมัติผ่าน Transaction ใน Repository
     await this.repository.approveStageTransaction({
@@ -302,9 +302,9 @@ export class BorrowReturnService {
             ...(nextStage.brts_role === "HOD"
               ? { us_dept_id: nextStage.brts_dept_id }
               : {
-                us_dept_id: nextStage.brts_dept_id,
-                us_sec_id: nextStage.brts_sec_id,
-              }),
+                  us_dept_id: nextStage.brts_dept_id,
+                  us_sec_id: nextStage.brts_sec_id,
+                }),
           },
           select: { us_id: true },
         });

@@ -11,7 +11,7 @@ import {
   faChevronUp,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { UserRole } from "./role.enum";
+import { UserRole } from "./RoleEnum";
 import Logo from "../../assets/images/navbar/Logo.png";
 import LogoGiga from "../../assets/images/navbar/logo-giga.png";
 

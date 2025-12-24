@@ -28,11 +28,11 @@ export default function AddInventory() {
         });
              setTimeout(() => {
             window.location.reload();
-          }, 1500); // หน่วง 1 วินาที
+          }, 1500); // หน่วง 1.5 วินาที
       } catch (e) {
         console.log(e);
         push({
-          tone: "confirm",
+          tone: "danger",
           message: "ไม่สามารถเพิ่มอุปกรณ์",
         });
       }
@@ -52,7 +52,7 @@ export default function AddInventory() {
         });
              setTimeout(() => {
             window.location.reload();
-          }, 1500); // หน่วง 1 วินาที
+          }, 1500); // หน่วง 1.5 วินาที
       } catch (e) {
         console.log(e);
         push({

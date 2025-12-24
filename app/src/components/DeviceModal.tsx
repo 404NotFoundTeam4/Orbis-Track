@@ -248,14 +248,14 @@ const MainDeviceModal = ({
   const [selectedApproverSteps, setSelectedApproverSteps] = useState([]);
   // modal สำหรับจัดการลำดับการอนุมัติ
   const [isApproverModalOpen, setIsApproverModalOpen] = useState(false);
-  const [approverGroupFlow, setapproverGroupFlow] = useState([]);
+  const [approverGroupFlow, setApproverGroupFlow] = useState([]);
   const handleApproverGroup = (item) => {
-    setapproverGroupFlow((prev: any) =>
+    setApproverGroupFlow((prev: any) =>
       prev.some((v) => v.label === item.label) ? prev : [...prev, item]
     );
   };
   const handleDeleteApproverGroup = (value: string) => {
-    setapproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
+    setApproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
   };
 
   // เปิด modal
@@ -500,7 +500,7 @@ const MainDeviceModal = ({
       return;
     }
 
-    setapproverGroupFlow((prev) => {
+    setApproverGroupFlow((prev) => {
       const newArr = [...prev];
       const [moved] = newArr.splice(from, 1);
       newArr.splice(to, 0, moved);

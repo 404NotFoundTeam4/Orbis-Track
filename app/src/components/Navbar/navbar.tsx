@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Icon } from "@iconify/react";
 import { useUserStore } from "../../stores/userStore";
-import { UserRole, UserRoleTH } from "./role.enum";
-import { MENU_CONFIG, filterMenuByRole } from "./menu.config";
+import { UserRole, UserRoleTH } from "./RoleEnum";
+import { MENU_CONFIG, filterMenuByRole } from "./MenuConfig";
 import getImageUrl from "../../services/GetImage";
-import { type MenuItem, Images, Icons } from "./menu.config";
+import { type MenuItem, Images, Icons } from "./MenuConfig";
 
 
 const Navbar = () => {

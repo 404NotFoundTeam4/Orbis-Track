@@ -1,8 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
-import { CartItemSchema, idParamSchema, CartItemListResponse, createBorrowTicketPayload } from "./cart.schema.js";
 import { cartsService } from "./cart.service.js";
+import {
+  idParamSchema,
+  CartItemListResponse,
+  createBorrowTicketPayload,
+  getCartDeviceDetailParamSchema,
+  updateCartDeviceDetailParamSchema,
+  updateCartDeviceDetailBodySchema,
+} from "./cart.schema.js";
+
 
 /**
  * Description : Controller สำหรับจัดการ Cart และการส่งคำร้องขอยืมอุปกรณ์
@@ -54,10 +62,73 @@ export class CartController extends BaseController {
     next: NextFunction
   ): Promise<BaseResponse> {
     const params = createBorrowTicketPayload.parse(req.body);
-    // เรียกใช้งาน service เพื่อบันทึกข้อมูลลงฐานข้อมูล
-    const result = await cartsService.createBorrowTecket(params);
+    const result = await cartsService.createBorrowTicket(params);
 
-    // คืนค่าบัญชีผู้ใช้ใหม่
-    return { data: result };
+    return {
+      message: "สร้าง Borrow Return Ticket สำเร็จ",
+      data: result,
+    };
   }
+  /* =========================
+   * GET /borrow/cart/device/:id
+   * ========================= */
+  /**
+   * Description: Controller สำหรับดึงข้อมูลรายละเอียดอุปกรณ์ในรถเข็น
+   * Input     : req.params.id - id ของ cart item
+   * Output    : Object ของ cart item รวม relation cart และ device_child
+   * Logic     :
+   *   - ตรวจสอบพารามิเตอร์ id ผ่าน getCartDeviceDetailParamSchema
+   *   - เรียก CartService.getCartDeviceDetail เพื่อนำข้อมูลจาก database
+   *   - คืนค่า response พร้อม message และ data
+   * Author    : Rachata Jitjeankhan (Tang) 66160369
+   */
+  async getCartDeviceDetail(
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+): Promise<BaseResponse<any>> {
+  // .parse จะดึง id ออกมาเป็น number ตาม schema ที่เราตั้งไว้
+  const { id } = getCartDeviceDetailParamSchema.parse(req.params);
+
+  // เรียกใช้ service (เช็คให้ชัวร์ว่า import cartsService มาแล้ว)
+  const data = await cartsService.getCartDeviceDetail(id);
+
+  // คืนค่ารูปแบบ Object เพื่อให้ BaseController เอาไปส่ง res.json() ต่อเอง
+  return {
+    message: "ดึงข้อมูลรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
+    data,
+  };
+}
+
+  /* =========================
+   * PATCH /borrow/cart/device/:id
+   * ========================= */
+  /**
+   * Description: Controller สำหรับแก้ไขรายละเอียดอุปกรณ์ในรถเข็น
+   * Input     : 
+   *   - req.params.id - id ของ cart item
+   *   - req.body - payload สำหรับแก้ไข เช่น ชื่อผู้ใช้, เบอร์โทร, จำนวน, โน้ต, สถานที่ใช้งาน, วันที่เริ่ม-สิ้นสุด
+   * Output    : Object ของ cart item หลัง update พร้อม relation cart และ device_child
+   * Logic     :
+   *   - ตรวจสอบพารามิเตอร์ id ผ่าน updateCartDeviceDetailParamSchema
+   *   - ตรวจสอบ body payload ผ่าน updateCartDeviceDetailBodySchema
+   *   - เรียก CartService.updateCartDeviceDetail เพื่อนำข้อมูลไป update database
+   *   - คืนค่า response พร้อม message และ data
+   * Author    : Rachata Jitjeankhan (Tang) 66160369
+   */
+  async updateCartDeviceDetail(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<BaseResponse<any>> {
+  const { id } = updateCartDeviceDetailParamSchema.parse(req.params);
+  const payload = updateCartDeviceDetailBodySchema.parse(req.body);
+
+  const data = await cartsService.updateCartDeviceDetail(id, payload);
+
+  return {
+    message: "แก้ไขรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
+    data,
+  };
+}
 }

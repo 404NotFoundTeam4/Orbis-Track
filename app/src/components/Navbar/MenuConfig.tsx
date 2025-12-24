@@ -140,7 +140,7 @@ export const MENU_CONFIG: MenuItem[] = [
     label: "การตั้งค่า",
     path: "/setting",
     icon: faGear,
-    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS],
+    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS,UserRole.USER],
   },
 ];
 

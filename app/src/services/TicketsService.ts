@@ -169,6 +169,12 @@ export interface ApproveTicketPayload {
   pickupLocation?: string;
 }
 
+export interface RejectTicketPayload {
+  ticketId: number;
+  currentStage: number;
+  rejectReason: string;
+}
+
 // Tickets API Service
 export const ticketsService = {
   /**
@@ -206,6 +212,14 @@ export const ticketsService = {
     await api.patch(`/tickets/borrow-return/${ticketId}/approve`, {
       currentStage,
       pickupLocation,
+    });
+  },
+
+  rejectTicket: async (payload: RejectTicketPayload): Promise<void> => {
+    const { ticketId, currentStage, rejectReason } = payload;
+    await api.patch(`/tickets/borrow-return/${ticketId}/reject`, {
+      currentStage,
+      rejectReason,
     });
   },
 };

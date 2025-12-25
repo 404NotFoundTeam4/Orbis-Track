@@ -146,7 +146,14 @@ export const approveTicket = z.object({
   pickupLocation: z.string().nullable().optional(),
 });
 
+export const rejectTicket = z.object({
+  currentStage: z.coerce.number(),
+  rejectReason: z.string(),
+});
+
 export type ApproveTicket = z.infer<typeof approveTicket>;
+
+export type RejectTicket = z.infer<typeof rejectTicket>;
 
 export type BorrowReturnTicketDetailDto = z.infer<
   typeof borrowReturnTicketDetailSchema

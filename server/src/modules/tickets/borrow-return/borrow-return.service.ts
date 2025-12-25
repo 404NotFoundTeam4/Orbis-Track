@@ -4,7 +4,11 @@
  * - ใช้ Repository สำหรับ Query ข้อมูล
  * Author: Pakkapon Chomchoey (Tonnam) 66160080
  */
-import { ApproveTicket, GetBorrowTicketQuery } from "./borrow-return.schema.js";
+import {
+  ApproveTicket,
+  GetBorrowTicketQuery,
+  RejectTicket,
+} from "./borrow-return.schema.js";
 import { IdParamDto } from "../../departments/departments.schema.js";
 import { BorrowReturnRepository } from "./borrow-return.repository.js";
 import { AccessTokenPayload, AuthRequest } from "../../auth/auth.schema.js";
@@ -17,7 +21,7 @@ import { SocketEmitter } from "../../../infrastructure/websocket/socket.emitter.
 import { logger } from "../../../infrastructure/logger.js";
 
 export class BorrowReturnService {
-  constructor(private readonly repository: BorrowReturnRepository) {}
+  constructor(private readonly repository: BorrowReturnRepository) { }
 
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อมรายละเอียดสำหรับแต่ละรายการ
@@ -153,16 +157,16 @@ export class BorrowReturnService {
       accessories:
         ticket.ticket_devices[0]?.child.device?.accessories?.length > 0
           ? [
-              {
-                acc_id:
-                  ticket.ticket_devices[0].child.device.accessories[0].acc_id,
-                acc_name:
-                  ticket.ticket_devices[0].child.device.accessories[0].acc_name,
-                acc_quantity:
-                  ticket.ticket_devices[0].child.device.accessories[0]
-                    .acc_quantity,
-              },
-            ]
+            {
+              acc_id:
+                ticket.ticket_devices[0].child.device.accessories[0].acc_id,
+              acc_name:
+                ticket.ticket_devices[0].child.device.accessories[0].acc_name,
+              acc_quantity:
+                ticket.ticket_devices[0].child.device.accessories[0]
+                  .acc_quantity,
+            },
+          ]
           : [],
 
       timeline: ticket.stages.map((stage: any) => ({
@@ -220,7 +224,7 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-          currentStageData.brts_sec_id === approvalUser?.sec;
+        currentStageData.brts_sec_id === approvalUser?.sec;
 
     if (!isGrantApproveUser)
       throw new HttpError(
@@ -255,11 +259,10 @@ export class BorrowReturnService {
           // target_route: `/request-borrow-ticket/${ticketId}`,
         });
       } catch (error) {
-        console.error("Failed to send final notification:", error);
+        logger.error({ err: error }, "Failed to send final notification");
       }
     } else {
       const nextStage = ticketStage[indexCurrentStage + 1];
-      // const nextStepNum = nextStage.brts_step_approve;
       const displayStep = `[green:${currentStage} / ${totalStages}]`;
 
       // แจ้งเตือนผู้ยืม: อนุมัติบางส่วน (สถานะอัปเดต)
@@ -275,7 +278,7 @@ export class BorrowReturnService {
           upsert: true,
         });
       } catch (error) {
-        console.error("Failed to send status notification:", error);
+        logger.error({ err: error }, "Failed to send status notification");
       }
 
       // ปิดการแจ้งเตือนสำหรับผู้อนุมัติคนอื่นๆ ในขั้นตอนปัจจุบัน (ถ้ามีหลายคน)
@@ -290,7 +293,7 @@ export class BorrowReturnService {
           target_sec: currentStageData.brts_sec_id || 0,
         });
       } catch (error) {
-        console.error("Failed to dismiss old approval notifications:", error);
+        logger.error({ err: error }, "Failed to dismiss old approval notifications");
       }
 
       // แจ้งเตือนผู้อนุมัติลำดับถัดไป
@@ -302,9 +305,9 @@ export class BorrowReturnService {
             ...(nextStage.brts_role === "HOD"
               ? { us_dept_id: nextStage.brts_dept_id }
               : {
-                  us_dept_id: nextStage.brts_dept_id,
-                  us_sec_id: nextStage.brts_sec_id,
-                }),
+                us_dept_id: nextStage.brts_dept_id,
+                us_sec_id: nextStage.brts_sec_id,
+              }),
           },
           select: { us_id: true },
         });
@@ -339,8 +342,85 @@ export class BorrowReturnService {
           }
         }
       } catch (error) {
-        console.error("Failed to notify next approvers:", error);
+        logger.error({ err: error }, "Failed to notify next approvers");
       }
     }
+  }
+
+  async rejectTicketById(
+    params: IdParamDto,
+    approvalUser: AccessTokenPayload | undefined,
+    payload: RejectTicket,
+  ) {
+    if (!approvalUser)
+      throw new HttpError(HttpStatus.UNAUTHORIZED, "Access Denied!");
+    const { id } = params;
+    const ticketId = id;
+    const { currentStage, rejectReason } = payload;
+    const ticket = await this.repository.getFlowApproveById(ticketId);
+
+    if (!ticket) throw new HttpError(HttpStatus.NOT_FOUND, "Ticket Not Found!");
+
+    const ticketStage = ticket.stages;
+    const stageLength = ticketStage.length - 1;
+    const indexCurrentStage = ticketStage.findIndex(
+      (ts) => currentStage === ts.brts_step_approve,
+    );
+
+    const borrowUserId = ticket.brt_user_id;
+
+    if (indexCurrentStage === -1)
+      throw new HttpError(HttpStatus.NOT_FOUND, "Ticket Stage Not Found!");
+
+    const isLastStage = stageLength === indexCurrentStage;
+    const currentStageData = ticketStage[indexCurrentStage];
+    const isGrantApproveUser =
+      approvalUser?.role === US_ROLE.HOD
+        ? currentStageData.brts_dept_id === approvalUser?.dept
+        : currentStageData.brts_dept_id === approvalUser?.dept &&
+        currentStageData.brts_sec_id === approvalUser?.sec;
+
+    if (!isGrantApproveUser)
+      throw new HttpError(
+        HttpStatus.FORBIDDEN,
+        "You Don't Have Permission to Reject this Ticket!",
+      );
+
+    await this.repository.rejectTicketByIdTransaction({
+      approverId: approvalUser.sub,
+      stageId: currentStageData.brts_id,
+      ticketId: ticketId,
+      currentStage: indexCurrentStage + 1,
+      isLastStage,
+      rejectReason: rejectReason,
+    });
+
+    const results = await Promise.allSettled([
+      notificationsService.createNotification({
+        recipient_ids: [borrowUserId],
+        title: "คำขอยืมถูกปฏิเสธ",
+        message: `เหตุผลการปฏิเสธ : ${rejectReason}`,
+        base_event: "TICKET_REJECTED",
+        event: "YOUR_TICKET_REJECTED",
+        brt_id: ticketId,
+        // target_route: `/request-borrow-ticket/${ticketId}`,
+        upsert: true,
+      }),
+      notificationsService.dismissNotificationsByTicket({
+        approvalUser: approvalUser.sub,
+        brt_id: ticketId,
+        event: "APPROVAL_REQUESTED",
+        type: "borrow",
+        target_role: currentStageData.brts_role,
+        target_dept: currentStageData.brts_dept_id || 0,
+        target_sec: currentStageData.brts_sec_id || 0,
+      }),
+    ]);
+
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        logger.error({ err: result.reason }, `Reject notification task ${index + 1} failed`);
+      }
+    });
   }
 }

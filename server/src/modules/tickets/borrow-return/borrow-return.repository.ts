@@ -1,6 +1,7 @@
 import {
   BRTS_STATUS,
   BRT_STATUS,
+  DA_STATUS,
   DEVICE_CHILD_STATUS,
   LBR_ACTION,
   LDC_ACTION,
@@ -76,8 +77,8 @@ export class BorrowReturnRepository {
       brt_status: status
         ? status
         : {
-          in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
-        },
+            in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
+          },
     };
 
     if (search) {
@@ -420,6 +421,78 @@ export class BorrowReturnRepository {
           note: `Stage ${currentStage} approved. Advancing to stage ${currentStage + 1}.`,
         });
       }
+
+      return true;
+    });
+  }
+
+  async rejectTicketByIdTransaction(params: {
+    approverId: number;
+    stageId: number;
+    ticketId: number;
+    currentStage: number;
+    isLastStage: boolean;
+    rejectReason?: string;
+  }) {
+    const {
+      approverId,
+      stageId,
+      ticketId,
+      currentStage,
+      isLastStage,
+      rejectReason,
+    } = params;
+
+    return await prisma.$transaction(async (tx) => {
+      const ticket = await tx.borrow_return_tickets.findUnique({
+        where: { brt_id: ticketId },
+        include: { ticket_devices: { include: { child: true } } },
+      });
+      if (!ticket) throw new Error("TICKET_NOT_FOUND");
+
+      const result = await tx.borrow_return_ticket_stages.updateMany({
+        where: {
+          brts_id: stageId,
+          brts_status: BRTS_STATUS.PENDING,
+        },
+        data: {
+          brts_us_id: approverId,
+          brts_status: BRTS_STATUS.REJECTED,
+        },
+      });
+
+      if (result.count === 0) {
+        throw new Error("STAGE_ALREADY_PROCESSED_OR_NOT_PENDING");
+      }
+
+      await Promise.all([
+        tx.borrow_return_tickets.update({
+          where: { brt_id: ticketId, brt_current_stage: currentStage },
+          data: {
+            brt_status: BRT_STATUS.REJECTED,
+            brt_reject_reason: rejectReason,
+            brt_staff_id: isLastStage ? approverId : null,
+          },
+        }),
+
+        tx.device_availabilities.updateMany({
+          where: {
+            da_brt_id: ticketId,
+          },
+          data: {
+            da_status: DA_STATUS.COMPLETED,
+          },
+        }),
+
+        auditLogger.logBorrowReturn(tx, {
+          action: LBR_ACTION.REJECTED,
+          brtId: ticketId,
+          actorId: approverId,
+          oldStatus: ticket.brt_status,
+          newStatus: LBR_ACTION.REJECTED,
+          note: `Stage ${currentStage} rejected By ${approverId}.`,
+        }),
+      ]);
 
       return true;
     });

@@ -12,6 +12,7 @@ import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
 import RequestItem from "../components/RequestItem";
 import Pagination from "../components/Pagination";
+import RejectReasonModal from "../components/RejectReasonModal";
 import { Icon } from "@iconify/react";
 import { useLocation, useParams } from "react-router-dom";
 import {
@@ -83,13 +84,18 @@ const Requests = () => {
     title: string;
     description: string;
     onConfirm: () => Promise<void>;
-    tone: "success" | "warning" | "danger";
+    tone: "success" | "warning" | "danger" | "reject";
   }>({
     title: "",
     description: "",
-    onConfirm: async () => {},
+    onConfirm: async () => { },
     tone: "success",
   });
+
+  // Reject Modal State
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectTicketId, setRejectTicketId] = useState<number | null>(null);
+  const [rejectLoading, setRejectLoading] = useState(false);
 
   let statusOptions;
 
@@ -236,7 +242,6 @@ const Requests = () => {
         delete next[ticketId];
         return next;
       });
-      console.log("Heeee");
       fetchTickets();
     };
 
@@ -345,26 +350,84 @@ const Requests = () => {
   };
 
   /**
-   * Description: ปฏิเสธคำร้อง
+   * Description: เปิด modal สำหรับกรอกเหตุผลปฏิเสธ
    * Input : id - ticket ID
    * Output : void
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
   const handleReject = (id: number) => {
+    setRejectTicketId(id);
+    setRejectModalOpen(true);
+  };
+
+  /**
+   * Description: ยืนยันการปฏิเสธพร้อมเหตุผล
+   * Input : reason - เหตุผลการปฏิเสธ
+   * Output : void
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  const handleRejectConfirm = (reason: string) => {
+    if (!rejectTicketId) return;
+
+    // เปิด Confirm Dialog ซ้อนทับ RejectReasonModal
     setConfirmData({
-      title: "ยืนยันการปฏิเสธ",
-      description: `คุณต้องการปฏิเสธคำร้องหมายเลข #${id} ใช่หรือไม่?`,
-      tone: "danger",
+      title: "ต้องการปฏิเสธคำร้องนี้?",
+      description: "การดำเนินการนี้ไม่สามารถกู้คืนได้",
+      tone: "reject",
       onConfirm: async () => {
-        // TODO: Implement reject API call
-        push({
-          tone: "info",
-          message: "Coming Soon",
-          description: "ระบบการปฏิเสธคำร้องกำลังอยู่ระหว่างการพัฒนา",
-        });
+        setRejectModalOpen(false); // ปิด modal หลัง confirm
+        await executeReject(rejectTicketId, reason);
       },
     });
     setConfirmOpen(true);
+  };
+
+  /**
+   * Description: ดำเนินการปฏิเสธจริง (เรียก API)
+   * Input : ticketId, reason
+   * Output : void
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  const executeReject = async (ticketId: number, reason: string) => {
+    try {
+      setRejectLoading(true);
+
+      // ดึงข้อมูล detail ถ้ายังไม่มี
+      let detail = ticketDetails[ticketId];
+      if (!detail) {
+        detail = await ticketsService.getTicketById(ticketId);
+        setTicketDetails((prev) => ({ ...prev, [ticketId]: detail }));
+      }
+
+      const currentStage = detail?.details?.current_stage || 1;
+
+      await ticketsService.rejectTicket({
+        ticketId: ticketId,
+        currentStage: currentStage,
+        rejectReason: reason,
+      });
+
+      push({
+        tone: "danger",
+        message: "คำร้องถูกปฏิเสธแล้ว",
+      });
+
+      // reset state
+      setRejectTicketId(null);
+
+      // ลบ cache และ refresh
+      delete ticketDetails[ticketId];
+      fetchTickets();
+    } catch (err) {
+      console.error("Failed to reject ticket:", err);
+      push({
+        tone: "danger",
+        message: "ปฏิเสธไม่สำเร็จ",
+        description: "เกิดข้อผิดพลาดในการปฏิเสธ กรุณาลองใหม่อีกครั้ง",
+      });
+    } finally {
+      setRejectLoading(false);
+    }
   };
 
   return (
@@ -548,8 +611,19 @@ const Requests = () => {
         description={confirmData.description}
         onConfirm={confirmData.onConfirm}
         tone={confirmData.tone}
-        confirmText="ตกลง"
+        confirmText="ยืนยัน"
         cancelText="ยกเลิก"
+      />
+
+      {/* Reject Reason Modal */}
+      <RejectReasonModal
+        isOpen={rejectModalOpen}
+        onClose={() => {
+          setRejectModalOpen(false);
+          setRejectTicketId(null);
+        }}
+        onConfirm={handleRejectConfirm}
+        isLoading={rejectLoading}
       />
     </div>
   );

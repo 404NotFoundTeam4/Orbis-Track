@@ -14,6 +14,7 @@ import {
   approveTicket,
   BorrowReturnTicketDetailDto,
   getBorrowTicketQuery,
+  rejectTicket,
   TicketItemDto,
 } from "./borrow-return.schema.js";
 import { authSchema } from "../../auth/index.js";
@@ -85,6 +86,57 @@ export class BorrowReturnController extends BaseController {
     const ticketId = idParamSchema.parse(req.params);
     const payload = approveTicket.parse(req.body);
     const result = await this.borrowReturnService.approveTicketById(
+      ticketId,
+      user,
+      payload,
+    );
+
+    return { data: result };
+  }
+
+  async rejectTicketById(
+    req: authSchema.AuthRequest,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<void>> {
+    const user = req.user;
+    const ticketId = idParamSchema.parse(req.params);
+    const payload = rejectTicket.parse(req.body);
+    const result = await this.borrowReturnService.rejectTicketById(
+      ticketId,
+      user,
+      payload,
+    );
+
+    return { data: result };
+  }
+
+  // async manageDevice(
+  //   req: authSchema.AuthRequest,
+  //   _res: Response,
+  //   _next: NextFunction,
+  // ): Promise<BaseResponse<void>> {
+  //   const user = req.user;
+  //   const ticketId = idParamSchema.parse(req.params);
+  //   const payload = manageDevice.parse(req.body);
+  //   const result = await this.borrowReturnService.manageDevice(
+  //     ticketId,
+  //     user,
+  //     payload,
+  //   );
+
+  //   return { data: result };
+  // }
+  //
+  async manageDevice(
+    req: authSchema.AuthRequest,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<void>> {
+    const user = req.user;
+    const ticketId = idParamSchema.parse(req.params);
+    const payload = manageDevice.parse(req.body);
+    const result = await this.borrowReturnService.manageDevice(
       ticketId,
       user,
       payload,

@@ -3,6 +3,7 @@ import { idParamSchema } from "../../departments/departments.schema.js";
 import { BorrowReturnController } from "./borrow-return.controller.js";
 import {
   getBorrowTicketQuery,
+  rejectTicket,
   ticketItemSchema,
   borrowReturnTicketDetailSchema,
   approveTicket,
@@ -45,6 +46,42 @@ router.patchDoc(
     auth: true,
   },
   borrowReturnController.approveTicketById,
+);
+
+router.patchDoc(
+  "/:id/reject",
+  {
+    tag: "Borrow Return",
+    params: idParamSchema,
+    body: rejectTicket,
+    // res: borrowReturnTicketDetailSchema,
+    auth: true,
+  },
+  borrowReturnController.rejectTicketById,
+);
+
+// router.patchDoc(
+//   "/:id/device-childs",
+//   {
+//     tag: "Borrow Return",
+//     params: idParamSchema,
+//     // body: approveTicket,
+//     // res: borrowReturnTicketDetailSchema,
+//     auth: true,
+//   },
+//   borrowReturnController.manageDevice,
+// );
+
+router.getDoc(
+  "/:id/device-childs",
+  {
+    tag: "Borrow Return",
+    params: idParamSchema,
+    // body: approveTicket,
+    // res: borrowReturnTicketDetailSchema,
+    auth: true,
+  },
+  borrowReturnController.manageDevice,
 );
 
 export default router.instance;

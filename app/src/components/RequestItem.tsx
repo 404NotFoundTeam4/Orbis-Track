@@ -14,7 +14,10 @@ import type { TicketItem, TicketDetail } from "../services/TicketsService";
 import Button from "./Button";
 import { Icon } from "@iconify/react";
 import getImageUrl from "../services/GetImage";
-import DeviceListModal from "./DeviceListModal";
+import DeviceListModal, {
+  ModeModal,
+  type ModeModalType,
+} from "./DeviceListModal";
 
 interface RequestItemProps {
   ticket: TicketItem;
@@ -145,9 +148,21 @@ const RequestItem = ({
 }: RequestItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+  const [isMode, setIsMode] = useState<ModeModalType>(ModeModal.VIEW);
 
   const getStepTicket = () => {
     return ticketDetail?.status;
+  };
+
+  const openDeviceModal = (mode: ModeModalType) => {
+    setIsMode(mode as ModeModalType);
+    setIsDeviceModalOpen(true);
+  };
+
+  const onMode = (payload: { mode: ModeModalType; ticketId: number }) => {
+    const { mode, ticketId } = payload;
+    setIsMode(mode as ModeModalType);
+    setIsDeviceModalOpen(true);
   };
 
   const toggleExpand = () => {
@@ -253,14 +268,18 @@ const RequestItem = ({
               <>
                 <Button
                   variant="primary"
-                  onClick={() => onApprove(ticket.id)}
+                  onClick={() =>
+                    onMode({ mode: ModeModal.RETURN, ticketId: ticket.id })
+                  }
                   style={{ width: 105, height: 44, padding: "5px 15px" }}
                 >
                   รับคืน
                 </Button>
                 <Button
                   variant="manage"
-                  onClick={() => onReject(ticket.id)}
+                  onClick={() =>
+                    onMode({ mode: ModeModal.MANAGE, ticketId: ticket.id })
+                  }
                   style={{ width: 105, height: 44, padding: "5px 15px" }}
                 >
                   จัดการ
@@ -732,7 +751,7 @@ const RequestItem = ({
                       ))}
                       {ticketDetail?.devices && (
                         <button
-                          onClick={() => setIsDeviceModalOpen(true)}
+                          onClick={() => openDeviceModal(ModeModal.VIEW)}
                           className="bg-[#FFFFFF] border border-[#BFBFBF] rounded-full flex justify-center items-center w-10 h-[22px] cursor-pointer hover:bg-gray-100"
                         >
                           <Icon
@@ -868,6 +887,7 @@ const RequestItem = ({
         isOpen={isDeviceModalOpen}
         onClose={() => setIsDeviceModalOpen(false)}
         devices={ticketDetail?.devices || []}
+        mode={isMode}
       />
     </div>
   );

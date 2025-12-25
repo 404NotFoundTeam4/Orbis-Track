@@ -1,24 +1,45 @@
 import { prisma } from "../../infrastructure/database/client.js";
-import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema } from "./cart.schema.js";
+import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, DeleteCartItemPayload, LogBorrowReturnSchema } from "./cart.schema.js";
 import { DepartmentSchema, SectionSchema } from "../departments/departments.schema.js";
-import { id } from "zod/locales";
 
 /**
- * Description: ฟังก์ชันดึงข้อมูลรายการอุปกรณ์ทั้งหมดในรถเข็นตาม Cart ID
- * รวมข้อมูลอุปกรณ์, หมวดหมู่, แผนก, ฝ่ายย่อย และสถานะความพร้อมใช้งาน
- * Input : params (IdParamDto) = { id: number } (Cart ID)
- * Output : Promise<{ itemData: any[] }> = ข้อมูลรายการในรถเข็นทั้งหมด (ถ้าไม่พบคืน itemData ว่าง)
+ * Description: ฟังก์ชันสำหรับดึงรายการอุปกรณ์ทั้งหมดในรถเข็น “ตาม User ID (us_id)”
+ *              - ค้นหา cart ของผู้ใช้ (ct_us_id = userId)
+ *              - หากไม่พบ cart จะสร้าง cart ใหม่ให้ผู้ใช้
+ *              - ดึง cart_items ของ cart และแนบข้อมูลประกอบ (device/category/department/section/accessories)
+ *              - คำนวณจำนวน device_child และสถานะความพร้อมใช้งานจาก READY
+ * Input : userId (number)
+ * Output : Promise<{ itemData: any[] }>  // หากไม่มี cart_items คืน { itemData: [] }
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
 async function getCartItem(params: IdParamDto) {
-    const { id } = params;
-    const cartItem = await prisma.cart_items.findMany({ where: { cti_ct_id: id, deleted_at: null } });
-    if (cartItem.length === 0) {
-        return { itemData: [] };
-    }
-    const [cart_items, device_childs, devices, accessories, categories, departments, sections, cart_device_childs] = await Promise.all([
-        prisma.cart_items.findMany({
-            where: { cti_ct_id: id, deleted_at: null },
+    const { userId } = params;
+
+    return prisma.$transaction(async (tx) => {
+
+        //หา cart ของ user
+        const existingCart = await tx.carts.findFirst({
+            where: { ct_us_id: userId, deleted_at: null },
+            orderBy: { ct_id: "asc" },
+            select: { ct_id: true, ct_us_id: true },
+        });
+
+        //ถ้าไม่มี cart -> สร้าง cart ใหม่
+        const cart =
+            existingCart ??
+            (await tx.carts.create({
+                data: {
+                    ct_us_id: userId,
+                    created_at: new Date(),
+                },
+                select: { ct_id: true, ct_us_id: true },
+            }));
+
+        const cartId = cart.ct_id;
+
+        //ดึง cart_items ด้วย cartId (ถ้าไม่มี item ก็คืน [] ได้เลย)
+        const cart_items = (await tx.cart_items.findMany({
+            where: { cti_ct_id: cartId, deleted_at: null },
             orderBy: { cti_id: "asc" },
             select: {
                 cti_id: true,
@@ -32,201 +53,209 @@ async function getCartItem(params: IdParamDto) {
                 cti_ct_id: true,
                 cti_de_id: true,
             },
-        }) as Promise<CartItemSchema[]>,
-        prisma.device_childs.findMany({
-            where: { deleted_at: null },
-            select: {
-                dec_id: true,
-                dec_serial_number: true,
-                dec_asset_code: true,
-                dec_has_serial_number: true,
-                dec_status: true,
-                dec_de_id: true,
-            },
-        }) as Promise<DeviceChildSchema[]>,
-        prisma.devices.findMany({
-            where: { deleted_at: null },
-            select: {
-                de_id: true,
-                de_serial_number: true,
-                de_name: true,
-                de_description: true,
-                de_location: true,
-                de_max_borrow_days: true,
-                de_images: true,
-                de_af_id: true,
-                de_ca_id: true,
-                de_us_id: true,
-                de_sec_id: true,
-            },
-        }) as Promise<DeviceSchema[]>,
-        prisma.accessories.findMany({
-            where: { deleted_at: null },
-            select: {
-                acc_id: true,
-                acc_name: true,
-                acc_quantity: true,
-                acc_de_id: true,
-            },
-        }) as Promise<AccessoriesSchema[]>,
-        prisma.categories.findMany({
-            where: { deleted_at: null },
-            select: {
-                ca_id: true,
-                ca_name: true,
-            },
-        }) as Promise<CategoriesSchema[]>,
-        prisma.departments.findMany({
-            where: { deleted_at: null },
-            select: {
-                dept_id: true,
-                dept_name: true,
-            },
-        }) as Promise<DepartmentSchema[]>,
-        prisma.sections.findMany({
-            where: { deleted_at: null },
-            select: {
-                sec_id: true,
-                sec_name: true,
-                sec_dept_id: true,
-            },
-        }) as Promise<SectionSchema[]>,
-        prisma.cart_device_childs.findMany({
-            where: { deleted_at: null },
-            select: {
-                cdc_id: true,
-                cdc_cti_id: true,
-                cdc_dec_id: true,
-            },
-        }) as Promise<CartDeviceChildSchema[]>,
+        })) as CartItemSchema[];
 
+        if (cart_items.length === 0) {
+            return { itemData: [] };
+        }
 
-    ]);
+        const [
+            device_childs,
+            devices,
+            accessories,
+            categories,
+            departments,
+            sections,
+            cart_device_childs,
+        ] = await Promise.all([
+            tx.device_childs.findMany({
+                where: { deleted_at: null },
+                select: {
+                    dec_id: true,
+                    dec_serial_number: true,
+                    dec_asset_code: true,
+                    dec_has_serial_number: true,
+                    dec_status: true,
+                    dec_de_id: true,
+                },
+            }) as Promise<DeviceChildSchema[]>,
 
-    if (!cart_items.length) throw new Error("Cart not found");
+            tx.devices.findMany({
+                where: { deleted_at: null },
+                select: {
+                    de_id: true,
+                    de_serial_number: true,
+                    de_name: true,
+                    de_description: true,
+                    de_location: true,
+                    de_max_borrow_days: true,
+                    de_images: true,
+                    de_af_id: true,
+                    de_ca_id: true,
+                    de_us_id: true,
+                    de_sec_id: true,
+                },
+            }) as Promise<DeviceSchema[]>,
 
-    /**
-    * Description: สร้าง Map สำหรับ lookup device_child ตาม dec_id เพื่อลดการวน find ซ้ำหลายรอบ
-    * Input : device_childs (DeviceChildSchema[])
-    * Output : Map<number, DeviceChildSchema>
-    * Author : Nontapat Sinhum (Guitar) 66160104
-    **/
-    const deviceChildById = new Map<number, DeviceChildSchema>();
-    for (const dc of device_childs) deviceChildById.set(dc.dec_id, dc);
+            tx.accessories.findMany({
+                where: { deleted_at: null },
+                select: {
+                    acc_id: true,
+                    acc_name: true,
+                    acc_quantity: true,
+                    acc_de_id: true,
+                },
+            }) as Promise<AccessoriesSchema[]>,
 
-    /**
-    * Description: จัดกลุ่ม cart_device_childs ตาม cti_id เพื่อดึง device_childs ของแต่ละ cart item ได้รวดเร็ว
-    * Input : cart_device_childs (CartDeviceChildSchema[])
-    * Output : Map<number, CartDeviceChildSchema[]>
-    * Author : Nontapat Sinhum (Guitar) 66160104
-    **/
-    const cartDeviceChildsByCtiId = new Map<number, CartDeviceChildSchema[]>();
-    for (const cdc of cart_device_childs) {
-        const key = cdc.cdc_cti_id;
-        if (!cartDeviceChildsByCtiId.has(key)) cartDeviceChildsByCtiId.set(key, []);
-        cartDeviceChildsByCtiId.get(key)!.push(cdc);
-    }
+            tx.categories.findMany({
+                where: { deleted_at: null },
+                select: { ca_id: true, ca_name: true },
+            }) as Promise<CategoriesSchema[]>,
 
-    // นับจำนวน device_child ทั้งหมด ต่อ de_id (เช็ค null/undefined ก่อน)
-    const deviceChildCountByDeviceId = device_childs.reduce<Record<number, number>>(
-        (acc, dc) => {
-            const deId = dc.dec_de_id;
-            if (deId == null) return acc; // กัน null/undefined
-            acc[deId] = (acc[deId] ?? 0) + 1;
-            return acc;
-        },
-        {}
-    );
+            tx.departments.findMany({
+                where: { deleted_at: null },
+                select: { dept_id: true, dept_name: true },
+            }) as Promise<DepartmentSchema[]>,
 
-    // นับจำนวน device_child ที่ dec_status = "READY" ต่อ de_id (เช็ค null/undefined + status)
-    const deviceChildReadyCountByDeviceId = device_childs.reduce<Record<number, number>>(
-        (acc, dc) => {
-            const deId = dc.dec_de_id;
-            if (deId == null) return acc;
-            if (dc.dec_status === "READY") {
+            tx.sections.findMany({
+                where: { deleted_at: null },
+                select: { sec_id: true, sec_name: true, sec_dept_id: true },
+            }) as Promise<SectionSchema[]>,
+
+            tx.cart_device_childs.findMany({
+                where: { deleted_at: null },
+                select: { cdc_id: true, cdc_cti_id: true, cdc_dec_id: true },
+            }) as Promise<CartDeviceChildSchema[]>,
+        ]);
+
+        /**
+        * Description: สร้าง Map สำหรับ lookup device_child ตาม dec_id เพื่อลดการวน find ซ้ำหลายรอบ
+        * Input : device_childs (DeviceChildSchema[])
+        * Output : Map<number, DeviceChildSchema>
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const deviceChildById = new Map<number, DeviceChildSchema>();
+        for (const dc of device_childs) deviceChildById.set(dc.dec_id, dc);
+
+        /**
+        * Description: จัดกลุ่ม cart_device_childs ตาม cti_id เพื่อดึง device_childs ของแต่ละ cart item ได้รวดเร็ว
+        * Input : cart_device_childs (CartDeviceChildSchema[])
+        * Output : Map<number, CartDeviceChildSchema[]>
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const cartDeviceChildsByCtiId = new Map<number, CartDeviceChildSchema[]>();
+        for (const cdc of cart_device_childs) {
+            const key = cdc.cdc_cti_id;
+            if (!cartDeviceChildsByCtiId.has(key)) cartDeviceChildsByCtiId.set(key, []);
+            cartDeviceChildsByCtiId.get(key)!.push(cdc);
+        }
+
+        /**
+        * Description: ฟังก์ชัน reducer สำหรับนับจำนวน device_child ทั้งหมดแยกตาม de_id
+        * Input : acc (Record<number, number>), dc (DeviceChildSchema)
+        * Output : acc (Record<number, number>)
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const deviceChildCountByDeviceId = device_childs.reduce<Record<number, number>>(
+            (acc, dc) => {
+                const deId = dc.dec_de_id;
+                if (deId == null) return acc;
                 acc[deId] = (acc[deId] ?? 0) + 1;
-            }
-            return acc;
-        },
-        {}
-    );
-
-    // จัดกลุ่ม accessories ตาม de_id (acc_de_id)
-    const accessoriesByDeviceId = accessories.reduce<Record<number, AccessoriesSchema[]>>(
-        (acc, a) => {
-            const deId = a.acc_de_id;
-            if (deId == null) return acc;
-            (acc[deId] ??= []).push(a);
-            return acc;
-        },
-        {},
-    );
-
-    /**
-    * Description: แปลงข้อมูล cart_items ให้อยู่ในรูปแบบ response ที่ frontend ใช้
-    * แนบข้อมูล device/category/department/section พร้อมคำนวณความพร้อมใช้งาน
-    * Input : cart_items, devices, categories, sections, departments, device_childs, cart_device_childs
-    * Output : itemData (array)
-    * Author : Nontapat Sinhum (Guitar) 66160104
-    **/
-    const itemData = cart_items.map((cartItem: CartItemSchema) => {
-        const device: DeviceSchema | undefined = devices.find(
-            (d) => d.de_id === cartItem.cti_de_id
+                return acc;
+            },
+            {},
         );
 
-        const matchedCartDeviceChilds =
-            cartDeviceChildsByCtiId.get(cartItem.cti_id) ?? [];
-
-        //แปลง cdc_dec_id -> DeviceChildSchema[] (ทั้งหมด)
-        const matchedDeviceChilds: DeviceChildSchema[] = matchedCartDeviceChilds
-            .map((cdc) => deviceChildById.get(cdc.cdc_dec_id))
-            .filter((dc): dc is DeviceChildSchema => Boolean(dc));
-
-        const category: CategoriesSchema | undefined = categories.find(
-            (c) => c.ca_id === device?.de_ca_id
+        /**
+        * Description: ฟังก์ชัน reducer สำหรับนับจำนวน device_child ที่ READY แยกตาม de_id
+        * Input : acc (Record<number, number>), dc (DeviceChildSchema)
+        * Output : acc (Record<number, number>)
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const deviceChildReadyCountByDeviceId = device_childs.reduce<Record<number, number>>(
+            (acc, dc) => {
+                const deId = dc.dec_de_id;
+                if (deId == null) return acc;
+                if (dc.dec_status === "READY") acc[deId] = (acc[deId] ?? 0) + 1;
+                return acc;
+            },
+            {},
         );
 
-        const accessory: AccessoriesSchema | undefined = accessories.find(
-            (a) => a.acc_de_id === device?.de_id
+        /**
+        * Description: ฟังก์ชัน reducer สำหรับจัดกลุ่ม accessories ตาม de_id (acc_de_id)
+        * Input : acc (Record<number, AccessoriesSchema[]>), a (AccessoriesSchema)
+        * Output : acc (Record<number, AccessoriesSchema[]>)
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const accessoriesByDeviceId = accessories.reduce<Record<number, AccessoriesSchema[]>>(
+            (acc, a) => {
+                const deId = a.acc_de_id;
+                if (deId == null) return acc;
+                (acc[deId] ??= []).push(a);
+                return acc;
+            },
+            {},
         );
 
-        const section: SectionSchema | undefined = sections.find(
-            (s) => s.sec_id === device?.de_sec_id
-        );
+        /**
+         * Description: ฟังก์ชัน mapper สำหรับแปลง cart_items ให้อยู่ในรูปแบบ response ที่ frontend ใช้
+         *              - แนบข้อมูล device/category/department/section/accessories
+         *              - แนบ device_childs ของแต่ละ cart item
+         *              - คำนวณ availability จากจำนวน READY
+         * Input : cartItem (CartItemSchema)
+         * Output : object (หนึ่งรายการของ itemData)
+         * Author : Nontapat Sinhum (Guitar) 66160104
+         **/
+        const itemData = cart_items.map((cartItem: CartItemSchema) => {
+            const device = devices.find((d) => d.de_id === cartItem.cti_de_id);
 
-        const department: DepartmentSchema | undefined = departments.find(
-            (d) => d.dept_id === section?.sec_dept_id
-        );
+            const matchedCartDeviceChilds = cartDeviceChildsByCtiId.get(cartItem.cti_id) ?? [];
 
-        // ใช้ de_id แบบ type-safe
-        const deId = device?.de_id ?? null;
+            /**
+            * Description: map + filter เพื่อแปลง cdc_dec_id -> DeviceChildSchema[] (เฉพาะที่หาเจอจริง)
+            * Input : matchedCartDeviceChilds
+            * Output : matchedDeviceChilds (DeviceChildSchema[])
+            * Author : Nontapat Sinhum (Guitar) 66160104
+            **/
+            const matchedDeviceChilds: DeviceChildSchema[] = matchedCartDeviceChilds
+                .map((cdc) => deviceChildById.get(cdc.cdc_dec_id))
+                .filter((dc): dc is DeviceChildSchema => Boolean(dc));
 
-        const dec_count =
-            deId != null ? deviceChildCountByDeviceId[deId] ?? 0 : 0;
+            const category = categories.find((c) => c.ca_id === device?.de_ca_id);
 
-        const dec_ready_count =
-            deId != null ? deviceChildReadyCountByDeviceId[deId] ?? 0 : 0;
+            const accessory = accessories.find((a) => a.acc_de_id === device?.de_id);
 
-        const dec_availability = dec_ready_count > 0 ? "พร้อมใช้งาน" : "ไม่พร้อมใช้งาน";
+            const section = sections.find((s) => s.sec_id === device?.de_sec_id);
 
-        const deviceAccessories: AccessoriesSchema[] =
-            deId != null ? accessoriesByDeviceId[deId] ?? [] : [];
-        return {
-            ...cartItem,
-            device: device || null,
-            de_ca_name: category?.ca_name || null,
-            de_acc_name: accessory?.acc_name || null,
-            de_dept_name: department?.dept_name || null,
-            de_sec_name: section?.sec_name || null,
-            dec_count,
-            dec_ready_count,
-            dec_availability,
-            accessories: deviceAccessories,
-            device_childs: matchedDeviceChilds,
-        };
+            const department = departments.find((d) => d.dept_id === section?.sec_dept_id);
+
+            const deId = device?.de_id ?? null;
+
+            const dec_count = deId != null ? deviceChildCountByDeviceId[deId] ?? 0 : 0;
+            const dec_ready_count = deId != null ? deviceChildReadyCountByDeviceId[deId] ?? 0 : 0;
+
+            const dec_availability = dec_ready_count > 0 ? "พร้อมใช้งาน" : "ไม่พร้อมใช้งาน";
+
+            const deviceAccessories = deId != null ? accessoriesByDeviceId[deId] ?? [] : [];
+
+            return {
+                ...cartItem,
+                device: device || null,
+                de_ca_name: category?.ca_name || null,
+                de_acc_name: accessory?.acc_name || null,
+                de_dept_name: department?.dept_name || null,
+                de_sec_name: section?.sec_name || null,
+                dec_count,
+                dec_ready_count,
+                dec_availability,
+                accessories: deviceAccessories,
+                device_childs: matchedDeviceChilds,
+            };
+        });
+
+        return { itemData };
     });
-
-    return { itemData };
 }
 
 /**
@@ -235,14 +264,15 @@ async function getCartItem(params: IdParamDto) {
  * Output : Promise<{ message: string }>
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
-async function deleteCartItemById(params: IdParamDto) {
-    const { id } = params;
-    const cartItem = await prisma.cart_items.findUnique({ where: { cti_id: id } });
+async function deleteCartItemById(params: DeleteCartItemPayload) {
+    const { cartItemId } = params;
+
+    const cartItem = await prisma.cart_items.findUnique({ where: { cti_id: cartItemId } });
     if (!cartItem) throw new Error("CartItem not found");
 
     // ลบจริง
     await prisma.cart_items.delete({
-        where: { cti_id: id },
+        where: { cti_id: cartItemId },
     });
 
     return { message: "Delete Cart Item successfully" };
@@ -255,13 +285,12 @@ async function deleteCartItemById(params: IdParamDto) {
  * Output : Promise<any> = ข้อมูล Borrow Ticket ที่สร้างใหม่
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
-async function createBorrowTecket(params: CreateBorrowTicketPayload) {
+export async function createBorrowTicket(params: CreateBorrowTicketPayload) {
     const { cartItemId } = params;
 
-    const cartItem = await prisma.cart_items.findMany({ where: { cti_id: cartItemId } });
-    if (!cartItem) throw new Error("Cart not found");
-    const [cart_items, device_childs, devices, ticket_devices, carts] = await Promise.all([
-        prisma.cart_items.findMany({
+    return prisma.$transaction(async (tx) => {
+        //ดึง cart_item (ของจริงเป็น 1 record ใช้ findUnique/First แทน findMany)
+        const cartItem = await tx.cart_items.findUnique({
             where: { cti_id: cartItemId },
             select: {
                 cti_id: true,
@@ -274,115 +303,111 @@ async function createBorrowTecket(params: CreateBorrowTicketPayload) {
                 cti_end_date: true,
                 cti_ct_id: true,
                 cti_de_id: true,
+                deleted_at: true,
             },
-        }) as Promise<CartItemSchema[]>,
-        prisma.device_childs.findMany({
-            select: {
-                dec_id: true,
-                dec_serial_number: true,
-                dec_asset_code: true,
-                dec_has_serial_number: true,
-                dec_status: true,
-                dec_de_id: true,
-            },
-        }) as Promise<DeviceChildSchema[]>,
-        prisma.devices.findMany({
+        });
+
+        if (!cartItem || cartItem.deleted_at) {
+            throw new Error("Cart item not found");
+        }
+
+        if (cartItem.cti_de_id == null) {
+            throw new Error("Device not found on cart item");
+        }
+
+        //ดึง device เพื่อเอา flow (af_id)
+        const device = await tx.devices.findUnique({
+            where: { de_id: cartItem.cti_de_id },
             select: {
                 de_id: true,
-                de_serial_number: true,
-                de_name: true,
-                de_description: true,
-                de_location: true,
-                de_max_borrow_days: true,
-                de_images: true,
                 de_af_id: true,
-                de_ca_id: true,
-                de_us_id: true,
-                de_sec_id: true,
             },
-        }) as Promise<DeviceSchema[]>,
-        prisma.ticket_devices.findMany({
-            select: {
-                td_id: true,
-                td_brt_id: true,
-                td_dec_id: true,
-                td_origin_cti_id: true,
-            },
-        }) as Promise<TicketDevicesSchema[]>,
-        prisma.carts.findMany({
+        });
+
+        if (!device?.de_af_id) {
+            throw new Error("Approval flow not found on device");
+        }
+
+        //ดึง cart เพื่อเอา requester (ct_us_id)
+        const cart = await tx.carts.findUnique({
+            where: { ct_id: cartItem.cti_ct_id },
             select: {
                 ct_id: true,
                 ct_us_id: true,
             },
-        }) as Promise<CartSchema[]>,
-    ]);
+        });
 
-    const cart_item = cart_items.find((ct) => ct.cti_id === cartItemId);
-    const device = devices.find((de) => de.de_id === cart_item?.cti_de_id);
-    const device_child = device_childs.find((dec) => dec.dec_id === device?.de_id);
-
-    const cart = carts.find((ct) => ct.ct_id === cart_item?.cti_ct_id);
-
-    /**
-    * Description: สร้างข้อมูลคำร้องใหม่ลงในตาราง borrow_return_tickets
-    * Input : cart_item, device, cart (ใช้ connect requester/flow)
-    * Output : newBorrowTicket (ข้อมูลคำร้องที่สร้าง)
-    * Author : Nontapat Sinhum (Guitar) 66160104
-    **/
-    const newBorrowTicket = await prisma.borrow_return_tickets.create({
-        data: {
-            brt_status: "PENDING",
-            brt_usage_location: cart_item?.cti_usage_location,
-            brt_borrow_purpose: cart_item?.cti_note,
-            brt_start_date: cart_item?.cti_start_date,
-            brt_end_date: cart_item?.cti_end_date,
-            brt_quantity: cart_item?.cti_quantity,
-            brt_current_stage: 1,
-            brt_reject_reason: null,
-            brt_pickup_location: null,
-            brt_pickup_datetime: null,
-            brt_return_location: null,
-            brt_return_datetime: null,
-            created_at: new Date(),
-            requester: {
-                connect: {
-                    us_id: cart!.ct_us_id,
-                },
-            },
-            flow: {
-                connect: {
-                    af_id: device?.de_af_id,
-                },
-            },
-        },
-        select: {
-            brt_id: true,
-            brt_status: true,
-            brt_usage_location: true,
-            brt_borrow_purpose: true,
-            brt_start_date: true,
-            brt_end_date: true,
-            brt_quantity: true,
-            brt_current_stage: true,
-            brt_reject_reason: true,
-            brt_pickup_location: true,
-            brt_pickup_datetime: true,
-            brt_return_location: true,
-            brt_return_datetime: true,
-            requester: { select: { us_id: true } },
-            flow: { select: { af_id: true } },
-            created_at: true,
+        if (!cart?.ct_us_id) {
+            throw new Error("Cart requester not found");
         }
-    });
 
-    await prisma.cart_items.update({
-        where: { cti_id: cartItemId },
-        data: { deleted_at: new Date(), },
-    });
+        const user = await tx.users.findUnique({
+            where: { us_id: cart.ct_us_id },
+            select: {
+                us_id: true,
+                us_firstname: true,
+                us_lastname: true,
+            },
+        });
+        //สร้าง borrow_return_ticket
+        const newBorrowTicket = await tx.borrow_return_tickets.create({
+            data: {
+                brt_status: "PENDING",
+                brt_usage_location: cartItem.cti_usage_location,
+                brt_borrow_purpose: cartItem.cti_note,
+                brt_start_date: cartItem.cti_start_date,
+                brt_end_date: cartItem.cti_end_date,
+                brt_quantity: cartItem.cti_quantity,
+                brt_current_stage: 1,
+                created_at: new Date(),
+                requester: {
+                    connect: { us_id: cart.ct_us_id },
+                },
+                flow: {
+                    connect: { af_id: device.de_af_id },
+                },
+            },
+            select: {
+                brt_id: true,
+                brt_status: true,
+                brt_usage_location: true,
+                brt_borrow_purpose: true,
+                brt_start_date: true,
+                brt_end_date: true,
+                brt_quantity: true,
+                brt_current_stage: true,
+                brt_reject_reason: true,
+                brt_pickup_location: true,
+                brt_pickup_datetime: true,
+                brt_return_location: true,
+                brt_return_datetime: true,
+                requester: { select: { us_id: true } },
+                flow: { select: { af_id: true } },
+                created_at: true,
+            },
+        });
 
-    return newBorrowTicket;
+        //บันทึก log การสร้างคำร้อง
+        await tx.log_borrow_returns.create({
+            data: {
+                lbr_action: "CREATED",
+                lbr_new_status: "CREATED",
+                lbr_note: `${user.us_firstname} ${user.us_lastname} ส่งคำร้องการยืมอุปกรณ์`,
+                lbr_actor_id: cart.ct_us_id,
+                lbr_brt_id: newBorrowTicket.brt_id,
+                created_at: new Date(),
+            },
+        });
+
+        //soft-delete cart item
+        await tx.cart_items.update({
+            where: { cti_id: cartItemId },
+            data: { deleted_at: new Date() },
+        });
+
+        return newBorrowTicket;
+    });
 }
-
 /**
  * Description: ฟังก์ชันสร้าง ticket_devices และ device_availabilities ตาม device_child ที่ถูกเลือกใน cart
  * ทำงานภายใต้ transaction เพื่อให้ข้อมูลสอดคล้องกัน (สร้างสำเร็จทั้งหมดหรือ rollback ทั้งหมด)
@@ -390,7 +415,7 @@ async function createBorrowTecket(params: CreateBorrowTicketPayload) {
  * Output : Promise<Array<{ ticketDevice: any; availability: any }>> = ผลลัพธ์ที่สร้างต่อ device_child
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
-async function createTecketDevice(params: CreateTicketDevicePayload) {
+async function createTicketDevice(params: CreateTicketDevicePayload) {
 
     const { cartItemId, borrowTicketId } = params;
 
@@ -483,7 +508,7 @@ async function createTecketDevice(params: CreateTicketDevicePayload) {
  * Output : Promise<any[]> = stages ที่สร้างจาก approval_flow_steps (ไม่รวม stage STAFF Distribution ที่สร้างเพิ่มท้าย)
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
-async function createBorrowTecketStages(params: CreateBorrowTicketStagePayload) {
+async function createBorrowTicketStages(params: CreateBorrowTicketStagePayload) {
     const { cartItemId, borrowTicketId } = params;
 
     //ครอบทั้งฟังก์ชันด้วย transaction
@@ -664,5 +689,5 @@ async function createBorrowTecketStages(params: CreateBorrowTicketStagePayload) 
 }
 
 export const cartsService = {
-    getCartItem, deleteCartItemById, createBorrowTecket, createTecketDevice, createBorrowTecketStages,
+    getCartItem, deleteCartItemById, createBorrowTicket, createTicketDevice, createBorrowTicketStages,
 };

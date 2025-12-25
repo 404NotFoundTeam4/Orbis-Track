@@ -64,7 +64,7 @@ export const Cart = () => {
     try {
       if (!us_id) return;
 
-      const res = await CartService.getCartItems(us_id);
+      const res = await CartService.getCartItems();
 
       const mapped: CartItem[] = res.itemData.map((d: any) => ({
         id: d.cti_id,
@@ -125,7 +125,7 @@ export const Cart = () => {
    **/
   const remove = async (id: number) => {
     try {
-      await CartService.deleteCartItem(id);
+      await CartService.deleteCartItem({ cartItemId: id });
 
       setItems((prev) => prev.filter((i) => i.id !== id));
       setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
@@ -181,9 +181,7 @@ export const Cart = () => {
       // ส่งคำร้องตามรายการที่เลือก
       await Promise.all(
         selectedItems.map((cartItemId) =>
-          CartService.createBorrowTicket(us_id, {
-            cartItemId,
-          })
+          CartService.createBorrowTicket({ cartItemId })
         )
       );
 
@@ -209,7 +207,9 @@ export const Cart = () => {
     try {
       if (selectDeleteMode) {
         await Promise.all(
-          selectedItems.map((id) => CartService.deleteCartItem(id))
+          selectedItems.map((id) =>
+            CartService.deleteCartItem({ cartItemId: id })
+          )
         );
 
         setItems((prev) => prev.filter((i) => !selectedItems.includes(i.id)));

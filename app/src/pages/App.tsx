@@ -16,7 +16,7 @@ import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
 import { Cart } from "./Cart";
-import EditCart from "./EditCart";
+// import EditCart from "./EditCart";
 import ListDevices from "./ListDevices";
 
 function App() {

@@ -1,17 +1,26 @@
+import { create } from "domain";
 import { z } from "zod";
 
 /**
- * Description : Schema สำหรับรับ id จาก params
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema สำหรับรับ id จาก params
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const idParamSchema = z.object({
     id: z.coerce.number().int().positive(),
 });
 
 /**
- * Description : Schema โครงสร้างข้อมูล Cart
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema Payload สำหรับลบ Cart Item (ส่ง cartItemId ผ่าน req.body)
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
+export const deleteCartItemPayload = z.object({
+    cartItemId: z.coerce.number().int().positive(),
+})
+
+/**
+* Description : Schema โครงสร้างข้อมูล Cart
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const cartSchema = z.object({
     ct_id: z.coerce.number(),
     ct_quantity: z.coerce.number(),
@@ -22,9 +31,9 @@ export const cartSchema = z.object({
 })
 
 /**
- * Description : Schema โครงสร้างข้อมูล Cart Item
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema โครงสร้างข้อมูล Cart Item
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const cartItemSchema = z.object({
     cti_id: z.coerce.number(),
     cti_us_name: z.string().min(1).max(120),
@@ -42,9 +51,9 @@ export const cartItemSchema = z.object({
 });
 
 /**
- * Description: Schema โครงสร้างข้อมูล Cart Device Child (ความสัมพันธ์ Cart Item กับ Device Child)
- * Author : Nontapat Sinhum (Guitar) 66160104
- **/
+* Description: Schema โครงสร้างข้อมูล Cart Device Child (ความสัมพันธ์ Cart Item กับ Device Child)
+* Author : Nontapat Sinhum (Guitar) 66160104
+**/
 export const cartDeviceChildSchema = z.object({
     cdc_id: z.coerce.number(),
     cdc_cti_id: z.coerce.number(),
@@ -55,9 +64,9 @@ export const cartDeviceChildSchema = z.object({
     reserved_at: z.date().nullable(),
 })
 /**
- * Description : Schema โครงสร้างข้อมูล Device Child
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema โครงสร้างข้อมูล Device Child
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const deviceChildSchema = z.object({
     dec_id: z.coerce.number(),
     dec_serial_number: z.string().min(1).max(120),
@@ -77,9 +86,9 @@ export const deviceChildSchema = z.object({
 });
 
 /**
- * Description : Schema โครงสร้างข้อมูล Device
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema โครงสร้างข้อมูล Device
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const deviceSchema = z.object({
     de_id: z.coerce.number(),
     de_serial_number: z.string().min(1).max(120),
@@ -98,9 +107,9 @@ export const deviceSchema = z.object({
 });
 
 /**
- * Description : Schema หมวดหมู่อุปกรณ์
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema หมวดหมู่อุปกรณ์
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const categoriesSchema = z.object({
     ca_id: z.coerce.number(),
     ca_name: z.string().min(1).max(120),
@@ -110,9 +119,9 @@ export const categoriesSchema = z.object({
 });
 
 /**
- * Description : Schema อุปกรณ์เสริม
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema อุปกรณ์เสริม
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const accessoriesSchema = z.object({
     acc_id: z.coerce.number(),
     acc_name: z.string().min(1).max(120),
@@ -124,17 +133,17 @@ export const accessoriesSchema = z.object({
 });
 
 /**
- * Description : Schema Response รายการ Cart Item
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema Response รายการ Cart Item
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const cartItemListResponseSchema = z.object({
     itemData: z.array(cartItemSchema),
 });
 
 /**
- * Description : Schema ข้อมูล Borrow Return Ticket
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema ข้อมูล Borrow Return Ticket
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const borrowReturnTicketsSchema = z.object({
     brt_id: z.coerce.number().nullable(),
     brt_status: z.enum([
@@ -164,10 +173,10 @@ export const borrowReturnTicketsSchema = z.object({
 })
 
 /**
- * Description : Schema โครงสร้างข้อมูลขั้นตอนการอนุมัติของ Borrow Return Ticket
- * ใช้สำหรับเก็บสถานะและลำดับการอนุมัติในแต่ละขั้นตอน
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema โครงสร้างข้อมูลขั้นตอนการอนุมัติของ Borrow Return Ticket
+* ใช้สำหรับเก็บสถานะและลำดับการอนุมัติในแต่ละขั้นตอน
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const borrowReturnTicketStagesSchema = z.object({
     brts_id: z.coerce.number().nullable(),
     brts_name: z.string().min(1).max(255),
@@ -197,10 +206,10 @@ export const borrowReturnTicketStagesSchema = z.object({
 })
 
 /**
- * Description : Schema โครงสร้างข้อมูล Approval Flow
- * ใช้กำหนดชุดกระบวนการอนุมัติคำร้องขอยืมอุปกรณ์
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema โครงสร้างข้อมูล Approval Flow
+* ใช้กำหนดชุดกระบวนการอนุมัติคำร้องขอยืมอุปกรณ์
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const approvalFlowsSchema = z.object({
     af_id: z.coerce.number().nullable(),
     af_name: z.string().min(1).max(255),
@@ -212,10 +221,10 @@ export const approvalFlowsSchema = z.object({
 })
 
 /**
- * Description : Schema โครงสร้างข้อมูลขั้นตอนย่อยของ Approval Flow
- * ใช้ระบุบทบาทและลำดับการอนุมัติในแต่ละขั้น
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema โครงสร้างข้อมูลขั้นตอนย่อยของ Approval Flow
+* ใช้ระบุบทบาทและลำดับการอนุมัติในแต่ละขั้น
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const approvalFlowStepsSchema = z.object({
     afs_id: z.coerce.number().nullable(),
     afs_step_approve: z.coerce.number(),
@@ -236,17 +245,17 @@ export const approvalFlowStepsSchema = z.object({
 })
 
 /**
- * Description : Schema Payload สำหรับสร้าง Borrow Ticket
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema Payload สำหรับสร้าง Borrow Ticket
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const createBorrowTicketPayload = z.object({
     cartItemId: z.coerce.number(),
 })
 
 /**
- * Description : Schema ความสัมพันธ์ Ticket กับ Device
- * Author : Nontapat Sinhum (Guitar) 66160104
- */
+* Description : Schema ความสัมพันธ์ Ticket กับ Device
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
 export const ticketDevicesSchema = z.object({
     td_id: z.coerce.number(),
     td_brt_id: z.coerce.number(),
@@ -258,27 +267,27 @@ export const ticketDevicesSchema = z.object({
 })
 
 /**
- * Description: Schema Payload สำหรับสร้าง TicketDevice (ผูก borrowTicketId กับ cartItemId)
- * Author : Nontapat Sinhum (Guitar) 66160104
- **/
+* Description: Schema Payload สำหรับสร้าง TicketDevice (ผูก borrowTicketId กับ cartItemId)
+* Author : Nontapat Sinhum (Guitar) 66160104
+**/
 export const createTicketDevicePayload = z.object({
     cartItemId: z.coerce.number(),
     borrowTicketId: z.coerce.number(),
 })
 
 /**
- * Description: Schema Payload สำหรับสร้าง BorrowTicketStages
- * Author : Nontapat Sinhum (Guitar) 66160104
- **/
+* Description: Schema Payload สำหรับสร้าง BorrowTicketStages
+* Author : Nontapat Sinhum (Guitar) 66160104
+**/
 export const createBorrowTicketStagePayload = z.object({
     cartItemId: z.coerce.number(),
     borrowTicketId: z.coerce.number(),
 })
 
 /**
- * Description: Schema โครงสร้างข้อมูล Device Availabilities (ช่วงเวลาที่อุปกรณ์ถูกจอง/ถูกยืม)
- * Author : Nontapat Sinhum (Guitar) 66160104
- **/
+* Description: Schema โครงสร้างข้อมูล Device Availabilities (ช่วงเวลาที่อุปกรณ์ถูกจอง/ถูกยืม)
+* Author : Nontapat Sinhum (Guitar) 66160104
+**/
 export const deviceAvailabilitiesSchema = z.object({
     da_id: z.coerce.number(),
     da_dec_id: z.coerce.number(),
@@ -293,7 +302,31 @@ export const deviceAvailabilitiesSchema = z.object({
     updated_at: z.date().nullable(),
 })
 
+/**
+* Description: Schema บันทึกการกระทำ/เหตุการณ์ของ Borrow Return Ticket (Audit Log)
+* Author : Nontapat Sinhum (Guitar) 66160104
+*/
+export const logBorrowReturnSchema = z.object({
+    lbr_id: z.coerce.number(),
+    lbr_action: z.enum([
+        "CREATED",
+        "UPDATED",
+        "APPROVED",
+        "REJECTED",
+        "RETURNED",
+        "MARK_DAMAGED",
+        "MARK_LOST",
+    ]),
+    lbr_old_status: z.string().min(1).max(50).nullable(),
+    lbr_new_status: z.string().min(1).max(50).nullable(),
+    lbr_note: z.string().min(1).max(255).nullable(),
+    lbr_actor_id: z.coerce.number(),
+    lbr_brt_id: z.coerce.number(),
+    created_at: z.date().nullable(),
+})
+
 export type IdParamDto = z.infer<typeof idParamSchema>;
+export type DeleteCartItemPayload = z.infer<typeof deleteCartItemPayload>;
 export type CartSchema = z.infer<typeof cartSchema>;
 export type CartItemSchema = z.infer<typeof cartItemSchema>;
 export type CartDeviceChildSchema = z.infer<typeof cartDeviceChildSchema>;
@@ -311,3 +344,4 @@ export type TicketDevicesSchema = z.infer<typeof ticketDevicesSchema>;
 export type CreateTicketDevicePayload = z.infer<typeof createTicketDevicePayload>;
 export type CreateBorrowTicketStagePayload = z.infer<typeof createBorrowTicketStagePayload>;
 export type DeviceAvailabilitiesSchema = z.infer<typeof deviceAvailabilitiesSchema>;
+export type LogBorrowReturnSchema = z.infer<typeof logBorrowReturnSchema>;

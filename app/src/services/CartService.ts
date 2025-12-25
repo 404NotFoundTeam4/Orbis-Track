@@ -1,6 +1,5 @@
 /**
  * Description: Service สำหรับเรียก API ตะกร้าจาก Backend (Cart / Borrow)
- * Input : -
  * Output : CartService (object) สำหรับเรียกใช้งาน API
  * Author : Nontapat Sinthum (Guitar) 66160104
  */
@@ -29,9 +28,12 @@ export type CreateBorrowTicketPayload = {
     cartItemId: number;
 };
 
+export type DeleteCartItemPayload = {
+    cartItemId: number;
+};
+
 /**
  * Description: โครงสร้างข้อมูล Cart Item ที่ frontend ใช้หลังดึงจาก backend
- * Input : -
  * Output : CartItem (type)
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
@@ -60,7 +62,6 @@ export type CartItem = {
 
 /**
  * Description: โครงสร้างผลลัพธ์จาก API GET /borrow/cart/:id
- * Input : -
  * Output : CartItemListResponse
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
@@ -70,7 +71,6 @@ export type CartItemListResponse = {
 
 /**
  * Description: โครงสร้างผลลัพธ์จาก API DELETE /borrow/cart/:cti_id
- * Input : -
  * Output : DeleteCartItemResponse
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
@@ -78,51 +78,44 @@ export type DeleteCartItemResponse = {
     message: string;
 };
 
-/**
- * Description: Service รวมฟังก์ชันเรียก API ที่เกี่ยวข้องกับ Cart (GET/DELETE/POST)
- * Input : -
- * Output : CartService (methods สำหรับเรียก backend)
- * Author : Nontapat Sinhum (Guitar) 66160104
- **/
 export const CartService = {
     /**
-    * Description: ดึงรายการ cart ทั้งหมดของผู้ใช้/ตะกร้า ตาม ct_id
-    * Input : ct_id (number) = id ของ cart (หรือ id ที่ backend ใช้ผูกตะกร้า)
+    * Description: ดึงรายการอุปกรณ์ในตะกร้าของผู้ใช้ (backend จะ resolve ผู้ใช้จาก token/session)
     * Output : Promise<CartItemListResponse> = { itemData: CartItem[] }
     * Author : Nontapat Sinhum (Guitar) 66160104
     **/
-    async getCartItems(ct_id: number): Promise<CartItemListResponse> {
+    async getCartItems(): Promise<CartItemListResponse> {
         const res = await api.get<ApiEnvelope<CartItemListResponse>>(
-            `/borrow/cart/${ct_id}`
+            `/borrow/cart/`
         );
         return res.data.data;
     },
 
     /**
-    * Description: ลบ cart item ตาม cti_id
-    * Input : cti_id (number) = id ของรายการในตะกร้าที่ต้องการลบ
+    * Description: ลบรายการในตะกร้าตาม cartItemId
+    * Input : payload: { cartItemId: number }
     * Output : Promise<string> = message ผลการลบ (ถ้าไม่มี message จะคืนค่า default)
     * Author : Nontapat Sinhum (Guitar) 66160104
     **/
-    async deleteCartItem(cti_id: number): Promise<string> {
+    async deleteCartItem(payload: DeleteCartItemPayload): Promise<string> {
         const res = await api.delete<ApiEnvelope<DeleteCartItemResponse>>(
-            `/borrow/cart/${cti_id}`
+            `/borrow/cart/`,
+            { data: payload }
         );
         return res.data.message ?? "Delete successfully";
     },
 
     /**
-    * Description: สร้าง Borrow Ticket จาก cart ตาม ct_id และ payload (cartItemId)
-    * Input : ct_id (number) = id ที่ backend ใช้ระบุเจ้าของตะกร้า/ตะกร้า, payload (CreateBorrowTicketPayload)
+    * Description: สร้าง Borrow Ticket จากรายการในตะกร้า
+    * Input : payload: { cartItemId: number }
     * Output : Promise<any> = ข้อมูลผลลัพธ์ที่ backend ส่งกลับ (ตามที่ backend กำหนด)
     * Author : Nontapat Sinhum (Guitar) 66160104
     **/
     async createBorrowTicket(
-        ct_id: number,
         payload: CreateBorrowTicketPayload
     ): Promise<any> {
         const res = await api.post<ApiEnvelope<any>>(
-            `/borrow/cart/${ct_id}`,
+            `/borrow/cart/`,
             payload
         );
         return res.data.data;

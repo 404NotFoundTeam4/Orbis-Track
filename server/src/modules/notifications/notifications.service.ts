@@ -128,9 +128,9 @@ async function createNotification(payload: CreateNotificationDto) {
       });
     });
   } catch (error) {
-    console.error(
-      `Failed to send socket notification for notif_id ${notification.n_id}:`,
-      error,
+    logger.error(
+      { err: error, notifId: notification.n_id },
+      "Failed to send socket notification",
     );
   }
 
@@ -379,7 +379,7 @@ async function dismissNotificationsByTicket(params: {
       });
     }
   } catch (error) {
-    console.error("Failed to send dismissal socket:", error);
+    logger.error({ err: error }, "Failed to send dismissal socket");
   }
 }
 

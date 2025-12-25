@@ -8,6 +8,7 @@ import { CreateAccountsPayload, EditAccountSchema, IdParamDto } from "./accounts
 import redisUtils from "../../infrastructure/redis.cjs";
 import { jobDispatcher } from "../../infrastructure/queue/job.dispatcher.js";
 import { JobType } from "../../infrastructure/queue/job.types.js";
+import { logger } from "../../infrastructure/logger.js";
 
 const { redisSet } = redisUtils;
 
@@ -61,7 +62,7 @@ async function generateNextEmployeeCode(role: UserRole): Promise<string> {
                 nextNum = currentNum + 1;
             }
         } catch (e) {
-            console.warn("Could not parse latest employee code, starting from 1.", latestUser.us_emp_code, e);
+            logger.warn({ empCode: latestUser.us_emp_code, err: e }, "Could not parse latest employee code, starting from 1.");
         }
     }
 

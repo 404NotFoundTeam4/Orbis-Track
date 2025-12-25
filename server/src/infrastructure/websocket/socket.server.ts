@@ -9,6 +9,7 @@
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { socketAuthMiddleware } from "./socket.middleware.js";
+import { logger } from "../logger.js";
 
 let io: SocketIOServer | null = null;
 
@@ -28,14 +29,14 @@ export const initSocket = (httpServer: HttpServer) => {
 
   io.on("connection", (socket: Socket) => {
     const user = socket.user;
-    console.log(`User connected: ${user?.sub}`);
+    logger.info({ userId: user?.sub }, "User connected");
 
     // Join Room อัตโนมัติ
     socket.join(`user_${user?.sub}`);
     if (user?.role) {
       if (user.role === "HOD") socket.join(`role_${user?.role}_${user?.dept}`);
       socket.join(`role_${user?.role}_${user?.dept}_${user?.sec}`);
-      console.log(`User ${user.sub} joined rooms: role_${user.role}_${user.dept}, role_${user.role}_${user.dept}_${user.sec}`);
+      logger.debug({ userId: user.sub, role: user.role, dept: user.dept, sec: user.sec }, "User joined rooms");
     }
 
     // For Testing: Echo notification back to sender
@@ -44,7 +45,7 @@ export const initSocket = (httpServer: HttpServer) => {
     });
 
     socket.on("disconnect", () => {
-      console.log("User disconnected");
+      logger.info("User disconnected");
     });
   });
 

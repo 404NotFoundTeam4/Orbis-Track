@@ -1,4 +1,5 @@
 import { getIO } from "./socket.server.js";
+import { logger } from "../logger.js";
 
 export const SocketEmitter = {
   /**
@@ -12,7 +13,7 @@ export const SocketEmitter = {
     try {
       getIO().to(`user_${userId}`).emit(event, data);
     } catch (e) {
-      console.error("Socket emit error:", e);
+      logger.error({ err: e }, "Socket emit error");
     }
   },
 
@@ -37,7 +38,7 @@ export const SocketEmitter = {
       // console.log(`Socket emitting to ${roomName}: ${event} with ticketId: ${data.ticketId}`);
       getIO().to(roomName).emit(event, data);
     } catch (e) {
-      console.error("Socket emit error:", e);
+      logger.error({ err: e }, "Socket emit error");
     }
   },
 };

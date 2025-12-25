@@ -8,31 +8,12 @@
  */
 import { Icon } from "@iconify/react";
 import type { TicketDevice } from "../services/TicketsService";
-import Button from "./Button";
-import { useState } from "react";
-import DropDown from "./DropDown";
-
-export const ModeModal = {
-  VIEW: "view",
-  RETURN: "return",
-  MANAGE: "manage",
-} as const;
-
-export type ModeModalType = (typeof ModeModal)[keyof typeof ModeModal];
 
 interface DeviceListModalProps {
   isOpen: boolean;
   onClose: () => void;
   devices: TicketDevice[];
-  mode: ModeModalType;
 }
-
-const statusItems = [
-  { id: "READY", label: "พร้อมใช้งาน", value: "READY" },
-  { id: "BORROWED", label: "กำลังใช้งาน", value: "BORROWED" },
-  { id: "DAMAGED", label: "ชำรุด", value: "DAMAGED" },
-  { id: "LOST", label: "สูญหาย", value: "LOST" },
-];
 
 // Status display configuration (matching Figma)
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -62,29 +43,13 @@ const DeviceListModal = ({
   isOpen,
   onClose,
   devices,
-  mode = ModeModal.VIEW,
 }: DeviceListModalProps) => {
-  const [localDeviceChild, setLocalDeviceChild] =
-    useState<TicketDevice[]>(devices);
-
   if (!isOpen) return null;
 
   // Check if any device has serial number
-  const hasSerialNumber = localDeviceChild.some(
+  const hasSerialNumber = devices.some(
     (d) => d.serial && d.serial.trim() !== "",
   );
-
-  // const addDeviceChild = () => {
-  //   const emptyDevice: TicketDevice = {
-  //     child_id: 0,
-  //     asset_code: "",
-  //     serial: "",
-  //     current_status: "READY",
-  //   };
-  //   setLocalDeviceChild((prev) => [...prev, emptyDevice]);
-  // };
-
-  // const hasSerialNumber = null;
 
   const getStatusStyle = (status: string) => {
     return (
@@ -105,16 +70,6 @@ const DeviceListModal = ({
         {/* Header */}
         <div className="flex items-center justify-between pb-4">
           <h2 className="text-2xl font-bold text-black">รายการอุปกรณ์</h2>
-          <Button
-            // onClick={() => addDeviceChild()}
-            variant="primary"
-            style={{ width: 130, height: 44 }}
-          >
-            + เพิ่มอุปกรณ์
-          </Button>
-          <Button variant="primary" style={{ width: 130, height: 44 }}>
-            ลบอุปกรณ์
-          </Button>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full border border-black flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
@@ -142,7 +97,7 @@ const DeviceListModal = ({
 
             {/* Table Body */}
             <div className="mt-2">
-              {localDeviceChild.map((device, index) => {
+              {devices.map((device, index) => {
                 const statusStyle = getStatusStyle(device.current_status);
                 return (
                   <div
@@ -167,26 +122,11 @@ const DeviceListModal = ({
                       </div>
                     )}
                     <div className="w-[100px] sm:w-[120px] flex justify-start">
-                      {mode === ModeModal.VIEW ? (
-                        <span
-                          className={`flex items-center justify-center px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full text-xs sm:text-sm whitespace-nowrap ${statusStyle.className}`}
-                        >
-                          {statusStyle.label}
-                        </span>
-                      ) : (
-                        <DropDown
-                          items={statusItems}
-                          value={
-                            statusItems.find(
-                              (s) => s.value === device.current_status,
-                            ) || null
-                          }
-                          onChange={(item) => updateStatus(index, item.value)}
-                          placeholder="เลือกสถานะ"
-                          searchable={false}
-                          className="w-[140px]"
-                        />
-                      )}
+                      <span
+                        className={`flex items-center justify-center px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full text-xs sm:text-sm whitespace-nowrap ${statusStyle.className}`}
+                      >
+                        {statusStyle.label}
+                      </span>
                     </div>
                   </div>
                 );
@@ -194,19 +134,6 @@ const DeviceListModal = ({
             </div>
           </div>
         </div>
-
-        {/* Footer - Fixed at bottom */}
-        {mode !== ModeModal.VIEW && (
-          <div className="flex pt-4 justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              style={{ width: 105, height: 46, fontSize: 18 }}
-            >
-              ยืนยัน
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

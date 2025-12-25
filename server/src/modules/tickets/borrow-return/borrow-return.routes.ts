@@ -60,19 +60,19 @@ router.patchDoc(
   borrowReturnController.rejectTicketById,
 );
 
-// router.patchDoc(
-//   "/:id/device-childs",
-//   {
-//     tag: "Borrow Return",
-//     params: idParamSchema,
-//     // body: approveTicket,
-//     // res: borrowReturnTicketDetailSchema,
-//     auth: true,
-//   },
-//   borrowReturnController.manageDevice,
-// );
-
 router.getDoc(
+  "/:id/device-childs",
+  {
+    tag: "Borrow Return",
+    params: idParamSchema,
+    // body: approveTicket,
+    // res: borrowReturnTicketDetailSchema,
+    auth: true,
+  },
+  borrowReturnController.manageDevice,
+);
+
+router.patchDoc(
   "/:id/device-childs",
   {
     tag: "Borrow Return",

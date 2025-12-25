@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom"
 import BorrowEquipmentModal from "../components/BorrowDeviceModal"
-import { borrowService, type GetDeviceForBorrow } from "../services/BorrowService";
+import { borrowService, type GetAvailable, type GetDeviceForBorrow } from "../services/BorrowService";
 import { useEffect, useState } from "react";
 import { useToast } from "../components/Toast";
 
@@ -31,17 +31,25 @@ const BorrowDevice = () => {
     const location = useLocation();
     // รับรหัสอุปกรณ์แม่ที่ส่งมาจาก state ของ navigate
     const de_id = location.state?.deviceId;
-    // เก็บข้อมูลอุปกรณ์
+    // เก็บข้อมูลอุปกรณ์แม่
     const [device, setDevice] = useState<GetDeviceForBorrow | null>(null);
+
+    // เก็บข้อมูลอุปกรณ์ลูก
+    const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
+    // เก็บอุปกรณ์ที่ผู้ใช้เลือก
+    const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
+    // เก็บจำนวนอุปกรณ์ที่สถานะ READY
+    const [availableCount, setAvailableCount] = useState(0);
+
     // ใช้ำสำหรับแสดง toast
     const { push } = useToast();
 
-    // ดึงข้อมูลอุปกรณ์เมื่อเรนเดอร์หน้าเว็บครั้งแรก
+    // ดึงข้อมูลอุปกรณ์แม่เมื่อเรนเดอร์หน้าเว็บครั้งแรก
     useEffect(() => {
         const fetchDevice = async () => {
             const res = await borrowService.getDeviceForBorrow(de_id);
             // เก็บข้อมูลลงใน state
-            setDevice(res.data);
+            setDevice(res);
         }
 
         fetchDevice();
@@ -68,19 +76,11 @@ const BorrowDevice = () => {
         section: device.section ?? "",
         imageUrl: device.de_images ?? "",
         storageLocation: device.de_location,
-        total: device.device_childs?.length ?? 0,
-        remain: device.device_childs?.filter(
-            (d) => d.dec_status === "READY"
-        ).length ?? 0,
+        total: device.total,
+        remain: device.ready,
         maxBorrowDays: device.de_max_borrow_days,
         accessories: accessory
     };
-
-    // หาอุปกรณ์ลูกที่สถานะเป็น Ready
-    const getReadyDeviceChilds = (deviceChilds: { dec_id: number, dec_status: string }[], quantity: number) => {
-        const ready = deviceChilds.filter((d) => d.dec_status === "READY");
-        return ready.slice(0, quantity).map(d => d.dec_id);
-    }
 
     // ฟังก์ชันสำหรับรวมวันที่และเวลาเป็น Date (ISO)
     const buildDateTime = (date: Date, time: string) => {
@@ -91,6 +91,20 @@ const BorrowDevice = () => {
         // ตั้งค่าเวลาให้วันที่
         d.setHours(hh, mm, 0, 0);
         return d;
+    };
+
+    // ฟังก์ชันสำหรับการเปลี่ยนวันเวลาที่เลือก
+    const handleDateTimeChange = async () => {
+        // ดึงข้อมูล device childs ทั้งหมด พร้อมเวลาที่ถูกยืม
+        const res = await borrowService.getAvailable(de_id);
+        setAvailableDevices(res);
+
+        // นับจำนวนอุปกรณ์ที่ว่าง
+        const readyCount = res.filter(d => d.dec_status === "READY").length;
+        setAvailableCount(readyCount);
+
+        // reset การเลือก ถ้าเวลาเปลี่ยน
+        setSelectedDeviceIds([]);
     };
 
     // ส่งคำร้องยืมอุปกรณ์
@@ -107,14 +121,8 @@ const BorrowDevice = () => {
             const borrowStart = buildDateTime(borrowDate, data.borrowTime);
             const borrowEnd = buildDateTime(returnDate, data.returnTime);
 
-            // หาอุปกรณ์ลูกที่พร้อมให้ยืม
-            const deviceChilds = getReadyDeviceChilds(
-                device.device_childs ?? [],
-                data.quantity
-            );
-
             const payload = {
-                deviceChilds,
+                deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
                 borrowStart: borrowStart.toISOString(),
                 borrowEnd: borrowEnd.toISOString(),
                 reason: data.reason,
@@ -133,6 +141,7 @@ const BorrowDevice = () => {
 
     };
 
+    // เพิ่มอุปกรณ์ไปยังรถเข็น
     const handleAddToCard = async ({ data }: { data: AddToCart }) => {
         try {
             // วันที่ยืมและวันที่คืน
@@ -142,14 +151,9 @@ const BorrowDevice = () => {
 
             if (!borrowDate || !returnDate) return;
 
+            // รวมวันเวลาที่ยืมและคืนเป็น Date
             const borrowStart = buildDateTime(borrowDate, data.borrowTime);
             const borrowEnd = buildDateTime(returnDate, data.returnTime);
-
-            // หาอุปกรณ์ลูกที่พร้อมให้ยืม
-            const deviceChilds = getReadyDeviceChilds(
-                device.device_childs ?? [],
-                data.quantity
-            );
 
             const payload = {
                 deviceId: de_id,
@@ -157,10 +161,10 @@ const BorrowDevice = () => {
                 phone: data.phone,
                 reason: data.reason,
                 placeOfUse: data.placeOfUse,
-                quantity: data.quantity,
+                quantity: selectedDeviceIds.length,
                 borrowStart: borrowStart.toISOString(),
                 borrowEnd: borrowEnd.toISOString(),
-                deviceChilds,
+                deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
             }
 
             await borrowService.addToCart(payload);
@@ -185,10 +189,14 @@ const BorrowDevice = () => {
             <div className="flex items-center">
                 <h1 className="text-[36px] font-semibold">ยืมอุปกรณ์</h1>
             </div>
-
             <BorrowEquipmentModal
                 mode="borrow-equipment"
-                equipment={equipment}
+                equipment={equipment} // ข้อมูลอุปกรณ์
+                availableDevices={availableDevices} // รายการอุปกรณ์ลูก
+                availableCount={availableCount} // จำนวนอุปกรณ์ที่พร้อมใช้งาน (READY)
+                selectedDeviceIds={selectedDeviceIds} // อุปกรณ์ที่เลือก
+                onSelectDevice={setSelectedDeviceIds} // เปลี่ยนอุปกรณ์ที่เลือก
+                onDateTimeChange={handleDateTimeChange} // เปลี่ยนวันเวลา
                 onSubmit={handleSubmit}
                 onAddToCart={handleAddToCard}
             />

@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { z } from "zod";
 
 // Author: Sutaphat Thahin (Yeen) 66160378
@@ -48,22 +49,26 @@ export const getDeviceForBorrowSchema = z.object({
     // แผนกและฝ่ายย่อย
     department: z.string().nullable().optional(),
     section: z.string().nullable().optional(),
-
-    // อุปกรณ์ลูก
-    device_childs: z.array(
-        z.object({
-            dec_id: z.number(),
-            dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]),
-            // ช่วงเวลาที่ถูกยืมอยู่
-            activeBorrows: z.array(
-                z.object({
-                    start: z.date(),
-                    end: z.date()
-                })
-            )
-        })
-    ).optional(),
+    // จำนวนอุปกรณ์ทั้งหมดและที่พร้อมใช้งาน
+    total: z.number(),
+    ready: z.number()
 });
+
+// โครงสร้างข้อมูลที่ตอบกลับหลังจากดึงข้อมูลอุปกรณ์ที่ถูกยืมอยู่
+export const getAvailableSchema = z.array(
+  z.object({
+    dec_id: z.number(),
+    dec_serial_number: z.string().nullable(),
+    dec_asset_code: z.string(),
+    dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]),
+    activeBorrow: z.array(
+      z.object({
+        da_start: z.coerce.date(),
+        da_end: z.coerce.date(),
+      })
+    ),
+  })
+);
 
 // โครงสร้างข้อมูลที่ส่งมาตอนส่งคำร้อง
 export const createBorrowTicketPayload = z.object({
@@ -77,7 +82,7 @@ export const createBorrowTicketPayload = z.object({
 // โครงสร้างข้อมูลที่ตอบกลับหลังจากสร้างคำร้อง
 export const createBorrowTicketSchema = z.object({
     brt_id: z.number(),
-    brt_status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
+    brt_status: z.enum(["PENDING", "APPROVED", "IN_USE", "COMPLETED", "REJECTED"]),
     brt_start_date: z.date(),
     brt_end_date: z.date(),
     brt_quantity: z.number(),
@@ -108,8 +113,12 @@ export type IdParamDto = z.infer<typeof idParamSchema>;
 
 export type GetDeviceForBorrowSchema = z.infer<typeof getDeviceForBorrowSchema>;
 
+export type GetAvailableSchema = z.infer<typeof getAvailableSchema>;
+
 export type CreateBorrowTicketPayload = z.infer<typeof createBorrowTicketPayload>;
 
 export type CreateBorrowTicketSchema = z.infer<typeof createBorrowTicketSchema>;
 
 export type AddToCartPayload = z.infer<typeof addToCartPayload>;
+
+export type AddToCartSchema = z.infer<typeof addToCartSchema>;

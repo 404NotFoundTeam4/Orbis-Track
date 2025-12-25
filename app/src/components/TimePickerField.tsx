@@ -53,10 +53,9 @@ const TimePickerField = ({
                         {
                             // ลูปแสดงเวลา
                             hours.map((hour) => (
-                                <Popover.Close asChild>
+                                <Popover.Close key={hour} asChild>
                                     <button
                                         type="button"
-                                        key={hour}
                                         onClick={() => onChange(hour)}
                                         className={`py-2 rounded-xl text-[18px]
                                     ${value === hour

@@ -82,7 +82,7 @@ async function getInventory() {
 /**
  * Description : ดึงข้อมูลรายการอุปกรณ์ที่ใช้สำหรับการยืม
  * Input : params - รหัสอุปกรณ์แม่
- * Output : ข้อมูลอุปกรณ์แม่, หมวดหมู่, อุปกรณ์เสริม, แผนก, ฝ่ายย่อย และอุปกรณ์ลูก
+ * Output : ข้อมูลอุปกรณ์แม่, หมวดหมู่, อุปกรณ์เสริม, แผนก, ฝ่ายย่อย, จำนวนอุปกรณ์ทั้งหมดและที่พร้อมใช้งาน
  * Author: Thakdanai Makmi (Ryu) 66160355
  */
 async function getDeviceForBorrow(params: IdParamDto) {
@@ -123,27 +123,6 @@ async function getDeviceForBorrow(params: IdParamDto) {
                 select: {
                     sec_name: true
                 }
-            },
-
-            // อุปกรณ์ลูก
-            device_childs: {
-                where: {
-                    deleted_at: null
-                },
-                select: {
-                    dec_id: true,
-                    dec_status: true,
-
-                    availabilities: {
-                        where: {
-                            da_status: "ACTIVE"
-                        },
-                        select: {
-                            da_start: true,
-                            da_end: true
-                        }
-                    }
-                }
             }
         }
     });
@@ -151,6 +130,23 @@ async function getDeviceForBorrow(params: IdParamDto) {
     if (!device) {
         throw new Error("Device not found");
     }
+
+    // จำนวนอุปกรณ์ทั้งหมด
+    const total = await prisma.device_childs.count({
+        where: {
+            deleted_at: null,
+            dec_de_id: id,
+        }
+    });
+
+    // จำนวนอุปกรณ์ที่พร้อมให้ยืม (ทั้งหมด)
+    const ready = await prisma.device_childs.count({
+        where: {
+            deleted_at: null,
+            dec_de_id: id,
+            dec_status: "READY"
+        }
+    });
 
     // แยกชื่อแผนก และ ฝ่ายย่อย
     function extractDepartmentAndSection(sectionName: string) {
@@ -164,24 +160,62 @@ async function getDeviceForBorrow(params: IdParamDto) {
 
     // แยก department และ section หลังจากใช้งานฟังก์ชัน extractDepartmentAndSection
     const { department, section } = extractDepartmentAndSection(device.section?.sec_name ?? "");
-    // ตัด device_childs เดิมออก
-    const { device_childs, ...deviceWithoutChilds } = device;
-    // สร้าง device_childs ใหม่ โดยแปลง availabilities เป็น activeBorrows
-    const deviceChilds = device.device_childs.map(child => ({
-        dec_id: child.dec_id,
-        dec_status: child.dec_status,
-        activeBorrows: child.availabilities.map(a => ({
-            start: a.da_start,
-            end: a.da_end,
-        })),
-    }));
 
     return {
-        ...deviceWithoutChilds,
+        ...device,
         department,
         section,
-        device_childs: deviceChilds
+        total,
+        ready
     };
+}
+
+/**
+ * Description : ดึงข้อมูลรายการอุปกรณ์ที่ถูกยืม
+ * Input : params - รหัสอุปกรณ์แม่
+ * Output : รายการอุปกรณ์และเวลาที่ถูกยืม
+ * Author: Thakdanai Makmi (Ryu) 66160355
+ */
+async function getAvailable(params: IdParamDto) {
+    const { id } = params;
+
+    // ดึงข้อมูลอุปกรณ์ลูกที่กำลังถูกยืมอยู่
+    const deviceChilds = await prisma.device_childs.findMany({
+        where: {
+            dec_de_id: id,
+            deleted_at: null
+        },
+        select: {
+            dec_id: true,
+            dec_serial_number: true,
+            dec_asset_code: true,
+            dec_status: true,
+
+            availabilities: {
+                where: {
+                    da_status: "ACTIVE"
+                },
+                select: {
+                    da_start: true,
+                    da_end: true
+                }
+            }
+        }
+    });
+
+    // เปลี่ยนจากคำว่า availabilities ให้เป็น activeBorrow เพื่อให้สื่อความหมาย
+    const devices = deviceChilds.map((device) => ({
+        dec_id: device.dec_id,
+        dec_serial_number: device.dec_serial_number,
+        dec_asset_code: device.dec_asset_code,
+        dec_status: device.dec_status,
+        activeBorrow: device.availabilities.map((borrowed) => ({
+            da_start: borrowed.da_start,
+            da_end: borrowed.da_end
+        }))
+    }));
+
+    return devices;
 }
 
 /**
@@ -309,6 +343,15 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
             }))
         });
 
+        // สร้าง log borrow return
+        await tx.log_borrow_returns.createMany({
+            data: {
+                lbr_action: "CREATED",
+                lbr_brt_id: ticket.brt_id,
+                lbr_actor_id: userId
+            }
+        });
+
         return {
             brt_id: ticket.brt_id,
             brt_status: ticket.brt_status,
@@ -423,4 +466,4 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
     });
 }
 
-export const borrowService = { getInventory, getDeviceForBorrow, createBorrowTicket, addToCart };
+export const borrowService = { getInventory, getDeviceForBorrow, getAvailable, createBorrowTicket, addToCart };

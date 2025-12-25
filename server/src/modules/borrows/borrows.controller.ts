@@ -4,7 +4,10 @@ import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
   addToCartPayload,
+  AddToCartSchema,
   createBorrowTicketPayload,
+  CreateBorrowTicketSchema,
+  GetAvailableSchema,
   GetDeviceForBorrowSchema,
   GetInventorySchema,
   idParamSchema
@@ -28,6 +31,22 @@ export class BorrowController extends BaseController {
     next: NextFunction
   ): Promise<BaseResponse<GetInventorySchema>> {
     const devices = await borrowService.getInventory();
+    return { data: devices };
+  }
+
+ /**
+ * Description: ดึงข้อมูลรายการอุปกรณ์ที่ถูกยืม
+ * Input : req.params (ไอดีอุปกรณ์แม่)
+ * Output : { data: device } - รายการอุปกรณ์ลูกที่กำลังถูกยืมอยู่
+ * Author : Thakdanai Makmi (Ryu) 66160355
+ */
+  async getAvailable(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<GetAvailableSchema>> {
+    const id = idParamSchema.parse(req.params);
+    const devices = await borrowService.getAvailable(id);
     return { data: devices };
   }
 
@@ -57,7 +76,7 @@ export class BorrowController extends BaseController {
     req: AuthRequest,
     res: Response,
     next: NextFunction
-  ) {
+  ): Promise<BaseResponse<CreateBorrowTicketSchema>> {
 
     if (!req.user) {
       throw new Error("Unauthorized");
@@ -85,7 +104,7 @@ export class BorrowController extends BaseController {
     req: AuthRequest,
     res: Response,
     next: NextFunction
-  ) {
+  ): Promise<BaseResponse<AddToCartSchema>> {
 
     if (!req.user) {
       throw new Error("Unauthorized");

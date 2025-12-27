@@ -2,7 +2,7 @@
 import { prisma } from "../../infrastructure/database/client.js";
 import type { z } from "zod";
 import {
-    getCategoriesQuerySchema
+    GetCategoriesQuerySchema
 } from "./category.schema.js";
 import { ca } from "zod/locales";
 
@@ -20,7 +20,7 @@ import { ca } from "zod/locales";
  *             - meta          : ข้อมูลประกอบการแบ่งหน้า (page, limit, total, totalPages)
  * Author    : Chanwit Muangma (Boom) 66160224
  */
-export async function getCategories (query: z.infer<typeof getCategoriesQuerySchema>) {
+export async function getCategories (query: GetCategoriesQuerySchema) {
     const { q, page, limit, sortBy , sortOrder, includeDeleted} = query;
 
     const where: any =  {

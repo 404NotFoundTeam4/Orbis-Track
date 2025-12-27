@@ -20,7 +20,7 @@ router.getDoc(
     query: getCategoriesQuerySchema,
     res: getCategoriesResponseSchema,
   },
-  controller.getCategories.bind(controller)
+  controller.getCategories
 );
 
 // GET /categories/:id
@@ -32,7 +32,7 @@ router.getDoc(
     params: idParamSchema,
     res: categorySchema,
   },
-  controller.getCategory.bind(controller)
+  controller.getCategory
 );
 
 // DELETE /categories/:id (Soft Delete Category)
@@ -44,7 +44,7 @@ router.deleteDoc(
     params: idParamSchema,
     res: softDeleteCategoryResponseSchema,
   },
-  controller.softDeleteCategory.bind(controller)
+  controller.softDeleteCategory
 );
 
 export default router.instance;

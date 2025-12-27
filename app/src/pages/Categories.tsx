@@ -24,14 +24,17 @@ export const Categories = () => {
 
     // ========== Data ==========
     const [rows , setRows] = useState<Category[]>([]);
+
+    const [activeTotal, setActiveTotal] = useState(0);
     
-    const [meta , setMeta] = useState({ page: 1, limit: 10, total: 0 , totalPages: 1});
+    const [meta , setMeta] = useState({ page: 1, limit, total: 0 , totalPages: 1});
 
     const totalPages = Math.max(1, meta.totalPages);
 
     const [loading , setLoading] = useState(false);
 
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    
 
     // ========= Delete Confirm =========
     const [deleteTarget , setDeleteTarget] = useState<Category | null>(null);
@@ -83,10 +86,8 @@ export const Categories = () => {
         const fetch = async () => {
             setLoading(true);
             try {
-            const q = searchFilter.search.trim();
-
             const result = await categoryService.getCategories({
-                q: debouncedSearch ? q : undefined, 
+                q: debouncedSearch || undefined, 
                 page,
                 limit,
                 includeDeleted,
@@ -109,6 +110,39 @@ export const Categories = () => {
 
         fetch();
     }, [debouncedSearch, page, limit, includeDeleted, sortOrder , refreshTrigger]);
+
+
+    /**
+     * Description: ดึง “จำนวนหมวดหมู่ทั้งหมดที่ยังไม่ถูกลบ” (deleted_at = null) สำหรับแสดงใน Badge
+     *              - ไม่ขึ้นกับการค้นหา (ไม่ส่ง q) เพื่อให้เป็นจำนวน “ทั้งหมดจริง”
+     *              - ดึงเฉพาะ meta.total จึงใช้ limit=1 เพื่อลดภาระการโหลดข้อมูล
+     *              - รีเฟรชจำนวนใหม่เมื่อมีการลบ/เพิ่มข้อมูล (refreshTrigger เปลี่ยน)
+     * Input     : refreshTrigger
+     * Output    : อัปเดต activeTotal (จำนวนหมวดหมู่ที่ยังไม่ถูกลบทั้งหมด)
+     * Author    : Chanwit Muangma (Boom) 66160224
+     */
+    useEffect(() => {
+        const fetchActiveTotal = async () => {
+            try {
+            const result = await categoryService.getCategories({
+                q: undefined,         //ไม่ผูกกับ search เพื่อให้แสดงจำนวนตามจริง
+                page: 1,
+                limit: 1,              
+                includeDeleted: false, //นับเฉพาะรายการที่ยังไม่ถูกลบ
+
+                sortBy: "ca_id",
+                sortOrder: "asc",
+            });
+
+            setActiveTotal(result.meta.total);
+            } catch (err) {
+            //ถ้าโหลดจำนวนรวมไม่สำเร็จ ให้ fallback เป็น 0 กันพัง
+            setActiveTotal(0);
+            }
+        };
+
+        fetchActiveTotal();
+        }, [refreshTrigger]); 
     
 
 
@@ -126,7 +160,7 @@ export const Categories = () => {
             <div className="flex items-center gap-[14px] mb-[21px] h-[34px]">
                  <h1 className="text-[24px] font-semibold">จัดการหมวดหมู่อุปกรณ์</h1>
                  <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
-                    หมวดหมู่ทั้งหมด {meta.total}
+                    หมวดหมู่ทั้งหมด {activeTotal}
                 </div>
             </div>
 

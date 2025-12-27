@@ -5,9 +5,11 @@ import { BaseResponse } from "../../core/base.response.js";
 import {
   idParamSchema,
   getCategoriesQuerySchema,
-  getCategoriesResponseSchema,
   categorySchema,
   softDeleteCategoryResponseSchema,
+  CategorySchema,
+  GetCategoriesResponseSchema,
+  SoftDeleteResponseSchema,
 } from "./category.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 import type { z } from "zod";
@@ -33,7 +35,7 @@ export class CategoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<z.infer<typeof getCategoriesResponseSchema>>> {
+  ): Promise<BaseResponse<GetCategoriesResponseSchema>>  {
     const query = getCategoriesQuerySchema.parse(req.query);
     const result = await categoryService.getCategories(query);
     return { data: result };
@@ -49,7 +51,7 @@ export class CategoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<z.infer<typeof categorySchema>>> {
+  ): Promise<BaseResponse<CategorySchema>>  {
     const { id } = idParamSchema.parse(req.params);
     const category = await categoryService.getCategoryById(id);
 
@@ -70,7 +72,7 @@ export class CategoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<z.infer<typeof softDeleteCategoryResponseSchema>>> {
+  ): Promise<BaseResponse<SoftDeleteResponseSchema>> {
     const { id } = idParamSchema.parse(req.params);
     const result = await categoryService.softDeleteCategory(id);
     return { data: result, message: "Category soft-deleted successfully" };

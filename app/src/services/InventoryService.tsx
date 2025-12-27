@@ -29,9 +29,9 @@ export const inventoryService = {
     > => {
         const { data } = await api.get(`/inventory/devices`);
         return data.data;
-    }
-    ,
-    /**
+    },
+      
+   /**
    * Description: ดึงข้อมูลอุปกรณ์ตาม ID (filter จาก list)
    * Input     : deviceId
    * Output    : Promise<GetInventory | undefined>

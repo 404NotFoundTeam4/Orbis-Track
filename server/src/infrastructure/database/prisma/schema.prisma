@@ -65,6 +65,9 @@ enum DA_STATUS {
 
 enum BASE_EVENT {
   DEVICE_CREATED
+  APPROVAL_REQUESTED
+  NOTIFICATION_FULFILLED
+  NOTIFICATION_RESOLVED
   TICKET_CREATED
   TICKET_APPROVED
   TICKET_REJECTED
@@ -86,7 +89,10 @@ enum NR_STATUS {
 
 enum NR_EVENT {
   APPROVAL_REQUESTED
+  REQUEST_FULFILLED
+  REQUEST_RESOLVED
   YOUR_TICKET_APPROVED
+  YOUR_TICKET_STAGE_APPROVED
   YOUR_TICKET_REJECTED
   YOUR_TICKET_IN_USE
   YOUR_TICKET_RETURNED
@@ -494,13 +500,13 @@ model borrow_return_ticket_stages {
 }
 
 model ticket_devices {
-  td_id      Int       @id @default(autoincrement())
-  td_brt_id  Int
+  td_id            Int       @id @default(autoincrement())
+  td_brt_id        Int
   td_dec_id        Int
   td_origin_cti_id Int?
-  deleted_at DateTime? @db.Timestamptz(6)
-  created_at DateTime? @db.Timestamptz(6)
-  updated_at DateTime? @db.Timestamptz(6)
+  deleted_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @db.Timestamptz(6)
+  updated_at       DateTime? @db.Timestamptz(6)
 
   ticket borrow_return_tickets @relation(fields: [td_brt_id], references: [brt_id])
   child  device_childs         @relation(fields: [td_dec_id], references: [dec_id])
@@ -522,7 +528,7 @@ model ticket_issues {
   ti_result         TI_RESULT
   ti_damaged_reason String?   @db.VarChar(255)
   ti_resolved_note  String?
-  receive_at         DateTime? @db.Timestamptz(6)
+  receive_at        DateTime? @db.Timestamptz(6)
   success_at        DateTime? @db.Timestamptz(6)
   deleted_at        DateTime? @db.Timestamptz(6)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)

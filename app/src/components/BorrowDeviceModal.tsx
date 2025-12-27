@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "./Button"
 import DatePickerField from "./DatePickerField";
 import Input from "./Input"
 import QuantityInput from "./QuantityInput"
 import { Icon } from "@iconify/react";
 import TimePickerField from "./TimePickerField";
+import { AlertDialog } from "./AlertDialog";
+import type { GetAvailable } from "../services/BorrowService";
 
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
-    id: number;
+    serialNumber: string;
     name: string;
     total: number;
     category: string;
@@ -31,8 +33,7 @@ interface BorrowFormData {
     reason: string;
     placeOfUse: string;
     quantity: number;
-    borrowDate: Date | null;
-    returnDate: Date | null;
+    dateRange: [Date | null, Date | null];
     borrowTime: string;
     returnTime: string;
 }
@@ -43,16 +44,31 @@ interface BorrowEquipmentModalProps {
     defaultValue?: BorrowFormData; // ค่าเริ่มต้น
     equipment: EquipmentDetail; // รายละเอียดอุปกรณ์
     onSubmit: (data: {
-        equipmentId: number,
         data: BorrowFormData
     }) => void; // ฟังก์ชันส่งข้อมูลตอน “ส่งคำร้อง” หรือ “บันทึก”
     onAddToCart?: (data: {
-        equipmentId: number,
-        data: BorrowFormData
+        data: any
     }) => void; // ฟังก์ชันเพิ่มไปยังรถเข็น
+
+    availableDevices: GetAvailable[]; // รายการอุปกรณ์ลูก
+    availableCount: number; // จำนวนอุปกรณ์ที่พร้อมใช้งาน
+    selectedDeviceIds: number[]; // อุปกรณ์ที่เลือก
+    onSelectDevice: (ids: number[]) => void; // เปลี่ยนอุปกรณ์ที่เลือก
+    onDateTimeChange: () => void; // เปลี่ยนวันเวลา
 }
 
-const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddToCart }: BorrowEquipmentModalProps) => {
+const BorrowEquipmentModal = ({
+    mode,
+    defaultValue,
+    equipment,
+    onSubmit,
+    onAddToCart,
+    availableDevices,
+    availableCount,
+    selectedDeviceIds,
+    onSelectDevice,
+    onDateTimeChange
+}: BorrowEquipmentModalProps) => {
     // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
     const initialForm: BorrowFormData = {
         borrower: defaultValue?.borrower ?? "",
@@ -60,50 +76,188 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
         reason: defaultValue?.reason ?? "",
         placeOfUse: defaultValue?.placeOfUse ?? "",
         quantity: defaultValue?.quantity ?? 1,
-        borrowDate: defaultValue?.borrowDate ?? null,
-        returnDate: defaultValue?.returnDate ?? null,
+        dateRange: [null, null],
         borrowTime: defaultValue?.borrowTime ?? "",
         returnTime: defaultValue?.returnTime ?? "",
     }
 
     // ฟอร์มยืมอุปกรณ์
     const [form, setForm] = useState<BorrowFormData>(initialForm);
+    // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
+    const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
+    // เก็บข้อความ error ของแต่ละ field ในฟอร์ม BorrowFormData
+    const [errors, setErrors] = useState<Partial<Record<keyof BorrowFormData, string>>>({});
 
-    // ส่งข้อมูลฟอร์มและรหัสอุปกรณ์ ออกไปให้ใช้ต่อ
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault(); // ป้องกันบราว์เซอร์ refresh หน้าเว็บ
+    /**
+    * Description: ฟังก์ชันในการตรวจสอบข้อมูลและกำหนดข้อความ error
+    * Input : -
+    * Output : boolean (true = ข้อมูลถูกต้อง, false = ข้อมูลไม่ครบหรือไม่ถูกต้อง)
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
+    const validate = () => {
+        const newError: typeof errors = {};
+
+        // ตรวจสอบชื่อผู้ยืม
+        if (!form.borrower.trim()) {
+            newError.borrower = "กรุณาระบุชื่อผู้ยืม"
+        } else if (!/^[a-zA-Zก-๙\s]+$/.test(form.borrower)) {
+            newError.borrower = "ชื่อต้องเป็นตัวอักษรเท่านั้น";
+        }
+
+        // ตรวจสอบเบอร์โทรศัพท์
+        if (!form.phone.trim()) {
+            newError.phone = "กรุณาระบุเบอร์โทรศัพท์ผู้ยืม"
+        } else if (!/^\d+$/.test(form.phone)) {
+            newError.phone = "เบอร์โทรศัพท์ต้องเป็นตัวเลขเท่านั้น";
+        } else if (form.phone.length !== 10) {
+            newError.phone = "เบอร์โทรศัพท์ต้องมี 10 หลัก";
+        }
+
+        // ตรวจสอบเหตุผลในการยืม
+        if (!form.reason.trim()) {
+            newError.reason = "กรุณาระบุเหตุผลในการยืม"
+        }
+
+        // ตรวจสอบสถานที่ใช้งาน
+        if (!form.placeOfUse.trim()) {
+            newError.placeOfUse = "กรุณาระบุสถานที่ใช้งาน"
+        }
+
+        // ตรวจสอบวันที่ยืมและวันที่คืน (กรณีไม่เลือกวัน)
+        if (!form.dateRange[0]) {
+            newError.dateRange = "กรุณาเลือกช่วงวันที่ยืม";
+        }
+
+        // วันที่เริ่มยืมและวันที่สิ้นสุด
+        const startDate = form.dateRange[0];
+        const endDate = form.dateRange[1] ?? form.dateRange[0];
+
+        if (startDate && endDate && form.borrowTime && form.returnTime) {
+            const sameDay = startDate.toISOString() === endDate.toISOString();
+            // กรณียืมวันเดียว เวลาคืนต้องมากกว่าเวลายืม
+            if (sameDay && form.borrowTime >= form.returnTime) {
+                newError.returnTime = "เวลาที่คืนต้องมากกว่าเวลาที่ยืม";
+            }
+        }
+
+        // ตรวจสอบเวลาที่ยืม
+        if (!form.borrowTime) {
+            newError.borrowTime = "กรุณาระบุช่วงเวลาที่ยืม";
+        }
+
+        // ตรวจสอบเวลาที่คืน
+        if (!form.returnTime) {
+            newError.returnTime = "กรุณาระบุช่วงเวลาที่คืน";
+        }
+
+        // อัปเดต state เพื่อให้แสดงข้อความ error
+        setErrors(newError);
+
+        // คืนค่า true เมื่อไม่ error (ฟอร์มถูกต้อง)
+        return Object.keys(newError).length === 0;
+    }
+
+    /**
+    * Description: ฟังก์ชันในการส่งคำร้องยืมอุปกรณ์
+    * Input : -
+    * Output : ส่งข้อมูลคำร้องไปยัง parent component, รีเซ็ตฟอร์ม และปิด AlertDialog
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
+    const handleSubmitBorrow = () => {
+        // ตรวจสอบข้อมูลก่อน submit
+        if (!validate()) {
+            setIsConfirmOpen(false);
+            return;
+        }
+
+        // ส่งข้อมูลไปยัง parent component
         onSubmit({
-            equipmentId: equipment.id,
             data: form
         });
 
         // รีเซ็ตค่าในฟอร์ม
-        setForm({
-            ...form,
-            reason: "",
-            placeOfUse: "",
-            quantity: 0,
-            borrowDate: null,
-            returnDate: null,
-            borrowTime: "",
-            returnTime: ""
-        });
+        setForm(initialForm);
+        // ปิด alert
+        setIsConfirmOpen(false);
     }
 
-    // ส่งข้อมูลฟอร์มและรหัสอุปกรณ์ ออกไปให้ใช้ต่อ
-    const handleAddToCard = () => {
+    /**
+    * Description: ฟังก์ชันในการเพิ่มอุปกรณ์ไปยังรถเข็น
+    * Input : -
+    * Output : ส่งข้อมูลไปยัง parent component เพื่อบันทึกลงตะกร้า
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
+    const handleAddToCart = () => {
+        // ตรวจสอบข้อมูล
+        if (!validate()) {
+            return;
+        }
+
+        // ส่งข้อมูลไปยัง parent component
         onAddToCart?.({
-            equipmentId: equipment.id,
             data: form
         });
     }
+
+    /**
+    * Description: ฟังก์ชันในการแก้ไขรายละเอียดอุปกรณ์
+    * Input : -
+    * Output : ส่งข้อมูลที่แก้ไขแล้วไปยัง parent component และปิด AlertDialog
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
+    const handleSubmitEdit = () => {
+        // ตรวจสอบข้อมูล
+        if (!validate()) {
+            setIsConfirmOpen(false);
+            return;
+        }
+
+        // ส่งข้อมูลไปยัง parent component
+        onSubmit({
+            data: form
+        });
+
+        // ปิด alert
+        setIsConfirmOpen(false);
+    }
+
+    /**
+    * Description: ฟังก์ชันควบคุมการทำงานหลัก ตามโหมดของหน้า
+    * Input : -
+    * Output : ดำเนินการยืมอุปกรณ์ หรือบันทึกการแก้ไขตามโหมด
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
+    const handlePrimaryAction = () => {
+        // ตรวจสอบว่าเป็นโหมดการยืมอุปกรณ์หรือไม่
+        if (mode === "borrow-equipment") {
+            handleSubmitBorrow();
+        } else {
+            handleSubmitEdit();
+        }
+    }
+
+    useEffect(() => {
+        // วันเวลาที่เริ่มยืม-คืน
+        const [startDate, endDateRaw] = form.dateRange;
+        // กรณียืมวันเดียว
+        const endDate = endDateRaw ?? startDate;
+
+        if (!startDate) return;
+        
+        if (!form.borrowTime || !form.returnTime) return;
+
+        if (startDate && endDate && form.borrowTime && form.returnTime) {
+            // นับจำนวนอุปกรณ์ที่พร้อมใช้งาน
+            onDateTimeChange();
+        }
+    }, [form.dateRange, form.borrowTime, form.returnTime]);
 
     return (
         <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
             {/* การ์ดฟอร์มยืมอุปกรณ์ */}
             <form
                 className="flex flex-col justify-between gap-[30px] text-[16px] bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] w-[1048px] px-[40px] py-[40px]"
-                onSubmit={handleSubmit}>
+            >
                 {/* หัวข้อ */}
                 <div className="flex flex-col gap-[20px]">
                     <div className="flex flex-col gap-[7px]">
@@ -111,28 +265,39 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                         <p className="text-[#40A9FF] font-medium">รายละเอียดข้อมูลอุปกรณ์</p>
                     </div>
                     {/* ชื่อผู้ยืม */}
-                    <div>
+                    <div className="flex flex-col gap-[4px]">
+                        <label className="text-[16px] font-medium">ชื่อผู้ยืม <span className="text-[#F5222D]">*</span></label>
                         <Input
                             fullWidth
-                            label="ชื่อผู้ยืม"
                             placeholder="กรอกข้อมูลชื่อผู้ยืม"
                             value={form.borrower}
                             onChange={(e) => setForm({ ...form, borrower: e.target.value })}
                         />
+                        {
+                            errors.borrower && (
+                                <p className="text-sm mt-1 text-[#F5222D]">{errors.borrower}</p>
+                            )
+                        }
                     </div>
                     {/* เบอร์โทรศัพท์ผู้ยืม */}
-                    <div>
+                    <div className="flex flex-col gap-[4px]">
+                        <label className="text-[16px] font-medium">เบอร์โทรศัพท์ผู้ยืม <span className="text-[#F5222D]">*</span></label>
                         <Input
+                            maxLength={10}
                             fullWidth
-                            label="เบอร์โทรศัพท์ผู้ยืม"
                             placeholder="กรอกข้อมูลเบอร์โทรศัพท์ผู้ยืม"
                             value={form.phone}
                             onChange={(e) => setForm({ ...form, phone: e.target.value })}
                         />
+                        {
+                            errors.phone && (
+                                <p className="text-sm mt-1 text-[#F5222D]">{errors.phone}</p>
+                            )
+                        }
                     </div>
                     {/* เหตุผลในการยืม */}
                     <div className="flex flex-col gap-[4px]">
-                        <label className="font-medium">เหตุผลในการยืม</label>
+                        <label className="text-[16px] font-medium">เหตุผลในการยืม <span className="text-[#F5222D]">*</span></label>
                         <textarea
                             className="border border-[#D8D8D8] rounded-[16px] w-[581px] h-[111px] px-[15px] py-[8px]"
                             placeholder="กรอกข้อมูลเหตุผลในการยืม"
@@ -140,10 +305,15 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                             onChange={(e) => setForm({ ...form, reason: e.target.value })}
                         >
                         </textarea>
+                        {
+                            errors.reason && (
+                                <p className="text-sm mt-1 text-[#F5222D]">{errors.reason}</p>
+                            )
+                        }
                     </div>
                     {/* สถานที่ใช้งาน */}
                     <div className="flex flex-col gap-[4px]">
-                        <label className="font-medium">สถานที่ใช้งาน</label>
+                        <label className="text-[16px] font-medium">สถานที่ใช้งาน <span className="text-[#F5222D]">*</span></label>
                         <textarea
                             className="border border-[#D8D8D8] rounded-[16px] w-[581px] h-[111px] px-[15px] py-[8px]"
                             placeholder="กรอกสถานที่ใช้งาน"
@@ -151,6 +321,11 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                             onChange={(e) => setForm({ ...form, placeOfUse: e.target.value })}
                         >
                         </textarea>
+                        {
+                            errors.placeOfUse && (
+                                <p className="text-sm mt-1 text-[#F5222D]">{errors.placeOfUse}</p>
+                            )
+                        }
                     </div>
                 </div>
                 <div className="flex flex-col gap-[20px]">
@@ -161,65 +336,142 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                     </div>
                     {/* วันเวลาที่ยืม */}
                     <div className="flex gap-[10px]">
-                        <DatePickerField
-                            width={489}
-                            label="ช่วงวันที่ยืม"
-                            value={form.borrowDate}
-                            onChange={(date) => setForm({ ...form, borrowDate: date })}
-                        />
+                        <div className="flex flex-col gap-[4px]">
+                            <label className="text-[16px] font-medium">ช่วงวันที่ยืม <span className="text-[#F5222D]">*</span></label>
+                            <DatePickerField
+                                width={489}
+                                label=""
+                                value={form.dateRange}
+                                onChange={(range) =>
+                                    setForm({ ...form, dateRange: range })
+                                }
+                            />
+                            {
+                                errors.dateRange && (
+                                    <p className="text-sm mt-1 text-[#F5222D]">{errors.dateRange}</p>
+                                )
+                            }
+                        </div>
                     </div>
                     {/* เวลาที่ยืม - คืน */}
                     <div className="flex gap-[10px]">
-                        <TimePickerField
-                            width={239}
-                            label="ช่วงเวลาที่ยืม"
-                            value={form.borrowTime}
-                            onChange={(time: string) => setForm({ ...form, borrowTime: time })}
-                        />
-                        <TimePickerField
-                            width={239}
-                            label="ช่วงเวลาที่คืน"
-                            value={form.returnTime}
-                            onChange={(time: string) => setForm({ ...form, returnTime: time })}
-                        />
+                        <div className="flex flex-col gap-[4px]">
+                            <label className="text-[16px] font-medium">ช่วงเวลาที่ยืม <span className="text-[#F5222D]">*</span></label>
+                            <TimePickerField
+                                width={239}
+                                label=""
+                                value={form.borrowTime}
+                                onChange={(time: string) => setForm({ ...form, borrowTime: time })}
+                            />
+                            {
+                                errors.borrowTime && (
+                                    <p className="text-sm mt-1 text-[#F5222D]">{errors.borrowTime}</p>
+                                )
+                            }
+                        </div>
+                        <div className="flex flex-col gap-[4px]">
+                            <label className="text-[16px] font-medium">ช่วงเวลาที่คืน <span className="text-[#F5222D]">*</span></label>
+                            <TimePickerField
+                                width={239}
+                                label=""
+                                value={form.returnTime}
+                                onChange={(time: string) => setForm({ ...form, returnTime: time })}
+                            />
+                            {
+                                errors.returnTime && (
+                                    <p className="text-sm mt-1 text-[#F5222D]">{errors.returnTime}</p>
+                                )
+                            }
+                        </div>
                     </div>
-                    <div className="flex items-center gap-[10px] text-[#00AA1A]">
-                        <Icon
-                            icon="icon-park-solid:check-one"
-                            width={20}
-                            height={20}
-                        />
-                        <p className="text-[16px]">ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด X ชิ้น</p>
+                    {
+                        // เลือกวันที่และเวลายืม-คืน ก่อนจึงจะแสดง
+                        form.dateRange[0] && form.borrowTime && form.returnTime && (
+                            <div className="flex items-center gap-[10px] text-[#00AA1A]">
+                                <Icon
+                                    icon="icon-park-solid:check-one"
+                                    width={20}
+                                    height={20}
+                                />
+                                <p className="text-[16px]">ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด {availableCount} ชิ้น</p>
+                            </div>
+                        )
+                    }
+
+                    {/* แสดงรายการอุปกรณ์ที่ว่างคร่าวๆ (ลบได้) */}
+                    <div className="grid grid-cols-2 gap-[10px]">
+                        {
+                            // เทสแสดงรายการอุปกรณ์ที่พร้อมใช้งาน (ให้ผู้ใช้เลือกเอง)
+                            availableDevices.filter(d => d.dec_status === "READY").map(device => {
+                                // ตรวจสอบว่าอุปกรณ์ที่เลือกอยู่ในรายการที่เลือกอยู่แล้วหรือไม่
+                                const checked = selectedDeviceIds.includes(device.dec_id);
+                                return (
+                                    <label
+                                        key={device.dec_id}
+                                        className="flex items-center gap-[10px] border border-[#A2A2A2] rounded-[12px] px-[12px] py-[10px] cursor-pointer
+                                    ">
+                                        <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() => {
+                                                if (checked) {
+                                                    // ถ้าถูกเลือกอยู่ -> เอาติ๊กออก ถ้ายังไม่ถูกเลือก -> ติ๊ก
+                                                    onSelectDevice(
+                                                        selectedDeviceIds.filter(id => id !== device.dec_id)
+                                                    );
+                                                } else {
+                                                    // ยังไม่ถูกเลือก เพิ่มเข้ารายการที่เลือก
+                                                    onSelectDevice([...selectedDeviceIds, device.dec_id]);
+                                                }
+                                            }}
+                                        />
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">
+                                                {device.dec_serial_number}
+                                            </span>
+                                            <span className="text-[12px] text-[#888]">
+                                                {device.dec_asset_code}
+                                            </span>
+                                        </div>
+                                    </label>
+                                );
+                            })
+                        }
                     </div>
+
                 </div>
-                <div className="flex flex-col gap-[20px]">
-                    {/* หัวข้อ */}
+
+                {/* <div className="flex flex-col gap-[20px]">
+                    
                     <div className="flex flex-col gap-[7px]">
                         <h1 className="text-[18px] font-medium">3. เลือกจำนวนอุปกรณ์ที่ต้องการยืม</h1>
                         <p className="text-[#40A9FF] font-medium">รายละเอียดจำนวนอุปกรณ์</p>
                     </div>
-                    {/* จำนวนอุปกรณ์ */}
+                    
                     <div>
+                        <label className="text-[16px] font-medium">จำนวนอุปกรณ์ <span className="text-[#F5222D]">*</span></label>
                         <QuantityInput
                             width={399}
-                            label="จำนวน"
-                            value={form.quantity}
+                            label=""
+                            value={selectedDeviceIds.length}
                             onChange={(e: number) => setForm({ ...form, quantity: e })}
                             min={1}
                             max={equipment.remain} // ไม่เกินจำนวนคงเหลือ
                         />
                     </div>
-                </div>
+                </div> */}
+
                 {/* ปุ่ม */}
-                <div className={`flex ${mode === "edit-detail" ? "justify-end" : "gap-[20px]"}`}>
+                <div className={`flex gap-[20px] ${mode === "edit-detail" ? "justify-end" : ""}`}>
                     {
                         // ถ้าเป็นยืมอุปกรณ์แสดงเพิ่มไปยังรถเข็น
                         mode === "borrow-equipment" && (
                             <Button
+                                disabled={selectedDeviceIds.length === 0}
                                 type="button"
-                                className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px]"
+                                className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px] font-semibold"
                                 variant="outline"
-                                onClick={handleAddToCard}>
+                                onClick={handleAddToCart}>
                                 <Icon
                                     icon="mdi-light:cart"
                                     width="36"
@@ -229,11 +481,28 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                             </Button>
                         )
                     }
+                    {/* ปุ่มยกเลิก (เฉพาะ edit-detail) */}
+                    {
+                        mode === "edit-detail" && (
+                            <Button
+                                type="button"
+                                className="!bg-[#E5E7EB] text-black !w-[112px] !h-[46px] hover:!bg-[#D1D5DB] font-semibold"
+                                onClick={() => {
+                                    // ปิด modal หรือย้อนกลับ
+                                }}
+                            >
+                                ยกเลิก
+                            </Button>
+                        )
+                    }
+                    {/* ปุ่มหลัก */}
                     <Button
-                        type="submit"
-                        className="!w-[155px] !h-[46px]"
+                        disabled={selectedDeviceIds.length === 0}
+                        onClick={() => setIsConfirmOpen(true)}
+                        type="button"
+                        className="!w-[155px] !h-[46px] font-semibold"
                         variant="primary">
-                        {mode === "borrow-equipment" ? "ส่งคำร้อง" : "บันทึก"}
+                        {mode === "borrow-equipment" ? "ส่งคำร้อง" : "บันทึกการแก้ไข"}
                     </Button>
                 </div>
             </form>
@@ -249,7 +518,7 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                 {/* รายละเอียดอุปกรณ์ */}
                 <div className="flex flex-col gap-[20px] text-[14px] text-[#747474]">
                     <p className="text-[16px] text-black font-semibold">{equipment.name}</p>
-                    <p className="text-[#747474]">รหัสอุปกรณ์: {equipment.id}</p>
+                    <p className="text-[#747474]">รหัสอุปกรณ์: {equipment.serialNumber}</p>
                     <div className="w-[520px] h-[1px] bg-[#D9D9D9]"></div>
                     <p className="text-[16px] text-black font-semibold">รายละเอียดอุปกรณ์</p>
                     <p>หมวดหมู่: {equipment.category}</p>
@@ -268,16 +537,22 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                             <p className="text-black font-semibold">อุปกรณ์ย่อย</p>
                         </div>
                         {/* รายการอุปกรณ์เสริม */}
-                        <div className="flex flex-col gap-[10px] pl-[34px] pr-[10px]">
-                            {
-                                equipment.accessories.map((acc, index) => (
-                                    <div key={index} className="flex justify-between items-center">
-                                        <p>{acc.name}</p>
-                                        <p>{acc.qty} ชิ้น</p>
+                        {
+                            equipment.accessories.length > 0
+                                ? (
+                                    <div className="flex flex-col gap-[10px] pl-[34px] pr-[10px]">
+                                        {equipment.accessories.map((acc, index) => (
+                                            <div key={index} className="flex justify-between items-center">
+                                                <p>{acc.name}</p>
+                                                <p>{acc.qty} ชิ้น</p>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))
-                            }
-                        </div>
+                                )
+                                : (
+                                    <p className="text-center">ไม่มีอุปกรณ์ย่อย</p>
+                                )
+                        }
                     </div>
                 </div>
                 {/* ยืมได้สูงสุด / จำนวนคงเหลือ */}
@@ -286,6 +561,19 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                     <p className="flex justify-center items-center bg-[#00AA1A]/10 rounded-[10px] text-[#00AA1A] min-w-[191px] h-[39px] px-[20px]">ขณะนี้ว่าง {equipment.remain} ชิ้น</p>
                 </div>
             </div>
+            {
+                isConfirmOpen && (
+                    <AlertDialog
+                        tone="success"
+                        title={mode === "borrow-equipment"
+                            ? "ยืนยันการส่งคำร้อง"
+                            : "ยืนยันการบันทึกการแก้ไข"}
+                        open={isConfirmOpen}
+                        onConfirm={handlePrimaryAction}
+                        onCancel={() => setIsConfirmOpen(false)}
+                    />
+                )
+            }
         </div>
     )
 }

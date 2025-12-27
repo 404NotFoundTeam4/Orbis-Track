@@ -583,228 +583,228 @@ async function main() {
   let ticketIdCounter = 1;
   let stageIdCounter = 1;
 
-  // async function createTicketWithStages(params: {
-  //   status: any;
-  //   purpose: string;
-  //   userId: number;
-  //   flowId: number;
-  //   deviceId: number;
-  //   startDate: Date;
-  //   endDate: Date;
-  //   currentStage: number;
-  //   stages: {
-  //     name: string;
-  //     role: any;
-  //     deptId: number | null;
-  //     status: any;
-  //     usId?: number | null;
-  //   }[];
-  // }) {
-  //   const brtId = ticketIdCounter++;
-  //   const ticket = await prisma.borrow_return_tickets.upsert({
-  //     where: { brt_id: brtId },
-  //     update: {},
-  //     create: {
-  //       brt_id: brtId,
-  //       brt_status: params.status,
-  //       brt_usage_location: "Office / On-site",
-  //       brt_borrow_purpose: params.purpose,
-  //       brt_start_date: params.startDate,
-  //       brt_end_date: params.endDate,
-  //       brt_quantity: 1,
-  //       brt_user_id: params.userId,
-  //       brt_af_id: params.flowId,
-  //       brt_current_stage: params.currentStage,
-  //       created_at: daysAgo(5),
-  //     },
-  //   });
+  async function createTicketWithStages(params: {
+    status: any;
+    purpose: string;
+    userId: number;
+    flowId: number;
+    deviceId: number;
+    startDate: Date;
+    endDate: Date;
+    currentStage: number;
+    stages: {
+      name: string;
+      role: any;
+      deptId: number | null;
+      status: any;
+      usId?: number | null;
+    }[];
+  }) {
+    const brtId = ticketIdCounter++;
+    const ticket = await prisma.borrow_return_tickets.upsert({
+      where: { brt_id: brtId },
+      update: {},
+      create: {
+        brt_id: brtId,
+        brt_status: params.status,
+        brt_usage_location: "Office / On-site",
+        brt_borrow_purpose: params.purpose,
+        brt_start_date: params.startDate,
+        brt_end_date: params.endDate,
+        brt_quantity: 1,
+        brt_user_id: params.userId,
+        brt_af_id: params.flowId,
+        brt_current_stage: params.currentStage,
+        created_at: daysAgo(5),
+      },
+    });
 
-  //   await prisma.ticket_devices.upsert({
-  //     where: {
-  //       td_brt_id_td_dec_id: { td_brt_id: brtId, td_dec_id: params.deviceId },
-  //     },
-  //     update: {},
-  //     create: { td_brt_id: brtId, td_dec_id: params.deviceId },
-  //   });
+    await prisma.ticket_devices.upsert({
+      where: {
+        td_brt_id_td_dec_id: { td_brt_id: brtId, td_dec_id: params.deviceId },
+      },
+      update: {},
+      create: { td_brt_id: brtId, td_dec_id: params.deviceId },
+    });
 
-  //   for (const [index, s] of params.stages.entries()) {
-  //     const stepNum = index + 1;
-  //     const brtsId = stageIdCounter++;
-  //     await prisma.borrow_return_ticket_stages.upsert({
-  //       where: { brts_id: brtsId },
-  //       update: {},
-  //       create: {
-  //         brts_id: brtsId,
-  //         brts_brt_id: brtId,
-  //         brts_step_approve: stepNum,
-  //         brts_name: s.name,
-  //         brts_role: s.role,
-  //         brts_dept_id: s.deptId,
-  //         brts_dept_name: "Mock Dept",
-  //         brts_sec_name: "N/A",
-  //         brts_status: s.status,
-  //         brts_us_id: s.usId || null,
-  //         created_at: daysAgo(5 - index),
-  //       },
-  //     });
-  //   }
+    for (const [index, s] of params.stages.entries()) {
+      const stepNum = index + 1;
+      const brtsId = stageIdCounter++;
+      await prisma.borrow_return_ticket_stages.upsert({
+        where: { brts_id: brtsId },
+        update: {},
+        create: {
+          brts_id: brtsId,
+          brts_brt_id: brtId,
+          brts_step_approve: stepNum,
+          brts_name: s.name,
+          brts_role: s.role,
+          brts_dept_id: s.deptId,
+          brts_dept_name: "Mock Dept",
+          brts_sec_name: "N/A",
+          brts_status: s.status,
+          brts_us_id: s.usId || null,
+          created_at: daysAgo(5 - index),
+        },
+      });
+    }
 
-  //   return ticket;
-  // }
+    return ticket;
+  }
 
   // 1. IN_USE - กล้อง (โดย Employee Media)
-  // await createTicketWithStages({
-  //   status: "IN_USE",
-  //   purpose: "ถ่ายวีดีโอโปรโมทคณะ",
-  //   userId: empMedia.us_id,
-  //   flowId: flowMedia.af_id,
-  //   deviceId: childCam2.dec_id,
-  //   startDate: daysAgo(2),
-  //   endDate: daysFromNow(5),
-  //   currentStage: 2,
-  //   stages: [
-  //     { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
-  //     { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-  //   ],
-  // });
+  await createTicketWithStages({
+    status: "IN_USE",
+    purpose: "ถ่ายวีดีโอโปรโมทคณะ",
+    userId: empMedia.us_id,
+    flowId: flowMedia.af_id,
+    deviceId: childCam2.dec_id,
+    startDate: daysAgo(2),
+    endDate: daysFromNow(5),
+    currentStage: 2,
+    stages: [
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
+    ],
+  });
 
   // 2. PENDING - โน้ตบุ๊ค (โดย Employee IT) รอ HOD IT
-  // await createTicketWithStages({
-  //   status: "PENDING",
-  //   purpose: "พัฒนาโปรเจกต์ใหม่",
-  //   userId: empIT.us_id,
-  //   flowId: flowIT.af_id,
-  //   deviceId: childLaptop2.dec_id,
-  //   startDate: daysFromNow(1),
-  //   endDate: daysFromNow(7),
-  //   currentStage: 1,
-  //   stages: [
-  //     { name: "HOD IT Check", role: "HOD", deptId: it.dept_id, status: "PENDING" },
-  //   ],
-  // });
+  await createTicketWithStages({
+    status: "PENDING",
+    purpose: "พัฒนาโปรเจกต์ใหม่",
+    userId: empIT.us_id,
+    flowId: flowIT.af_id,
+    deviceId: childLaptop2.dec_id,
+    startDate: daysFromNow(1),
+    endDate: daysFromNow(7),
+    currentStage: 1,
+    stages: [
+      { name: "HOD IT Check", role: "HOD", deptId: it.dept_id, status: "PENDING" },
+    ],
+  });
 
   // 3. APPROVED - โปรเจคเตอร์ (โดย Employee Media) รอ STAFF จ่ายของ
-  // await createTicketWithStages({
-  //   status: "APPROVED",
-  //   purpose: "ประชุมสรุปงานรายเดือน",
-  //   userId: empMedia.us_id,
-  //   flowId: flowMediaFull.af_id,
-  //   deviceId: childProjector1.dec_id,
-  //   startDate: daysFromNow(1),
-  //   endDate: daysFromNow(2),
-  //   currentStage: 3,
-  //   stages: [
-  //     { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
-  //     { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-  //     { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "PENDING" },
-  //   ],
-  // });
+  await createTicketWithStages({
+    status: "APPROVED",
+    purpose: "ประชุมสรุปงานรายเดือน",
+    userId: empMedia.us_id,
+    flowId: flowMediaFull.af_id,
+    deviceId: childProjector1.dec_id,
+    startDate: daysFromNow(1),
+    endDate: daysFromNow(2),
+    currentStage: 3,
+    stages: [
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
+      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "PENDING" },
+    ],
+  });
 
   // 4. REJECTED - กล้อง (โดย Employee Media)
-  // await createTicketWithStages({
-  //   status: "REJECTED",
-  //   purpose: "ยืมไปถ่ายรูปงานวันเกิดเพื่อน",
-  //   userId: empMedia.us_id,
-  //   flowId: flowMedia.af_id,
-  //   deviceId: childCam3.dec_id,
-  //   startDate: daysFromNow(2),
-  //   endDate: daysFromNow(3),
-  //   currentStage: 1,
-  //   stages: [
-  //     { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "REJECTED", usId: hosMedia.us_id },
-  //     { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
-  //   ],
-  // });
+  await createTicketWithStages({
+    status: "REJECTED",
+    purpose: "ยืมไปถ่ายรูปงานวันเกิดเพื่อน",
+    userId: empMedia.us_id,
+    flowId: flowMedia.af_id,
+    deviceId: childCam3.dec_id,
+    startDate: daysFromNow(2),
+    endDate: daysFromNow(3),
+    currentStage: 1,
+    stages: [
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "REJECTED", usId: hosMedia.us_id },
+      { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
+    ],
+  });
 
   // 5. COMPLETED - กล้อง (โดย Employee Media)
-  // await createTicketWithStages({
-  //   status: "COMPLETED",
-  //   purpose: "ถ่ายงาน Event คณะ",
-  //   userId: empMedia.us_id,
-  //   flowId: flowMedia.af_id,
-  //   deviceId: childCam4.dec_id,
-  //   startDate: daysAgo(10),
-  //   endDate: daysAgo(7),
-  //   currentStage: 2,
-  //   stages: [
-  //     { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
-  //     { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-  //   ],
-  // });
+  await createTicketWithStages({
+    status: "COMPLETED",
+    purpose: "ถ่ายงาน Event คณะ",
+    userId: empMedia.us_id,
+    flowId: flowMedia.af_id,
+    deviceId: childCam4.dec_id,
+    startDate: daysAgo(10),
+    endDate: daysAgo(7),
+    currentStage: 2,
+    stages: [
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
+    ],
+  });
 
   // 6. OVERDUE - โน้ตบุ๊ค (โดย Employee Media)
-  // await createTicketWithStages({
-  //   status: "IN_USE",
-  //   purpose: "ยืมไปทำกราฟิก",
-  //   userId: empMedia.us_id,
-  //   flowId: flowMediaFull.af_id,
-  //   deviceId: childLaptop1.dec_id, // ตัวที่ส่งซ่อม แต่จำลองว่ายืมอยู่
-  //   startDate: daysAgo(14),
-  //   endDate: daysAgo(1), // เลยกำหนดคืนแล้ว
-  //   currentStage: 3,
-  //   stages: [
-  //     { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
-  //     { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-  //     { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "APPROVED", usId: staffMedia.us_id },
-  //   ],
-  // });
+  await createTicketWithStages({
+    status: "IN_USE",
+    purpose: "ยืมไปทำกราฟิก",
+    userId: empMedia.us_id,
+    flowId: flowMediaFull.af_id,
+    deviceId: childLaptop1.dec_id, // ตัวที่ส่งซ่อม แต่จำลองว่ายืมอยู่
+    startDate: daysAgo(14),
+    endDate: daysAgo(1), // เลยกำหนดคืนแล้ว
+    currentStage: 3,
+    stages: [
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
+      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "APPROVED", usId: staffMedia.us_id },
+    ],
+  });
 
   // 7. Bulk generation for pagination testing (30 more tickets)
   console.log("📑 Generating bulk tickets for pagination testing...");
-  // for (let i = 0; i < 30; i++) {
-  //   await createTicketWithStages({
-  //     status: i % 2 === 0 ? "PENDING" : "IN_USE",
-  //     purpose: `Bulk Request #${i + 1}`,
-  //     userId: empMedia.us_id,
-  //     flowId: flowMedia.af_id,
-  //     deviceId: childCam1.dec_id,
-  //     startDate: daysFromNow(10 + i),
-  //     endDate: daysFromNow(15 + i),
-  //     currentStage: 1,
-  //     stages: [
-  //       { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "PENDING" },
-  //       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
-  //     ],
-  //   });
-  // }
+  for (let i = 0; i < 30; i++) {
+    await createTicketWithStages({
+      status: i % 2 === 0 ? "PENDING" : "IN_USE",
+      purpose: `Bulk Request #${i + 1}`,
+      userId: empMedia.us_id,
+      flowId: flowMedia.af_id,
+      deviceId: childCam1.dec_id,
+      startDate: daysFromNow(10 + i),
+      endDate: daysFromNow(15 + i),
+      currentStage: 1,
+      stages: [
+        { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "PENDING" },
+        { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
+      ],
+    });
+  }
 
   // ---- TICKET ISSUES (แจ้งซ่อม) ----
   console.log("🛠 Creating issues...");
-  // const issue = await prisma.ticket_issues.upsert({
-  //   where: { ti_id: 1 },
-  //   update: {},
-  //   create: {
-  //     ti_id: 1,
-  //     ti_de_id: deviceLaptop.de_id,
-  //     ti_title: "จอฟ้า เปิดไม่ติด",
-  //     ti_description: "เปิดเครื่องแล้วขึ้น Blue Screen code 0x0000",
-  //     ti_reported_by: empIT.us_id,
-  //     ti_assigned_to: techIT.us_id,
-  //     ti_status: "IN_PROGRESS",
-  //     ti_result: "IN_PROGRESS",
-  //     created_at: daysAgo(3),
-  //   },
-  // });
+  const issue = await prisma.ticket_issues.upsert({
+    where: { ti_id: 1 },
+    update: {},
+    create: {
+      ti_id: 1,
+      ti_de_id: deviceLaptop.de_id,
+      ti_title: "จอฟ้า เปิดไม่ติด",
+      ti_description: "เปิดเครื่องแล้วขึ้น Blue Screen code 0x0000",
+      ti_reported_by: empIT.us_id,
+      ti_assigned_to: techIT.us_id,
+      ti_status: "IN_PROGRESS",
+      ti_result: "IN_PROGRESS",
+      created_at: daysAgo(3),
+    },
+  });
 
   // ---- NOTIFICATIONS ----
   console.log("🔔 Creating notifications...");
-  // const noti = await prisma.notifications.create({
-  //   data: {
-  //     n_title: "มีคำร้องขออนุมัติใหม่",
-  //     n_message: "คุณมีรายการยืม Laptop รออนุมัติ",
-  //     n_base_event: "TICKET_CREATED",
-  //     n_brt_id: 2, // Ticket Pending
-  //   },
-  // });
+  const noti = await prisma.notifications.create({
+    data: {
+      n_title: "มีคำร้องขออนุมัติใหม่",
+      n_message: "คุณมีรายการยืม Laptop รออนุมัติ",
+      n_base_event: "TICKET_CREATED",
+      n_brt_id: 2, // Ticket Pending
+    },
+  });
 
-  // await prisma.notification_recipients.create({
-  //   data: {
-  //     nr_n_id: noti.n_id,
-  //     nr_us_id: hodIT.us_id,
-  //     nr_status: "UNREAD",
-  //     nr_event: "APPROVAL_REQUESTED",
-  //   },
-  // });
+  await prisma.notification_recipients.create({
+    data: {
+      nr_n_id: noti.n_id,
+      nr_us_id: hodIT.us_id,
+      nr_status: "UNREAD",
+      nr_event: "APPROVAL_REQUESTED",
+    },
+  });
 
   // ---- LOGS & CHAT ----
   console.log("💬 Creating chat & logs...");
@@ -834,20 +834,6 @@ async function main() {
     "  Username: admin, hod.media, hod.it, hos.media.a, tech.it, staff.media, emp.media, emp.it",
   );
   console.log("  Password: password123");
-
-  //test
-  // await prisma.$executeRawUnsafe(`
-  //   SELECT setval(
-  //     pg_get_serial_sequence('borrow_return_tickets', 'brt_id'),
-  //     (SELECT COALESCE(MAX(brt_id), 0) FROM borrow_return_tickets)
-  //   );
-  // `);
-  // await prisma.$executeRawUnsafe(`
-  //   SELECT setval(
-  //     pg_get_serial_sequence('borrow_return_ticket_stages', 'brts_id'),
-  //     (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
-  //   );
-  // `);
 }
 
 main()

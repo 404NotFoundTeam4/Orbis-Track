@@ -18,7 +18,6 @@ import ForgotPassword from "./ForgotPassword"
 import { Cart } from "./Cart";
 // import EditCart from "./EditCart";
 import ListDevices from "./ListDevices";
-import BorrowDevicefrom from "./BorrowDevice";
 import BorrowDevice from "./BorrowDevice";
 
 function App() {

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { GetInventory } from "../services/InventoryService"
 import Button from "./Button"
 
@@ -7,9 +7,24 @@ interface DevicesCardProps {
 }
 
 const DevicesCard = ({ device }: DevicesCardProps) => {
+  // ใช้สำหรับเปลี่ยนหน้า
+  const navigate = useNavigate();
 
-  const deviceID = device.de_id;
-  const deviceName = device.de_name;
+  /**
+  * Description: ฟังก์ชันสำหรับเปลี่ยนหน้าไปยังหน้าการยืมอุปกรณ์
+  * Input : -
+  * Output : เปลี่ยนเส้นทางไปยังหน้าการยืมอุปกรณ์
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
+  const handleBorrow = () => {
+    // เปลี่ยน path และส่งค่า deviceId ไปผ่าน state
+    navigate("/list-devices/borrow", {
+      state: {
+        deviceId: device.de_id,
+        deviceName: device.de_name
+      }
+    });
+  }
 
   return (
     <div className="w-[308px] min-h-[313px] rounded-[16px] bg-white shadow-md border border-gray-200 overflow-hidden flex flex-col">
@@ -50,13 +65,13 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
               คงเหลือ : {device.available} / {device.total} ชิ้น
             </p>
 
-              <Link to="/list-devices/borrow" state={{deviceID : deviceID,deviceName : deviceName}}>
-                <Button className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm">
-                  ยืม
-                </Button>
-
-              </Link>
-            
+              <Button
+                className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm cursor-pointer"
+                onClick={handleBorrow}
+                disabled={device.available === 0}
+              >
+                ยืม
+              </Button>
           </div>
         </div>
       </div>

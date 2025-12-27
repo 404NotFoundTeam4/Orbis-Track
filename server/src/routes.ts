@@ -45,6 +45,8 @@ export function routes(app: Express) {
 
   api.use("/inventory", authMiddleware, borrowRouter);
 
+  api.use("/borrow", authMiddleware, borrowRouter);
+
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);
 }

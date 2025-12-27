@@ -85,22 +85,49 @@ export interface AddToCart {
 }
 
 export const borrowService = {
-    // ดึงข้อมูลอุปกรณ์สำหรับรายละเอียดในฟอร์ม
+   /**
+   * Description: ดึงข้อมูลอุปกรณ์สำหรับรายละเอียดในฟอร์ม
+   * Input     : de_id - รหัสอุปกรณ์แม่
+   * Output    : Promise<GetDeviceForBorrow> - รายละเอียดข้อมูลอุปกรณ์
+   * Endpoint  : GET /api/borrow/devices/:id
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
     getDeviceForBorrow: async (de_id: GetDeviceForBorrowPayload): Promise<GetDeviceForBorrow> => {
         const { data } = await api.get(`/borrow/devices/${de_id}`);
         return data.data;
     },
-    // ดึงข้อมูลอุปกรณ์ที่กำลังถูกยืม
+
+   /**
+   * Description: ดึงข้อมูลอุปกรณ์ที่กำลังถูกยืม
+   * Input     : de_id - รหัสอุปกรณ์แม่
+   * Output    : Promise<GetAvailable[]> - รายการอุปกรณ์พร้อมวันที่กำลังถูกยืม
+   * Endpoint  : GET /api/borrow/available/:id
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
     getAvailable: async (de_id: GetAvailablePayload): Promise<GetAvailable[]> => {
         const { data } = await api.get(`/borrow/available/${de_id}`);
         return data.data;
     },
-    // ส่งคำร้องการยืมอุปกรณ์
+
+   /**
+   * Description: ส่งคำร้องการยืมอุปกรณ์
+   * Input     : payload - ข้อมูลในการยืมอุปกรณ์
+   * Output    : Promise<CreateBorrowTicket> - รหัสคำร้องการยืมอุปกรณ์ สถานะ วันที่เริ่มยืม วันสิ้นสุด และอุปกรณ์ลูก
+   * Endpoint  : POST /api/borrow/send-ticket
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
     createBorrowTicket: async (payload: CreateBorrowTicketPayload): Promise<CreateBorrowTicket> => {
         const { data } = await api.post(`/borrow/send-ticket`, payload);
         return data;
     },
-    // เพิ่มอุปกรณ์ไปยังรถเข็น
+
+   /**
+   * Description: เพิ่มอุปกรณ์ไปยังรถเข็น
+   * Input     : payload - ข้อมูลในการยืมอุปกรณ์
+   * Output    : Promise<AddToCart> - รหัสรถเข็น และรหัสรายการอุปกรณ์ในรถเข็น
+   * Endpoint  : POST /api/borrow/add-cart
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
     addToCart: async (payload: AddToCartPayload): Promise<AddToCart> => {
         const { data } = await api.post('/borrow/add-cart', payload);
         return data;

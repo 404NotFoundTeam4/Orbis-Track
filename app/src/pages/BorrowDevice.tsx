@@ -30,7 +30,7 @@ const BorrowDevice = () => {
 
     const location = useLocation();
     // รับรหัสอุปกรณ์แม่ที่ส่งมาจาก state ของ navigate
-    const de_id = location.state?.deviceId;
+    const deId = location.state?.deviceId;
     // เก็บข้อมูลอุปกรณ์แม่
     const [device, setDevice] = useState<GetDeviceForBorrow | null>(null);
 
@@ -47,13 +47,13 @@ const BorrowDevice = () => {
     // ดึงข้อมูลอุปกรณ์แม่เมื่อเรนเดอร์หน้าเว็บครั้งแรก
     useEffect(() => {
         const fetchDevice = async () => {
-            const res = await borrowService.getDeviceForBorrow(de_id);
+            const res = await borrowService.getDeviceForBorrow(deId);
             // เก็บข้อมูลลงใน state
             setDevice(res);
         }
 
         fetchDevice();
-    }, [de_id]);
+    }, [deId]);
 
     if (!device) {
         return null;
@@ -82,21 +82,31 @@ const BorrowDevice = () => {
         accessories: accessory
     };
 
-    // ฟังก์ชันสำหรับรวมวันที่และเวลาเป็น Date (ISO)
+    /**
+    * Description: ฟังก์ชันสำหรับรวมวันที่และเวลาเป็น Date (ISO)
+    * Input : date - วันที่, time - เวลา
+    * Output : วันที่และเวลาที่ถูกรวมแล้ว
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     const buildDateTime = (date: Date, time: string) => {
         // แยกชั่วโมงและนาที
         const [hh, mm] = time.split(":").map(Number);
         // clone วันที่
-        const d = new Date(date);
+        const dateTime = new Date(date);
         // ตั้งค่าเวลาให้วันที่
-        d.setHours(hh, mm, 0, 0);
-        return d;
+        dateTime.setHours(hh, mm, 0, 0);
+        return dateTime;
     };
 
-    // ฟังก์ชันสำหรับการเปลี่ยนวันเวลาที่เลือก
+    /**
+    * Description: ฟังก์ชันสำหรับจัดการเมื่อมีการเปลี่ยนวันที่หรือเวลาที่เลือก
+    * Input : -
+    * Output : อัปเดตข้อมูลอุปกรณ์ที่ว่าง, จำนวนอุปกรณ์ที่ว่าง และรีเซ็ตการเลือกอุปกรณ์
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     const handleDateTimeChange = async () => {
         // ดึงข้อมูล device childs ทั้งหมด พร้อมเวลาที่ถูกยืม
-        const res = await borrowService.getAvailable(de_id);
+        const res = await borrowService.getAvailable(deId);
         setAvailableDevices(res);
 
         // นับจำนวนอุปกรณ์ที่ว่าง
@@ -107,7 +117,12 @@ const BorrowDevice = () => {
         setSelectedDeviceIds([]);
     };
 
-    // ส่งคำร้องยืมอุปกรณ์
+    /**
+    * Description: ฟังก์ชันสำหรับส่งคำร้องยืมอุปกรณ์
+    * Input : data - ข้อมูลฟอร์มการยืมอุปกรณ์
+    * Output : สร้างคำร้องยืมอุปกรณ์ และนำทางกลับไปยังหน้ารายการอุปกรณ์
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     const handleSubmit = async ({ data }: { data: BorrowForm }) => {
         try {
             // วันที่ยืมและวันที่คืน
@@ -141,8 +156,13 @@ const BorrowDevice = () => {
 
     };
 
-    // เพิ่มอุปกรณ์ไปยังรถเข็น
-    const handleAddToCard = async ({ data }: { data: AddToCart }) => {
+    /**
+    * Description: ฟังก์ชันสำหรับเพิ่มอุปกรณ์ลงในรถเข็น
+    * Input : data - ข้อมูลฟอร์มการยืมอุปกรณ์
+    * Output : เพิ่มอุปกรณ์ลงรถเข็น และนำทางกลับไปยังหน้ารายการอุปกรณ์
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
+    const handleAddToCart = async ({ data }: { data: AddToCart }) => {
         try {
             // วันที่ยืมและวันที่คืน
             const [borrowDate, returnDateRaw] = data.dateRange;
@@ -156,7 +176,7 @@ const BorrowDevice = () => {
             const borrowEnd = buildDateTime(returnDate, data.returnTime);
 
             const payload = {
-                deviceId: de_id,
+                deviceId: deId,
                 borrower: data.borrower,
                 phone: data.phone,
                 reason: data.reason,
@@ -198,7 +218,7 @@ const BorrowDevice = () => {
                 onSelectDevice={setSelectedDeviceIds} // เปลี่ยนอุปกรณ์ที่เลือก
                 onDateTimeChange={handleDateTimeChange} // เปลี่ยนวันเวลา
                 onSubmit={handleSubmit}
-                onAddToCart={handleAddToCard}
+                onAddToCart={handleAddToCart}
             />
         </div>
     )

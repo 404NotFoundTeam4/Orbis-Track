@@ -10,8 +10,14 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
   // ใช้สำหรับเปลี่ยนหน้า
   const navigate = useNavigate();
 
-  // เมื่อทำการกดปุ่มยืม
+  /**
+  * Description: ฟังก์ชันสำหรับเปลี่ยนหน้าไปยังหน้าการยืมอุปกรณ์
+  * Input : -
+  * Output : เปลี่ยนเส้นทางไปยังหน้าการยืมอุปกรณ์
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
   const handleBorrow = () => {
+    // เปลี่ยน path และส่งค่า deviceId ไปผ่าน state
     navigate("/list-devices/borrow", {
       state: {
         deviceId: device.de_id

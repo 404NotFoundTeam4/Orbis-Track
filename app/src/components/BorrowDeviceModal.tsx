@@ -85,10 +85,15 @@ const BorrowEquipmentModal = ({
     const [form, setForm] = useState<BorrowFormData>(initialForm);
     // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
     const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
-
+    // เก็บข้อความ error ของแต่ละ field ในฟอร์ม BorrowFormData
     const [errors, setErrors] = useState<Partial<Record<keyof BorrowFormData, string>>>({});
 
-    // ฟังก์ชันในการตรวจสอบข้อมูล
+    /**
+    * Description: ฟังก์ชันในการตรวจสอบข้อมูลและกำหนดข้อความ error
+    * Input : -
+    * Output : boolean (true = ข้อมูลถูกต้อง, false = ข้อมูลไม่ครบหรือไม่ถูกต้อง)
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     const validate = () => {
         const newError: typeof errors = {};
 
@@ -145,12 +150,19 @@ const BorrowEquipmentModal = ({
             newError.returnTime = "กรุณาระบุช่วงเวลาที่คืน";
         }
 
+        // อัปเดต state เพื่อให้แสดงข้อความ error
         setErrors(newError);
 
+        // คืนค่า true เมื่อไม่ error (ฟอร์มถูกต้อง)
         return Object.keys(newError).length === 0;
     }
 
-    // ส่งคำร้อง
+    /**
+    * Description: ฟังก์ชันในการส่งคำร้องยืมอุปกรณ์
+    * Input : -
+    * Output : ส่งข้อมูลคำร้องไปยัง parent component, รีเซ็ตฟอร์ม และปิด AlertDialog
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     const handleSubmitBorrow = () => {
         // ตรวจสอบข้อมูลก่อน submit
         if (!validate()) {
@@ -158,6 +170,7 @@ const BorrowEquipmentModal = ({
             return;
         }
 
+        // ส่งข้อมูลไปยัง parent component
         onSubmit({
             data: form
         });
@@ -168,24 +181,38 @@ const BorrowEquipmentModal = ({
         setIsConfirmOpen(false);
     }
 
-    // เพิ่มไปยังรถเข็น
-    const handleAddToCard = () => {
+    /**
+    * Description: ฟังก์ชันในการเพิ่มอุปกรณ์ไปยังรถเข็น
+    * Input : -
+    * Output : ส่งข้อมูลไปยัง parent component เพื่อบันทึกลงตะกร้า
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
+    const handleAddToCart = () => {
+        // ตรวจสอบข้อมูล
         if (!validate()) {
             return;
         }
 
+        // ส่งข้อมูลไปยัง parent component
         onAddToCart?.({
             data: form
         });
     }
 
-    // แก้ไขรายละเอียดอุปกรณ์
+    /**
+    * Description: ฟังก์ชันในการแก้ไขรายละเอียดอุปกรณ์
+    * Input : -
+    * Output : ส่งข้อมูลที่แก้ไขแล้วไปยัง parent component และปิด AlertDialog
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     const handleSubmitEdit = () => {
+        // ตรวจสอบข้อมูล
         if (!validate()) {
             setIsConfirmOpen(false);
             return;
         }
 
+        // ส่งข้อมูลไปยัง parent component
         onSubmit({
             data: form
         });
@@ -194,8 +221,14 @@ const BorrowEquipmentModal = ({
         setIsConfirmOpen(false);
     }
 
-    // handle ตาม mode
+    /**
+    * Description: ฟังก์ชันควบคุมการทำงานหลัก ตามโหมดของหน้า
+    * Input : -
+    * Output : ดำเนินการยืมอุปกรณ์ หรือบันทึกการแก้ไขตามโหมด
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     const handlePrimaryAction = () => {
+        // ตรวจสอบว่าเป็นโหมดการยืมอุปกรณ์หรือไม่
         if (mode === "borrow-equipment") {
             handleSubmitBorrow();
         } else {
@@ -438,7 +471,7 @@ const BorrowEquipmentModal = ({
                                 type="button"
                                 className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px] font-semibold"
                                 variant="outline"
-                                onClick={handleAddToCard}>
+                                onClick={handleAddToCart}>
                                 <Icon
                                     icon="mdi-light:cart"
                                     width="36"

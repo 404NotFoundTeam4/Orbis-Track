@@ -27,12 +27,20 @@ const DatePickerField = ({
     setTempDate(value);
   }, [value]);
 
-  // แปลงวันที่เป็น พ.ศ. สำหรับแสดงในช่อง Input
+  /**
+  * Description: ฟังก์ชันแปลงช่วงวันที่ ให้เป็นข้อความวันที่รูปแบบไทย (พ.ศ.)
+  * Input : range [Date | null, Date | null] - วันที่เริ่มต้นและวันที่สิ้นสุด
+  * Output : ข้อความวันที่ในรูปแบบไทย
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
   const formatThaiInput = (range: [Date | null, Date | null]) => {
+    // แยกวันที่เริ่มต้นและวันที่สิ้นสุด
     const [start, end] = range;
 
+    // ถ้าไม่มีวันที่เริ่มต้น ให้คืนค่าว่าง
     if (!start) return "";
 
+    // แปลง Date เป็นรูปแบบ วัน/เดือน/ปี (พ.ศ.)
     const format = (d: Date) =>
       `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")
       }/${d.getFullYear() + 543}`;

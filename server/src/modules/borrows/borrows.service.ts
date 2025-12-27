@@ -148,7 +148,12 @@ async function getDeviceForBorrow(params: IdParamDto) {
         }
     });
 
-    // แยกชื่อแผนก และ ฝ่ายย่อย
+    /**
+    * Description: ฟังก์ชันสำหรับแยกชื่อแผนกและฝ่ายย่อยออกจากข้อความเดียวกัน
+    * Input : sectionName - ข้อความชื่อแผนกและฝ่ายย่อยรวมกัน
+    * Output : { department - แผนก, section - ฝ่ายย่อย }
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    **/
     function extractDepartmentAndSection(sectionName: string) {
         const match = sectionName.match(/แผนก\s*(.*?)\s*ฝ่ายย่อย\s*(.*)/); // แยก แผนก และ ฝ่ายย่อย ออกจากข้อความเดียวกัน
 
@@ -297,11 +302,21 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
             },
         });
 
-        // ดึงชื่อแผนกจาก dept_id
+        /**
+        * Description: ฟังก์ชันสำหรับดึงชื่อแผนกจากรหัสแผนก
+        * Input : deptId - รหัสแผนก
+        * Output : ชื่อแผนก
+        * Author : Thakdanai Makmi (Ryu) 66160355
+        **/
         const getDeptName = (deptId?: number | null) =>
             departments.find((d) => d.dept_id === deptId)?.dept_name ?? null;
 
-        // ดึงชื่อฝ่ายย่อยจาก sec_id
+        /**
+        * Description: ฟังก์ชันสำหรับดึงชื่อฝ่ายย่อยจากรหัสฝ่ายย่อย
+        * Input : secId - รหัสฝ่ายย่อย
+        * Output : ชื่อฝ่ายย่อย
+        * Author : Thakdanai Makmi (Ryu) 66160355
+        **/
         const getSecName = (secId?: number | null) =>
             sections.find((s) => s.sec_id === secId)?.sec_name ?? null;
 

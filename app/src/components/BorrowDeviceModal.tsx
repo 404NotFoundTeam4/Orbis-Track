@@ -12,13 +12,13 @@ import type { GetAvailable } from "../services/BorrowService";
 interface EquipmentDetail {
     serialNumber: string;
     name: string;
+    total: number;
     category: string;
     department: string;
     section: string;
     imageUrl?: string;
     storageLocation: string;
     remain: number;
-    total: number;
     maxBorrowDays: number;
     accessories: {
         name: string;

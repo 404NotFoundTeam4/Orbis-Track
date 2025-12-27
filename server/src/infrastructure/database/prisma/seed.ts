@@ -565,9 +565,12 @@ async function main() {
     create: {
       cti_id: 1,
       cti_ct_id: cart.ct_id,
-      cti_dec_id: childCam1.dec_id,
+      cti_de_id: deviceCamera.de_id,
       cti_quantity: 1,
       cti_us_name: "ชาติชาย มานะสิน",
+      cti_phone: "0999999999",
+      cti_note: "นำเสนองาน",
+      cti_usage_location: "สำนักงาน",
       cti_start_date: daysFromNow(1),
       cti_end_date: daysFromNow(3),
     },

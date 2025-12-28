@@ -1,3 +1,12 @@
+/**
+ * File: MenuConfig.ts
+ * Description:
+ *  - กำหนดโครงสร้างเมนู Sidebar / Navbar
+ *  - จัดการ Icon, Image และ Role-based Menu
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+
 import {
   faHome,
   faServer,
@@ -11,30 +20,60 @@ import {
   faChevronUp,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { UserRole } from "./RoleEnum";
+import { UserRole } from "../../utils/RoleEnum";
 import Logo from "../../assets/images/navbar/Logo.png";
 import LogoGiga from "../../assets/images/navbar/logo-giga.png";
 
+/**
+ * Constant: Icons
+ * Description:
+ *  - Map key สำหรับเรียกใช้ FontAwesome Icon
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 export const Icons: { [key: string]: IconDefinition } = {
   FASHOPPING: faCartShopping,
   FABELL: faBell,
 };
 
+/**
+ * Constant: Images
+ * Description:
+ *  - เก็บ path รูปภาพที่ใช้ใน Navbar
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 export const Images: { [key: string]: string } = {
   LOGO: Logo,
   LOGO_GIGA: LogoGiga,
 };
 
+/**
+ * Type: MenuItem
+ * Description:
+ *  - โครงสร้างข้อมูลเมนู
+ *  - รองรับเมนูหลักและ submenu
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 export type MenuItem = {
-  key: string;
-  label: string;
-  path?: string;
-  icon?: IconDefinition; // icon ด้านซ้าย
-  iconRight?: IconDefinition; // icon ด้านขวา
-  roles: UserRole[];
-  children?: MenuItem[];
+  key: string;                 // key สำหรับอ้างอิงเมนู
+  label: string;               // ชื่อเมนูที่แสดง
+  path?: string;               // path สำหรับ routing
+  icon?: IconDefinition;       // icon ด้านซ้าย
+  iconRight?: IconDefinition;  // icon ด้านขวา (dropdown)
+  roles: UserRole[];           // role ที่สามารถเห็นเมนู
+  children?: MenuItem[];       // submenu (ถ้ามี)
 };
 
+/**
+ * Constant: MENU_CONFIG
+ * Description:
+ *  - กำหนดเมนูทั้งหมดของระบบ
+ *  - ควบคุมการแสดงผลด้วย role
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
 export const MENU_CONFIG: MenuItem[] = [
   {
     key: "home",
@@ -43,7 +82,7 @@ export const MENU_CONFIG: MenuItem[] = [
     icon: faHome,
     roles: [
       UserRole.ADMIN,
-      UserRole.USER,
+      UserRole.EMPLOYEE,
       UserRole.STAFF,
       UserRole.HOD,
       UserRole.HOS,
@@ -67,22 +106,22 @@ export const MENU_CONFIG: MenuItem[] = [
         key: "requests",
         label: "คำร้อง",
         path: "/requests",
-        roles: [UserRole.ADMIN],
+        roles: [UserRole.ADMIN,UserRole.STAFF],
       },
       {
-        key: "departments",
+        key: "users",
         label: "บัญชีผู้ใช้",
         path: "/administrator/departments-management",
         roles: [UserRole.ADMIN],
       },
       {
-        key: "categories",
+        key: "devices_admin",
         label: "คลังอุปกรณ์",
         path: "/categories",
-        roles: [UserRole.ADMIN],
+        roles: [UserRole.ADMIN,UserRole.STAFF],
       },
       {
-        key: "departments",
+        key: "chatbot",
         label: "แชทบอท",
         path: "/administrator/departments-management",
         roles: [UserRole.ADMIN],
@@ -94,10 +133,10 @@ export const MENU_CONFIG: MenuItem[] = [
         roles: [UserRole.ADMIN],
       },
       {
-        key: "departments",
+        key: "categories",
         label: "หมวดหมู่อุปกรณ์",
         path: "/administrator/departments-management",
-        roles: [UserRole.ADMIN],
+        roles: [UserRole.ADMIN,UserRole.STAFF],
       },
     ],
   },
@@ -106,7 +145,7 @@ export const MENU_CONFIG: MenuItem[] = [
     label: "รายการอุปกรณ์",
     path: "/devices",
     icon: faBoxArchive,
-    roles: [UserRole.ADMIN, UserRole.USER, UserRole.HOD, UserRole.HOS],
+    roles: [UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.HOD, UserRole.HOS,UserRole.STAFF],
   },
   {
     key: "repair",
@@ -114,7 +153,7 @@ export const MENU_CONFIG: MenuItem[] = [
     path: "/repair",
     icon: faWrench,
     roles: [
-      UserRole.USER,
+      UserRole.EMPLOYEE,
       UserRole.STAFF,
       UserRole.ADMIN,
       UserRole.HOD,
@@ -126,26 +165,33 @@ export const MENU_CONFIG: MenuItem[] = [
     label: "แดชบอร์ด",
     path: "/dashboard",
     icon: faChartLine,
-    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS],
+    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS,UserRole.STAFF],
   },
   {
     key: "history",
     label: "ดูประวัติ",
     path: "/history",
     icon: faClockRotateLeft,
-    roles: [UserRole.ADMIN, UserRole.USER, UserRole.HOD, UserRole.HOS],
+    roles: [UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.HOD, UserRole.HOS,UserRole.STAFF],
   },
   {
     key: "setting",
     label: "การตั้งค่า",
     path: "/setting",
     icon: faGear,
-    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS,UserRole.USER],
+    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS, UserRole.EMPLOYEE,UserRole.STAFF,],
   },
 ];
 
 /**
- * ฟังก์ชันกรองเมนูตาม role (Reusable)
+ * Function: filterMenuByRole
+ * Description:
+ *  - กรองเมนูตาม role ของผู้ใช้งาน
+ *  - กรอง submenu ตาม role เช่นเดียวกัน
+ *  - ใช้งานซ้ำได้ (Reusable)
+ * คืนเมนูที่ผ่านการกรองแล้ว
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
  */
 export const filterMenuByRole = (
   menus: MenuItem[],

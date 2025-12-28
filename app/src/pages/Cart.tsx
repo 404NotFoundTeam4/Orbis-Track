@@ -47,46 +47,46 @@ export const Cart = () => {
   const loginData =
     sessionStorage.getItem("User") || localStorage.getItem("User");
   const user = loginData ? JSON.parse(loginData) : null;
-  const us_id = user?.us_id || user?.state?.user?.us_id || null;
+  const userId = user?.us_id || user?.state?.user?.us_id || null;
 
   /**
    * Description : State เก็บรายการอุปกรณ์ในรถเข็น
    */
   const [items, setItems] = useState<CartItem[]>([]);
 
-  /**
-   * Description: ฟังก์ชันโหลดข้อมูลรถเข็นของผู้ใช้จากระบบ และ map ให้อยู่ในรูปแบบ CartItem เพื่อใช้งานใน UI
-   * Input : us_id (ดึงจาก session/local storage ภายใน component)
-   * Output : Promise<void> (อัปเดต state: items)
-   * Author : Nontapat Sinhum (Guitar) 66160104
-   **/
+ /**
+ * Description: ฟังก์ชันสำหรับโหลดข้อมูลรถเข็นของผู้ใช้ และแปลงข้อมูลให้อยู่ในรูปแบบ CartItem เพื่อใช้แสดงผลใน UI
+ * Input : userId (ดึงจาก session/local storage หรือ state ภายใน component)
+ * Output : อัปเดตข้อมูลรายการรถเข็นใน state (items)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
   const loadCart = useCallback(async () => {
     try {
-      if (!us_id) return;
+      if (!userId) return;
 
       const res = await CartService.getCartItems();
 
-      const mapped: CartItem[] = res.itemData.map((d: any) => ({
-        id: d.cti_id,
-        name: d.device?.de_name ?? "ไม่ระบุ",
-        code: d.device?.de_serial_number ?? "-",
-        category: d.de_ca_name ?? "ไม่ระบุ",
-        department: d.de_dept_name ?? "ไม่ระบุ",
-        qty: d.cti_quantity ?? 1,
-        image: d.device?.de_images ?? "/images/default.png",
-        section: d.de_sec_name ? d.de_sec_name.trim().split(" ").pop() : "-",
-        availability: d.dec_availability,
-        borrowDate: formatThaiDateTime(d.cti_start_date) ?? "ยังไม่กำหนด",
-        returnDate: formatThaiDateTime(d.cti_end_date) ?? "ยังไม่กำหนด",
-        readyQuantity: d.dec_ready_count ?? 0,
-        maxQuantity: d.dec_count ?? 0,
+      const mapped: CartItem[] = res.itemData.map((cti: any) => ({
+        id: cti.cti_id,
+        name: cti.device?.de_name ?? "ไม่ระบุ",
+        code: cti.device?.de_serial_number ?? "-",
+        category: cti.de_ca_name ?? "ไม่ระบุ",
+        department: cti.de_dept_name ?? "ไม่ระบุ",
+        qty: cti.cti_quantity ?? 1,
+        image: cti.device?.de_images ?? "/images/default.png",
+        section: cti.de_sec_name ? cti.de_sec_name.trim().split(" ").pop() : "-",
+        availability: cti.dec_availability,
+        borrowDate: formatThaiDateTime(cti.cti_start_date) ?? "ยังไม่กำหนด",
+        returnDate: formatThaiDateTime(cti.cti_end_date) ?? "ยังไม่กำหนด",
+        readyQuantity: cti.dec_ready_count ?? 0,
+        maxQuantity: cti.dec_count ?? 0,
       }));
 
       setItems(mapped);
     } catch (err) {
       console.error("โหลดรถเข็นผิดพลาด:", err);
     }
-  }, [us_id]);
+  }, [userId]);
 
   /**
    * Description: Hook สำหรับเรียก loadCart เมื่อ component ถูก mount หรือเมื่อ dependency ของ loadCart เปลี่ยน
@@ -114,8 +114,8 @@ export const Cart = () => {
    * Author : Nontapat Sinhum (Guitar) 66160104
    **/
   const totalItems = items
-    .filter((i) => selectedItems.includes(i.id))
-    .reduce((sum, i) => sum + i.qty, 0);
+    .filter((item) => selectedItems.includes(item.id))
+    .reduce((sum, item) => sum + item.qty, 0);
 
   /**
    * Description: ฟังก์ชันลบรายการในรถเข็นทีละรายการ พร้อมอัปเดต state และแสดง toast
@@ -127,7 +127,7 @@ export const Cart = () => {
     try {
       await CartService.deleteCartItem({ cartItemId: id });
 
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      setItems((prev) => prev.filter((item) => item.id !== id));
       setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
 
       push({ tone: "danger", message: "ลบออกจากรถเข็นเสร็จสิ้น!" });
@@ -212,7 +212,7 @@ export const Cart = () => {
           )
         );
 
-        setItems((prev) => prev.filter((i) => !selectedItems.includes(i.id)));
+        setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
 
         push({
           tone: "danger",
@@ -252,7 +252,7 @@ export const Cart = () => {
    * Author : Nontapat Sinhum (Guitar) 66160104
    **/
   const toggleSelect = (id: number) => {
-    const item = items.find((i) => i.id === id);
+    const item = items.find((item) => item.id === id);
     if (!item) return;
 
     // ถ้า availability = "ไม่พร้อมใช้งาน" → ห้ามเลือก
@@ -263,8 +263,8 @@ export const Cart = () => {
     );
   };
 
-  const selectableItems = items.filter((i) => i.availability === "พร้อมใช้งาน");
-  const selectableIds = selectableItems.map((i) => i.id);
+  const selectableItems = items.filter((item) => item.availability === "พร้อมใช้งาน");
+  const selectableIds = selectableItems.map((item) => item.id);
 
   const selectedItemCount = selectedItems.length;
 

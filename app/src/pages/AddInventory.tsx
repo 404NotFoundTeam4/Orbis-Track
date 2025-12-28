@@ -1,5 +1,4 @@
 import MainDeviceModal from "../components/DeviceModal";
-import { useState } from "react";
 import { useInventorys } from "../hooks/useInventory";
 import { useToast } from "../components/Toast";
 

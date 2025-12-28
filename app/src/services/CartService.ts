@@ -16,6 +16,12 @@ type ApiEnvelope<T> = {
   data: T;
 };
 
+/**
+ * Description: Payload สำหรับสร้าง Borrow Ticket จากรายการในตะกร้า
+ * Input : cartItemId (number) = id ของ cart item ที่ต้องการสร้างคำร้อง
+ * Output : CreateBorrowTicketPayload
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 export type CreateBorrowTicketPayload = {
     cartItemId: number;
 };
@@ -139,6 +145,21 @@ export const CartService = {
       throw error;
     }
   },
+/**
+    * Description: สร้าง Borrow Ticket จากรายการในตะกร้า
+    * Input : payload: { cartItemId: number }
+    * Output : Promise<any> = ข้อมูลผลลัพธ์ที่ backend ส่งกลับ (ตามที่ backend กำหนด)
+    * Author : Nontapat Sinhum (Guitar) 66160104
+    **/
+    async createBorrowTicket(
+        payload: CreateBorrowTicketPayload
+    ): Promise<any> {
+        const res = await api.post<ApiEnvelope<any>>(
+            `/borrow/cart/`,
+            payload
+        );
+        return res.data.data;
+    },
 };
 
 export default CartService;

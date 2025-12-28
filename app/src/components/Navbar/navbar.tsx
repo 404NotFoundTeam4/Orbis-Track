@@ -1,9 +1,22 @@
+/**
+ * Component: Navbar
+ * Features:
+ *  - แสดง Topbar + Sidebar
+ *  - แสดงเมนูตาม Role ของผู้ใช้งาน
+ *  - รองรับเมนูแบบมี Submenu (Dropdown)
+ *  - แสดงข้อมูลผู้ใช้จาก localStorage / sessionStorage
+ *  - รองรับ Notification และ Cart icon
+ *  - จัดการ Logout และ redirect ไปหน้า Login
+ *
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Icon } from "@iconify/react";
 import { useUserStore } from "../../stores/userStore";
-import { UserRole, UserRoleTH } from "./RoleEnum";
+import { UserRole, UserRoleTH } from "../../utils/RoleEnum";
 import { MENU_CONFIG, filterMenuByRole } from "./MenuConfig";
 import getImageUrl from "../../services/GetImage";
 import { type MenuItem, Images, Icons } from "./MenuConfig";

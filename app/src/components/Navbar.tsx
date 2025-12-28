@@ -18,7 +18,7 @@ import {
   faClockRotateLeft,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
-import { UserRole, UserRoleTH } from "../utils/role.enum";
+import { UserRole, UserRoleTH } from "../utils/RoleEnum";
 import Logo from "../assets/images/navbar/Logo.png";
 import LogoGiag from "../assets/images/navbar/logo giga.png";
 import getImageUrl from "../services/GetImage";

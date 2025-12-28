@@ -36,38 +36,38 @@ export class UsersController {
 
 
 
-updateMyProfile = async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user;
+// updateMyProfile = async (req: Request, res: Response) => {
+//   try {
+//     const user = (req as any).user;
 
-    const userId = Number(user?.us_id || user?.id || user?.sub);
-       console.log("FILE:", req.file);
-    console.log("BODY:", req.body);
+//     const userId = Number(user?.us_id || user?.id || user?.sub);
+//        console.log("FILE:", req.file);
+//     console.log("BODY:", req.body);
 
 
-    if (!userId || isNaN(userId)) {
-      return res.status(401).json({ message: "ไม่พบข้อมูลผู้ใช้ในระบบ" });
-    }
+//     if (!userId || isNaN(userId)) {
+//       return res.status(401).json({ message: "ไม่พบข้อมูลผู้ใช้ในระบบ" });
+//     }
 
-    const validatedBody = updateMyProfilePayload.parse(req.body);
-    const imagePath = req.file ? req.file.filename : null;
+//     const validatedBody = updateMyProfilePayload.parse(req.body);
+//     const imagePath = req.file ? req.file.filename : null;
 
-    await usersService.updateProfile(userId, validatedBody, imagePath);
+//     await usersService.updateProfile(userId, validatedBody, imagePath);
 
-    const updatedProfile = await usersService.getProfile(userId);
+//     const updatedProfile = await usersService.getProfile(userId);
 
-    return res.status(200).json({
-      message: "Updated successfully",
-      data: updatedProfile
-    });
+//     return res.status(200).json({
+//       message: "Updated successfully",
+//       data: updatedProfile
+//     });
 
-  } catch (error: any) {
-    console.error("Update Error:", error);
-    if (!res.headersSent) {
-      return res.status(500).json({ message: error.message });
-    }
-  }
-};
+//   } catch (error: any) {
+//     console.error("Update Error:", error);
+//     if (!res.headersSent) {
+//       return res.status(500).json({ message: error.message });
+//     }
+//   }
+// };
 
 updatePassword = async (req: Request, res: Response) => {
     try {

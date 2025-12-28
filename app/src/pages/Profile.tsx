@@ -159,13 +159,21 @@ const fetchProfile = async () => {
 const handleSaveProfile = async () => {
     try {
       const formData = new FormData();
-formData.append('us_phone', profileData.us_phone);
-if (selectedFile) {
-    // ต้องเป็น 'images' ให้ตรงกับที่ระบุใน Router
-    formData.append('images', selectedFile); 
-}
       
-      await usersService.updateProfile(formData);
+      // 1. ใส่ข้อมูลที่จะอัปเดต (ตรวจสอบ Key ให้ตรงกับ EditAccountSchema)
+      formData.append('us_phone', profileData.us_phone);
+      formData.append('us_firstname', profileData.us_firstname);
+      formData.append('us_lastname', profileData.us_lastname);
+      formData.append('us_email', profileData.us_email);
+      
+      // 2. ส่งรูปภาพโดยใช้ Key 'us_images' ตามที่ Router เพื่อนกำหนด
+      if (selectedFile) {
+          formData.append('us_images', selectedFile); 
+      }
+      
+      // 3. เรียก Service โดยส่ง ID ไปด้วย (เพื่อแก้ปัญหา id: NaN)
+      // สมมติ userId เก็บอยู่ใน profileData.us_id
+      await usersService.updateProfile(profileData.us_id, formData);
       
       push({ tone: "success", message: "บันทึกข้อมูลสำเร็จ!" });
       await fetchProfile(); 

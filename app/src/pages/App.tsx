@@ -20,6 +20,7 @@ import EditCart from "./EditCart";
 import RoleRoute from "../middlewares/RoleRoute";
 import { ROLE_BASE_PATH, type Role } from "../constants/rolePath";
 import RolePathRedirect from "../components/RolePathRedirect";
+import Profile from "./Profile";
 
 function App() {
   const ADMIN_ONLY: Role[] = ["ADMIN"];
@@ -33,6 +34,7 @@ function App() {
       <Route path="requests" element={<Requests />} />
       <Route path="list-devices/cart" element={<Cart />} />
       <Route path="list-devices/cart/edit" element={<EditCart />} />
+      <Route path="profile" element={<Profile />} />
     </>
   );
 

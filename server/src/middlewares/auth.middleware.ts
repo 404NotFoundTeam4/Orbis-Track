@@ -38,3 +38,5 @@ export async function authMiddleware(req: authSchema.AuthRequest, res: Response,
         throw new HttpError(HttpStatus.UNAUTHORIZED, "Invalid token");
     }
 }
+
+export { verifyToken };

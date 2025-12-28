@@ -106,7 +106,7 @@ export const accessoriesSchema = z.object({
     acc_name: z.string().min(1).max(120),
     acc_quantity: z.coerce.number().int().positive().nullable().optional(),
     acc_de_id: z.coerce.number().int().positive().nullable().optional(), // เพิ่ม acc_de_id
-});
+
 
 // Schema สำหรับ response ของ list cart item
     created_at: z.date().nullable(),

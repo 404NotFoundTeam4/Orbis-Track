@@ -61,7 +61,7 @@ const Button: React.FC<ButtonProps> = ({
     confirm:
       "bg-[#52C41A] text-white hover:bg-green-700 active:bg-green-600",
 
-    /* ✅ CANCEL VARIANT */
+    /* CANCEL VARIANT */
     cancel:
       "bg-[#E5E7EB] text-black hover:bg-[#D1D5DB] active:bg-[#9CA3AF]",
   };

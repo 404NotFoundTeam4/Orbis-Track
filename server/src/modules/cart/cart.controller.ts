@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
-import { CartItemSchema, idParamSchema, CartItemListResponse, createBorrowTicketPayload } from "./cart.schema.js";
+import {
+  CartItemSchema,
+  idParamSchema,
+  CartItemListResponse,
+  createBorrowTicketPayload,
+} from "./cart.schema.js";
 import { cartsService } from "./cart.service.js";
 
 /**
@@ -43,24 +48,32 @@ export class CartController extends BaseController {
     return { message: result.message };
   }
 
+  /**
+   * Description : แก้ไขรายละเอียดอุปกรณ์ในรถเข็นตาม Cart Item ID
+   * Trigger     : เมื่อเรียก PUT /borrow/cart/:id
+   * Flow        :
+   *   1. รับ cti_id จาก params และข้อมูลที่แก้ไขจาก body
+   *   2. ส่งข้อมูลไปอัปเดตที่ cartsService
+   *   3. ส่งผลลัพธ์การอัปเดตกลับไปยัง Client
+   * Author      : Salsabeela Sa-e (San) 66160349
+   */
   async updateCartItem(ctx: any) {
-  const { params, body } = ctx;
+    const { params, body } = ctx;
 
-  const updated = await cartsService.updateCartItemById(params, body);
+    const updated = await cartsService.updateCartItemById(params, body);
 
-  return {
-    success: true,
-    message: "Update cart item successfully",
-    data: updated,
-  };
-}
-
+    return {
+      success: true,
+      message: "Update cart item successfully",
+      data: updated,
+    };
+  }
 
   /**
-  * Description : สร้าง Borrow Return Ticket จากรายการอุปกรณ์ที่เลือกในรถเข็น
-  * Trigger : เมื่อเรียก POST /borrow/cart/:id
-  * Author : Nontapat Sinhum (Guitar) 66160104
-  */
+   * Description : สร้าง Borrow Return Ticket จากรายการอุปกรณ์ที่เลือกในรถเข็น
+   * Trigger : เมื่อเรียก POST /borrow/cart/:id
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
   async create(
     req: Request,
     res: Response,

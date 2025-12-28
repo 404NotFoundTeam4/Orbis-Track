@@ -5,18 +5,22 @@
 
 import api from "../api/axios.js"; // ต้องมี axios.d.ts สำหรับ TS
 
-// Envelope ตาม Backend
+/**
+ * Description : โครงสร้าง Envelope มาตรฐานที่ Backend ส่งกลับมา
+ * ใช้ครอบข้อมูล response จริง
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ */
 type ApiEnvelope<T> = {
   success?: boolean;
   message?: string;
   data: T;
 };
 
-// -------------------------
-// TYPE RESULT FROM BACKEND
-// -------------------------
+export type CreateBorrowTicketPayload = {
+    cartItemId: number;
+};
 
-// 1) Type ของ Cart Item แต่ละชิ้น
+// Type ของ Cart Item แต่ละชิ้น
 export type CartItem = {
   cti_id: number;
   cti_us_name: string;
@@ -30,12 +34,12 @@ export type CartItem = {
   cti_dec_id: number | null;
 };
 
-// 2) Type ของผลลัพธ์จาก GET /borrow/cart/:id
+// Type ของผลลัพธ์จาก GET /borrow/cart/:id
 export type CartItemListResponse = {
   itemData: CartItem[];
 };
 
-// 3) Type ของ DELETE response
+// Type ของ DELETE response
 export type DeleteCartItemResponse = {
   message: string;
 };

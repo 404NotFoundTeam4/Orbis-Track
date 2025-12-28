@@ -4,25 +4,16 @@ import {
   idParamSchema,
   cartItemSchema,
   cartItemListResponseSchema,
-  updateCartItemSchema, // 👈 เพิ่ม
+  updateCartItemSchema, // 
 } from "./cart.schema.js";
+import { idParamSchema, cartItemSchema, cartItemListResponseSchema, createBorrowTicketPayload } from "./cart.schema.js";
 
 const cartsController = new CartController();
 const router = new Router(undefined, "/borrow/cart");
 
-/**
- * GET: ดึงรายการ cart ตาม ct_id
- */
-router.getDoc(
-  "/:id",
-  {
-    tag: "Carts",
-    res: cartItemListResponseSchema,
-    auth: true,
-    params: idParamSchema,
-  },
-  cartsController.getCartItemList
-);
+router.getDoc("/:id", { tag: "Carts", res: cartItemListResponseSchema, auth: true, params: idParamSchema }, cartsController.getCartItemList);
+router.deleteDoc("/:id", { tag: "Carts", res: cartItemSchema, auth: true, params: idParamSchema }, cartsController.deleteCartItem);
+router.postDoc("/:id", { tag: "Carts", params: idParamSchema, body: createBorrowTicketPayload, auth: true }, cartsController.create);
 
 /**
  * PATCH: แก้ไข cart item ตาม cti_id

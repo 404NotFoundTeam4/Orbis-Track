@@ -17,6 +17,7 @@ import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword";
 import { Cart } from "./Cart";
 import EditCart from "./EditCart";
+import ListDevices from "./ListDevices";
 
 function App() {
   return (
@@ -40,6 +41,9 @@ function App() {
                 path="/administrator/account-management"
                 element={<Users />}
               />
+              <Route path="/list-devices/cart" element={<Cart />}/>
+              {/* <Route path="/list-devices/cart/edit" element={<EditCart />}/> */}
+              <Route path="/users" element={<Users />} />
               <Route
                 path="/administrator/departments-management"
                 element={<Departments />}
@@ -64,6 +68,8 @@ function App() {
                * Author: Salsabeela Sa-e (San) 66160349
                */}
               <Route path="/list-devices/cart/edit" element={<EditCart />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/list-devices" element={<ListDevices />} />
             </Route>
           </Route>
         </Routes>

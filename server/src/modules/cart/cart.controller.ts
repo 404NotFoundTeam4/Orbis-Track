@@ -1,14 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
-import { CartItemSchema, idParamSchema, CartItemListResponse } from "./cart.schema.js";
+import { CartItemSchema, idParamSchema, CartItemListResponse, createBorrowTicketPayload } from "./cart.schema.js";
 import { cartsService } from "./cart.service.js";
 
+/**
+ * Description : Controller สำหรับจัดการ Cart และการส่งคำร้องขอยืมอุปกรณ์
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ */
 export class CartController extends BaseController {
   constructor() {
     super();
   }
 
+  /**
+   * Description : ดึงรายการอุปกรณ์ทั้งหมดในรถเข็นตาม Cart ID
+   * Trigger : เมื่อเรียก GET /borrow/cart/:id
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
   async getCartItemList(
     req: Request,
     res: Response,
@@ -19,6 +28,11 @@ export class CartController extends BaseController {
     return { data: cartItems };
   }
 
+  /**
+   * Description : ลบอุปกรณ์ออกจากรถเข็นตาม Cart Item ID
+   * Trigger : เมื่อเรียก DELETE /borrow/cart/:id
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
   async deleteCartItem(
     req: Request,
     res: Response,
@@ -42,4 +56,21 @@ export class CartController extends BaseController {
 }
 
 
+  /**
+  * Description : สร้าง Borrow Return Ticket จากรายการอุปกรณ์ที่เลือกในรถเข็น
+  * Trigger : เมื่อเรียก POST /borrow/cart/:id
+  * Author : Nontapat Sinhum (Guitar) 66160104
+  */
+  async create(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse> {
+    const params = createBorrowTicketPayload.parse(req.body);
+    // เรียกใช้งาน service เพื่อบันทึกข้อมูลลงฐานข้อมูล
+    const result = await cartsService.createBorrowTecket(params);
+
+    // คืนค่าบัญชีผู้ใช้ใหม่
+    return { data: result };
+  }
 }

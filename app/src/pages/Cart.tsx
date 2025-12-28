@@ -6,8 +6,25 @@ import { Link } from "react-router-dom";
 import api from "../api/axios.js";
 import CartService from "../services/CartService";
 
+/**
+ * Description : หน้า Cart สำหรับจัดการรายการอุปกรณ์ที่ผู้ใช้เลือกยืม
+ * Feature :
+ * - แสดงรายการอุปกรณ์ในรถเข็น
+ * - เลือก / ยกเลิกเลือกอุปกรณ์
+ * - เพิ่ม–ลดจำนวนอุปกรณ์ตามจำนวนที่พร้อมใช้งาน
+ * - ลบอุปกรณ์ (รายชิ้น / หลายรายการ)
+ * - ส่งคำร้องขอยืมอุปกรณ์
+ * Related API :
+ * - CartService.getCartItems()
+ * - CartService.deleteCartItem()
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ */
+
 type ModalType = "danger" | "success" | "warning" | null;
 
+/**
+ * Description : โครงสร้างข้อมูลของอุปกรณ์ในรถเข็น
+ */
 interface CartItem {
   id: number;
   name: string;
@@ -25,13 +42,24 @@ interface CartItem {
 }
 
 export const Cart = () => {
-
-  const loginData = sessionStorage.getItem("User") || localStorage.getItem("User");
+  /**
+   * Description : ดึงข้อมูลผู้ใช้จาก sessionStorage / localStorage
+   */
+  const loginData =
+    sessionStorage.getItem("User") || localStorage.getItem("User");
   const user = loginData ? JSON.parse(loginData) : null;
   const us_id = user?.us_id || user?.state?.user?.us_id || null;
 
+  /**
+   * Description : State เก็บรายการอุปกรณ์ในรถเข็น
+   */
   const [items, setItems] = useState<CartItem[]>([]);
 
+  /**
+   * Description : โหลดข้อมูลรถเข็นของผู้ใช้จากระบบ
+   * Trigger : เมื่อ component ถูก mount
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
   useEffect(() => {
     const loadCart = async () => {
       try {
@@ -47,8 +75,8 @@ export const Cart = () => {
           image: d.device?.de_images ?? "/images/default.png",
           section: d.de_sec_name ? d.de_sec_name.trim().split(" ").pop() : "-",
           availability: d.dec_availability,
-          borrowDate: d.cti_start_date ?? "ยังไม่กำหนด",
-          returnDate: d.cti_end_date ?? "ยังไม่กำหนด",
+          borrowDate: formatThaiDateTime(d.cti_start_date) ?? "ยังไม่กำหนด",
+          returnDate: formatThaiDateTime(d.cti_end_date) ?? "ยังไม่กำหนด",
           readyQuantity: d.dec_ready_count ?? 0,
           maxQuantity: d.dec_count ?? 0,
         }));
@@ -62,13 +90,19 @@ export const Cart = () => {
     loadCart();
   }, []);
 
+  /** State สำหรับจัดการการเลือกอุปกรณ์ */
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const { push } = useToast();
 
+  /** State สำหรับ Modal */
   const [modalType, setModalType] = useState<ModalType>(null);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [selectDeleteMode, setSelectDeleteMode] = useState(false);
 
+  /**
+   * Description : คำนวณจำนวนอุปกรณ์รวมที่ถูกเลือก
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
   const totalItems = items
     .filter((i) => selectedItems.includes(i.id))
     .reduce((sum, i) => sum + i.qty, 0);
@@ -88,6 +122,9 @@ export const Cart = () => {
     }
   };
 
+  /**
+   * Description : เปิด Modal ยืนยันการลบอุปกรณ์
+   */
   const openDeleteModal = (id: number) => {
     setItemToDelete(id);
     setModalType("danger");
@@ -98,15 +135,45 @@ export const Cart = () => {
     setModalType("danger");
   };
 
-  // --- SUBMIT MODAL LOGIC ---
+  /**
+   * Description : เปิด Modal ยืนยันการส่งคำร้อง
+   * Constraint : ต้องมีรายการที่ถูกเลือกอย่างน้อย 1 รายการ
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
   const openSubmitModal = () => {
     if (selectedItems.length > 0) setModalType("success");
   };
 
+  /**
+   * Description : ยืนยันการส่งคำร้องขอยืมอุปกรณ์
+   */
   const handleConfirmSubmit = async () => {
-    push({ tone: "confirm", message: "ส่งคำร้องสำเร็จ!" });
+    // push({ tone: "confirm", message: "ส่งคำร้องสำเร็จ!" });
+    try {
+      // ส่งคำร้องตามรายการที่เลือก
+      await Promise.all(
+        selectedItems.map((cartItemId) =>
+          CartService.createBorrowTicket(us_id, {
+            cartItemId,
+          })
+        )
+      );
+
+      push({ tone: "success", message: "ส่งคำร้องสำเร็จ!" });
+
+      // ล้าง state หลังส่งสำเร็จ
+      setSelectedItems([]);
+      closeModal();
+    } catch (err) {
+      console.error("ส่งคำร้องไม่สำเร็จ:", err);
+      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง" });
+    }
   };
 
+  /**
+   * Description : ยืนยันการลบอุปกรณ์ออกจากรถเข็น
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
   const handleConfirmDelete = async () => {
     try {
       if (selectDeleteMode) {
@@ -135,13 +202,19 @@ export const Cart = () => {
     }
   };
 
+  /**
+   * Description : ปิด Modal และ reset state ที่เกี่ยวข้อง
+   */
   const closeModal = () => {
     setModalType(null);
     setItemToDelete(null);
     setSelectDeleteMode(false);
   };
 
-  // --- ITEM QUANTITY & SELECTION LOGIC ---
+  /**
+   * Description : เพิ่มจำนวนอุปกรณ์
+   * Constraint : ไม่เกิน readyQuantity
+   */
   const increment = (id: number) => {
     setItems((prev) =>
       prev.map((i) =>
@@ -150,12 +223,20 @@ export const Cart = () => {
     );
   };
 
+  /**
+   * Description : ลดจำนวนอุปกรณ์
+   * Constraint : จำนวนต่ำสุดคือ 1
+   */
   const decrement = (id: number) => {
     setItems((prev) =>
       prev.map((i) => (i.id === id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i))
     );
   };
 
+  /**
+   * Description : เลือก / ยกเลิกเลือกอุปกรณ์
+   * Constraint : อุปกรณ์ที่ไม่พร้อมใช้งานไม่สามารถเลือกได้
+   */
   const toggleSelect = (id: number) => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
@@ -207,6 +288,27 @@ export const Cart = () => {
       showRing: true,
     };
   }
+
+  /**
+   * Description : แปลง ISO Date string เป็นรูปแบบ วัน/เดือน/ปี พ.ศ. + เวลา
+   * Input  : isoDate (string | null)
+   * Output : string
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   */
+  const formatThaiDateTime = (isoDate: string | null): string => {
+    if (!isoDate) return "ยังไม่กำหนด";
+
+    const date = new Date(isoDate);
+
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = (date.getFullYear() + 543).toString(); // แปลงเป็น พ.ศ.
+
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+
+    return `${day}/${month}/${year}   เวลา : ${hours}:${minutes}`;
+  };
 
   return (
     <div className="w-full min-h-screen flex flex-row p-4 gap-6">

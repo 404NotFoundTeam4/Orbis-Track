@@ -28,4 +28,18 @@ export class CartController extends BaseController {
     const result = await cartsService.deleteCartItemById(id);
     return { message: result.message };
   }
+
+  async updateCartItem(ctx: any) {
+  const { params, body } = ctx;
+
+  const updated = await cartsService.updateCartItemById(params, body);
+
+  return {
+    success: true,
+    message: "Update cart item successfully",
+    data: updated,
+  };
+}
+
+
 }

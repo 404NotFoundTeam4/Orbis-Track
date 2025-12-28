@@ -35,6 +35,7 @@ export const Cart = () => {
   useEffect(() => {
     const loadCart = async () => {
       try {
+        
         const res = await CartService.getCartItems(us_id);
         const mapped: CartItem[] = res.itemData.map((d: any) => ({
           id: d.cti_id,
@@ -233,9 +234,9 @@ export const Cart = () => {
           {selectedItemCount > 0 && (
             <button
               onClick={handleSelectDelete}
-              className="px-[15px] py-[6.4px] w-[114px] h-[46px] bg-[#FF4D4F] text-white rounded-full text-[18px] font-semibold hover:bg-[#D9363E] transition-colors"
+              className="px-[15px] py-[6.4px] w-[167px] h-[46px] bg-[#FF4D4F] text-white rounded-full text-[18px] font-semibold hover:bg-[#D9363E] transition-colors"
             >
-              ลบ
+              ลบคำขอยืม
             </button>
           )}
         </div>
@@ -282,6 +283,7 @@ export const Cart = () => {
                   </div>
                   <Link
                     to="/list-devices/cart/edit"
+                     state={{ cti_id: item.id }}
                     className="mt-1 text-[#096DD9] text-sm underline hover:text-[#0050B3] transition-colors"
                   >
                     แก้ไขรายละเอียด
@@ -378,7 +380,6 @@ export const Cart = () => {
               className="w-full bg-[#40A9FF] text-white py-3 rounded-full text-center text-base font-semibold hover:bg-[#0050B3] transition-colors disabled:bg-gray-400"
               disabled={selectedItemCount === 0}
             >
-              ส่งคำร้อง ({selectedItemCount})
             </button>
           </div>
         </div>
@@ -389,6 +390,7 @@ export const Cart = () => {
         <AlertDialog
           open={modalType !== null}
           onOpenChange={closeModal}
+          width={786}
           {...modalProps}
         />
       )}

@@ -5,7 +5,7 @@ import Input from "./Input"
 import QuantityInput from "./QuantityInput"
 import { Icon } from "@iconify/react";
 import TimePickerField from "./TimePickerField";
-
+import { useNavigate } from "react-router-dom";
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
     id: number;
@@ -37,6 +37,8 @@ interface BorrowFormData {
     returnTime: string;
 }
 
+
+
 // โครงสร้าง props ที่ต้องส่งมาเมื่อเรียกใช้งาน
 interface BorrowEquipmentModalProps {
     mode: "borrow-equipment" | "edit-detail";
@@ -53,6 +55,7 @@ interface BorrowEquipmentModalProps {
 }
 
 const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddToCart }: BorrowEquipmentModalProps) => {
+    const navigate = useNavigate(); 
     // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
     const initialForm: BorrowFormData = {
         borrower: defaultValue?.borrower ?? "",
@@ -210,31 +213,43 @@ const BorrowEquipmentModal = ({ mode, defaultValue, equipment, onSubmit, onAddTo
                         />
                     </div>
                 </div>
-                {/* ปุ่ม */}
-                <div className={`flex ${mode === "edit-detail" ? "justify-end" : "gap-[20px]"}`}>
-                    {
-                        // ถ้าเป็นยืมอุปกรณ์แสดงเพิ่มไปยังรถเข็น
-                        mode === "borrow-equipment" && (
-                            <Button
-                                type="button"
-                                className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px]"
-                                variant="outline"
-                                onClick={handleAddToCard}>
-                                <Icon
-                                    icon="mdi-light:cart"
-                                    width="36"
-                                    height="36"
-                                />
-                                เพิ่มไปยังรถเข็น
-                            </Button>
-                        )
-                    }
-                    <Button
-                        type="submit"
-                        className="!w-[155px] !h-[46px]"
-                        variant="primary">
-                        {mode === "borrow-equipment" ? "ส่งคำร้อง" : "บันทึก"}
-                    </Button>
+                {/* ปุ่มด้านล่าง */}
+<div
+  className={`flex ${
+    mode === "edit-detail" ? "justify-end" : ""
+  } gap-[20px]`}
+>
+  {/* เพิ่มไปยังรถเข็น (เฉพาะ borrow-equipment) */}
+  {mode === "borrow-equipment" && (
+    <Button
+      type="button"
+      className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px]"
+      variant="outline"
+      onClick={handleAddToCard}
+    >
+      <Icon icon="mdi-light:cart" width="36" height="36" />
+      เพิ่มไปยังรถเข็น
+    </Button>
+  )}
+
+  {/* ยกเลิก */}
+  <Button
+    type="button"
+    variant="cancel"
+    className="!w-[112px] !h-[46px]"
+    onClick={() => navigate("/list-devices/cart")}
+  >
+    ยกเลิก
+  </Button>
+
+  {/* ปุ่มบันทึก / ส่งคำร้อง */}
+  <Button
+    type="submit"
+    variant="primary"
+    className="!w-[155px] !h-[46px]"
+  >
+    {mode === "borrow-equipment" ? "ส่งคำร้อง" : "บันทึกการแก้ไข"}
+  </Button>
                 </div>
             </form>
             {/* การ์ดรายละเอียดอุปกรณ์ */}

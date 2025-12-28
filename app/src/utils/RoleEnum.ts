@@ -4,7 +4,7 @@ export enum UserRole {
   HOS = "HOS",
   TECHNICAL = "TECHNICAL",
   STAFF = "STAFF",
-  EMPLOYEE = "แ",
+  EMPLOYEE = "EMPLOYEE",
 }
 
 export const UserRoleTH: Record<UserRole, string> = {
@@ -13,6 +13,7 @@ export const UserRoleTH: Record<UserRole, string> = {
   [UserRole.HOS]: "หัวหน้าฝ่ายย่อย",
   [UserRole.TECHNICAL]: "ช่างเทคนิค",
   [UserRole.STAFF]: "เจ้าหน้าที่",
-  [UserRole.EMPLOYEE]: "ผู้ใช้ทั่วไป",
+  [UserRole.EMPLOYEE]: "พนักงาน",
   
 };
+  

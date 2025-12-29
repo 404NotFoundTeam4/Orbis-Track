@@ -4,8 +4,8 @@ import { JobType, JobPayloads } from "./job.types.js";
 
 /**
  * Description: ตัวส่งคิวแบบ Generic (Pro way)
- * - ตัวเดียวรวบรวมทุก Job ไม่ต้องแยกไฟล์ Queue
- * Author : Pakkapon Chomchoey (Tonnam) 66160080
+ * Note      : ตัวเดียวรวบรวมทุก Job ไม่ต้องแยกไฟล์ Queue
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 class JobDispatcher {
     private queue: Queue;
@@ -25,7 +25,11 @@ class JobDispatcher {
     }
 
     /**
-     * ส่งงานเข้าคิว
+     * Description: ส่งงานเข้าคิว
+     * Input     : type - ประเภทของ Job, payload - ข้อมูลสำหรับ Job, options - ตัวเลือกเพิ่มเติม
+     * Output    : Promise<Job> - Job ที่ถูกเพิ่มเข้าคิว
+     * Note      : รองรับ retry 3 ครั้ง แบบ exponential backoff
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
      */
     async dispatch<T extends JobType>(
         type: T,
@@ -36,7 +40,10 @@ class JobDispatcher {
     }
 
     /**
-     * สำหรับปิดระบบ
+     * Description: ปิดการเชื่อมต่อ Queue
+     * Input     : -
+     * Output    : Promise<void>
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
      */
     async close() {
         await this.queue.close();

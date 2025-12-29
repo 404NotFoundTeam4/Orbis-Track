@@ -7,6 +7,7 @@
  * Author: Pakkapon Chomchoey (Tonnam) 66160080
  */
 import api from "../api/axios";
+import type { DeviceChildChanges } from "../components/DeviceManageModal";
 
 // Types based on backend borrow-return schema
 export interface TicketRequester {
@@ -18,6 +19,7 @@ export interface TicketRequester {
 }
 
 export interface TicketDeviceSummary {
+  deviceId: number;
   name: string;
   serial_number: string;
   description: string | null;
@@ -175,13 +177,21 @@ export interface RejectTicketPayload {
   rejectReason: string;
 }
 
+export interface GetDeviceAvailablePayload {
+  deviceId: number;
+  deviceChildIds: number[] | undefined;
+  startDate: string;
+  endDate: string;
+}
+
 // Tickets API Service
 export const ticketsService = {
   /**
    * Description: ดึงรายการ Borrow-Return Tickets
-   * Input: params - query parameters
-   * Output: Promise<PaginatedResult<TicketItem>>
-   * Endpoint: GET /tickets/borrow-return
+   * Input     : params - query parameters
+   * Output    : Promise<PaginatedResult<TicketItem>>
+   * Endpoint  : GET /tickets/borrow-return
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   getTickets: async (
     params?: GetTicketsParams,
@@ -192,9 +202,10 @@ export const ticketsService = {
 
   /**
    * Description: ดึงรายละเอียด Ticket ตาม ID
-   * Input: id - ticket ID
-   * Output: Promise<TicketDetail>
-   * Endpoint: GET /tickets/borrow-return/:id
+   * Input     : id - ticket ID
+   * Output    : Promise<TicketDetail>
+   * Endpoint  : GET /tickets/borrow-return/:id
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   getTicketById: async (id: number): Promise<TicketDetail> => {
     const { data } = await api.get(`/tickets/borrow-return/${id}`);
@@ -203,9 +214,10 @@ export const ticketsService = {
 
   /**
    * Description: อนุมัติ Ticket ตาม ID และ Stage
-   * Input: payload - { ticketId, currentStage }
-   * Output: Promise<void>
-   * Endpoint: PATCH /tickets/borrow-return/:id/approve
+   * Input     : payload - { ticketId, currentStage }
+   * Output    : Promise<void>
+   * Endpoint  : PATCH /tickets/borrow-return/:id/approve
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   approveTicket: async (payload: ApproveTicketPayload): Promise<void> => {
     const { ticketId, currentStage, pickupLocation } = payload;
@@ -215,11 +227,56 @@ export const ticketsService = {
     });
   },
 
+  /**
+   * Description: ปฏิเสธ Ticket ตาม ID พร้อมเหตุผล
+   * Input     : payload - { ticketId, currentStage, rejectReason }
+   * Output    : Promise<void>
+   * Endpoint  : PATCH /tickets/borrow-return/:id/reject
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   rejectTicket: async (payload: RejectTicketPayload): Promise<void> => {
     const { ticketId, currentStage, rejectReason } = payload;
     await api.patch(`/tickets/borrow-return/${ticketId}/reject`, {
       currentStage,
       rejectReason,
     });
+  },
+
+  /**
+   * Description: ดึงรายการ device childs ที่ว่างสำหรับเพิ่มเข้า ticket
+   * Input     : payload - { deviceId, deviceChildIds, startDate, endDate }
+   * Output    : Promise<TicketDevice[]>
+   * Endpoint  : GET /tickets/borrow-return/device-available
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  getDeviceAvailable: async (
+    payload: GetDeviceAvailablePayload,
+  ): Promise<TicketDevice[]> => {
+    const { deviceId, deviceChildIds, startDate, endDate } = payload;
+    // console.log(payload);
+    const response = await api.get("/tickets/borrow-return/device-available", {
+      params: { deviceId, deviceChildIds, startDate, endDate },
+      paramsSerializer: {
+        indexes: null,
+      },
+    });
+    return response.data.data || [];
+  },
+
+  /**
+   * Description: จัดการ device childs ใน ticket (เพิ่ม/ลบ/อัปเดตสถานะ)
+   * Input     : ticketId, payload - DeviceChildChanges { devicesToAdd, devicesToRemove, devicesToUpdate }
+   * Output    : Promise<void>
+   * Endpoint  : PATCH /tickets/borrow-return/:id/manage-device-childs
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  manageDeviceChildsInTicket: async (
+    ticketId: number,
+    payload: DeviceChildChanges,
+  ): Promise<void> => {
+    await api.patch(
+      `/tickets/borrow-return/${ticketId}/manage-device-childs`,
+      payload,
+    );
   },
 };

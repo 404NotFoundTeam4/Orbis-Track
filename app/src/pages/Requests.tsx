@@ -88,7 +88,7 @@ const Requests = () => {
   }>({
     title: "",
     description: "",
-    onConfirm: async () => { },
+    onConfirm: async () => {},
     tone: "success",
   });
 
@@ -234,7 +234,17 @@ const Requests = () => {
 
   // Socket Listeners
   useEffect(() => {
+    /**
+     * Description: รีเฟรชรายการ tickets เมื่อได้รับ event จาก socket
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
     const onRefreshRequest = () => fetchTickets();
+
+    /**
+     * Description: ลบ ticket detail ออกจาก cache และรีเฟรช tickets เมื่อ notification dismissed
+     * Input     : payload { ticketId: number }
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
     const onNotificationDismissed = (payload: { ticketId: number }) => {
       const { ticketId } = payload;
       setTicketDetails((prev) => {
@@ -245,12 +255,30 @@ const Requests = () => {
       fetchTickets();
     };
 
+    /**
+     * Description: Refetch ticket detail เมื่อมีการเปลี่ยนแปลง devices ใน ticket
+     * Input     : payload { ticketId: number }
+     * Note      : ดึงข้อมูลใหม่จาก API แทนที่จะล้าง cache เพื่อให้ UI อัปเดตทันที
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
+    const onTicketDevicesUpdated = async (payload: { ticketId: number }) => {
+      const { ticketId } = payload;
+      try {
+        const detail = await ticketsService.getTicketById(ticketId);
+        setTicketDetails((prev) => ({ ...prev, [ticketId]: detail }));
+      } catch (error) {
+        console.error(`Failed to refetch ticket detail ${ticketId}:`, error);
+      }
+    };
+
     socketService.on("REFRESH_REQUEST_PAGE", onRefreshRequest);
     socketService.on("TICKET_PROCESSED", onNotificationDismissed);
+    socketService.on("TICKET_DEVICES_UPDATED", onTicketDevicesUpdated);
 
     return () => {
       socketService.off("REFRESH_REQUEST_PAGE", onRefreshRequest);
       socketService.off("TICKET_PROCESSED", onNotificationDismissed);
+      socketService.off("TICKET_DEVICES_UPDATED", onTicketDevicesUpdated);
     };
   }, [fetchTickets]);
 

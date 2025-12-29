@@ -10,11 +10,20 @@
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
-import type { TicketItem, TicketDetail } from "../services/TicketsService";
+import {
+  type TicketItem,
+  type TicketDetail,
+  ticketsService,
+} from "../services/TicketsService";
 import Button from "./Button";
 import { Icon } from "@iconify/react";
 import getImageUrl from "../services/GetImage";
 import DeviceListModal from "./DeviceListModal";
+import DeviceManageModal, {
+  type DeviceChildChanges,
+} from "./DeviceManageModal";
+import type { TicketDevice } from "../services/TicketsService";
+import { useToast } from "./Toast";
 
 interface RequestItemProps {
   ticket: TicketItem;
@@ -28,6 +37,11 @@ interface RequestItemProps {
   onPickupLocationChange?: (id: number, value: string) => void;
   isInvalid?: boolean;
   expandTrigger?: number;
+  onManage?: (
+    ticketId: number,
+    devices: TicketDevice[],
+    changes: DeviceChildChanges,
+  ) => void;
 }
 
 // Status display configuration
@@ -59,6 +73,12 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   // },
 };
 
+/**
+ * Description: ตรวจสอบว่าลำดับปัจจุบันเป็นลำดับสุดท้ายหรือไม่ (ใช้สำหรับ Timeline)
+ * Input     : currentStage (number | null), stageLength (number) - ลำดับปัจจุบันและจำนวนลำดับทั้งหมด
+ * Output    : boolean - true ถ้าเป็นลำดับสุดท้าย
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 const checkLastStage = (
   currentStage: number | null | undefined,
   stageLength: number,
@@ -116,6 +136,12 @@ const formatFullDateTime = (dateStr: string | null): string => {
   return `${day} / ${month} / ${year} | ${time} น.`;
 };
 
+/**
+ * Description: แปลงวันที่เวลาสำหรับแสดงเวลาอัปเดต (D MMM YYYY HH:MM น.)
+ * Input     : dateStr (string | null) - วันที่จาก Backend
+ * Output    : string - รูปแบบวันที่เวลาภาษาไทย
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 const formatUpdateByDateTime = (dateStr: string | null): string => {
   if (!dateStr || dateStr === "-") return "-";
   const date = new Date(dateStr);
@@ -142,12 +168,21 @@ const RequestItem = ({
   onPickupLocationChange,
   isInvalid,
   expandTrigger,
+  onManage,
 }: RequestItemProps) => {
+  const { push } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
   const getStepTicket = () => {
     return ticketDetail?.status;
+  };
+
+  const manageButton = () => {
+    // โหลด ticketDetail โดยไม่ expand UI
+    onExpand(ticket.id, false);
+    setIsManageModalOpen(true);
   };
 
   const toggleExpand = () => {
@@ -157,6 +192,18 @@ const RequestItem = ({
     if (newExpanded) {
       onExpand(ticket.id, true);
     }
+  };
+
+  const handleManageDeviceChilds = async (changes: DeviceChildChanges) => {
+    if (onManage && ticketDetail) {
+      onManage(ticket.id, ticketDetail.devices, changes);
+    }
+    await ticketsService.manageDeviceChildsInTicket(ticket.id, changes);
+    push({
+      tone: "confirm",
+      message: "บันทึกการเปลี่ยนแปลงแล้ว",
+    });
+    setIsManageModalOpen(false);
   };
 
   // Handle external force expansion (e.g. from notification navigation)
@@ -175,7 +222,7 @@ const RequestItem = ({
     "https://placehold.co/200x150/png?text=Device";
   const sectionName =
     typeof ticket.device_summary.section === "object" &&
-    ticket.device_summary.section
+      ticket.device_summary.section
       ? ticket.device_summary.section
       : ticket.device_summary.section || "-";
 
@@ -260,7 +307,7 @@ const RequestItem = ({
                 </Button>
                 <Button
                   variant="manage"
-                  onClick={() => onReject(ticket.id)}
+                  onClick={() => manageButton()}
                   style={{ width: 105, height: 44, padding: "5px 15px" }}
                 >
                   จัดการ
@@ -274,18 +321,16 @@ const RequestItem = ({
           <FontAwesomeIcon
             size="lg"
             icon={faChevronDown}
-            className={`text-[#000000] transition-transform duration-200 ${
-              isExpanded ? "transform rotate-180" : ""
-            }`}
+            className={`text-[#000000] transition-transform duration-200 ${isExpanded ? "transform rotate-180" : ""
+              }`}
           />
         </div>
       </div>
 
       {/* Expanded Details */}
       <div
-        className={`transition-all duration-300 ease-in-out ${
-          isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+          }`}
       >
         {isLoadingDetail ? (
           <div className="p-6 flex items-center justify-center">
@@ -310,20 +355,20 @@ const RequestItem = ({
                       คำขอถูกปฏิเสธ ({" "}
                       {ticketDetail.details.reject_date
                         ? new Date(
-                            ticketDetail.details.reject_date,
-                          ).toLocaleDateString("th-TH", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          }) +
-                          " - " +
-                          new Date(
-                            ticketDetail.details.reject_date,
-                          ).toLocaleTimeString("th-TH", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }) +
-                          " น."
+                          ticketDetail.details.reject_date,
+                        ).toLocaleDateString("th-TH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        }) +
+                        " - " +
+                        new Date(
+                          ticketDetail.details.reject_date,
+                        ).toLocaleTimeString("th-TH", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }) +
+                        " น."
                         : "-"}{" "}
                       )
                     </span>
@@ -345,8 +390,7 @@ const RequestItem = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
                           ? "border-[#4CAF50] text-[#4CAF50]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#4CAF50] text-[#4CAF50]"
@@ -357,18 +401,17 @@ const RequestItem = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "border-[#4CAF50] text-[#4CAF50]"
                                   : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       <Icon
                         icon="ic:sharp-check"
                         width="20"
                         height="20"
-                        // color="blue"
+                      // color="blue"
                       />
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${
-                        getStepTicket() === "PENDING"
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
                           ? "bg-[#4CAF50]"
                           : getStepTicket() === "APPROVED"
                             ? "bg-[#4CAF50]"
@@ -379,14 +422,13 @@ const RequestItem = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "bg-[#4CAF50]"
                                   : "bg-[#9E9E9E]"
-                      }`}
+                        }`}
                     ></div>
                   </div>
 
                   <div className="pt-2">
                     <span
-                      className={`text-sm font-medium ${
-                        getStepTicket() === "PENDING"
+                      className={`text-sm font-medium ${getStepTicket() === "PENDING"
                           ? " text-[#4CAF50]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#4CAF50]"
@@ -397,7 +439,7 @@ const RequestItem = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "text-[#4CAF50]"
                                   : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       ส่งคำร้อง
                     </span>
@@ -408,8 +450,7 @@ const RequestItem = ({
                 <div className="flex gap-3 relative group">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
                           ? "border-[#000000] text-[#000000]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#4CAF50] text-[#4CAF50]"
@@ -420,7 +461,7 @@ const RequestItem = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "border-[#FF4D4F] text-[#FF4D4F]"
                                   : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       {getStepTicket() !== "REJECTED" ? (
                         <Icon
@@ -433,8 +474,7 @@ const RequestItem = ({
                       )}
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${
-                        getStepTicket() === "PENDING"
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
                           ? "bg-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "bg-[#4CAF50]"
@@ -443,13 +483,12 @@ const RequestItem = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "bg-[#4CAF50]"
                                 : "bg-[#9E9E9E]"
-                      }`}
+                        }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`cursor-pointer ${
-                        getStepTicket() === "PENDING"
+                      className={`cursor-pointer ${getStepTicket() === "PENDING"
                           ? " text-[#000000]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#4CAF50]"
@@ -460,7 +499,7 @@ const RequestItem = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "border-[#FF4D4F] text-[#FF4D4F]"
                                   : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       อนุมัติ
                     </span>
@@ -488,15 +527,14 @@ const RequestItem = ({
                                   {/* Icon & Line */}
                                   <div className="flex flex-col items-center">
                                     <div
-                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                                        stage.status === "APPROVED"
+                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
                                           ? "border-[#4CAF50] text-[#4CAF50]"
                                           : stage.status === "REJECTED"
                                             ? "border-[#FF4D4F] text-[#FF4D4F]"
                                             : isNextApprover
                                               ? "border-[#000000] text-[#000000]"
                                               : "border-[#9E9E9E] text-[#9E9E9E]"
-                                      }`}
+                                        }`}
                                     >
                                       {stage.status === "REJECTED" ? (
                                         <Icon
@@ -515,11 +553,10 @@ const RequestItem = ({
                                     {/* Connecting Line - hide for last item */}
                                     {!isLast && (
                                       <div
-                                        className={`w-0.5 h-12 -my-1 ${
-                                          stage.status === "APPROVED"
+                                        className={`w-0.5 h-12 -my-1 ${stage.status === "APPROVED"
                                             ? "bg-[#4CAF50]"
                                             : "bg-[#9E9E9E]"
-                                        }`}
+                                          }`}
                                       ></div>
                                     )}
                                   </div>
@@ -528,21 +565,20 @@ const RequestItem = ({
                                     className={`${stage.status === "APPROVED" || stage.status === "REJECTED" ? "" : "pt-1"} ${!isLast ? "pb-3" : ""} `}
                                   >
                                     <span
-                                      className={`text-sm ${
-                                        stage.status === "APPROVED"
+                                      className={`text-sm ${stage.status === "APPROVED"
                                           ? "text-[#4CAF50]"
                                           : stage.status === "REJECTED"
                                             ? "text-[#FF4D4F]"
                                             : isNextApprover
                                               ? "text-[#000000]"
                                               : "text-[#9E9E9E]"
-                                      }`}
+                                        }`}
                                     >
                                       {stage.role_name}
                                       {stage.dept_name && ` ${stage.dept_name}`}
                                     </span>
                                     {stage.status === "APPROVED" ||
-                                    stage.status === "REJECTED" ? (
+                                      stage.status === "REJECTED" ? (
                                       <>
                                         <div
                                           className={`text-xs text-[#9E9E9E]`}
@@ -581,8 +617,7 @@ const RequestItem = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
                           ? "border-[#9E9E9E] text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#000000] text-[#000000]"
@@ -591,18 +626,17 @@ const RequestItem = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "border-[#4CAF50] text-[#4CAF50]"
                                 : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       <Icon
                         icon="material-symbols-light:devices-outline"
                         width="23"
                         height="23"
-                        // color="blue"
+                      // color="blue"
                       />
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${
-                        getStepTicket() === "PENDING"
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
                           ? "bg-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "bg-[#9E9E9E]"
@@ -611,13 +645,12 @@ const RequestItem = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "bg-[#4CAF50]"
                                 : "bg-[#9E9E9E]"
-                      }`}
+                        }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`${
-                        getStepTicket() === "PENDING"
+                      className={`${getStepTicket() === "PENDING"
                           ? " text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#000000]"
@@ -626,7 +659,7 @@ const RequestItem = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "text-[#4CAF50]"
                                 : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       กำลังใช้งาน
                     </span>
@@ -637,8 +670,7 @@ const RequestItem = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
                           ? "border-[#9E9E9E] text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#9E9E9E] text-[#9E9E9E]"
@@ -647,20 +679,19 @@ const RequestItem = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "border-[#4CAF50] text-[#4CAF50]"
                                 : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       <Icon
                         icon="streamline:return-2"
                         width="20"
                         height="20"
-                        // color="blue"
+                      // color="blue"
                       />
                     </div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`${
-                        getStepTicket() === "PENDING"
+                      className={`${getStepTicket() === "PENDING"
                           ? " text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#9E9E9E]"
@@ -669,7 +700,7 @@ const RequestItem = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "text-[#4CAF50]"
                                 : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       คืนอุปกรณ์
                     </span>
@@ -737,13 +768,13 @@ const RequestItem = ({
                   <div className="grid grid-cols-[140px_1fr] items-start">
                     <span className="text-[#000000] text-sm">รหัสอุปกรณ์</span>
                     <div className="grid grid-cols-3 gap-1.5 w-fit">
-                      {ticketDetail?.devices?.slice(0, 8).map((d, index) => (
+                      {ticketDetail?.devices?.slice(0, 8).map((device, index) => (
                         <span
-                          key={d.child_id || index}
+                          key={device.child_id || index}
                           className="bg-[#F0F0F0] border border-[#BFBFBF] px-1 py-0.5 mb-0 rounded-full text-[#636363] text-[11px] text-center w-[88px] truncate"
-                          title={d.asset_code}
+                          title={device.asset_code}
                         >
-                          {d.asset_code || "CH-001"}
+                          {device.asset_code || "CH-001"}
                         </span>
                       ))}
                       {ticketDetail?.devices && (
@@ -810,9 +841,9 @@ const RequestItem = ({
                     <span className="text-[#636363] text-sm">
                       {ticketDetail?.requester.us_phone
                         ? ticketDetail.requester.us_phone.replace(
-                            /(\d{3})(\d{3})(\d{4})/,
-                            "$1-$2-$3",
-                          )
+                          /(\d{3})(\d{3})(\d{4})/,
+                          "$1-$2-$3",
+                        )
                         : "000-000-0000"}
                     </span>
                   </div>
@@ -825,7 +856,7 @@ const RequestItem = ({
                     </span>
                   </div>
                   {ticketDetail?.accessories &&
-                  ticketDetail.accessories.length > 0 ? (
+                    ticketDetail.accessories.length > 0 ? (
                     ticketDetail.accessories.map((acc, index) => (
                       <div
                         key={acc.acc_id || index}
@@ -856,11 +887,10 @@ const RequestItem = ({
                       ticketDetail?.timeline?.length || 0,
                     ) && ticket.status === "PENDING" ? (
                       <textarea
-                        className={`w-[80%] h-[100px] p-3 bg-white border rounded-xl resize-none text-sm transition-all ${
-                          isInvalid
+                        className={`w-[80%] h-[100px] p-3 bg-white border rounded-xl resize-none text-sm transition-all ${isInvalid
                             ? "border-red-500 ring-1 ring-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.2)]"
                             : "border-[#BFBFBF] focus:border-[#40A9FF] focus:ring-1 focus:ring-[#40A9FF]"
-                        }`}
+                          }`}
                         placeholder="กรอกสถานที่รับอุปกรณ์ (เช่น ตึก A ชั้น 2)"
                         value={pickupLocation}
                         onChange={(e) =>
@@ -885,6 +915,18 @@ const RequestItem = ({
         isOpen={isDeviceModalOpen}
         onClose={() => setIsDeviceModalOpen(false)}
         devices={ticketDetail?.devices || []}
+      />
+
+      {/* Device Manage Modal */}
+      <DeviceManageModal
+        deviceSummary={ticket?.device_summary}
+        isOpen={isManageModalOpen}
+        onClose={() => setIsManageModalOpen(false)}
+        devices={ticketDetail?.devices || []}
+        ticketDate={ticketDetail?.details?.dates}
+        onConfirm={(_, changes) => {
+          handleManageDeviceChilds(changes);
+        }}
       />
     </div>
   );

@@ -76,8 +76,9 @@ export const useNotifications = ({
    */
   /**
    * Description: แปลงข้อความที่มี Tag สีให้เป็น React Nodes
-   * รองรับ: [green:...], [blue:...], [gray:...], [red:...] และ \n
-   * เช่น "สถานที่รับ : [blue:XXXXX]\nโปรดรับอุปกรณ์"
+   * Input     : desc (string) - ข้อความที่มี Tag เช่น [green:...], [blue:...]
+   * Output    : React.ReactNode - ข้อความที่แปลงเป็น JSX พร้อมสีแล้ว
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   const parseDescription = (desc: string): React.ReactNode => {
     if (!desc) return desc;
@@ -92,12 +93,12 @@ export const useNotifications = ({
       const parsedLine =
         parts.length === 1
           ? line
-          : parts.map((part, i) => {
+          : parts.map((part, partIndex) => {
             // parts pattern from split with groups: [text, color, content, text, color, content, ...]
-            // index i: 0 is text before, 1 is color, 2 is content, 3 is text after...
-            if (i % 3 === 1) {
-              const color = parts[i];
-              const content = parts[i + 1];
+            // index partIndex: 0 is text before, 1 is color, 2 is content, 3 is text after...
+            if (partIndex % 3 === 1) {
+              const color = parts[partIndex];
+              const content = parts[partIndex + 1];
               const colorMap: Record<string, string> = {
                 green: "#00AA1A",
                 blue: "#40A9FF",
@@ -106,7 +107,7 @@ export const useNotifications = ({
               };
               return (
                 <span
-                  key={`${lineIdx}-${i}`}
+                  key={`${lineIdx}-${partIndex}`}
                   style={{ color: colorMap[color] || "inherit" }}
                   className="font-bold"
                 >
@@ -114,7 +115,7 @@ export const useNotifications = ({
                 </span>
               );
             }
-            if (i % 3 === 2) return null; // Skip content as it's handled by color group
+            if (partIndex % 3 === 2) return null; // Skip content as it's handled by color group
             return part;
           });
 
@@ -149,10 +150,10 @@ export const useNotifications = ({
           await notificationService.markAsRead([notiId]);
           // Optimistic update
           setNotifications((prev) =>
-            prev.map((n) =>
-              n.id === notiId || (title && title === n.title) // Identify by ID or Title (fallback)
-                ? { ...n, isRead: true }
-                : n,
+            prev.map((notification) =>
+              notification.id === notiId || (title && title === notification.title)
+                ? { ...notification, isRead: true }
+                : notification,
             ),
           );
           setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -179,6 +180,9 @@ export const useNotifications = ({
 
   /**
    * Description: จัดการเมื่อผู้ใช้คลิกที่การแจ้งเตือนจากรายการ (List)
+   * Input     : dto (GetNotiDto) - ข้อมูลการแจ้งเตือนจาก Backend
+   * Output    : Promise<void>
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   const handleNotificationClick = useCallback(
     async (dto: GetNotiDto) => {
@@ -188,20 +192,23 @@ export const useNotifications = ({
         status: dto.status,
         title: dto.n_title,
         message: dto.n_message,
-        // isToast: true,
       });
     },
     [handleNotificationAction],
   );
 
-  // Map backend DTO to frontend props
+  /**
+   * Description: แปลงข้อมูลการแจ้งเตือนจาก Backend (GetNotiDto) เป็น Frontend Props (NotificationItemProps)
+   * Input     : dto (GetNotiDto) - ข้อมูลจาก API
+   * Output    : NotificationItemProps - Props สำหรับ Component
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const mapToNotificationItem = useCallback(
     (dto: GetNotiDto): NotificationItemProps => {
       return {
-        id: dto.nr_id, // Add ID to props for better keying/identification
+        id: dto.nr_id,
         type: mapEventType(dto.event),
         title: dto.n_title,
-        // description: dto.n_message,
         description: parseDescription(dto.n_message),
         timestamp: new Date(dto.created_at).toLocaleDateString("th-TH", {
           day: "numeric",
@@ -237,8 +244,8 @@ export const useNotifications = ({
         setNotifications((prev) => {
           if (pageNum === 1) return newNotis;
           // Filter out duplicates if any (though backend pagination should be clean)
-          const existingIds = new Set(prev.map((n) => n.id));
-          const uniqueNew = newNotis.filter((n) => !existingIds.has(n.id));
+          const existingIds = new Set(prev.map((notification) => notification.id));
+          const uniqueNew = newNotis.filter((notification) => !existingIds.has(notification.id));
           return [...prev, ...uniqueNew];
         });
 
@@ -266,7 +273,11 @@ export const useNotifications = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run once on mount
 
-  // Load More
+  /**
+   * Description: โหลดการแจ้งเตือนเพิ่มเติมเมื่อ scroll ถึงท้ายรายการ
+   * Output    : void - ดึงข้อมูลหน้าถัดไปและอัปเดต state
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       const nextPage = page + 1;
@@ -276,7 +287,9 @@ export const useNotifications = ({
   }, [loading, hasMore, page, fetchNotifications]);
 
   /**
-   * Socket Integration
+   * Description: Socket Integration - รับการแจ้งเตือนใหม่แบบ Real-time ผ่าน Socket.IO
+   * Note      : แสดง Toast และอัปเดตรายการทันทีเมื่อมี notification ใหม่
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   useEffect(() => {
     // Connect socket (idempotent)
@@ -355,12 +368,14 @@ export const useNotifications = ({
   ]); // usage of socketService doesn't need dep as it is singleton import
 
   /**
-   * Function: markAllRead
+   * Description: ทำเครื่องหมายการแจ้งเตือนทั้งหมดเป็น "อ่านแล้ว"
+   * Output    : Promise<void>
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   const markAllRead = async () => {
     try {
       await notificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
       console.error("Failed to mark all as read:", error);

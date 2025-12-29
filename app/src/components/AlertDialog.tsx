@@ -7,7 +7,7 @@
 import React, { useEffect, useId } from "react";
 import Button from "./Button";
 
-export type AlertTone = "success" | "warning" | "danger" | "reject";
+export type AlertTone = "success" | "warning" | "danger" | "reject" | "confirm";
 
 export type AlertDialogProps = {
   open: boolean;
@@ -52,6 +52,7 @@ const TONE_HEX: Record<AlertTone, string> = {
   warning: "#FFC53D",
   danger: "#FF4D4F",
   reject: "#FFC53D",
+  confirm: "#52C41A",
 };
 
 const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
@@ -59,6 +60,7 @@ const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
   warning: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ยืนยันปกติให้เขียว
   danger: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
   reject: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white", // ปุ่มแดง ไอค่อนเหลือง
+  confirm: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ปุ่มเขียว วงเขียว
 };
 // bg-[#52C41A] text-[#FFFFFF] hover:bg-green-700 active:bg-green-600
 function cx(...p: Array<string | false | null | undefined>) {

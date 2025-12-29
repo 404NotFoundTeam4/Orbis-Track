@@ -1,14 +1,11 @@
 import cron from "node-cron";
 import { prisma } from "../infrastructure/database/client.js";
-import { notificationsService } from "../modules/notifications/notifications.service.js";
 import {
-    BRT_STATUS,
-    NR_EVENT,
-    BASE_EVENT,
-    DEVICE_CHILD_STATUS,
-    LBR_ACTION,
-    LDC_ACTION,
-    US_ROLE,
+  BRT_STATUS,
+  DEVICE_CHILD_STATUS,
+  LBR_ACTION,
+  LDC_ACTION,
+  US_ROLE,
 } from "@prisma/client";
 import { logger } from "../infrastructure/logger.js";
 import { auditLogger } from "./audit-logger.js";
@@ -22,28 +19,40 @@ import { SocketEmitter } from "../infrastructure/websocket/socket.emitter.js";
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 export const initCronJobs = () => {
-    cron.schedule("*/10 * * * *", async () => {
-        logger.info(
-            `Running 10-min cron job at ${new Date().toISOString()}: Checking for status transitions...`,
-        );
-        try {
-            await handleStatusTransitions();
-        } catch (error) {
-            logger.error({ error }, "Failed to run status transitions cron job");
-        }
-    });
+  /**
+   * Description: Cron Job ทุก 10 นาที - ตรวจสอบและเปลี่ยนสถานะ Ticket
+   * Schedule  : every 10 minutes (ทุก 10 นาที)
+   * Action    : เปลี่ยน APPROVED → IN_USE เมื่อถึงเวลา brt_start_date
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  cron.schedule("*/10 * * * *", async () => {
+    logger.info(
+      `Running 10-min cron job at ${new Date().toISOString()}: Checking for status transitions...`,
+    );
+    try {
+      await handleStatusTransitions();
+    } catch (error) {
+      logger.error({ error }, "Failed to run status transitions cron job");
+    }
+  });
 
-    // 2. รันทุกวันเวลา 00:01 น. เพื่อตรวจสอบการแจ้งเตือนเรื่องกำหนดคืน
-    cron.schedule("1 0 * * *", async () => {
-        logger.info("Running midnight cron job: Checking ticket deadlines...");
-        try {
-            // await handleTicketDeadlines();
-        } catch (error) {
-            logger.error({ error }, "Failed to run ticket deadlines cron job");
-        }
-    });
+  /**
+   * Description: Cron Job รายวันเวลา 00:01 น. - ตรวจสอบการแจ้งเตือนกำหนดคืน
+   * Schedule  : 1 0 * * * (ทุกวัน เวลา 00:01)
+   * Action    : แจ้งเตือน Ticket ที่ใกล้ถึงกำหนดคืน (Due Soon) และที่เกินกำหนด (Overdue)
+   * Note      : ยังไม่เปิดใช้งาน (handleTicketDeadlines ถูก comment ไว้)
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  cron.schedule("1 0 * * *", async () => {
+    logger.info("Running midnight cron job: Checking ticket deadlines...");
+    try {
+      // await handleTicketDeadlines();
+    } catch (error) {
+      logger.error({ error }, "Failed to run ticket deadlines cron job");
+    }
+  });
 
-    logger.info("Cron jobs initialized");
+  logger.info("Cron jobs initialized");
 };
 
 /**
@@ -54,95 +63,95 @@ export const initCronJobs = () => {
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 async function handleStatusTransitions() {
-    const now = new Date();
+  const now = new Date();
 
-    // ค้นหา Ticket ที่อนุมัติแล้วและถึงเวลาเริ่มใช้งาน (brt_start_date <= now)
-    // Prisma จะเปรียบเทียบข้อมูล DateTime (Date + Time) ให้อย่างแม่นยำ
-    const pendingStartTickets = await prisma.borrow_return_tickets.findMany({
-        where: {
-            brt_status: BRT_STATUS.APPROVED,
-            brt_start_date: {
-                lte: now,
-            },
-            deleted_at: null,
-        },
+  // ค้นหา Ticket ที่อนุมัติแล้วและถึงเวลาเริ่มใช้งาน (brt_start_date <= now)
+  // Prisma จะเปรียบเทียบข้อมูล DateTime (Date + Time) ให้อย่างแม่นยำ
+  const pendingStartTickets = await prisma.borrow_return_tickets.findMany({
+    where: {
+      brt_status: BRT_STATUS.APPROVED,
+      brt_start_date: {
+        lte: now,
+      },
+      deleted_at: null,
+    },
+    include: {
+      ticket_devices: {
         include: {
-            ticket_devices: {
-                include: {
-                    child: true,
-                },
-            },
-            staffer: {
-                select: {
-                    us_dept_id: true,
-                    us_sec_id: true,
-                },
-            },
+          child: true,
         },
-    });
+      },
+      staffer: {
+        select: {
+          us_dept_id: true,
+          us_sec_id: true,
+        },
+      },
+    },
+  });
 
-    if (pendingStartTickets.length === 0) return;
+  if (pendingStartTickets.length === 0) return;
 
-    for (const ticket of pendingStartTickets) {
-        try {
-            await prisma.$transaction(async (tx) => {
-                // 1. อัปเดตสถานะ Ticket เป็น IN_USE
-                await tx.borrow_return_tickets.update({
-                    where: { brt_id: ticket.brt_id },
-                    data: { brt_status: BRT_STATUS.IN_USE },
-                });
+  for (const ticket of pendingStartTickets) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        // 1. อัปเดตสถานะ Ticket เป็น IN_USE
+        await tx.borrow_return_tickets.update({
+          where: { brt_id: ticket.brt_id },
+          data: { brt_status: BRT_STATUS.IN_USE },
+        });
 
-                // 2. อัปเดตสถานะอุปกรณ์ใน Ticket เป็น BORROWED
-                const deviceIds = ticket.ticket_devices.map((td) => td.td_dec_id);
-                await tx.device_childs.updateMany({
-                    where: { dec_id: { in: deviceIds } },
-                    data: { dec_status: DEVICE_CHILD_STATUS.BORROWED },
-                });
+        // 2. อัปเดตสถานะอุปกรณ์ใน Ticket เป็น BORROWED
+        const deviceIds = ticket.ticket_devices.map((td) => td.td_dec_id);
+        await tx.device_childs.updateMany({
+          where: { dec_id: { in: deviceIds } },
+          data: { dec_status: DEVICE_CHILD_STATUS.BORROWED },
+        });
 
-                // 3. บันทึก Log สำหรับ Ticket
-                await auditLogger.logBorrowReturn(tx, {
-                    action: LBR_ACTION.UPDATED,
-                    brtId: ticket.brt_id,
-                    actorId: null, // null = System / Auto
-                    oldStatus: BRT_STATUS.APPROVED,
-                    newStatus: BRT_STATUS.IN_USE,
-                    note: `System: Auto transition to IN_USE because current time >= start date (${ticket.brt_start_date.toISOString()})`,
-                });
+        // 3. บันทึก Log สำหรับ Ticket
+        await auditLogger.logBorrowReturn(tx, {
+          action: LBR_ACTION.UPDATED,
+          brtId: ticket.brt_id,
+          actorId: null, // null = System / Auto
+          oldStatus: BRT_STATUS.APPROVED,
+          newStatus: BRT_STATUS.IN_USE,
+          note: `System: Auto transition to IN_USE because current time >= start date (${ticket.brt_start_date.toISOString()})`,
+        });
 
-                // 4. บันทึก Log สำหรับอุปกรณ์แต่ละชิ้น
-                for (const td of ticket.ticket_devices) {
-                    await auditLogger.logDeviceHistory(tx, {
-                        action: LDC_ACTION.BORROWED,
-                        decId: td.td_dec_id,
-                        brtId: ticket.brt_id,
-                        actorId: null,
-                        oldStatus: td.child.dec_status,
-                        newStatus: DEVICE_CHILD_STATUS.BORROWED,
-                        note: "System: Auto borrowed based on ticket start date",
-                    });
-                }
-            });
-
-            if (ticket.staffer) {
-                SocketEmitter.toRole({
-                    role: US_ROLE.STAFF,
-                    dept: ticket.staffer.us_dept_id || 0,
-                    sec: ticket.staffer.us_sec_id || 0,
-                    event: "REFRESH_REQUEST_PAGE",
-                    data: { ticketId: ticket.brt_id },
-                });
-            }
-
-            logger.info(
-                `Ticket #${ticket.brt_id} automatically transitioned to IN_USE and notified user`,
-            );
-        } catch (err) {
-            logger.error(
-                { err, brt_id: ticket.brt_id },
-                "Failed to transition ticket status",
-            );
+        // 4. บันทึก Log สำหรับอุปกรณ์แต่ละชิ้น
+        for (const td of ticket.ticket_devices) {
+          await auditLogger.logDeviceHistory(tx, {
+            action: LDC_ACTION.BORROWED,
+            decId: td.td_dec_id,
+            brtId: ticket.brt_id,
+            actorId: null,
+            oldStatus: td.child.dec_status,
+            newStatus: DEVICE_CHILD_STATUS.BORROWED,
+            note: "System: Auto borrowed based on ticket start date",
+          });
         }
+      });
+
+      if (ticket.staffer) {
+        SocketEmitter.toRole({
+          role: US_ROLE.STAFF,
+          dept: ticket.staffer.us_dept_id || 0,
+          sec: ticket.staffer.us_sec_id || 0,
+          event: "REFRESH_REQUEST_PAGE",
+          data: { ticketId: ticket.brt_id },
+        });
+      }
+
+      logger.info(
+        `Ticket #${ticket.brt_id} automatically transitioned to IN_USE and notified user`,
+      );
+    } catch (err) {
+      logger.error(
+        { err, brt_id: ticket.brt_id },
+        "Failed to transition ticket status",
+      );
     }
+  }
 }
 
 // /**

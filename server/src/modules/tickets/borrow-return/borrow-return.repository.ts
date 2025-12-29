@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "../../../infrastructure/database/client.js";
 import { auditLogger } from "../../../utils/audit-logger.js";
+import { GetDeviceAvailableQuery } from "./borrow-return.schema.js";
 
 export class BorrowReturnRepository {
   /**
@@ -20,10 +21,10 @@ export class BorrowReturnRepository {
    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   async findPaginated(params: {
-    user_id: number | null | undefined;
+    userId: number | null | undefined;
     role: string | undefined;
-    dept_id: number | null | undefined;
-    sec_id: number | null | undefined;
+    deptId: number | null | undefined;
+    secId: number | null | undefined;
     page?: number | null;
     limit?: number | null;
     status?: any;
@@ -32,10 +33,10 @@ export class BorrowReturnRepository {
     sortDirection?: "asc" | "desc" | null;
   }) {
     const {
-      user_id,
+      userId,
       role,
-      dept_id,
-      sec_id,
+      deptId,
+      secId,
       page: pageParam,
       limit: limitParam,
       status,
@@ -77,8 +78,8 @@ export class BorrowReturnRepository {
       brt_status: status
         ? status
         : {
-            in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
-          },
+          in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
+        },
     };
 
     if (search) {
@@ -148,16 +149,16 @@ export class BorrowReturnRepository {
                   (s."brts_status" = ${BRTS_STATUS.PENDING}::"BRTS_STATUS"
                     AND s."brts_role" = ${role}::"US_ROLE"
                     AND (
-                        (${role} = ${US_ROLE.HOD} AND s."brts_dept_id" = ${dept_id})
+                        (${role} = ${US_ROLE.HOD} AND s."brts_dept_id" = ${deptId})
                         OR
-                        (${role} != ${US_ROLE.HOD} AND (s."brts_dept_id" = ${dept_id}) AND (s."brts_sec_id" = ${sec_id}))
+                        (${role} != ${US_ROLE.HOD} AND (s."brts_dept_id" = ${deptId}) AND (s."brts_sec_id" = ${secId}))
                     )
                     AND s."brts_step_approve" = t."brt_current_stage"
                   )
-                  OR (t."brt_staff_id" = ${user_id})
+                  OR (t."brt_staff_id" = ${userId})
                 )
             `;
-      const allowedIds = matchingTickets.map((t) => t.id);
+      const allowedIds = matchingTickets.map((ticket) => ticket.id);
       where.brt_id = { in: allowedIds };
     }
 
@@ -186,6 +187,7 @@ export class BorrowReturnRepository {
                 select: {
                   device: {
                     select: {
+                      de_id: true,
                       de_serial_number: true,
                       de_name: true,
                       de_description: true,
@@ -426,6 +428,13 @@ export class BorrowReturnRepository {
     });
   }
 
+  /**
+   * Description: ปฏิเสธ Ticket (Transaction) พร้อมอัปเดตสถานะและบันทึกเหตุผล
+   * Input     : params { approverId, stageId, ticketId, currentStage, isLastStage, rejectReason }
+   * Output    : Promise<boolean> - ผลลัพธ์การ transaction
+   * Note      : อัปเดต stage เป็น REJECTED, บันทึกเหตุผลและสร้าง Audit Log
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   async rejectTicketByIdTransaction(params: {
     approverId: number;
     stageId: number;
@@ -493,6 +502,186 @@ export class BorrowReturnRepository {
           note: `Stage ${currentStage} rejected By ${approverId}.`,
         }),
       ]);
+
+      return true;
+    });
+  }
+
+  /**
+   * Description: ดึงรายการ device childs ที่พร้อมใช้งานสำหรับเพิ่มเข้า ticket
+   * Input     : GetDeviceAvailableQuery { deviceId, deviceChildIds, startDate, endDate }
+   * Output    : Promise<device_childs[]> - Device childs ที่สถานะ READY และไม่มีการจองในช่วงเวลาที่ระบุ
+   * Note      : ใช้ none filter เพื่อหา devices ที่ไม่มี overlapping ACTIVE availability
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async getAvailableDeviceChildsByDeviceId(query: GetDeviceAvailableQuery) {
+    const { deviceId, deviceChildIds, startDate, endDate } = query;
+    return await prisma.device_childs.findMany({
+      where: {
+        device: {
+          de_id: deviceId,
+        },
+        dec_id: {
+          notIn: deviceChildIds || [],
+        },
+        dec_status: DEVICE_CHILD_STATUS.READY,
+        availabilities: {
+          none: {
+            da_start: { lt: endDate },
+            da_end: { gt: startDate },
+            da_status: DA_STATUS.ACTIVE,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Description: จัดการ device childs ใน ticket (เพิ่ม/ลบ/อัปเดต) ภายใน transaction
+   * Input     : params { ticketId, ticketStatus, startDate, endDate, devicesToAdd, devicesToRemove, devicesToUpdate, actorId }
+   * Output    : Promise<boolean>
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async manageDeviceChildsTransaction(params: {
+    ticketId: number;
+    ticketStatus: BRT_STATUS;
+    startDate: Date;
+    endDate: Date;
+    devicesToAdd?: { id: number }[];
+    devicesToRemove?: { id: number }[];
+    devicesToUpdate?: {
+      id: number;
+      oldStatus: DEVICE_CHILD_STATUS;
+      status: DEVICE_CHILD_STATUS;
+      note?: string | null;
+    }[];
+    actorId: number | null;
+  }) {
+    const {
+      ticketId,
+      ticketStatus,
+      startDate,
+      endDate,
+      devicesToAdd,
+      devicesToRemove,
+      devicesToUpdate,
+      actorId,
+    } = params;
+
+    return await prisma.$transaction(async (tx) => {
+      // เพิ่ม devices ใหม่
+      if (devicesToAdd && devicesToAdd.length > 0) {
+        await Promise.all([
+          tx.ticket_devices.createMany({
+            data: devicesToAdd.map((deviceChild) => ({
+              td_brt_id: ticketId,
+              td_dec_id: deviceChild.id,
+            })),
+          }),
+          tx.device_availabilities.createMany({
+            data: devicesToAdd.map((deviceChild) => ({
+              da_dec_id: deviceChild.id,
+              da_brt_id: ticketId,
+              da_start: startDate,
+              da_end: endDate,
+              da_status: DA_STATUS.ACTIVE,
+            })),
+          }),
+        ]);
+
+        if (ticketStatus === BRT_STATUS.IN_USE) {
+          await Promise.all([
+            tx.device_childs.updateMany({
+              where: {
+                dec_id: { in: devicesToAdd.map((deviceChild) => deviceChild.id) },
+              },
+              data: {
+                dec_status: DEVICE_CHILD_STATUS.BORROWED,
+              },
+            }),
+            tx.log_device_childs.createMany({
+              data: devicesToAdd.map((deviceChild) => ({
+                ldc_action: LDC_ACTION.BORROWED,
+                ldc_old_status: DEVICE_CHILD_STATUS.READY,
+                ldc_new_status: DEVICE_CHILD_STATUS.BORROWED,
+                ldc_note: `เพิ่มอุปกรณ์ในคำขอยืมระหว่างใช้งาน (Ticket ID: ${ticketId})`,
+                ldc_actor_id: actorId,
+                ldc_brt_id: ticketId,
+                ldc_dec_id: deviceChild.id,
+              })),
+            }),
+          ]);
+        }
+      }
+
+      // ลบ devices
+      if (devicesToRemove && devicesToRemove.length > 0) {
+        await Promise.all([
+          tx.ticket_devices.deleteMany({
+            where: {
+              td_brt_id: ticketId,
+              td_dec_id: { in: devicesToRemove.map((deviceChild) => deviceChild.id) },
+            },
+          }),
+          tx.device_availabilities.updateMany({
+            where: {
+              da_brt_id: ticketId,
+              da_dec_id: { in: devicesToRemove.map((deviceChild) => deviceChild.id) },
+            },
+            data: { da_status: DA_STATUS.COMPLETED },
+          }),
+        ]);
+
+        if (ticketStatus === BRT_STATUS.IN_USE) {
+          await Promise.all([
+            tx.device_childs.updateMany({
+              where: {
+                dec_id: { in: devicesToRemove.map((deviceChild) => deviceChild.id) },
+              },
+              data: {
+                dec_status: DEVICE_CHILD_STATUS.READY,
+              },
+            }),
+            tx.log_device_childs.createMany({
+              data: devicesToRemove.map((deviceChild) => ({
+                ldc_action: LDC_ACTION.RETURNED,
+                ldc_old_status: DEVICE_CHILD_STATUS.BORROWED,
+                ldc_new_status: DEVICE_CHILD_STATUS.READY,
+                ldc_note: `ลบอุปกรณ์ออกจากคำขอยืม (Ticket ID: ${ticketId})`,
+                ldc_actor_id: actorId,
+                ldc_brt_id: ticketId,
+                ldc_dec_id: deviceChild.id,
+              })),
+            }),
+          ]);
+        }
+      }
+
+      // อัปเดต status ของ devices
+      if (devicesToUpdate && devicesToUpdate.length > 0) {
+        for (const device of devicesToUpdate) {
+          await Promise.all([
+            tx.device_childs.update({
+              where: { dec_id: device.id },
+              data: {
+                dec_status: device.status,
+              },
+            }),
+            tx.log_device_childs.create({
+              data: {
+                ldc_action: LDC_ACTION.CHANGED,
+                ldc_old_status: device.oldStatus,
+                ldc_new_status: device.status,
+                ldc_note:
+                  device.note || `อัปเดตสถานะอุปกรณ์ (Ticket ID: ${ticketId})`,
+                ldc_actor_id: actorId,
+                ldc_brt_id: ticketId,
+                ldc_dec_id: device.id,
+              },
+            }),
+          ]);
+        }
+      }
 
       return true;
     });

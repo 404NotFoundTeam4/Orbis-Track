@@ -5,8 +5,8 @@ import emailService from "../../utils/email/email.service.js";
 
 /**
  * Description: ตัวจัดการการประมวลผล Job แบบรวมศูนย์
- * - สามารถเพิ่ม Handler ใหม่ๆ ได้ที่นี่ที่เดียว
- * Author : Pakkapon Chomchoey (Tonnam) 66160080
+ * Note      : สามารถเพิ่ม Handler ใหม่ๆ ได้ที่นี่ที่เดียว
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 
 // รวม Handlers ไว้ในที่เดียว

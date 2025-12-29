@@ -41,7 +41,6 @@ const SCHEME: Record<
   "danger" | "confirm" | "warning" | "info" | "notification",
   { accent: string; bar: string; icon: string }
 > = {
-  // ตามที่ขอ
   danger: { accent: "#DF203B", bar: "#F696A3", icon: "ep:warning-filled" },
   confirm: {
     accent: "#73D13D",

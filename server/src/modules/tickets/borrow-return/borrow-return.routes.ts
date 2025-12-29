@@ -2,11 +2,14 @@ import { Router } from "../../../core/router.js";
 import { idParamSchema } from "../../departments/departments.schema.js";
 import { BorrowReturnController } from "./borrow-return.controller.js";
 import {
+  availableDeviceChildsSchema,
   getBorrowTicketQuery,
+  getDeviceAvailableQuery,
   rejectTicket,
   ticketItemSchema,
   borrowReturnTicketDetailSchema,
   approveTicket,
+  updateDeviceChildInTicket,
 } from "./borrow-return.schema.js";
 
 import { borrowReturnService } from "./borrow-return.provider.js";
@@ -23,6 +26,17 @@ router.getDoc(
     auth: true,
   },
   borrowReturnController.getBorrowReturnTicket,
+);
+
+router.getDoc(
+  "/device-available",
+  {
+    tag: "Borrow Return",
+    query: getDeviceAvailableQuery,
+    res: availableDeviceChildsSchema,
+    auth: true,
+  },
+  borrowReturnController.getDeviceAvailable,
 );
 
 router.getDoc(
@@ -60,28 +74,16 @@ router.patchDoc(
   borrowReturnController.rejectTicketById,
 );
 
-router.getDoc(
-  "/:id/device-childs",
-  {
-    tag: "Borrow Return",
-    params: idParamSchema,
-    // body: approveTicket,
-    // res: borrowReturnTicketDetailSchema,
-    auth: true,
-  },
-  borrowReturnController.manageDevice,
-);
-
 router.patchDoc(
-  "/:id/device-childs",
+  "/:id/manage-device-childs",
   {
     tag: "Borrow Return",
     params: idParamSchema,
-    // body: approveTicket,
+    body: updateDeviceChildInTicket,
     // res: borrowReturnTicketDetailSchema,
     auth: true,
   },
-  borrowReturnController.manageDevice,
+  borrowReturnController.manageDeviceChildsInTicket,
 );
 
 export default router.instance;

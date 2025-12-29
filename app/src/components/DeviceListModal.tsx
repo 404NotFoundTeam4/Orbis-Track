@@ -48,7 +48,7 @@ const DeviceListModal = ({
 
   // Check if any device has serial number
   const hasSerialNumber = devices.some(
-    (d) => d.serial && d.serial.trim() !== "",
+    (device) => device.serial && device.serial.trim() !== "",
   );
 
   const getStatusStyle = (status: string) => {

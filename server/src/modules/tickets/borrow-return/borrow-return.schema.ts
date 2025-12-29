@@ -46,6 +46,7 @@ const requesterSchema = z.object({
 });
 
 const deviceSummarySchema = z.object({
+  deviceId: z.coerce.number(),
   name: z.string(),
   serial_number: z.string(),
   description: z.string().nullable(),
@@ -150,6 +151,64 @@ export const rejectTicket = z.object({
   currentStage: z.coerce.number(),
   rejectReason: z.string(),
 });
+
+export const getDeviceAvailableQuery = z.object({
+  deviceId: z.coerce.number(),
+  deviceChildIds: z.preprocess(
+    (val) => {
+      if (val === undefined || val === null) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === "string") return [val];
+      return [];
+    },
+    z.array(z.coerce.number()).optional()
+  ),
+  startDate: z.string(),
+  endDate: z.string(),
+});
+
+export const deviceChildSchema = z.object({
+  dec_id: z.number(),
+  dec_serial_number: z.string().nullable(),
+  dec_asset_code: z.string(),
+  dec_has_serial_number: z.boolean(),
+  dec_status: z.nativeEnum(DEVICE_CHILD_STATUS),
+  dec_de_id: z.number(),
+  deleted_at: z.date().nullable(),
+  created_at: z.date().nullable(),
+  updated_at: z.date().nullable(),
+});
+
+export const devicesToAdd = z.object({
+  id: z.coerce.number(),
+});
+
+export const devicesToRemove = devicesToAdd;
+
+export const devicesToUpdate = z.object({
+  id: z.coerce.number(),
+  oldStatus: z.nativeEnum(DEVICE_CHILD_STATUS),
+  status: z.nativeEnum(DEVICE_CHILD_STATUS),
+  note: z.string().nullable().optional(),
+});
+
+export const updateDeviceChildInTicket = z.object({
+  devicesToAdd: z.array(devicesToAdd).optional(),
+  devicesToRemove: z.array(devicesToRemove).optional(),
+  devicesToUpdate: z.array(devicesToUpdate).optional(),
+});
+
+export const availableDeviceChildsSchema = z.array(deviceChildSchema);
+
+export type UpdateDeviceChildInTicket = z.infer<
+  typeof updateDeviceChildInTicket
+>;
+
+export type DeviceChildDto = z.infer<typeof deviceChildSchema>;
+
+export type TicketDeviceSchema = z.infer<typeof ticketDeviceSchema>;
+
+export type GetDeviceAvailableQuery = z.infer<typeof getDeviceAvailableQuery>;
 
 export type ApproveTicket = z.infer<typeof approveTicket>;
 

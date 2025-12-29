@@ -12,6 +12,10 @@ interface SearchFilterProps {
   onChange: (filters: { search: string }) => void;
   /** Debounce delay in ms (default: 400) */
   debounceMs?: number;
+  /** Additional CSS classes for the container */
+  className?: string;
+  /** Inline styles for the container */
+  style?: React.CSSProperties;
 }
 
 /**
@@ -24,6 +28,8 @@ interface SearchFilterProps {
 export const SearchFilter: React.FC<SearchFilterProps> = ({
   onChange,
   debounceMs = 400,
+  className = "",
+  style,
 }) => {
   const [search, setSearch] = useState("");
 
@@ -42,7 +48,8 @@ export const SearchFilter: React.FC<SearchFilterProps> = ({
 
   return (
     <div
-      className={`${inputClass} w-[438px] h-[46px] px-[24px] py-[10px] flex items-center gap-2 rounded-full`}
+      className={`${inputClass} w-[438px] h-[46px] px-[24px] py-[10px] flex items-center gap-2 rounded-full ${className}`}
+      style={style}
     >
       <FontAwesomeIcon
         icon={faMagnifyingGlass}

@@ -6,17 +6,21 @@
  */
 import {
   ApproveTicket,
+  BorrowReturnTicketDetailDto,
   GetBorrowTicketQuery,
+  GetDeviceAvailableQuery,
   RejectTicket,
+  TicketDeviceSchema,
+  UpdateDeviceChildInTicket,
 } from "./borrow-return.schema.js";
 import { IdParamDto } from "../../departments/departments.schema.js";
 import { BorrowReturnRepository } from "./borrow-return.repository.js";
-import { AccessTokenPayload, AuthRequest } from "../../auth/auth.schema.js";
+import { AccessTokenPayload } from "../../auth/auth.schema.js";
 import { HttpStatus } from "../../../core/http-status.enum.js";
 import { HttpError } from "../../../errors/errors.js";
 import { notificationsService } from "../../notifications/notifications.service.js";
 import { prisma } from "../../../infrastructure/database/client.js";
-import { US_ROLE } from "@prisma/client";
+import { DEVICE_CHILD_STATUS, US_ROLE } from "@prisma/client";
 import { SocketEmitter } from "../../../infrastructure/websocket/socket.emitter.js";
 import { logger } from "../../../infrastructure/logger.js";
 
@@ -25,7 +29,7 @@ export class BorrowReturnService {
 
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อมรายละเอียดสำหรับแต่ละรายการ
-   * Input     : GetBorrowTicketQuery { page, limit, status, search, sortField, sortDirection }, role, dept_id, sec_id, user_id
+   * Input     : GetBorrowTicketQuery { page, limit, status, search, sortField, sortDirection }, role, deptId, secId, userId
    * Output    : PaginatedResult<TicketItemDto> - รายการ Tickets พร้อมข้อมูล Pagination
    * Note      : กรองตาม Role/Department/Section ของผู้ใช้งาน
    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
@@ -33,9 +37,9 @@ export class BorrowReturnService {
   async getBorrowReturnTicket(
     query: GetBorrowTicketQuery,
     role: string | undefined,
-    dept_id: number | null | undefined,
-    sec_id: number | null | undefined,
-    user_id: number | null | undefined,
+    deptId: number | null | undefined,
+    secId: number | null | undefined,
+    userId: number | null | undefined,
   ) {
     const {
       page = 1,
@@ -47,10 +51,10 @@ export class BorrowReturnService {
     } = query;
 
     const { total, items } = await this.repository.findPaginated({
-      user_id,
+      userId,
       role,
-      dept_id,
-      sec_id,
+      deptId,
+      secId,
       page,
       limit,
       status,
@@ -79,6 +83,7 @@ export class BorrowReturnService {
         },
 
         device_summary: {
+          deviceId: mainDevice ? mainDevice.de_id : 0,
           name: mainDevice ? mainDevice.de_name : "Unknown Device",
           serial_number: mainDevice ? mainDevice.de_serial_number : "-",
           description: mainDevice ? mainDevice.de_description : "-",
@@ -111,7 +116,9 @@ export class BorrowReturnService {
    * Note      : โยน HttpError ถ้าไม่พบ Ticket
    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
-  async getBorrowReturnTicketById(params: IdParamDto) {
+  async getBorrowReturnTicketById(
+    params: IdParamDto,
+  ): Promise<BorrowReturnTicketDetailDto> {
     const { id } = params;
     const ticket = await this.repository.getById(id);
 
@@ -197,11 +204,10 @@ export class BorrowReturnService {
     params: IdParamDto,
     approvalUser: AccessTokenPayload | undefined,
     payload: ApproveTicket,
-  ) {
+  ): Promise<void> {
     if (!approvalUser)
       throw new HttpError(HttpStatus.UNAUTHORIZED, "Access Denied!");
-    const { id } = params;
-    const ticketId = id;
+    const { id: ticketId } = params;
     const { currentStage } = payload;
     const ticket = await this.repository.getFlowApproveById(ticketId);
 
@@ -293,7 +299,10 @@ export class BorrowReturnService {
           target_sec: currentStageData.brts_sec_id || 0,
         });
       } catch (error) {
-        logger.error({ err: error }, "Failed to dismiss old approval notifications");
+        logger.error(
+          { err: error },
+          "Failed to dismiss old approval notifications",
+        );
       }
 
       // แจ้งเตือนผู้อนุมัติลำดับถัดไป
@@ -314,7 +323,7 @@ export class BorrowReturnService {
 
         if (nextApprovers.length > 0) {
           await notificationsService.createNotification({
-            recipient_ids: nextApprovers.map((u) => u.us_id),
+            recipient_ids: nextApprovers.map((approver) => approver.us_id),
             title: "แจ้งเตือนคำขอยืมใหม่",
             message: `มีคำขอยืมกำลังรออนุมัติ`,
             base_event: "TICKET_STAGE_PASSED",
@@ -347,15 +356,21 @@ export class BorrowReturnService {
     }
   }
 
+  /**
+   * Description: ดำเนินการปฏิเสธ Ticket พร้อมบันทึกเหตุผล
+   * Input     : IdParamDto { id }, AccessTokenPayload (approvalUser), RejectTicket { currentStage, rejectReason }
+   * Output    : void
+   * Note      : อัปเดตสถานะ ticket เป็น REJECTED, บันทึกเหตุผล และส่งแจ้งเตือนผู้ร้องขอ
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   async rejectTicketById(
     params: IdParamDto,
     approvalUser: AccessTokenPayload | undefined,
     payload: RejectTicket,
-  ) {
+  ): Promise<void> {
     if (!approvalUser)
       throw new HttpError(HttpStatus.UNAUTHORIZED, "Access Denied!");
-    const { id } = params;
-    const ticketId = id;
+    const { id: ticketId } = params;
     const { currentStage, rejectReason } = payload;
     const ticket = await this.repository.getFlowApproveById(ticketId);
 
@@ -419,8 +434,78 @@ export class BorrowReturnService {
 
     results.forEach((result, index) => {
       if (result.status === "rejected") {
-        logger.error({ err: result.reason }, `Reject notification task ${index + 1} failed`);
+        logger.error(
+          { err: result.reason },
+          `Reject notification task ${index + 1} failed`,
+        );
       }
     });
+  }
+
+  /**
+   * Description: ดึงรายการ device childs ที่ว่างสำหรับการเพิ่มเข้า ticket
+   * Input     : GetDeviceAvailableQuery { deviceId, deviceChildIds, startDate, endDate }
+   * Output    : TicketDeviceSchema[] - รายการ device childs ที่พร้อมใช้งาน
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async getDeviceAvailable(
+    query: GetDeviceAvailableQuery,
+  ): Promise<TicketDeviceSchema[]> {
+    const devices =
+      await this.repository.getAvailableDeviceChildsByDeviceId(query);
+
+    // Transform to frontend format
+    return devices.map((deviceChild) => ({
+      child_id: deviceChild.dec_id,
+      asset_code: deviceChild.dec_asset_code,
+      serial: deviceChild.dec_serial_number || "",
+      current_status: deviceChild.dec_status,
+      has_serial_number: deviceChild.dec_has_serial_number,
+    }));
+  }
+
+  /**
+   * Description: จัดการ device childs ใน ticket (เพิ่ม/ลบ/อัปเดตสถานะ)
+   * Input     : user (AccessTokenPayload), param (IdParamDto), deviceChilds (UpdateDeviceChildInTicket)
+   * Output    : { success: boolean }
+   * Note      : Emit socket event ไปยัง STAFF ใน dept/sec เดียวกันหลังจัดการสำเร็จ
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async manageDeviceChildsInTicket(
+    user: AccessTokenPayload | undefined,
+    param: IdParamDto,
+    deviceChilds: UpdateDeviceChildInTicket,
+  ) {
+    const { id: ticketId } = param;
+    const { devicesToAdd, devicesToRemove, devicesToUpdate } = deviceChilds;
+    const ticket = await this.repository.getById(ticketId);
+
+    if (!ticket) {
+      throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
+    }
+
+    await this.repository.manageDeviceChildsTransaction({
+      ticketId,
+      ticketStatus: ticket.brt_status,
+      startDate: ticket.brt_start_date,
+      endDate: ticket.brt_end_date,
+      devicesToAdd,
+      devicesToRemove,
+      devicesToUpdate,
+      actorId: user ? user.sub : null,
+    });
+
+    // Emit socket event to refresh frontend (all STAFF in same dept/sec)
+    if (user) {
+      SocketEmitter.toRole({
+        role: US_ROLE.STAFF,
+        dept: user.dept || 0,
+        sec: user.sec || 0,
+        event: "TICKET_DEVICES_UPDATED",
+        data: { ticketId },
+      });
+    }
+
+    return { success: true };
   }
 }

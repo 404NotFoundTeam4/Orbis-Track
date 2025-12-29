@@ -1,6 +1,7 @@
 /**
  * Description: นิยามประเภทของ Job และข้อมูลที่ต้องใช้ (Payload) สำหรับระบบ Background Job
- * Author : Pakkapon Chomchoey (Tonnam) 66160080
+ * Note      : เพิ่ม JobType ใหม่และ Payload ที่นี่เมื่อต้องการ Job ประเภทใหม่
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 
 export enum JobType {

@@ -13,9 +13,12 @@ import { BorrowReturnService } from "./borrow-return.service.js";
 import {
   approveTicket,
   BorrowReturnTicketDetailDto,
+  TicketDeviceSchema,
   getBorrowTicketQuery,
+  getDeviceAvailableQuery,
   rejectTicket,
   TicketItemDto,
+  updateDeviceChildInTicket,
 } from "./borrow-return.schema.js";
 import { authSchema } from "../../auth/index.js";
 import { PaginatedResult } from "../../../core/paginated-result.interface.js";
@@ -28,9 +31,9 @@ export class BorrowReturnController extends BaseController {
 
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อม pagination
-   * Input : AuthRequest (query: page, limit, status, search, sortField, sortDirection)
-   * Output : PaginatedResult<TicketItemDto>
-   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   * Input     : AuthRequest (query: page, limit, status, search, sortField, sortDirection)
+   * Output    : PaginatedResult<TicketItemDto>
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   async getBorrowReturnTicket(
     req: authSchema.AuthRequest,
@@ -39,15 +42,15 @@ export class BorrowReturnController extends BaseController {
   ): Promise<PaginatedResult<TicketItemDto>> {
     const query = getBorrowTicketQuery.parse(req.query);
     const role = req.user?.role;
-    const dept_id = req.user?.dept;
-    const sec_id = req.user?.sec;
-    const user_id = req.user?.sub;
+    const deptId = req.user?.dept;
+    const secId = req.user?.sec;
+    const userId = req.user?.sub;
     const result = await this.borrowReturnService.getBorrowReturnTicket(
       query,
       role,
-      dept_id,
-      sec_id,
-      user_id,
+      deptId,
+      secId,
+      userId,
     );
 
     return result;
@@ -55,9 +58,9 @@ export class BorrowReturnController extends BaseController {
 
   /**
    * Description: ดึงรายละเอียด Ticket ตาม ID
-   * Input : AuthRequest (params: id)
-   * Output : BaseResponse<BorrowReturnTicketDetailDto>
-   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   * Input     : AuthRequest (params: id)
+   * Output    : BaseResponse<BorrowReturnTicketDetailDto>
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   async getBorrowReturnTicketById(
     req: authSchema.AuthRequest,
@@ -94,6 +97,13 @@ export class BorrowReturnController extends BaseController {
     return { data: result };
   }
 
+  /**
+   * Description: ปฏิเสธ Ticket ตาม ID โดยผู้มีสิทธิ์อนุมัติ
+   * Input     : AuthRequest { params: id, body: RejectTicket { currentStage, rejectReason } }
+   * Output    : BaseResponse<void> - ผลลัพธ์การปฏิเสธ
+   * Note      : ส่งแจ้งเตือนไปยังผู้ร้องขอและบันทึกเหตุผลการปฏิเสธ
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   async rejectTicketById(
     req: authSchema.AuthRequest,
     _res: Response,
@@ -111,37 +121,43 @@ export class BorrowReturnController extends BaseController {
     return { data: result };
   }
 
-  // async manageDevice(
-  //   req: authSchema.AuthRequest,
-  //   _res: Response,
-  //   _next: NextFunction,
-  // ): Promise<BaseResponse<void>> {
-  //   const user = req.user;
-  //   const ticketId = idParamSchema.parse(req.params);
-  //   const payload = manageDevice.parse(req.body);
-  //   const result = await this.borrowReturnService.manageDevice(
-  //     ticketId,
-  //     user,
-  //     payload,
-  //   );
+  /**
+   * Description: ดึงรายการ device childs ที่ว่างสำหรับเพิ่มเข้า ticket
+   * Input     : Request { query: deviceId, deviceChildIds, startDate, endDate }
+   * Output    : BaseResponse<TicketDeviceSchema[]> - รายการอุปกรณ์ที่พร้อมใช้งาน
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async getDeviceAvailable(
+    req: Request,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<TicketDeviceSchema[]>> {
+    const query = getDeviceAvailableQuery.parse(req.query);
+    const result = await this.borrowReturnService.getDeviceAvailable(query);
 
-  //   return { data: result };
-  // }
-  //
-  async manageDevice(
+    return { data: result };
+  }
+
+  /**
+   * Description: จัดการอุปกรณ์ใน Ticket (เพิ่ม/ลบ/เปลี่ยนสถานะ)
+   * Input     : AuthRequest { params: id, body: ManageDevice }
+   * Output    : BaseResponse<void> - ผลลัพธ์การจัดการอุปกรณ์
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async manageDeviceChildsInTicket(
     req: authSchema.AuthRequest,
     _res: Response,
     _next: NextFunction,
   ): Promise<BaseResponse<void>> {
     const user = req.user;
-    const ticketId = idParamSchema.parse(req.params);
-    const payload = manageDevice.parse(req.body);
-    const result = await this.borrowReturnService.manageDevice(
-      ticketId,
+    const param = idParamSchema.parse(req.params);
+    const payload = updateDeviceChildInTicket.parse(req.body);
+    const result = await this.borrowReturnService.manageDeviceChildsInTicket(
       user,
+      param,
       payload,
     );
 
-    return { data: result };
+    return { success: result.success };
   }
 }

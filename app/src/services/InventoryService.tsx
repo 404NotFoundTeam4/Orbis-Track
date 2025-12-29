@@ -112,31 +112,27 @@ export const DeviceService = {
   },
 
   /**
-   * Description: เพิ่มอุปกรณ์ลูก
-   * Input     : payload (dec_de_id, quantity) - รหัสอุปกรณ์แม่และจำนวนอุปกรณ์ลูกที่ต้องการเพิ่ม
-   * Output    : data - ข้อมูลอุปกรณ์ลูกที่เพิ่มใหม่
-   * Endpoint  : POST /api/inventory/devices-childs
-   * Author    : Thakdanai Makmi (Ryu) 66160355
-   */
-  createDeviceChild: async (
-    payload: CreateDeviceChildPayload
-  ): Promise<{ message: string }> => {
+  * Description: เพิ่มอุปกรณ์ลูก
+  * Input     : payload (dec_de_id, quantity) - รหัสอุปกรณ์แม่และจำนวนอุปกรณ์ลูกที่ต้องการเพิ่ม
+  * Output    : data - ข้อมูลอุปกรณ์ลูกที่เพิ่มใหม่
+  * Endpoint  : POST /api/inventory/devices-childs
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  createDeviceChild: async (payload: CreateDeviceChildPayload): Promise<{ message: string }> => {
     const { data } = await api.post(`/inventory/devices-childs`, payload);
     return data;
   },
 
   /**
-   * Description: ลบอุปกรณ์ลูก
-   * Input     : payload (dec_id) - รหัสอุปกรณ์ลูก (รองรับหลายรายการ)
-   * Output    : data - ผลการลบอุปกรณ์ลูก
-   * Endpoint  : DELETE /api/inventory/devices-childs
-   * Author    : Thakdanai Makmi (Ryu) 66160355
-   */
-  deleteDeviceChild: async (
-    payload: DeleteDeviceChlidsPayload
-  ): Promise<{ message: string }> => {
+  * Description: ลบอุปกรณ์ลูก
+  * Input     : payload (dec_id) - รหัสอุปกรณ์ลูก (รองรับหลายรายการ)
+  * Output    : data - ผลการลบอุปกรณ์ลูก
+  * Endpoint  : DELETE /api/inventory/devices-childs
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  deleteDeviceChild: async (payload: DeleteDeviceChlidsPayload): Promise<{ message: string }> => {
     const { data } = await api.delete(`/inventory/devices-childs`, {
-      data: payload,
+      data: payload
     });
     return data;
   },

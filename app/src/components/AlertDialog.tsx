@@ -7,7 +7,7 @@
 import React, { useEffect, useId } from "react";
 import Button from "./Button";
 
-export type AlertTone = "success" | "warning" | "danger";
+export type AlertTone = "success" | "warning" | "danger"| "devicewarning"| "editDevice";
 
 export type AlertDialogProps = {
   open: boolean;
@@ -51,12 +51,16 @@ const TONE_HEX: Record<AlertTone, string> = {
   success: "#52C41A",
   warning: "#FFC53D",
   danger: "#FF4D4F",
+  devicewarning: "#FFC53D",
+  editDevice: "#52C41A",
 };
 
 const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
   success: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white",
   warning: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ยืนยันปกติให้เขียว
   danger: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
+  devicewarning: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
+  editDevice: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white",
 };
 // bg-[#52C41A] text-[#FFFFFF] hover:bg-green-700 active:bg-green-600
 function cx(...p: Array<string | false | null | undefined>) {
@@ -194,7 +198,7 @@ export function AlertDialog({
           >
             <Button
               variant="secondary"
-              className={cx("rounded-full", `!text-[${buttonTextPx}px]`)}
+              className={cx("rounded-full cursor-pointer", `!text-[${buttonTextPx}px]`)}
               onClick={() => {
                 onCancel?.();
                 onOpenChange?.(false);
@@ -208,7 +212,7 @@ export function AlertDialog({
             <Button
               variant={tone === "danger" ? "danger" : "primary"}
               className={cx(
-                "rounded-full",
+                "rounded-full cursor-pointer",
                 confirmCls,
                 `!text-[${buttonTextPx}px]`
               )}

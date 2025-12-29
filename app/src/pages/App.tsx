@@ -19,6 +19,9 @@ import Inventory from "./Inventory";
 import AddInventory from "./AddInventory";
 import ModalToggleExample from "./ModalToggleExample";
 
+import { Inventory } from "./Inventory";
+import EditInventory from "./EditInventory";
+import { Categories } from "./Categories";
 
 function App() {
   return (
@@ -46,6 +49,13 @@ function App() {
                 path="/administrator/departments-management"
                 element={<Departments />}
               />
+
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/inventory/edit" element={<EditInventory />} />
+
+              <Route path="/administrator/category" element={<Categories />} />
+              <Route path="/staff/category" element={<Categories />} />
+
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
               <Route path="/requests" element={<Requests />} />

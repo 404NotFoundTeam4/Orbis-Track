@@ -10,6 +10,7 @@ import {
   cartDeviceDetailSchema,
   updateCartDeviceDetailParamSchema,
   updateCartDeviceDetailBodySchema,
+  UpdateCartDeviceDetailBodyDto,
   updateCartDeviceDetailResponseSchema,
   borrowReturnTicketsSchema,
 } from "./cart.schema.js";

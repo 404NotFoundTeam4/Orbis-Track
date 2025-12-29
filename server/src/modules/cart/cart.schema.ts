@@ -302,6 +302,7 @@ export const deviceAvailabilitiesSchema = z.object({
 export const getCartDeviceDetailParamSchema = idParamSchema;
 export const updateCartDeviceDetailParamSchema = idParamSchema;
 
+
 /* ---------- GET Response ---------- */
 /**
  * Description: Schema สำหรับแสดงรายละเอียดอุปกรณ์ในรถเข็น
@@ -320,6 +321,7 @@ export const cartDeviceDetailSchema = cartItemSchema.extend({
     })
   ).optional().default([]),
 });
+
 /* ---------- PATCH Body ---------- */
 /**
  * Description: Schema สำหรับแก้ไขรายละเอียดอุปกรณ์ในรถเข็น
@@ -342,19 +344,17 @@ export const updateCartDeviceDetailBodySchema = z.object({
 
 /* ---------- PATCH Response ---------- */
 /**
- * Description: Schema สำหรับ response หลังแก้ไขรายละเอียดอุปกรณ์ในรถเข็น
- * Input     : ข้อมูล cart item ที่ได้รับการอัปเดต
- * Output    : Object ของ cart item พร้อมข้อมูล device_child ที่อัปเดต
+ * Description: Schema สำหรับ response หลังจากแก้ไขรายละเอียดอุปกรณ์ในรถเข็น
+ * Input     : ข้อมูล cart item ที่ถูกอัปเดต (รวม relation กับ cart และ device_child)
+ * Output    : Object ที่ห่อด้วย key `data` สำหรับส่งกลับ client
  * Logic     :
- *   - Validate ข้อมูล response ก่อนส่งกลับ client
- *   - รวมข้อมูล relation ของ cart และ device_child
+ *   - ตรวจสอบโครงสร้างข้อมูล response ก่อนส่ง
+ *   - รวมข้อมูล relation ของ cart และ device_child ให้ครบ
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const updateCartDeviceDetailDataSchema = cartDeviceDetailSchema;
-
 export const updateCartDeviceDetailResponseSchema = z.object({
-  message: z.string(),
-  data: cartDeviceDetailSchema,
+  data: updateCartDeviceDetailDataSchema,
 });
 
 export type IdParamDto = z.infer<typeof idParamSchema>;
@@ -375,9 +375,10 @@ export type TicketDevicesSchema = z.infer<typeof ticketDevicesSchema>;
 export type CreateTicketDevicePayload = z.infer<typeof createTicketDevicePayload>;
 export type CreateBorrowTicketStagePayload = z.infer<typeof createBorrowTicketStagePayload>;
 export type DeviceAvailabilitiesSchema = z.infer<typeof deviceAvailabilitiesSchema>;
-export type UpdateCartDeviceDetailResponseSchema = z.infer<typeof updateCartDeviceDetailResponseSchema>;
 export type UpdateCartDeviceDetailDataSchema = z.infer<typeof updateCartDeviceDetailDataSchema>;
 export type UpdateCartDeviceDetailBodySchema = z.infer<typeof updateCartDeviceDetailBodySchema>;
 export type CartDeviceDetailSchema = z.infer<typeof cartDeviceDetailSchema>;
 export type GetCartDeviceDetailParamDto = z.infer<typeof getCartDeviceDetailParamSchema>;
 export type UpdateCartDeviceDetailParamDto = z.infer<typeof updateCartDeviceDetailParamSchema>;
+export type UpdateCartDeviceDetailResponseSchema = z.infer<typeof updateCartDeviceDetailResponseSchema>;
+export type UpdateCartDeviceDetailBodyDto = z.infer<typeof updateCartDeviceDetailBodySchema>;

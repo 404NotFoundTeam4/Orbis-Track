@@ -1,9 +1,6 @@
 import { prisma } from "../../infrastructure/database/client.js";
-import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, updateCartDeviceDetailBodySchema, updateCartDeviceDetailParamSchema, getCartDeviceDetailParamSchema, CartDeviceDetailSchema, UpdateCartDeviceDetailBodySchema } from "./cart.schema.js";
+import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, updateCartDeviceDetailBodySchema, updateCartDeviceDetailParamSchema, getCartDeviceDetailParamSchema, CartDeviceDetailSchema, UpdateCartDeviceDetailBodySchema,UpdateCartDeviceDetailBodyDto } from "./cart.schema.js";
 import { DepartmentSchema, SectionSchema } from "../departments/departments.schema.js";
-import { z } from "zod";
-
-
 
 /**
  * Description: ฟังก์ชันดึงข้อมูลรายการอุปกรณ์ทั้งหมดในรถเข็นตาม Cart ID
@@ -721,13 +718,10 @@ async function getCartDeviceDetail(
 
 async function updateCartDeviceDetail(
   ctiId: number,
-  payload: UpdateCartDeviceDetailBodySchema
+  payload: UpdateCartDeviceDetailBodyDto
 ): Promise<CartDeviceDetailSchema> {
   const exists = await prisma.cart_items.findFirst({
-    where: {
-      cti_id: ctiId,
-      deleted_at: null,
-    },
+    where: { cti_id: ctiId, deleted_at: null },
   });
 
   if (!exists) {
@@ -740,9 +734,7 @@ async function updateCartDeviceDetail(
     include: {
       cart: true,
       cart_device_childs: {
-        include: {
-          device_child: true,
-        },
+        include: { device_child: true },
       },
     },
   });

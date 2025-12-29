@@ -7,10 +7,11 @@ import {
   CartItemListResponse,
   createBorrowTicketPayload,
   getCartDeviceDetailParamSchema,
-  updateCartDeviceDetailParamSchema,
+  CartDeviceDetailSchema,
+  UpdateCartDeviceDetailDataSchema,
+  UpdateCartDeviceDetailBodySchema,
   updateCartDeviceDetailBodySchema,
-  type CartDeviceDetailSchema,
-  type UpdateCartDeviceDetailResponseSchema,
+  updateCartDeviceDetailParamSchema,
 } from "./cart.schema.js";
 
 
@@ -122,15 +123,14 @@ export class CartController extends BaseController {
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<BaseResponse<CartDeviceDetailSchema>> {
+): Promise<BaseResponse<UpdateCartDeviceDetailDataSchema>> {
   const { id } = updateCartDeviceDetailParamSchema.parse(req.params);
   const payload = updateCartDeviceDetailBodySchema.parse(req.body);
+  const updatedDevice = await cartsService.updateCartDeviceDetail(id, payload);
 
-  const updatedCartItem = await cartsService.updateCartDeviceDetail(id, payload);
-
-  return {
+  return {  
     message: "แก้ไขรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
-    data: updatedCartItem,
+    data: updatedDevice,
   };
 }
 }

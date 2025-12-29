@@ -26,19 +26,19 @@ export const cartSchema = z.object({
  * Author : Nontapat Sinhum (Guitar) 66160104
  */
 export const cartItemSchema = z.object({
-    cti_id: z.coerce.number(),
-    cti_us_name: z.string().min(1).max(120),
-    cti_phone: z.string().min(1).max(20),
-    cti_note: z.string().min(1).max(255),
-    cti_usage_location: z.string().min(1).max(255),
-    cti_quantity: z.coerce.number(),
-    cti_start_date: z.date().nullable(),
-    cti_end_date: z.date().nullable(),
-    cti_ct_id: z.coerce.number().int().positive().nullable().optional(),
-    cti_de_id: z.coerce.number().int().positive().nullable().optional(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+  cti_id: z.coerce.number(),
+  cti_us_name: z.string().min(1).max(120).nullable(),
+  cti_phone: z.string().min(1).max(20).nullable(),
+  cti_note: z.string().min(1).max(255).nullable(),
+  cti_usage_location: z.string().min(1).max(255).nullable(),
+  cti_quantity: z.coerce.number(),
+  cti_start_date: z.date().nullable(),
+  cti_end_date: z.date().nullable(),
+  cti_ct_id: z.coerce.number().int().positive().nullable().optional(),
+  cti_de_id: z.coerce.number().int().positive().nullable().optional(),
+  created_at: z.date().nullable(),
+  updated_at: z.date().nullable(),
+  deleted_at: z.date().nullable(),
 });
 
 /**
@@ -60,7 +60,7 @@ export const cartDeviceChildSchema = z.object({
  */
 export const deviceChildSchema = z.object({
     dec_id: z.coerce.number(),
-    dec_serial_number: z.string().min(1).max(120),
+    dec_serial_number: z.string().nullable(),
     dec_asset_code: z.string().min(1).max(120),
     dec_has_serial_number: z.boolean(),
     dec_status: z.enum([
@@ -320,8 +320,6 @@ export const cartDeviceDetailSchema = cartItemSchema.extend({
     })
   ).optional().default([]),
 });
-
-
 /* ---------- PATCH Body ---------- */
 /**
  * Description: Schema สำหรับแก้ไขรายละเอียดอุปกรณ์ในรถเข็น
@@ -377,5 +375,9 @@ export type TicketDevicesSchema = z.infer<typeof ticketDevicesSchema>;
 export type CreateTicketDevicePayload = z.infer<typeof createTicketDevicePayload>;
 export type CreateBorrowTicketStagePayload = z.infer<typeof createBorrowTicketStagePayload>;
 export type DeviceAvailabilitiesSchema = z.infer<typeof deviceAvailabilitiesSchema>;
-
-
+export type UpdateCartDeviceDetailResponseSchema = z.infer<typeof updateCartDeviceDetailResponseSchema>;
+export type UpdateCartDeviceDetailDataSchema = z.infer<typeof updateCartDeviceDetailDataSchema>;
+export type UpdateCartDeviceDetailBodySchema = z.infer<typeof updateCartDeviceDetailBodySchema>;
+export type CartDeviceDetailSchema = z.infer<typeof cartDeviceDetailSchema>;
+export type GetCartDeviceDetailParamDto = z.infer<typeof getCartDeviceDetailParamSchema>;
+export type UpdateCartDeviceDetailParamDto = z.infer<typeof updateCartDeviceDetailParamSchema>;

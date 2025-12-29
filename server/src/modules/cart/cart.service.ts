@@ -1,8 +1,9 @@
 import { prisma } from "../../infrastructure/database/client.js";
-import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema } from "./cart.schema.js";
+import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, updateCartDeviceDetailBodySchema, updateCartDeviceDetailParamSchema, getCartDeviceDetailParamSchema, CartDeviceDetailSchema, UpdateCartDeviceDetailBodySchema } from "./cart.schema.js";
 import { DepartmentSchema, SectionSchema } from "../departments/departments.schema.js";
 import { z } from "zod";
-import { updateCartDeviceDetailBodySchema } from "./cart.schema.js";
+
+
 
 /**
  * Description: ฟังก์ชันดึงข้อมูลรายการอุปกรณ์ทั้งหมดในรถเข็นตาม Cart ID
@@ -678,9 +679,14 @@ async function createBorrowTicketStages(params: CreateBorrowTicketStagePayload) 
  *
  * Author : Rachata Jitjeankhan (Tang) 66160369
  */
-async function getCartDeviceDetail(ctiId: number) {
+async function getCartDeviceDetail(
+  ctiId: number
+): Promise<CartDeviceDetailSchema> {
   const cartItem = await prisma.cart_items.findFirst({
-    where: { cti_id: ctiId, deleted_at: null },
+    where: {
+      cti_id: ctiId,
+      deleted_at: null,
+    },
     include: {
       cart: true,
       cart_device_childs: {
@@ -691,7 +697,10 @@ async function getCartDeviceDetail(ctiId: number) {
     },
   });
 
-  if (!cartItem) throw new Error("ไม่พบข้อมูลอุปกรณ์ในรถเข็น");
+  if (!cartItem) {
+    throw new Error("ไม่พบข้อมูลอุปกรณ์ในรถเข็น");
+  }
+
   return cartItem;
 }
 /** PATCH /borrow/cart/device/:id
@@ -709,15 +718,23 @@ async function getCartDeviceDetail(ctiId: number) {
  *
  * Author : Rachata Jitjeankhan (Tang) 66160369
  */
-type UpdateCartDeviceDetailBodyDto = z.infer<typeof updateCartDeviceDetailBodySchema>;
 
-async function updateCartDeviceDetail(ctiId: number, payload: UpdateCartDeviceDetailBodyDto) {
+async function updateCartDeviceDetail(
+  ctiId: number,
+  payload: UpdateCartDeviceDetailBodySchema
+): Promise<CartDeviceDetailSchema> {
   const exists = await prisma.cart_items.findFirst({
-    where: { cti_id: ctiId, deleted_at: null },
+    where: {
+      cti_id: ctiId,
+      deleted_at: null,
+    },
   });
-  if (!exists) throw new Error("ไม่พบข้อมูลอุปกรณ์ในรถเข็น");
 
-  return prisma.cart_items.update({
+  if (!exists) {
+    throw new Error("ไม่พบข้อมูลอุปกรณ์ในรถเข็น");
+  }
+
+  const updated = await prisma.cart_items.update({
     where: { cti_id: ctiId },
     data: payload,
     include: {
@@ -729,6 +746,8 @@ async function updateCartDeviceDetail(ctiId: number, payload: UpdateCartDeviceDe
       },
     },
   });
+
+  return updated;
 }
 
 export const cartsService = {

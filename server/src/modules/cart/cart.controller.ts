@@ -9,6 +9,8 @@ import {
   getCartDeviceDetailParamSchema,
   updateCartDeviceDetailParamSchema,
   updateCartDeviceDetailBodySchema,
+  type CartDeviceDetailSchema,
+  type UpdateCartDeviceDetailResponseSchema,
 } from "./cart.schema.js";
 
 
@@ -83,22 +85,22 @@ export class CartController extends BaseController {
    * Author    : Rachata Jitjeankhan (Tang) 66160369
    */
   async getCartDeviceDetail(
-  req: Request, 
-  res: Response, 
-  next: NextFunction
-): Promise<BaseResponse<any>> {
-  // .parse จะดึง id ออกมาเป็น number ตาม schema ที่เราตั้งไว้
-  const { id } = getCartDeviceDetailParamSchema.parse(req.params);
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<CartDeviceDetailSchema>> {
+    // .parse จะดึง id ออกมาเป็น number ตาม schema ที่เราตั้งไว้
+    const { id } = getCartDeviceDetailParamSchema.parse(req.params);
 
-  // เรียกใช้ service (เช็คให้ชัวร์ว่า import cartsService มาแล้ว)
-  const data = await cartsService.getCartDeviceDetail(id);
+    // เรียกใช้ service (เช็คให้ชัวร์ว่า import cartsService มาแล้ว)
+    const cartItem = await cartsService.getCartDeviceDetail(id);
 
-  // คืนค่ารูปแบบ Object เพื่อให้ BaseController เอาไปส่ง res.json() ต่อเอง
-  return {
-    message: "ดึงข้อมูลรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
-    data,
-  };
-}
+    // คืนค่ารูปแบบ Object เพื่อให้ BaseController เอาไปส่ง res.json() ต่อเอง
+    return {
+      message: "ดึงข้อมูลรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
+      data: cartItem,
+    };
+  }
 
   /* =========================
    * PATCH /borrow/cart/device/:id
@@ -116,19 +118,19 @@ export class CartController extends BaseController {
    *   - คืนค่า response พร้อม message และ data
    * Author    : Rachata Jitjeankhan (Tang) 66160369
    */
-  async updateCartDeviceDetail(
+ async updateCartDeviceDetail(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<BaseResponse<any>> {
+): Promise<BaseResponse<CartDeviceDetailSchema>> {
   const { id } = updateCartDeviceDetailParamSchema.parse(req.params);
   const payload = updateCartDeviceDetailBodySchema.parse(req.body);
 
-  const data = await cartsService.updateCartDeviceDetail(id, payload);
+  const updatedCartItem = await cartsService.updateCartDeviceDetail(id, payload);
 
   return {
     message: "แก้ไขรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
-    data,
+    data: updatedCartItem,
   };
 }
 }

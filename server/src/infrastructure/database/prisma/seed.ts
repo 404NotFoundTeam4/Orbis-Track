@@ -563,7 +563,6 @@ async function main() {
     where: { cti_id: 1 },
     update: {},
     create: {
-      cti_id: 1,
       cti_ct_id: cart.ct_id,
       cti_de_id: deviceCamera.de_id,
       cti_quantity: 1,

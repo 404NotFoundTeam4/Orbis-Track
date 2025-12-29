@@ -1,4 +1,6 @@
 import { prisma } from "../../infrastructure/database/client.js";
+import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema,UpdateCartDeviceDetailDataSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, updateCartDeviceDetailBodySchema, updateCartDeviceDetailParamSchema, getCartDeviceDetailParamSchema, CartDeviceDetailSchema, UpdateCartDeviceDetailBodySchema,UpdateCartDeviceDetailBodyDto } from "./cart.schema.js";
+import { DepartmentSchema, SectionSchema } from "../departments/departments.schema.js";
 import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, DeleteCartItemPayload, LogBorrowReturnSchema } from "./cart.schema.js";
 import { DepartmentSchema, SectionSchema } from "../departments/departments.schema.js";
 
@@ -688,6 +690,372 @@ async function createBorrowTicketStages(params: CreateBorrowTicketStagePayload) 
 
 }
 
+/**
+ * Description: ฟังก์ชันสร้าง ticket_devices และ device_availabilities ตาม device_child ที่ถูกเลือกใน cart
+ * ทำงานภายใต้ transaction เพื่อให้ข้อมูลสอดคล้องกัน (สร้างสำเร็จทั้งหมดหรือ rollback ทั้งหมด)
+ * Input : params (CreateTicketDevicePayload) = { cartItemId: number, borrowTicketId: number }
+ * Output : Promise<Array<{ ticketDevice: any; availability: any }>> = ผลลัพธ์ที่สร้างต่อ device_child
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+async function createTicketDevice(params: CreateTicketDevicePayload) {
+
+    const { cartItemId, borrowTicketId } = params;
+
+    //ครอบทั้งฟังก์ชันด้วย transaction
+    return prisma.$transaction(async (tx) => {
+
+        //ใช้ tx แทน prisma
+        const borrowTicket = await tx.borrow_return_tickets.findUnique({
+            where: { brt_id: borrowTicketId },
+            select: { brt_id: true, brt_af_id: true },
+        });
+
+        if (!borrowTicket) throw new Error("Ticket not found");
+
+        //ชดึง cart_item เป็น record เดียว
+        const cart_item = await tx.cart_items.findUnique({
+            where: { cti_id: cartItemId },
+            select: { cti_id: true, cti_de_id: true, cti_start_date: true, cti_end_date: true, },
+        });
+        if (!cart_item) throw new Error("Cart item not found");
+
+        //td_dec_id เป็น Int ห้าม null/undefined
+        if (cart_item.cti_de_id == null) {
+            throw new Error("Cart item has no device child (cti_dec_id is null)");
+        }
+
+        const cartDeviceChilds = await tx.cart_device_childs.findMany({
+            where: { cdc_cti_id: cartItemId, deleted_at: null },
+            select: { cdc_id: true, cdc_dec_id: true },
+            orderBy: { cdc_id: "asc" },
+        });
+
+        if (cartDeviceChilds.length === 0) {
+            return [];
+        }
+
+        const results = await Promise.all(
+            cartDeviceChilds.map(async (cdc) => {
+                const [ticketDevice, availability] = await Promise.all([
+                    tx.ticket_devices.create({
+                        data: {
+                            td_brt_id: borrowTicket.brt_id,
+                            td_dec_id: cdc.cdc_dec_id,
+                            td_origin_cti_id: cartItemId,
+                            created_at: new Date(),
+                        },
+                        select: {
+                            td_id: true,
+                            td_brt_id: true,
+                            td_dec_id: true,
+                            td_origin_cti_id: true,
+                            created_at: true,
+                        },
+                    }),
+
+                    tx.device_availabilities.create({
+                        data: {
+                            da_dec_id: cdc.cdc_dec_id,
+                            da_brt_id: borrowTicket.brt_id,
+                            da_start: cart_item.cti_start_date ?? "",
+                            da_end: cart_item.cti_end_date ?? "",
+                            da_status: "ACTIVE",
+                            created_at: new Date(),
+                        },
+                        select: {
+                            da_id: true,
+                            da_dec_id: true,
+                            da_brt_id: true,
+                            da_start: true,
+                            da_end: true,
+                            da_status: true,
+                            created_at: true,
+                        },
+                    }),
+                ]);
+
+                return { ticketDevice, availability };
+            })
+        );
+
+        return results;
+    });
+
+}
+
+/**
+ * Description: ฟังก์ชันสร้าง stages ของ Borrow Ticket ตาม approval flow steps และเพิ่ม stage STAFF Distribution ปิดท้าย
+ * ทำงานภายใต้ transaction เพื่อให้สร้าง stage ได้ครบชุดหรือ rollback ทั้งหมด
+ * Input : params (CreateBorrowTicketStagePayload) = { cartItemId: number, borrowTicketId: number }
+ * Output : Promise<any[]> = stages ที่สร้างจาก approval_flow_steps (ไม่รวม stage STAFF Distribution ที่สร้างเพิ่มท้าย)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+async function createBorrowTicketStages(params: CreateBorrowTicketStagePayload) {
+    const { cartItemId, borrowTicketId } = params;
+
+    //ครอบทั้งฟังก์ชันด้วย transaction
+    return prisma.$transaction(async (tx) => {
+
+        //ใช้ tx แทน prisma
+        const borrowTicket = await tx.borrow_return_tickets.findUnique({
+            where: { brt_id: borrowTicketId },
+            select: { brt_id: true, brt_af_id: true },
+        });
+
+        if (!borrowTicket) throw new Error("Ticket not found");
+
+        //ดึงข้อมูลทั้งหมดภายใต้ transaction เดียว
+        const [
+            approval_flows,
+            sections,
+            departments,
+            cart_items,
+            device_childs,
+            devices,
+        ] = await Promise.all([
+            tx.approval_flows.findMany({
+                select: {
+                    af_id: true,
+                    af_name: true,
+                    af_is_active: true,
+                    af_us_id: true,
+                },
+            }),
+            tx.sections.findMany({
+                select: {
+                    sec_id: true,
+                    sec_name: true,
+                    sec_dept_id: true,
+                },
+            }),
+            tx.departments.findMany({
+                select: {
+                    dept_id: true,
+                    dept_name: true,
+                },
+            }),
+            tx.cart_items.findMany({
+                where: { cti_id: cartItemId },
+                select: {
+                    cti_id: true,
+                    cti_de_id: true,
+                },
+            }),
+            tx.device_childs.findMany({
+                select: {
+                    dec_id: true,
+                    dec_de_id: true,
+                },
+            }),
+            tx.devices.findMany({
+                select: {
+                    de_id: true,
+                    de_sec_id: true,
+                },
+            }),
+        ]);
+
+        const approval_flow = approval_flows.find(
+            (af) => af.af_id === borrowTicket.brt_af_id
+        );
+
+        if (!approval_flow) {
+            throw new Error("Approval flow not found");
+        }
+
+        /**
+        * Description: ดึงขั้นตอนการอนุมัติทั้งหมดของ approval flow และเรียงตามลำดับการอนุมัติ
+        * Input : approval_flow.af_id
+        * Output : approval_flow_steps (array)
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const approval_flow_steps = await tx.approval_flow_steps.findMany({
+            where: { afs_af_id: approval_flow.af_id },
+            orderBy: { afs_step_approve: "asc" },
+        });
+
+        //section / department ของอุปกรณ์ (ใช้ STAFF stage)
+        const cart_item = cart_items[0];
+        const device = devices.find(
+            (de) => de.de_id === cart_item.cti_de_id
+        );
+        const device_child = device_childs.find(
+            (dc) => dc.dec_de_id === device?.de_id
+        );
+        const section = sections.find(
+            (sec) => sec.sec_id === device?.de_sec_id
+        );
+        const department = departments.find(
+            (dept) => dept.dept_id === section?.sec_dept_id
+        );
+
+        /**
+        * Description: helper สำหรับดึงชื่อแผนกจาก dept_id
+        * Input : deptId (number | null | undefined)
+        * Output : string | null
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const getDeptName = (deptId?: number | null) =>
+            departments.find((dept) => dept.dept_id === deptId)?.dept_name ?? null;
+
+        /**
+        * Description: helper สำหรับดึงชื่อฝ่ายย่อยจาก sec_id
+        * Input : secId (number | null | undefined)
+        * Output : string | null
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const getSecName = (secId?: number | null) =>
+            sections.find((sec) => sec.sec_id === secId)?.sec_name ?? null;
+
+        /**
+        * Description: สร้าง stages ตาม approval_flow_steps โดยตั้งค่าเริ่มต้นเป็น PENDING และเชื่อมกับ ticket
+        * Input : approval_flow_steps, borrowTicketId
+        * Output : Promise<any[]> = stages ที่สร้างจาก steps
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        const stages = await Promise.all(
+            approval_flow_steps.map((step) => {
+                return tx.borrow_return_ticket_stages.create({
+                    data: {
+                        brts_name: `${step.afs_role ?? ""} Approval`.trim(),
+                        brts_step_approve: step.afs_step_approve,
+                        brts_role: step.afs_role,
+                        department: step.afs_dept_id
+                            ? { connect: { dept_id: step.afs_dept_id } }
+                            : undefined,
+                        section: step.afs_sec_id
+                            ? { connect: { sec_id: step.afs_sec_id } }
+                            : undefined,
+                        brts_dept_name: getDeptName(step.afs_dept_id),
+                        brts_sec_name: getSecName(step.afs_sec_id),
+                        brts_status: "PENDING",
+                        ticket: {
+                            connect: { brt_id: borrowTicketId },
+                        },
+                        created_at: new Date(),
+                    },
+                });
+            })
+        );
+
+        /**
+        * Description: สร้าง stage สุดท้ายสำหรับ STAFF Distribution ตามแผนก/ฝ่ายย่อยของอุปกรณ์
+        * Input : department, section, borrowTicketId
+        * Output : Promise<any>
+        * Author : Nontapat Sinhum (Guitar) 66160104
+        **/
+        await tx.borrow_return_ticket_stages.create({
+            data: {
+                brts_name: "STAFF Distribution",
+                brts_step_approve: approval_flow_steps.length + 1,
+                brts_role: "STAFF",
+                department: department?.dept_id
+                    ? { connect: { dept_id: department.dept_id } }
+                    : undefined,
+                section: section?.sec_id
+                    ? { connect: { sec_id: section.sec_id } }
+                    : undefined,
+                brts_dept_name: department?.dept_name ?? null,
+                brts_sec_name: section?.sec_name ?? null,
+                brts_status: "PENDING",
+                created_at: new Date(),
+                ticket: {
+                    connect: { brt_id: borrowTicketId },
+                },
+            },
+        });
+
+        return stages;
+    });
+
+}
+/** GET /borrow/cart/device/:id
+ * Description: ดึงรายละเอียดอุปกรณ์ในรถเข็น (Cart Item) ตาม Cart Item ID
+ * รวมข้อมูลความสัมพันธ์กับ Cart และ Device Child ที่ถูกเลือก
+ *
+ * Input  : ctiId (number) - รหัส Cart Item
+ * Output : Promise<CartItem> - ข้อมูล Cart Item พร้อม cart และ cart_device_childs
+ *
+ * Logic :
+ *   - ค้นหา cart_items ที่ยังไม่ถูกลบ (deleted_at = null)
+ *   - include ข้อมูล cart
+ *   - include cart_device_childs และ device_child ที่เกี่ยวข้อง
+ *   - ถ้าไม่พบข้อมูล ให้ throw error
+ *
+ * Author : Rachata Jitjeankhan (Tang) 66160369
+ */
+async function getCartDeviceDetail(
+  ctiId: number
+): Promise<CartDeviceDetailSchema> {
+  const cartItem = await prisma.cart_items.findFirst({
+    where: {
+      cti_id: ctiId,
+      deleted_at: null,
+    },
+    include: {
+      cart: true,
+      cart_device_childs: {
+        include: {
+          device_child: true,
+        },
+      },
+    },
+  });
+
+  if (!cartItem) {
+    throw new Error("ไม่พบข้อมูลอุปกรณ์ในรถเข็น");
+  }
+
+  return cartItem;
+}
+/** PATCH /borrow/cart/device/:id
+ * Description: ดึงรายละเอียดอุปกรณ์ในรถเข็น (Cart Item) ตาม Cart Item ID
+ * รวมข้อมูลความสัมพันธ์กับ Cart และ Device Child ที่ถูกเลือก
+ *
+ * Input  : ctiId (number) - รหัส Cart Item
+ * Output : Promise<CartItem> - ข้อมูล Cart Item พร้อม cart และ cart_device_childs
+ *
+ * Logic :
+ *   - ค้นหา cart_items ที่ยังไม่ถูกลบ (deleted_at = null)
+ *   - include ข้อมูล cart
+ *   - include cart_device_childs และ device_child ที่เกี่ยวข้อง
+ *   - ถ้าไม่พบข้อมูล ให้ throw error
+ *
+ * Author : Rachata Jitjeankhan (Tang) 66160369
+ */
+
+async function updateCartDeviceDetail(
+  ctiId: number,
+  payload: UpdateCartDeviceDetailBodyDto
+): Promise<UpdateCartDeviceDetailDataSchema> {
+  const exists = await prisma.cart_items.findFirst({
+    where: { cti_id: ctiId, deleted_at: null },
+  });
+
+  if (!exists) {
+    throw new Error("ไม่พบข้อมูลอุปกรณ์ในรถเข็น");
+  }
+
+  const updated = await prisma.cart_items.update({
+    where: { cti_id: ctiId },
+    data: payload,
+    include: {
+      cart: true,
+      cart_device_childs: {
+        include: { device_child: true },
+      },
+    },
+  });
+
+  return updated;
+}
+
 export const cartsService = {
+  getCartItem,
+  deleteCartItemById,
+  createBorrowTicket,
+  getCartDeviceDetail,
+  updateCartDeviceDetail,
+};
     getCartItem, deleteCartItemById, createBorrowTicket, createTicketDevice, createBorrowTicketStages,
 };

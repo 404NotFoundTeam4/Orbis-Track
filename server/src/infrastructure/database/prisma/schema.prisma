@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -149,8 +143,8 @@ model departments {
   dept_id    Int       @id @default(autoincrement())
   dept_name  String    @unique @db.VarChar(200)
   deleted_at DateTime? @db.Timestamptz(6)
-  created_at DateTime? @db.Timestamptz(6)
-  updated_at DateTime? @db.Timestamptz(6)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @updatedAt @db.Timestamptz(6)
 
   sections                 sections[]
   users                    users[]
@@ -175,8 +169,8 @@ model sections {
   sec_name    String    @unique @db.VarChar(50)
   sec_dept_id Int
   deleted_at  DateTime? @db.Timestamptz(6)
-  created_at  DateTime? @db.Timestamptz(6)
-  updated_at  DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @updatedAt @db.Timestamptz(6)
 
   department departments @relation(fields: [sec_dept_id], references: [dept_id], onDelete: Cascade)
   users      users[]
@@ -204,8 +198,8 @@ model users {
   us_sec_id    Int?
   us_is_active Boolean   @default(true)
   deleted_at   DateTime? @db.Timestamptz(6)
-  created_at   DateTime? @db.Timestamptz(6)
-  updated_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @updatedAt @db.Timestamptz(6)
 
   // approval_position approval_positions? @relation(fields: [us_pa_id], references: [ap_id])
   department departments? @relation(fields: [us_dept_id], references: [dept_id], onDelete: SetNull)
@@ -246,8 +240,8 @@ model devices {
   de_us_id           Int
   de_sec_id          Int
   deleted_at         DateTime? @db.Timestamptz(6)
-  created_at         DateTime? @db.Timestamptz(6)
-  updated_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @updatedAt @db.Timestamptz(6)
 
   approval_flow approval_flows @relation(fields: [de_af_id], references: [af_id])
   category      categories     @relation(fields: [de_ca_id], references: [ca_id])
@@ -270,15 +264,15 @@ model device_childs {
   dec_status            DEVICE_CHILD_STATUS
   dec_de_id             Int
   deleted_at            DateTime?           @db.Timestamptz(6)
-  created_at            DateTime?           @db.Timestamptz(6)
-  updated_at            DateTime?           @db.Timestamptz(6)
+  created_at            DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?           @updatedAt @db.Timestamptz(6)
 
   device devices @relation(fields: [dec_de_id], references: [de_id])
 
-  ticket_devices      ticket_devices[]
-  availabilities      device_availabilities[]
-  cart_device_childs  cart_device_childs[]
-  logDeviceChilds     log_device_childs[]
+  ticket_devices     ticket_devices[]
+  availabilities     device_availabilities[]
+  cart_device_childs cart_device_childs[]
+  logDeviceChilds    log_device_childs[]
 
   @@index([dec_de_id], map: "idx_child_device")
   @@index([dec_status], map: "idx_child_status")
@@ -289,8 +283,8 @@ model carts {
   ct_quantity Int       @default(1)
   ct_us_id    Int
   deleted_at  DateTime? @db.Timestamptz(6)
-  created_at  DateTime? @db.Timestamptz(6)
-  updated_at  DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @updatedAt @db.Timestamptz(6)
 
   owner      users        @relation(fields: [ct_us_id], references: [us_id])
   cart_items cart_items[]
@@ -310,12 +304,12 @@ model cart_items {
   cti_ct_id          Int
   cti_de_id          Int
   deleted_at         DateTime? @db.Timestamptz(6)
-  created_at         DateTime? @db.Timestamptz(6)
-  updated_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @updatedAt @db.Timestamptz(6)
 
-  cart                carts                 @relation(fields: [cti_ct_id], references: [ct_id])
-  device              devices               @relation(fields: [cti_de_id], references: [de_id])
-  cart_device_childs  cart_device_childs[]
+  cart               carts                @relation(fields: [cti_ct_id], references: [ct_id])
+  device             devices              @relation(fields: [cti_de_id], references: [de_id])
+  cart_device_childs cart_device_childs[]
 
   @@unique([cti_ct_id, cti_de_id], map: "uq_ct_item_device")
   @@index([cti_ct_id], map: "idx_ct_item_cart")
@@ -327,8 +321,8 @@ model cart_device_childs {
   cdc_cti_id  Int
   cdc_dec_id  Int
   deleted_at  DateTime? @db.Timestamptz(6)
-  created_at  DateTime? @db.Timestamptz(6)
-  updated_at  DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @updatedAt @db.Timestamptz(6)
   reserved_at DateTime? @default(now()) @db.Timestamptz(6)
 
   cart_item    cart_items    @relation(fields: [cdc_cti_id], references: [cti_id])
@@ -340,8 +334,8 @@ model refresh_tokens {
   rt_us_id      Int
   rt_token_hash String    @unique @db.VarChar(255)
   rt_revoked_at DateTime? @db.Timestamptz(6)
-  created_at    DateTime? @db.Timestamptz(6)
-  updated_at    DateTime? @db.Timestamptz(6)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @updatedAt @db.Timestamptz(6)
 
   user users @relation(fields: [rt_us_id], references: [us_id])
 
@@ -355,8 +349,8 @@ model accessories {
   acc_quantity Int
   acc_de_id    Int?
   deleted_at   DateTime? @db.Timestamptz(6)
-  created_at   DateTime? @db.Timestamptz(6)
-  updated_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @updatedAt @db.Timestamptz(6)
 
   device devices? @relation(fields: [acc_de_id], references: [de_id], onDelete: Cascade)
 
@@ -367,8 +361,8 @@ model categories {
   ca_id      Int       @id @default(autoincrement())
   ca_name    String    @db.VarChar(100)
   deleted_at DateTime? @db.Timestamptz(6)
-  created_at DateTime? @db.Timestamptz(6)
-  updated_at DateTime? @db.Timestamptz(6)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @updatedAt @db.Timestamptz(6)
 
   devices devices[]
 }
@@ -379,8 +373,8 @@ model approval_flows {
   af_is_active Boolean   @default(true)
   af_us_id     Int
   deleted_at   DateTime? @db.Timestamptz(6)
-  created_at   DateTime? @db.Timestamptz(6)
-  updated_at   DateTime? @db.Timestamptz(6)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @updatedAt @db.Timestamptz(6)
 
   creator users @relation("approval_flow_creator", fields: [af_us_id], references: [us_id])
 
@@ -398,8 +392,8 @@ model approval_flow_steps {
   afs_role         US_ROLE
   afs_af_id        Int
   deleted_at       DateTime? @db.Timestamptz(6)
-  created_at       DateTime? @db.Timestamptz(6)
-  updated_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @updatedAt @db.Timestamptz(6)
 
   // position approval_positions @relation(fields: [afs_pa_id], references: [ap_id])
   flow       approval_flows @relation(fields: [afs_af_id], references: [af_id])
@@ -418,7 +412,7 @@ model device_availabilities {
   da_end     DateTime  @db.Timestamptz(6)
   da_status  DA_STATUS @default(ACTIVE)
   created_at DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
 
   device_child device_childs         @relation(fields: [da_dec_id], references: [dec_id])
   ticket       borrow_return_tickets @relation(fields: [da_brt_id], references: [brt_id])
@@ -445,8 +439,8 @@ model borrow_return_tickets {
   brt_user_id         Int
   brt_staff_id        Int?
   deleted_at          DateTime?  @db.Timestamptz(6)
-  created_at          DateTime?  @db.Timestamptz(6)
-  updated_at          DateTime?  @db.Timestamptz(6)
+  created_at          DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?  @updatedAt @db.Timestamptz(6)
 
   flow      approval_flows? @relation(fields: [brt_af_id], references: [af_id])
   requester users           @relation("brt_requester", fields: [brt_user_id], references: [us_id])
@@ -482,8 +476,8 @@ model borrow_return_ticket_stages {
   // brts_pa_id        Int
   brts_us_id  Int?
   deleted_at  DateTime? @db.Timestamptz(6)
-  created_at  DateTime? @db.Timestamptz(6)
-  updated_at  DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @updatedAt @db.Timestamptz(6)
 
   ticket   borrow_return_tickets @relation(fields: [brts_brt_id], references: [brt_id])
   // position approval_positions    @relation(fields: [brts_pa_id], references: [ap_id])
@@ -505,8 +499,8 @@ model ticket_devices {
   td_dec_id        Int
   td_origin_cti_id Int?
   deleted_at       DateTime? @db.Timestamptz(6)
-  created_at       DateTime? @db.Timestamptz(6)
-  updated_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @updatedAt @db.Timestamptz(6)
 
   ticket borrow_return_tickets @relation(fields: [td_brt_id], references: [brt_id])
   child  device_childs         @relation(fields: [td_dec_id], references: [dec_id])
@@ -532,7 +526,7 @@ model ticket_issues {
   success_at        DateTime? @db.Timestamptz(6)
   deleted_at        DateTime? @db.Timestamptz(6)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @updatedAt @db.Timestamptz(6)
 
   device   devices                @relation(fields: [ti_de_id], references: [de_id])
   ticket   borrow_return_tickets? @relation(fields: [ti_brt_id], references: [brt_id])
@@ -662,7 +656,7 @@ model chat_rooms {
   cr_us_id    Int
   cr_title    String?   @db.VarChar(200)
   created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @db.Timestamptz(6)
+  updated_at  DateTime? @updatedAt @db.Timestamptz(6)
   last_msg_at DateTime? @db.Timestamptz(6)
 
   owner    users           @relation(fields: [cr_us_id], references: [us_id])

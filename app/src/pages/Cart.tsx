@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertDialog, type AlertTone } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { Link } from "react-router-dom";
@@ -11,7 +11,6 @@ import CartService from "../services/CartService";
  * Feature :
  * - แสดงรายการอุปกรณ์ในรถเข็น
  * - เลือก / ยกเลิกเลือกอุปกรณ์
- * - เพิ่ม–ลดจำนวนอุปกรณ์ตามจำนวนที่พร้อมใช้งาน
  * - ลบอุปกรณ์ (รายชิ้น / หลายรายการ)
  * - ส่งคำร้องขอยืมอุปกรณ์
  * Related API :
@@ -48,46 +47,56 @@ export const Cart = () => {
   const loginData =
     sessionStorage.getItem("User") || localStorage.getItem("User");
   const user = loginData ? JSON.parse(loginData) : null;
-  const us_id = user?.us_id || user?.state?.user?.us_id || null;
+  const userId = user?.us_id || user?.state?.user?.us_id || null;
 
   /**
    * Description : State เก็บรายการอุปกรณ์ในรถเข็น
    */
   const [items, setItems] = useState<CartItem[]>([]);
 
+ /**
+ * Description: ฟังก์ชันสำหรับโหลดข้อมูลรถเข็นของผู้ใช้ และแปลงข้อมูลให้อยู่ในรูปแบบ CartItem เพื่อใช้แสดงผลใน UI
+ * Input : userId (ดึงจาก session/local storage หรือ state ภายใน component)
+ * Output : อัปเดตข้อมูลรายการรถเข็นใน state (items)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+  const loadCart = useCallback(async () => {
+    try {
+      if (!userId) return;
+
+      const res = await CartService.getCartItems();
+
+      const mapped: CartItem[] = res.itemData.map((cti: any) => ({
+        id: cti.cti_id,
+        name: cti.device?.de_name ?? "ไม่ระบุ",
+        code: cti.device?.de_serial_number ?? "-",
+        category: cti.de_ca_name ?? "ไม่ระบุ",
+        department: cti.de_dept_name ?? "ไม่ระบุ",
+        qty: cti.cti_quantity ?? 1,
+        image: cti.device?.de_images ?? "/images/default.png",
+        section: cti.de_sec_name ? cti.de_sec_name.trim().split(" ").pop() : "-",
+        availability: cti.dec_availability,
+        borrowDate: formatThaiDateTime(cti.cti_start_date) ?? "ยังไม่กำหนด",
+        returnDate: formatThaiDateTime(cti.cti_end_date) ?? "ยังไม่กำหนด",
+        readyQuantity: cti.dec_ready_count ?? 0,
+        maxQuantity: cti.dec_count ?? 0,
+      }));
+
+      setItems(mapped);
+    } catch (err) {
+      console.error("โหลดรถเข็นผิดพลาด:", err);
+    }
+  }, [userId]);
+
   /**
-   * Description : โหลดข้อมูลรถเข็นของผู้ใช้จากระบบ
-   * Trigger : เมื่อ component ถูก mount
+   * Description: Hook สำหรับเรียก loadCart เมื่อ component ถูก mount หรือเมื่อ dependency ของ loadCart เปลี่ยน
+   * Input : loadCart
+   * Output : -
    * Author : Nontapat Sinhum (Guitar) 66160104
-   */
+   **/
   useEffect(() => {
-    const loadCart = async () => {
-      try {
-        const res = await CartService.getCartItems(us_id);
-        const mapped: CartItem[] = res.itemData.map((d: any) => ({
-          id: d.cti_id,
-          name: d.device?.de_name ?? "ไม่ระบุ",
-          code: d.device?.de_serial_number ?? "-",
-          category: d.de_ca_name ?? "ไม่ระบุ",
-          department: d.de_dept_name ?? "ไม่ระบุ",
-          qty: d.cti_quantity ?? 1,
-          image: d.device?.de_images ?? "/images/default.png",
-          section: d.de_sec_name ? d.de_sec_name.trim().split(" ").pop() : "-",
-          availability: d.dec_availability,
-          borrowDate: formatThaiDateTime(d.cti_start_date) ?? "ยังไม่กำหนด",
-          returnDate: formatThaiDateTime(d.cti_end_date) ?? "ยังไม่กำหนด",
-          readyQuantity: d.dec_ready_count ?? 0,
-          maxQuantity: d.dec_count ?? 0,
-        }));
-
-        setItems(mapped);
-      } catch (err) {
-        console.error("โหลดรถเข็นผิดพลาด:", err);
-      }
-    };
-
     loadCart();
-  }, []);
+  }, [loadCart]);
 
   /** State สำหรับจัดการการเลือกอุปกรณ์ */
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -99,18 +108,26 @@ export const Cart = () => {
   const [selectDeleteMode, setSelectDeleteMode] = useState(false);
 
   /**
-   * Description : คำนวณจำนวนอุปกรณ์รวมที่ถูกเลือก
+   * Description: คำนวณจำนวนชิ้นรวมของรายการที่ถูกเลือก (รวม qty ของแต่ละรายการ)
+   * Input : items, selectedItems
+   * Output : number (จำนวนชิ้นรวม)
    * Author : Nontapat Sinhum (Guitar) 66160104
-   */
+   **/
   const totalItems = items
-    .filter((i) => selectedItems.includes(i.id))
-    .reduce((sum, i) => sum + i.qty, 0);
+    .filter((item) => selectedItems.includes(item.id))
+    .reduce((sum, item) => sum + item.qty, 0);
 
+  /**
+   * Description: ฟังก์ชันลบรายการในรถเข็นทีละรายการ พร้อมอัปเดต state และแสดง toast
+   * Input : id (cart_item id)
+   * Output : Promise<void>
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const remove = async (id: number) => {
     try {
-      await CartService.deleteCartItem(id);
+      await CartService.deleteCartItem({ cartItemId: id });
 
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      setItems((prev) => prev.filter((item) => item.id !== id));
       setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
 
       push({ tone: "danger", message: "ลบออกจากรถเข็นเสร็จสิ้น!" });
@@ -122,42 +139,53 @@ export const Cart = () => {
   };
 
   /**
-   * Description : เปิด Modal ยืนยันการลบอุปกรณ์
-   */
+   * Description: ฟังก์ชันเปิด Modal ยืนยันการลบแบบรายชิ้น และเก็บ id ที่ต้องการลบไว้ใน state
+   * Input : id (cart_item id)
+   * Output : void (อัปเดต state: itemToDelete, modalType)
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const openDeleteModal = (id: number) => {
     setItemToDelete(id);
     setModalType("danger");
   };
 
+  /**
+   * Description: ฟังก์ชันเปิดโหมดลบแบบเลือกหลายรายการ และแสดง Modal ยืนยันการลบ
+   * Input : -
+   * Output : void (อัปเดต state: selectDeleteMode, modalType)
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const handleSelectDelete = () => {
     setSelectDeleteMode(true);
     setModalType("danger");
   };
 
   /**
-   * Description : เปิด Modal ยืนยันการส่งคำร้อง
-   * Constraint : ต้องมีรายการที่ถูกเลือกอย่างน้อย 1 รายการ
+   * Description: ฟังก์ชันเปิด Modal ยืนยันการส่งคำร้อง (ต้องมีรายการที่ถูกเลือกอย่างน้อย 1 รายการ)
+   * Input : selectedItems
+   * Output : void (อัปเดต state: modalType)
    * Author : Nontapat Sinhum (Guitar) 66160104
-   */
+   **/
   const openSubmitModal = () => {
     if (selectedItems.length > 0) setModalType("success");
   };
 
   /**
-   * Description : ยืนยันการส่งคำร้องขอยืมอุปกรณ์
-   */
+   * Description: ฟังก์ชันยืนยันการส่งคำร้องขอยืมอุปกรณ์ โดยสร้าง Borrow Ticket ตามรายการที่ผู้ใช้เลือก
+   * Input : us_id, selectedItems (cartItemId[])
+   * Output : Promise<void> (เรียก API + reload cart + reset selection)
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const handleConfirmSubmit = async () => {
-    // push({ tone: "confirm", message: "ส่งคำร้องสำเร็จ!" });
     try {
       // ส่งคำร้องตามรายการที่เลือก
       await Promise.all(
         selectedItems.map((cartItemId) =>
-          CartService.createBorrowTicket(us_id, {
-            cartItemId,
-          })
+          CartService.createBorrowTicket({ cartItemId })
         )
       );
 
+      await loadCart();
       push({ tone: "success", message: "ส่งคำร้องสำเร็จ!" });
 
       // ล้าง state หลังส่งสำเร็จ
@@ -170,17 +198,21 @@ export const Cart = () => {
   };
 
   /**
-   * Description : ยืนยันการลบอุปกรณ์ออกจากรถเข็น
+   * Description: ฟังก์ชันยืนยันการลบอุปกรณ์ออกจากรถเข็น รองรับทั้งลบรายชิ้น และลบหลายรายการ (selectDeleteMode)
+   * Input : selectDeleteMode, selectedItems, itemToDelete
+   * Output : Promise<void> (เรียก API + อัปเดต state + toast)
    * Author : Nontapat Sinhum (Guitar) 66160104
-   */
+   **/
   const handleConfirmDelete = async () => {
     try {
       if (selectDeleteMode) {
         await Promise.all(
-          selectedItems.map((id) => CartService.deleteCartItem(id))
+          selectedItems.map((id) =>
+            CartService.deleteCartItem({ cartItemId: id })
+          )
         );
 
-        setItems((prev) => prev.filter((i) => !selectedItems.includes(i.id)));
+        setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
 
         push({
           tone: "danger",
@@ -202,8 +234,11 @@ export const Cart = () => {
   };
 
   /**
-   * Description : ปิด Modal และ reset state ที่เกี่ยวข้อง
-   */
+   * Description: ฟังก์ชันปิด Modal และ reset state ที่เกี่ยวข้องกับ Modal/การลบ
+   * Input : -
+   * Output : void
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const closeModal = () => {
     setModalType(null);
     setItemToDelete(null);
@@ -211,33 +246,13 @@ export const Cart = () => {
   };
 
   /**
-   * Description : เพิ่มจำนวนอุปกรณ์
-   * Constraint : ไม่เกิน readyQuantity
-   */
-  const increment = (id: number) => {
-    setItems((prev) =>
-      prev.map((i) =>
-        i.id === id && i.qty < i.readyQuantity ? { ...i, qty: i.qty + 1 } : i
-      )
-    );
-  };
-
-  /**
-   * Description : ลดจำนวนอุปกรณ์
-   * Constraint : จำนวนต่ำสุดคือ 1
-   */
-  const decrement = (id: number) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id && i.qty > 1 ? { ...i, qty: i.qty - 1 } : i))
-    );
-  };
-
-  /**
-   * Description : เลือก / ยกเลิกเลือกอุปกรณ์
-   * Constraint : อุปกรณ์ที่ไม่พร้อมใช้งานไม่สามารถเลือกได้
-   */
+   * Description: ฟังก์ชันเลือก/ยกเลิกเลือกอุปกรณ์ทีละรายการ โดยจะไม่อนุญาตให้เลือกหาก availability ไม่พร้อมใช้งาน
+   * Input : id (cart_item id)
+   * Output : void (อัปเดต state: selectedItems)
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const toggleSelect = (id: number) => {
-    const item = items.find((i) => i.id === id);
+    const item = items.find((item) => item.id === id);
     if (!item) return;
 
     // ถ้า availability = "ไม่พร้อมใช้งาน" → ห้ามเลือก
@@ -248,8 +263,8 @@ export const Cart = () => {
     );
   };
 
-  const selectableItems = items.filter((i) => i.availability === "พร้อมใช้งาน");
-  const selectableIds = selectableItems.map((i) => i.id);
+  const selectableItems = items.filter((item) => item.availability === "พร้อมใช้งาน");
+  const selectableIds = selectableItems.map((item) => item.id);
 
   const selectedItemCount = selectedItems.length;
 
@@ -257,6 +272,12 @@ export const Cart = () => {
     selectableIds.length > 0 &&
     selectableIds.every((id) => selectedItems.includes(id));
 
+  /**
+   * Description: ฟังก์ชันเลือกทั้งหมด/ยกเลิกเลือกทั้งหมด โดยเลือกเฉพาะรายการที่พร้อมใช้งานเท่านั้น
+   * Input : allSelectableSelected, selectableIds
+   * Output : void (อัปเดต state: selectedItems)
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const toggleSelectAll = () => {
     if (allSelectableSelected) {
       setSelectedItems([]);
@@ -280,7 +301,6 @@ export const Cart = () => {
   } else if (modalType === "success") {
     modalProps = {
       title: "ยืนยันการส่งคำร้อง?",
-      // description: `การดำเนินการนี้จะส่งรายการอุปกรณ์จำนวน ${selectedItemCount} รายการเพื่อขออนุมัติ`,
       onConfirm: handleConfirmSubmit,
       tone: "success" as AlertTone,
       confirmText: "ยืนยัน",
@@ -289,11 +309,11 @@ export const Cart = () => {
   }
 
   /**
-   * Description : แปลง ISO Date string เป็นรูปแบบ วัน/เดือน/ปี พ.ศ. + เวลา
-   * Input  : isoDate (string | null)
-   * Output : string
+   * Description: ฟังก์ชันแปลง ISO Date string เป็นรูปแบบ วัน/เดือน/ปี พ.ศ. + เวลา
+   * Input : isoDate (string | null)
+   * Output : string (รูปแบบวันที่ภาษาไทย)
    * Author : Nontapat Sinhum (Guitar) 66160104
-   */
+   **/
   const formatThaiDateTime = (isoDate: string | null): string => {
     if (!isoDate) return "ยังไม่กำหนด";
 
@@ -326,7 +346,7 @@ export const Cart = () => {
           <input
             type="checkbox"
             className="w-4 h-4 rounded text-[#0072FF] focus:ring-0 cursor-pointer"
-            checked={selectedItemCount === items.length && items.length > 0}
+            checked={allSelectableSelected}
             onChange={toggleSelectAll}
           />
           <span className="text-black text-sm">
@@ -391,33 +411,12 @@ export const Cart = () => {
                 </div>
 
                 <div className="flex flex-col items-end h-full py-2 mr-5">
+                  <div className="w-full text-left text-sm space-y-[2px]">
+                    ช่วงเวลายืม - คืน
+                  </div>
                   <div className="text-right text-sm text-[#B3B1B1] space-y-[2px]">
                     <div>วันที่ยืม : {item.borrowDate}</div>
                     <div>วันที่คืน : {item.returnDate}</div>
-                  </div>
-                  <div className="w-[145px] h-[46px] flex items-center border border-[#A2A2A2] rounded-[16px] overflow-hidden mt-4">
-                    {/* ปุ่มลบ */}
-                    <button
-                      className="flex-1 h-full flex items-center justify-center bg-[#F0F0F0] hover:bg-[#E0E0E0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => decrement(item.id)}
-                      disabled={item.qty <= 1}
-                    >
-                      <Icon icon="ic:round-minus" width="16" height="16" />
-                    </button>
-
-                    {/* จำนวน */}
-                    <div className="flex-1 h-full border-l border-r border-[#A2A2A2] flex items-center justify-center bg-white text-base font-medium">
-                      {item.qty}
-                    </div>
-
-                    {/* ปุ่มบวก */}
-                    <button
-                      className="flex-1 h-full flex items-center justify-center bg-[#F0F0F0] hover:bg-[#E0E0E0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => increment(item.id)}
-                      disabled={item.qty >= item.readyQuantity}
-                    >
-                      <Icon icon="ic:round-plus" width="16" height="16" />
-                    </button>
                   </div>
                 </div>
               </div>

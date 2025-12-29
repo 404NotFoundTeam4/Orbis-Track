@@ -392,43 +392,45 @@ async function main() {
   // Camera accessories
   await prisma.accessories.upsert({
     where: { acc_id: 1 },
-    update: { acc_name: "เลนส์", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 1, acc_name: "เลนส์", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "แบตเตอรี่", acc_quantity: 2, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "แบตเตอรี่", acc_quantity: 2, device: { connect: { de_id: deviceCamera.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 2 },
-    update: { acc_name: "แบตเตอรี่สำรอง", acc_quantity: 10, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 2, acc_name: "แบตเตอรี่สำรอง", acc_quantity: 10, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "เมมโมรี่การ์ด 64GB", acc_quantity: 3, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "เมมโมรี่การ์ด 64GB", acc_quantity: 3, device: { connect: { de_id: deviceCamera.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 3 },
-    update: { acc_name: "ขาตั้งกล้อง", acc_quantity: 3, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 3, acc_name: "ขาตั้งกล้อง", acc_quantity: 3, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
   });
+  // Laptop accessories
   await prisma.accessories.upsert({
     where: { acc_id: 4 },
-    update: { acc_name: "กระเป๋ากล้อง", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 4, acc_name: "กระเป๋ากล้อง", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "อแด็ปเตอร์", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
+    create: { acc_name: "อแด็ปเตอร์", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 5 },
-    update: { acc_name: "เมาส์ไร้สาย", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
-    create: { acc_id: 5, acc_name: "เมาส์ไร้สาย", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
+    update: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
+    create: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
   });
+  // Projector accessories
   await prisma.accessories.upsert({
     where: { acc_id: 6 },
-    update: { acc_name: "Adapter", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
-    create: { acc_id: 6, acc_name: "Adapter", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
+    update: { acc_name: "สาย HDMI", acc_quantity: 2, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "สาย HDMI", acc_quantity: 2, device: { connect: { de_id: deviceProjector.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 7 },
-    update: { acc_name: "สาย HDMI", acc_quantity: 2, acc_de_id: deviceProjector.de_id },
-    create: { acc_id: 7, acc_name: "สาย HDMI", acc_quantity: 2, acc_de_id: deviceProjector.de_id },
+    update: { acc_name: "สายไฟ", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "สายไฟ", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 8 },
-    update: { acc_name: "รีโมท", acc_quantity: 1, acc_de_id: deviceProjector.de_id },
-    create: { acc_id: 8, acc_name: "รีโมท", acc_quantity: 1, acc_de_id: deviceProjector.de_id },
+    update: { acc_name: "รีโมท", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "รีโมท", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
   });
 
 
@@ -565,6 +567,9 @@ async function main() {
       cti_de_id: deviceCamera.de_id,
       cti_quantity: 1,
       cti_us_name: "ชาติชาย มานะสิน",
+      cti_phone: "0999999999",
+      cti_note: "นำเสนองาน",
+      cti_usage_location: "สำนักงาน",
       cti_start_date: daysFromNow(1),
       cti_end_date: daysFromNow(3),
     },

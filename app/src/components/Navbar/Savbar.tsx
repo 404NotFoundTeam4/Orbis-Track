@@ -17,9 +17,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Icon } from "@iconify/react";
 import { useUserStore } from "../../stores/userStore";
 import { UserRole, UserRoleTH } from "../../utils/RoleEnum";
-import { MENU_CONFIG, filterMenuByRole } from "./MenuConfig";
+import { MenuConfig, filterMenuByRole } from "./MenuConfig";
 import getImageUrl from "../../services/GetImage";
-import { type MenuItem, Images, Icons } from "./MenuConfig";
+import { type menuItem, Images, Icons } from "./MenuConfig";
 
 
 const Navbar = () => {
@@ -33,7 +33,7 @@ const Navbar = () => {
   );
 
   const role = user?.us_role as UserRole;
-  const menus = filterMenuByRole(MENU_CONFIG, role);
+  const menus = filterMenuByRole(MenuConfig, role);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -92,7 +92,7 @@ const Navbar = () => {
   };
 
 
-  const renderMenu = (menu: MenuItem) => {
+  const renderMenu = (menu: menuItem) => {
     if (menu.children?.length) {
       return (
         <div key={menu.key}>

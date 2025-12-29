@@ -17,11 +17,11 @@
  */
 export enum UserRole {
   ADMIN = "ADMIN",
-  HEADDEPT = "HOD",
-  HEADSEC = "HOS",
+  HOD = "HOD",
+  HOS = "HOS",
   TECHNICAL = "TECHNICAL",
   STAFF = "STAFF",
-  USER = "EMPLOYEE",
+  EMPLOYEE = "EMPLOYEE",
 }
 
 /**
@@ -34,9 +34,9 @@ export enum UserRole {
  */
 export const UserRoleTH: Record<UserRole, string> = {
   [UserRole.ADMIN]: "แอดมิน",
-  [UserRole.HEADDEPT]: "หัวหน้าแผนก",
-  [UserRole.HEADSEC]: "หัวหน้าฝ่ายย่อย",
+  [UserRole.HOD]: "หัวหน้าแผนก",
+  [UserRole.HOS]: "หัวหน้าฝ่ายย่อย",
   [UserRole.TECHNICAL]: "ช่างเทคนิค",
   [UserRole.STAFF]: "เจ้าหน้าที่",
-  [UserRole.USER]: "พนักงาน",
+  [UserRole.EMPLOYEE]: "พนักงาน",
 };

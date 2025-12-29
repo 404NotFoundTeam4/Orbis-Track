@@ -1,3 +1,10 @@
+/**
+ * Page: Profile
+ * Features:
+ *  - UI หน้าโปรไฟล์ผู้ใช้
+ *
+ * Author: Niyada Butchan (Da) 66160361
+ */
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { AlertDialog } from "../components/AlertDialog";
@@ -274,7 +281,7 @@ const handleUpdatePassword = async () => {
               <div className="mt-16 flex justify-center w-full">
             <button 
               onClick={() => setIsSaveDialogOpen(true)} 
-              disabled={profileData.us_phone.length < 10} // ✅ กดไม่ได้ถ้าไม่ครบ 10
+              disabled={profileData.us_phone.length < 10} // กดไม่ได้ถ้าไม่ครบ 10
               className={`w-[105px] h-[50px] rounded-full font-bold text-[18px] transition-all text-white
                 ${profileData.us_phone.length < 10 
                   ? 'bg-gray-300 cursor-not-allowed' 

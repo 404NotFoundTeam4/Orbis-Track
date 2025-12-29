@@ -9,7 +9,7 @@ import * as argon2 from "argon2";
  * - updateProfile: อัปเดตข้อมูลโปรไฟล์และรูปภาพประจำตัว
  * Author      : Niyada Butchan (Da) 66160361
  */
-// server/src/modules/users/users.service.ts
+
 async function getProfile(userId: number) {
   const user = await prisma.users.findUnique({
     where: { us_id: userId },
@@ -45,7 +45,22 @@ async function getProfile(userId: number) {
   };
 }
 
-// server/src/modules/users/users.service.ts
+/**
+   * updateProfile
+   * Description: ดำเนินการแก้ไขข้อมูลผู้ใช้งานในฐานข้อมูล Prisma
+   * Logic      : 
+   * 1. ตรวจสอบการมีอยู่ของบัญชีผู้ใช้งานผ่าน userId
+   * 2. หากไม่พบผู้ใช้งาน จะทำการ Throw Error เพื่อขัดขวางการทำงาน
+   * 3. อัปเดตข้อมูลที่ได้รับจาก Body (ชื่อ, นามสกุล, เบอร์โทร, อีเมล)
+   * 4. ตรวจสอบรูปภาพ: หากมีการอัปโหลดใหม่จะใช้ Path ใหม่ หากไม่มีจะคงค่าเดิมในฐานข้อมูลไว้
+   * 5. บันทึกเวลาที่มีการแก้ไขล่าสุดลงในฟิลด์ updated_at
+   * Input      : 
+   * - userId: ID ของผู้ใช้งานที่ต้องการอัปเดต
+   * - body: ข้อมูลใหม่จาก Payload (UpdateMyProfilePayload)
+   * - imagePath: เส้นทางจัดเก็บรูปภาพ (ถ้ามี)
+   * Output     : Object ข้อมูลผู้ใช้งานที่ผ่านการอัปเดตแล้ว
+   * Author     : Niyada Butchan (Da) 66160361
+   */
 
 async function updateProfile(userId: number, body: UpdateMyProfilePayload, imagePath: string | null) {
     const user = await prisma.users.findUnique({ where: { us_id: userId } });
@@ -63,6 +78,23 @@ async function updateProfile(userId: number, body: UpdateMyProfilePayload, image
         },
     });
 }
+/**
+   * updatePassword
+   * Description: ดำเนินการตรวจสอบรหัสผ่านเดิมและอัปเดตรหัสผ่านใหม่ด้วยการเข้ารหัส
+   * Logic      : 
+   * 1. ค้นหาข้อมูลผู้ใช้งานจาก Database ผ่าน userId
+   * 2. หากไม่พบผู้ใช้งาน จะทำการ Throw Error 404 เพื่อแจ้งเตือน Controller
+   * 3. ใช้ argon2.verify เพื่อเปรียบเทียบรหัสผ่านเดิมที่ผู้ใช้ส่งมากับรหัสที่ Hash ไว้ใน DB
+   * 4. หากรหัสผ่านเดิมไม่ถูกต้อง จะทำการ Throw Error 400 ทันที
+   * 5. หากถูกต้อง จะทำการเข้ารหัส (Hash) รหัสผ่านใหม่ด้วย argon2.hash
+   * 6. บันทึกรหัสผ่านใหม่ที่ผ่านการเข้ารหัสแล้วลงในฐานข้อมูล Prisma
+   * Input      : 
+   * - userId: ID ของผู้ใช้งาน
+   * - oldPassword: รหัสผ่านปัจจุบัน (แบบ Plain text)
+   * - newPassword: รหัสผ่านใหม่ที่ต้องการเปลี่ยน
+   * Output     : ข้อมูลผลลัพธ์การอัปเดตจาก Prisma
+   * Author     : Niyada Butchan (Da) 66160361
+   */
 
 export const updatePassword = async (userId: number, oldPassword: string, newPassword: string) => {
   // ดึงข้อมูล User มาจาก DB

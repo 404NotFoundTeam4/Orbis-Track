@@ -21,15 +21,15 @@ router.getDoc(
 
 //  UPDATE profile + upload image
 
-router.postDoc("/:id", //เพิ่ม /:id ตรงนี้เพื่อให้รับค่า id จาก URL ได้
+router.postDoc("/:id", 
   { 
     tag: "Accounts", 
-    body: editAccountSchema, // ตรวจสอบว่าใช้ Schema สำหรับการแก้ไข
+    body: editAccountSchema, 
     auth: true, 
     contentType: "multipart/form-data" 
   },
-  upload.single("us_images"), // ตรวจสอบชื่อ Key ให้ตรงกับที่ Frontend ส่ง
-  accountsController.update as any // เรียกใช้ฟังก์ชัน update ของเพื่อน
+  upload.single("us_images"), 
+  accountsController.update as any 
 );
 router.patchDoc(
   "/update-password",

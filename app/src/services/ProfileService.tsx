@@ -1,7 +1,6 @@
 import api from "../api/axios";
 
 export const usersService = {
-  // ดึงข้อมูลโปรไฟล์
     /**
    * getProfile
    * Description: ดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่เข้าสู่ระบบอยู่
@@ -29,7 +28,19 @@ export const usersService = {
     return data;
   },
 
-
+  /**
+   * updateProfile
+   * Description: อัปเดตข้อมูลโปรไฟล์ส่วนตัว (รองรับการแก้ไขข้อมูลทั่วไปและรูปภาพ)
+   * Method     : POST
+   * Endpoint   : /user/:id
+   * Input      : id (number), formData (FormData: us_phone, us_images ฯลฯ)
+   * Logic      :
+   * - ตรวจสอบ token จาก localStorage
+   * - ส่งข้อมูลแบบ multipart/form-data ไปยังบัญชีเป้าหมายตาม ID
+   * - ใช้ Authorization header สำหรับยืนยันสิทธิ์การแก้ไข
+   * Output     : ข้อมูลผลลัพธ์การอัปเดตบัญชีผู้ใช้
+   * Author     : Niyada Butchan (Da) 66160361
+   */
 updateProfile: async (id: number, formData: FormData) => {
   const token = localStorage.getItem("token");
 
@@ -43,7 +54,19 @@ updateProfile: async (id: number, formData: FormData) => {
   return data;
 },
 
-
+/**
+   * updatePassword
+   * Description: แก้ไขรหัสผ่านเดิมเป็นรหัสผ่านใหม่
+   * Method     : PATCH
+   * Endpoint   : /user/update-password
+   * Input      : payload { oldPassword, newPassword, confirmPassword }
+   * Logic      :
+   * - ตรวจสอบความถูกต้องของ token
+   * - ตรวจสอบรหัสผ่านเดิมผ่านระบบ argon2 ใน Backend
+   * - อัปเดตรหัสผ่านใหม่ลงฐานข้อมูล
+   * Output     : ข้อความยืนยันการเปลี่ยนรหัสผ่านสำเร็จ
+   * Author     : Niyada Butchan (Da) 66160361
+   */
   updatePassword: async (payload: {
     oldPassword: string;
     newPassword: string;

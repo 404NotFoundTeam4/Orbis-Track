@@ -34,40 +34,17 @@ export class UsersController {
     }
 };
 
-
-
-// updateMyProfile = async (req: Request, res: Response) => {
-//   try {
-//     const user = (req as any).user;
-
-//     const userId = Number(user?.us_id || user?.id || user?.sub);
-//        console.log("FILE:", req.file);
-//     console.log("BODY:", req.body);
-
-
-//     if (!userId || isNaN(userId)) {
-//       return res.status(401).json({ message: "ไม่พบข้อมูลผู้ใช้ในระบบ" });
-//     }
-
-//     const validatedBody = updateMyProfilePayload.parse(req.body);
-//     const imagePath = req.file ? req.file.filename : null;
-
-//     await usersService.updateProfile(userId, validatedBody, imagePath);
-
-//     const updatedProfile = await usersService.getProfile(userId);
-
-//     return res.status(200).json({
-//       message: "Updated successfully",
-//       data: updatedProfile
-//     });
-
-//   } catch (error: any) {
-//     console.error("Update Error:", error);
-//     if (!res.headersSent) {
-//       return res.status(500).json({ message: error.message });
-//     }
-//   }
-// };
+/**
+   * updatePassword
+   * Description: จัดการคำขอเปลี่ยนรหัสผ่าน โดยมีการตรวจสอบความถูกต้องของข้อมูลและตัวตน
+   * Logic      : 
+   * 1. ตรวจสอบ Identity ของผู้ใช้จาก Token (userId)
+   * 2. ตรวจสอบโครงสร้างข้อมูล (Validation) ด้วย changePasswordSchema
+   * 3. เรียกใช้งาน usersService เพื่อเปรียบเทียบรหัสผ่านเดิมและบันทึกรหัสผ่านใหม่
+   * 4. จัดการ Error เฉพาะกรณี (เช่น ZodError หรือข้อผิดพลาดจาก Service) เพื่อส่ง Response ที่เหมาะสม
+   * Output     : JSON Response แสดงสถานะการดำเนินการ (Success: true/false)
+   * Author     : Niyada Butchan (Da) 66160361
+   */
 
 updatePassword = async (req: Request, res: Response) => {
     try {

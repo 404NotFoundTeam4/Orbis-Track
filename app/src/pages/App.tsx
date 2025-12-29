@@ -8,7 +8,7 @@ import Dashboard from "./Dashboard";
 import "../styles/css/index.css";
 import ResetPassword from "./ResetPassword";
 import { Otppassword } from "./Otppassword";
-import Navbar from "../components/Navbar/Savbar";
+import Navbar from "../components/Navbar/Navbar";
 import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";

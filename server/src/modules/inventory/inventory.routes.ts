@@ -2,12 +2,18 @@ import { Router } from "../../core/router.js";
 import { upload } from "../upload/upload.service.js";
 import { InventoryController } from "./inventory.controller.js";
 import {
+    createDevicePayload,
+    createDeviceResponseSchema,
+    createApprovalFlowsPayload,
+    createApprovalFlowResponseSchema,    
     createDeviceChildPayload,
     createDeviceChildSchema,
     deleteDeviceChildPayload,
     getDeviceWithChildsSchema,
     idParamSchema,
     uploadFileDeviceChildSchema,
+    getDeviceWithSchema,
+    getApprovalFlowSchema
     inventorySchema,
     softDeleteResponseSchema,
     updateDevicePayload
@@ -15,6 +21,11 @@ import {
 
 const inventoryController = new InventoryController();
 const router = new Router(undefined, '/inventory');
+router.postDoc("/devices", { tag: "Inventory", body: createDevicePayload, res: createDeviceResponseSchema, auth: true }, upload.single("de_images"), inventoryController.createDevice);
+router.getDoc("/add-devices", { tag: "Inventory", res: getDeviceWithSchema, auth: true }, inventoryController.getDevices);
+
+router.postDoc("/approval", { tag: "Inventory", body:createApprovalFlowsPayload   , res: createApprovalFlowResponseSchema, auth: true }, inventoryController.createFlows);
+router.getDoc("/add-approval", { tag: "Inventory", res: getApprovalFlowSchema, auth: true }, inventoryController.getFlows);
 
 router.getDoc("/departments", { tag: "Inventory", auth: true }, inventoryController.getDepartments);
 router.getDoc("/categories", { tag: "Inventory", auth: true }, inventoryController.getCategories);
@@ -25,6 +36,7 @@ router.getDoc("/devices/:id", { tag: "Inventory", params: idParamSchema,res: get
 router.postDoc("/devices-childs", { tag: "Inventory", body: createDeviceChildPayload, res: createDeviceChildSchema.array(), auth: true }, inventoryController.create);
 router.postDoc("/devices/:id/upload-childs", { tag: "Inventory", params: idParamSchema, res: uploadFileDeviceChildSchema, auth: true }, upload.single("file"), inventoryController.uploadFileDeviceChild);
 router.deleteDoc("/devices-childs", { tag: "Inventory", body: deleteDeviceChildPayload, auth: true }, inventoryController.delete);
+
 // Get All Devices
 router.getDoc("/", { 
     tag: "Inventory", 

@@ -124,6 +124,7 @@ async function getAllAccounts() {
         }),
         // ดึงข้อมูลจากตาราง users
         prisma.users.findMany({
+            orderBy: { us_id: "asc" },
             select: {
                 us_id: true,
                 us_emp_code: true,
@@ -172,6 +173,7 @@ async function getAllAccounts() {
 */
 async function createAccounts(payload: CreateAccountsPayload, images: any) {
     const {
+        us_emp_code,
         us_firstname,
         us_lastname,
         us_username,
@@ -190,12 +192,12 @@ async function createAccounts(payload: CreateAccountsPayload, images: any) {
     // Hash Password
     const hashedPassword = await hashPassword(us_password);
 
-    const newEmployeeCode = await generateNextEmployeeCode(us_role as UserRole);
+    // const newEmployeeCode = await generateNextEmployeeCode(us_role as UserRole);
 
     // เพิ่มข้อมูลผู้ใช้ใหม่ลงในตาราง users
     const newUser = await prisma.users.create({
         data: {
-            us_emp_code: newEmployeeCode,
+            us_emp_code,
             us_firstname,
             us_lastname,
             us_username,

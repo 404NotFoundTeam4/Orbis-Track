@@ -30,6 +30,7 @@ interface DropDownProps<T extends DropDownItem> {
   className?: string; // CSS class ของ wrapper
   triggerClassName?: string;
   emptyMessage?: string; // ข้อความแสดงเมื่อไม่มีข้อมูล
+  dropdownHeight?: number; // ความสูงของ dropdown
 }
 
 /**
@@ -57,6 +58,7 @@ function DropDown<T extends DropDownItem>({
   className = "",
   triggerClassName = "",
   emptyMessage = "ไม่พบข้อมูล",
+  dropdownHeight = 240,
 }: Readonly<DropDownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false); // สถานะเปิด/ปิด dropdown
   const [searchTerm, setSearchTerm] = useState(""); // คำค้นหาปัจจุบัน
@@ -158,13 +160,13 @@ function DropDown<T extends DropDownItem>({
       {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
       <div className="flex-1 min-w-0">
         <div
-          className="text-sm font-normal text-[#000000] truncate"
+          className="text-sm font-normal text-[#000000] whitespace-normal break-words min-w-0"
           style={{ color: item.textColor || "#000000" }}
         >
           {item.label}
         </div>
         {item.subtitle && (
-          <div className="text-xs text-[#000000] truncate mt-0.5">
+          <div className="text-xs text-[#000000] whitespace-normal break-words min-w-0 mt-0.5">
             {item.subtitle}
           </div>
         )}
@@ -247,7 +249,7 @@ function DropDown<T extends DropDownItem>({
           )}
 
           {/* Items List */}
-          <div className="overflow-y-auto" style={{ maxHeight: "240px" }}>
+          <div className="overflow-y-auto" style={{ maxHeight: `${dropdownHeight}px` }}>
             {filteredItems.length > 0 ? (
               <div>
                 {filteredItems.map((item) => (
@@ -258,7 +260,7 @@ function DropDown<T extends DropDownItem>({
                     disabled={item.disabled}
                     className={`
                         w-full px-4 py-2.5
-                        text-left text-[16px]
+                        text-left text-[16px] 
                         transition-colors duration-150
                         ${item.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-[#EBF3FE] cursor-pointer"}
                         `}

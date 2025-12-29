@@ -20,6 +20,7 @@ import {
 async function getAllDepartment() {
   // ดึงข้อมูลแผนกทั้งหมด เลือกเฉพาะ id และชื่อ
   const departments = await prisma.departments.findMany({
+    orderBy: { dept_name: "asc" },
     select: {
       dept_id: true,
       dept_name: true,
@@ -85,7 +86,7 @@ async function editDepartment(
 ) {
   const { id } = params;
   const { department } = payload;
-  
+
   if (!isTextOnly(department))
     throw new Error("Departments should be text only");
 
@@ -116,12 +117,13 @@ async function editDepartment(
     const existingDept = await prisma.departments.findFirst({
       where: {
         dept_name: { equals: newDept, mode: "insensitive" }, //ชื่อแผนกที่มีอยู่ตรงกับชื่อแผนกที่กรอกเข้ามาใหม่ (ภาษาอังกฤษไม่สนตัวเล็กตัวใหญ่)
+        dept_id: { not: id },
       },
     });
-  
+
     //ถ้ามีแผนกอยู่แล้ว
     if (existingDept) throw new Error("Department name already exists");
-    
+
     // อัพเดตชื่อแผนกหลัก
     await tx.departments.update({
       where: { dept_id: id },
@@ -166,7 +168,7 @@ async function editSection(
 ) {
   const { deptId, secId } = params;
   const { section } = payload;
-  
+
   if (!isTextOnly(section))
     throw new Error("Departments should be text only");
 
@@ -189,11 +191,12 @@ async function editSection(
   const newSec = isEnglishText(cleanedName)
     ? `${dept.dept_name} ฝ่ายย่อย ${cleanedName}` // ภาษาอังกฤษ เว้นวรรค
     : `${dept.dept_name} ฝ่ายย่อย${cleanedName}`; // ภาษาไทย ไม่เว้นวรรค
-  
+
   //ตรวจสอบแผนกว่ามีอยู่แล้วหรือไม่
   const existingDept = await prisma.sections.findFirst({
     where: {
       sec_name: { equals: newSec, mode: "insensitive" }, //ชื่อแผนกที่มีอยู่ตรงกับชื่อแผนกที่กรอกเข้ามาใหม่ (ภาษาอังกฤษไม่สนตัวเล็กตัวใหญ่)
+      sec_id: { not: secId },
     },
   });
 
@@ -283,6 +286,7 @@ async function addSection(deptId: number, section: string) {
 //  */
 async function getDeptSection() {
   const deptsection = await prisma.departments.findMany({
+    orderBy: { dept_name: "asc" },
     select: {
       dept_id: true,
       dept_name: true,
@@ -294,6 +298,7 @@ async function getDeptSection() {
         },
       },
       sections: {
+        orderBy: { sec_name: "asc" },
         select: {
           sec_id: true,
           sec_name: true,
@@ -423,16 +428,16 @@ async function addDepartments(payload: AddDepartmentsPayload) {
   // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
   const newDept = dept_name.includes("แผนก") //ตรวจสอบว่าชื่อแผนกมีคำว่า "แผนก"
     ? (() => {
-        // มีคำว่า "แผนก" อยู่แล้ว ให้จัดการช่องว่าง
-        const afterDept = dept_name.split("แผนก")[1] || ""; //แยกข้อความหลังคำว่า "แผนก" ถ้าไม่มีให้เป็นค่าว่าง
-        const trimmedAfter = afterDept.trim(); //ตัดช่องว่างหัวท้ายหลังคำว่า "แผนก"
+      // มีคำว่า "แผนก" อยู่แล้ว ให้จัดการช่องว่าง
+      const afterDept = dept_name.split("แผนก")[1] || ""; //แยกข้อความหลังคำว่า "แผนก" ถ้าไม่มีให้เป็นค่าว่าง
+      const trimmedAfter = afterDept.trim(); //ตัดช่องว่างหัวท้ายหลังคำว่า "แผนก"
 
-        return isEnglishText(trimmedAfter) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
-          ? `แผนก ${trimmedAfter}` //ภาษาอังกฤษ เว้นวรรค
-          : `แผนก${trimmedAfter}`; //ภาษาไทย ไม่เว้นวรรค
-      })()
+      return isEnglishText(trimmedAfter) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
+        ? `แผนก ${trimmedAfter}` //ภาษาอังกฤษ เว้นวรรค
+        : `แผนก${trimmedAfter}`; //ภาษาไทย ไม่เว้นวรรค
+    })()
     : //ไม่มีคำว่า "แผนก"
-      isEnglishText(dept_name) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
+    isEnglishText(dept_name) //เช็คว่าข้อความหลัง "แผนก" เป็นภาษาอังกฤษหรือไทย
       ? `แผนก ${dept_name}`
       : `แผนก${dept_name}`;
 

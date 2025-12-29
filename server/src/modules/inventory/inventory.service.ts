@@ -1,13 +1,16 @@
 import { $Enums } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
+import { ValidationError } from "../../errors/errors.js";
 import xlsx from "xlsx";
 import fs from "fs";
 import {
-  CreateDeviceChildPayload,
-  DeleteDeviceChildPayload,
-  IdParamDto,
-  UploadFileDeviceChildPayload,
-  UpdateDevicePayload,
+    CreateDeviceChildPayload,
+    CreateApprovalFlowsPayload,
+    CreateDevicePayload,
+    DeleteDeviceChildPayload,
+    IdParamDto,
+    UploadFileDeviceChildPayload,
+    UpdateDevicePayload,
 } from "./inventory.schema.js";
 
 /**
@@ -297,19 +300,494 @@ async function uploadFileDeviceChild(payload: UploadFileDeviceChildPayload) {
  * Author    : Thakdanai Makmi (Ryu) 66160355
  */
 async function deleteDeviceChild(payload: DeleteDeviceChildPayload) {
-  const { dec_id } = payload;
-  await prisma.device_childs.updateMany({
-    where: {
-      dec_id: {
-        in: dec_id,
-      },
-    },
-    data: {
-      deleted_at: new Date(),
-    },
-  });
+    const { dec_id } = payload;
+    await prisma.device_childs.updateMany({
+        where: {
+            dec_id: {
+                in: dec_id
+            }
+        },
+        data: {
+            deleted_at: new Date()
+        }
+    });
 
-  return { message: "Delete device child successfully" };
+    return { message: "Delete device child successfully" }
+}
+
+/**
+ * Description: สร้างอุปกรณ์หลัก พร้อมอุปกรณ์เสริมและอุปกรณ์ลูก
+ * Input     :
+ *   - payload: CreateDevicePayload
+ *       - ข้อมูลอุปกรณ์หลัก
+ *       - accessories (optional)
+ *       - serialNumbers (optional)
+ *       - totalQuantity จำนวนอุปกรณ์ลูก
+ *   - images (optional): string - รูปภาพอุปกรณ์ (override payload)
+ * Output    :
+ *   - device: ข้อมูลอุปกรณ์หลักที่สร้างแล้ว
+ *   - accessories: รายการอุปกรณ์เสริม
+ * Logic     :
+ *   - แยกข้อมูล accessories, serialNumbers, totalQuantity ออกจาก payload
+ *   - เลือกรูปภาพจาก images → payload → null
+ *   - ใช้ Prisma Transaction
+ *     - สร้าง devices
+ *     - ถ้ามี accessories → createMany ลง accessories
+ *     - ถ้า totalQuantity > 0
+ *         - สร้าง device_childs ตามจำนวน
+ *         - สร้าง asset code และ serial number อัตโนมัติ
+ * Author    : Panyapon Phollert (Ton) 66160086
+ */
+
+async function createDevice(payload: CreateDevicePayload, images?: string) {
+    const { accessories,
+        serialNumbers,
+        totalQuantity,
+        de_images: payloadImages,
+        ...deviceData
+    } = payload;
+    const finalImages = images ?? payloadImages ?? null;
+
+    return await prisma.$transaction(async (tx) => {
+
+        const device = await tx.devices.create({
+            data: {
+                ...deviceData,
+                de_images: finalImages,
+                created_at: new Date(),
+            },
+        });
+
+        if (accessories?.length) {
+            await tx.accessories.createMany({
+                data: accessories.map((a) => ({
+                    acc_name: a.acc_name,
+                    acc_quantity: a.acc_quantity,
+                    acc_de_id: device.de_id,
+                    created_at: new Date(),
+                })),
+            });
+        }
+        if (totalQuantity > 0) {
+
+            const assetParts = device.de_serial_number.split("-")[0];
+            const ASSET_PREFIX = assetParts
+
+            const data = Array.from({ length: totalQuantity }, (_, index) => {
+                const serialNumber = String(index + 1).padStart(3, "0");
+                const dec = serialNumbers?.[index];
+
+                return {
+                    dec_serial_number: dec?.value || null,
+                    dec_asset_code: `ASSET-${ASSET_PREFIX}-${serialNumber}`,
+                    dec_has_serial_number: Boolean(dec?.value),
+                    dec_status: $Enums.DEVICE_CHILD_STATUS.READY,
+                    dec_de_id: device.de_id,
+                    created_at: new Date(),
+                };
+            });
+
+
+            await tx.device_childs.createMany({ data });
+        }
+
+        return {
+            ...device, accessories
+        };
+    });
+}
+
+/**
+ * Description: ดึงข้อมูลอุปกรณ์ทั้งหมด พร้อม approval flow และขั้นตอนอนุมัติ
+ * Input     : -
+ * Output    :
+ *   - departments: แผนก (เติม prefix หัวหน้า)
+ *   - sections: ฝ่ายย่อย (เติม prefix หัวหน้า)
+ *   - categories: หมวดหมู่อุปกรณ์
+ *   - approval_flows: flow การอนุมัติ
+ *   - approval_flow_step: flow พร้อม steps และผู้อนุมัติ
+ * Logic     :
+ *   - ดึง users, departments, sections, categories,
+ *     approval_flows และ approval_flow_steps พร้อมกัน
+ *   - แปลง approval_flow_steps
+ *     - STAFF → ผูกกับ section + dept
+ *     - HOD → ผูกกับ department
+ *     - HOS → ผูกกับ section
+ *   - map ผู้ใช้ตาม role (แสดงสูงสุด 3 คน)
+ *   - group steps ตาม af_id
+ *   - รวม approval_flows กับ steps
+ * Author : Panyapon Phollert (Ton) 66160086
+ */
+
+async function getAllDevices() {
+    const [users, departments, sections, categories, approval_flows, approval_flow_steps] = await Promise.all([
+        prisma.users.findMany({
+            select: {
+                us_id: true,
+                us_firstname: true,
+                us_lastname: true,
+                us_role: true,
+                us_dept_id: true,
+                us_sec_id: true,
+            },
+        }),
+        prisma.departments.findMany({
+            select: {
+                dept_id: true,
+                dept_name: true,
+            },
+        }),
+        prisma.sections.findMany({
+            select: {
+                sec_id: true,
+                sec_name: true,
+                sec_dept_id: true,
+            },
+        }),
+        prisma.categories.findMany({
+            select: {
+                ca_id: true,
+                ca_name: true,
+            },
+        }),
+        prisma.approval_flows.findMany({
+            select: {
+                af_id: true,
+                af_name: true,
+                af_us_id: true,
+                af_is_active: true,
+            },
+        }),
+        prisma.approval_flow_steps.findMany({
+            select: {
+                afs_id: true,
+                afs_step_approve: true,
+                afs_dept_id: true,
+                afs_sec_id: true,
+                afs_role: true,
+                afs_af_id: true,
+            },
+        }),
+    ]);
+
+    const flow_steps = approval_flow_steps.map((afs) => {
+        let name_role: string | null = null;
+        let users_selected: any[] = [];
+
+        /** ================= STAFF ================= */
+        if (afs.afs_role === "STAFF") {
+            const section = sections.find(
+                (sec) =>
+                    sec.sec_id === afs.afs_sec_id &&
+                    sec.sec_dept_id === afs.afs_dept_id
+            );
+
+            if (section) {
+                const deptMatch = section.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
+                const deptName = deptMatch?.[1]?.trim();
+
+                const letterMatch = section.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
+                const letter = letterMatch?.[1];
+
+                name_role = `เจ้าหน้าที่คลัง ${deptName} ฝ่ายย่อย ${letter}`;
+            }
+
+            users_selected = users
+                .filter(
+                    (u) =>
+                        u.us_role === "HOS" &&
+                        u.us_sec_id === afs.afs_sec_id &&
+                        u.us_dept_id === afs.afs_dept_id
+                )
+                .slice(0, 3);
+        }
+
+        /** ================= HOD ================= */
+        else if (afs.afs_role === "HOD") {
+            const dept = departments.find(
+                (d) => d.dept_id === afs.afs_dept_id
+            );
+
+            const name = dept?.dept_name ?? null;
+            name_role = `หัวหน้า${name}`
+            users_selected = users
+                .filter(
+                    (u) =>
+                        u.us_role === "HOD" &&
+                        u.us_dept_id === afs.afs_dept_id
+                )
+                .slice(0, 3);
+        }
+
+        /** ================= HOS ================= */
+        else if (afs.afs_role === "HOS") {
+            const section = sections.find(
+                (sec) =>
+                    sec.sec_id === afs.afs_sec_id &&
+                    sec.sec_dept_id === afs.afs_dept_id
+            );
+            const name = section?.sec_name ?? null;
+            name_role = `หัวหน้า${name}`
+
+            users_selected = users
+                .filter(
+                    (u) =>
+                        u.us_role === "HOS" &&
+                        u.us_sec_id === afs.afs_sec_id &&
+                        u.us_dept_id === afs.afs_dept_id
+                )
+                .slice(0, 3);
+        }
+
+        return {
+            ...afs,
+            afs_name: name_role,
+            users: users_selected.map(u => ({
+                us_id: u.us_id,
+                fullname: `${u.us_firstname} ${u.us_lastname}`,
+            })),
+        };
+    });
+
+    const flowMap = new Map<number, any[]>();
+
+    for (const step of flow_steps) {
+        if (!flowMap.has(step.afs_af_id)) {
+            flowMap.set(step.afs_af_id, []);
+        }
+        flowMap.get(step.afs_af_id)!.push(step);
+    }
+    const approvalFlowsWithSteps = approval_flows.map(flow => {
+        const { af_name, af_is_active, ...rest } = flow;
+
+        return {
+            ...rest,
+            steps: flowMap.get(flow.af_id) ?? [],
+        };
+    });
+
+
+
+
+    const departmentsWithHead = departments.map((dept) => ({
+        ...dept,
+        dept_name: `หัวหน้า${dept.dept_name}`,
+    }));
+
+    const sectionsWithHead = sections.map((sec) => ({
+        ...sec,
+        sec_name: `หัวหน้า${sec.sec_name}`,
+    }));
+
+    return {
+        departments: departmentsWithHead,
+        sections: sectionsWithHead,
+        categories,
+        approval_flows: approval_flows,
+        approval_flow_step: approvalFlowsWithSteps,
+    };
+
+
+}
+
+/**
+ * Description: สร้าง Approval Flow และขั้นตอนการอนุมัติ
+ * Input     :
+ *   - payload: CreateApprovalFlowsPayload
+ *       - af_name: ชื่อ flow
+ *       - af_us_id: ผู้สร้าง flow
+ *       - approvalflowsstep: รายการขั้นตอนการอนุมัติ
+ * Output    :
+ *   - approvalflow: ข้อมูล flow ที่สร้าง
+ *   - steps: จำนวนขั้นตอนที่สร้าง
+ * Logic     :
+ *   - ใช้ Prisma Transaction
+ *     - สร้าง approval_flows
+ *     - สร้าง approval_flow_steps แบบ createMany
+ *     - ผูก afs_af_id กับ flow ที่สร้างใหม่
+ * Author    : Panyapon Phollert (Ton) 66160086
+ */
+
+async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
+    const {
+        af_name,
+        af_us_id,
+        approvalflowsstep, } = payload;
+    return await prisma.$transaction(async (tx) => {
+
+        const approvalFlow = await tx.approval_flows.create({
+            data: {
+                af_name,
+                af_is_active: true,
+                af_us_id,
+                created_at: new Date(),
+            },
+        });
+
+        const steps = await tx.approval_flow_steps.createMany({
+            data: approvalflowsstep.map(step => ({
+                afs_step_approve: step.afs_step_approve,
+                afs_dept_id: step.afs_dept_id ?? null,
+                afs_sec_id: step.afs_sec_id ?? null,
+                afs_role: step.afs_role,
+                afs_af_id: approvalFlow.af_id,
+                created_at: new Date(),
+            })),
+        });
+
+        return {
+            approvalflow: approvalFlow,
+            steps
+        };
+    });
+}
+
+/**
+ * Description: ดึงข้อมูลสำหรับตั้งค่า Approval (STAFF / HOD / HOS)
+ * Input     : -
+ * Output    :
+ *   - departments: หัวหน้าแผนก (HOD)
+ *   - sections: หัวหน้าฝ่ายย่อย (HOS)
+ *   - staff: เจ้าหน้าที่คลัง แยกตามฝ่ายย่อย
+ * Logic     :
+ *   - ดึง departments, sections, users
+ *   - STAFF
+ *     - รวม section ที่ซ้ำกันด้วย Set
+ *     - map ผู้ใช้ role HOS
+ *   - HOD
+ *     - map ตาม department
+ *   - HOS
+ *     - map ตาม section
+ *   - แสดงผู้ใช้สูงสุด 3 คนต่อกลุ่ม
+ * Author   : Panyapon Phollert (Ton) 66160086
+ */
+
+async function getAllApproves() {
+    const [departments, sections, users] = await Promise.all([
+        prisma.departments.findMany({
+            select: {
+                dept_id: true,
+                dept_name: true,
+            },
+        }),
+        prisma.sections.findMany({
+            select: {
+                sec_id: true,
+                sec_name: true,
+                sec_dept_id: true,
+            },
+        }),
+        prisma.users.findMany({
+            select: {
+                us_id: true,
+                us_firstname: true,
+                us_lastname: true,
+                us_dept_id: true,
+                us_sec_id: true,
+                us_role: true,
+            },
+        }),
+    ]);
+
+    const getUserName = (u: any) => `${u.us_firstname} ${u.us_lastname}`;
+
+    /* ===============================
+       1) STAFF (เฉพาะ role STAFF)
+    =============================== */
+    const seen = new Set<string>();
+
+    const staffOptions = sections.reduce<
+        {
+            st_sec_id: number;
+            st_dept_id: number;
+            st_name: string;
+            users: {
+                us_id: number;
+                us_name: string;
+            }[];
+        }[]
+    >((acc, sec) => {
+        const deptMatch = sec.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
+        const deptName = deptMatch?.[1]?.trim();
+
+        const letterMatch = sec.sec_name.match(/ฝ่ายย่อย\s+([A-Z])$/);
+        const letter = letterMatch?.[1];
+
+        if (!deptName || !letter || seen.has(`${deptName}-${letter}`)) {
+            return acc;
+        }
+
+        seen.add(`${deptName}-${letter}`);
+
+        const staffUsers = users.filter(
+            (u) =>
+                u.us_role === 'HOS' &&
+                u.us_sec_id === sec.sec_id &&
+                u.us_dept_id === sec.sec_dept_id
+        ).slice(0, 3);
+
+        acc.push({
+            st_sec_id: sec.sec_id,
+            st_dept_id: sec.sec_dept_id,
+            st_name: `เจ้าหน้าที่คลังแผนก ${deptName} ฝ่ายย่อย ${letter}`,
+            users: staffUsers.map((u) => ({
+                us_id: u.us_id,
+                us_name: getUserName(u),
+            })),
+        });
+
+        return acc;
+    }, []);
+
+    /* ===============================
+       2) DEPARTMENTS (HOD)
+    =============================== */
+    const departmentsWithHead = departments.map((dept) => {
+        const deptUsers = users.filter(
+            (u) =>
+                u.us_role === 'HOD' &&
+                u.us_dept_id === dept.dept_id
+        ).slice(0, 3);
+
+        return {
+            dept_id: dept.dept_id,
+            dept_name: `หัวหน้า${dept.dept_name}`,
+            users: deptUsers.map((u) => ({
+                us_id: u.us_id,
+                us_name: getUserName(u),
+            })),
+        };
+    });
+
+    /* ===============================
+       3) SECTIONS (HOS)
+    =============================== */
+    const sectionsWithHead = sections.map((sec) => {
+        const secUsers = users.filter(
+            (u) =>
+                u.us_role === 'HOS' &&
+                u.us_sec_id === sec.sec_id
+        ).slice(0, 3);
+
+        return {
+            sec_id: sec.sec_id,
+            sec_dept_id: sec.sec_dept_id,
+            sec_name: `หัวหน้า${sec.sec_name}`,
+            users: secUsers.map((u) => ({
+                us_id: u.us_id,
+                us_name: getUserName(u),
+            })),
+        };
+    });
+
+    /* ===============================
+       4) RETURN
+    =============================== */
+    return {
+        departments: departmentsWithHead,
+        sections: sectionsWithHead,
+        staff: staffOptions,
+    };
 }
 
 /**
@@ -502,6 +980,8 @@ async function getApprovalFlows() {
   });
 }
 
+
+
 export const inventoryService = {
   getDeviceWithChilds,
   createDeviceChild,
@@ -516,3 +996,12 @@ export const inventoryService = {
   getSubSections,
   getApprovalFlows,
 };
+
+export const inventoryService = { createApprovesFlows, 
+                                 getAllApproves, 
+                                 getAllDevices, 
+                                 createDevice, 
+                                 getDeviceWithChilds, 
+                                 createDeviceChild, 
+                                 uploadFileDeviceChild, 
+                                 deleteDeviceChild }

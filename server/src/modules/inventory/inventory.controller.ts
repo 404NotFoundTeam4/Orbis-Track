@@ -4,10 +4,17 @@ import { inventoryService } from "./inventory.service.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
   createDeviceChildPayload,
+  CreateDevicePayload,
+  createDevicePayload,
+  createApprovalFlowsPayload,
   CreateDeviceChildSchema,
   deleteDeviceChildPayload,
   GetDeviceWithChildsSchema,
   idParamSchema,
+  UploadFileDeviceChildSchema,
+  GetDeviceWithSchema,
+  CreateApprovalFlowsPayload,
+  GetApprovalFlowSchema,
   InventorySchema,
   UploadFileDeviceChildSchema,
   updateDevicePayload
@@ -72,6 +79,74 @@ export class InventoryController extends BaseController {
     const data = await inventoryService.uploadFileDeviceChild(payload);
 
     return { data };
+  }
+
+  /**
+   * Description: ดึงข้อมูลอุปกรณ์ทั้งหมด
+   * Input     : -
+   * Output    : { data } - รายการอุปกรณ์ทั้งหมด
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
+  async getDevices(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<GetDeviceWithSchema>> {
+    const result = await inventoryService.getAllDevices();
+    return { data: result };
+  }
+
+  /**
+   * Description: เพิ่มอุปกรณ์ใหม่ พร้อมรูปภาพ (ถ้ามี)
+   * Input     : req.body (ข้อมูลอุปกรณ์), req.file (ไฟล์รูปภาพ)
+   * Output    : { data } - ข้อมูลอุปกรณ์ที่ถูกสร้าง
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
+  async createDevice(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<CreateDevicePayload>> {
+    const payload = createDevicePayload.parse(req.body);
+    const imagePath = req.file?.path;
+
+    const result = await inventoryService.createDevice(payload, imagePath);
+
+    return { data: result };
+  }
+
+  /**
+   * Description: สร้าง Approval Flow สำหรับการอนุมัติอุปกรณ์
+   * Input     : req.body (ข้อมูล Approval Flow)
+   * Output    : { data } - ข้อมูล Flow ที่ถูกสร้าง
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
+  async createFlows(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<CreateApprovalFlowsPayload>> {
+    const payload = createApprovalFlowsPayload.parse(req.body);
+
+    const result = await inventoryService.createApprovesFlows(payload);
+
+    return { data: result };
+  }
+
+  /**
+   * Description: ดึงข้อมูล Approval Flow ทั้งหมด
+   * Input     : -
+   * Output    : { data } - รายการ Approval Flow
+   * Author    : Panyapon Phollert (Ton) 66160086
+   */
+  async getFlows(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<GetApprovalFlowSchema>> {
+    const result = await inventoryService.getAllApproves();
+
+    return { data: result };
   }
   
   /**

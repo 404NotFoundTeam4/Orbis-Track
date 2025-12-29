@@ -126,7 +126,7 @@ export function ToastProvider({ children }: PropsWithChildren<{}>) {
       {children}
 
       {/* Stack ขวาบน; ให้กว้างอิสระและชิดขวา */}
-      <div className="pointer-events-none fixed right-5 top-5 z-[120] flex flex-col items-end gap-3 max-w-[min(100vw-40px,820px)]">
+      <div className="pointer-events-none fixed right-5 top-[115px] z-[120] flex flex-col items-end gap-3 max-w-[min(100vw-40px,820px)]">
         {toasts.map((t) => (
           <ToastCard
             key={t.id}

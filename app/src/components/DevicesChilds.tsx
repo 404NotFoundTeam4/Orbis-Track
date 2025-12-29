@@ -12,7 +12,7 @@ import type { DeviceChild } from "../services/InventoryService"
 // โครงสร้าง props ที่ต้องส่งมาเรียกใช้งาน
 interface DevicesChildsProps {
     devicesChilds: DeviceChild[]; // ข้อมูลอุปกรณ์ลูก
-    onAdd: (quantity: number) => Promise<void>; // ฟังก์ชันเพิ่มอุปกรณ์ลูก
+    onAdd: (parentId: number, quantity: number) => Promise<void>; // ฟังก์ชันเพิ่มอุปกรณ์ลูก
     onUpload?: (file: File | undefined) => void; // ฟังก์ชันเพิ่มอุปกรณ์ลูกแบบอัปโหลดไฟล์ (CSV / Excel)
     onDelete: (ids: number[]) => Promise<void>; // ฟังก์ชันลบอุปกรณ์ลูก
     onChangeStatus: (id: number, status: DeviceChild["dec_status"]) => void; // ฟังก์ชันเปลี่ยนสถานะอุปกรณ์ลูก
@@ -41,6 +41,9 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
     // เก็บรายการอุปกรณ์ลูกที่ต้องการลบ
     const [selectedDevices, setSelectedDevices] = useState<number[]>([]);
 
+    // ดึง id อุปกรณ์แม่จาก URL
+    const { id } = useParams();
+
     // เลือกรายการทีละตัว
     const toggleSelect = (id: number) => {
         setSelectedDevices((prev) =>
@@ -62,9 +65,9 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
     // เพิ่มอุปกรณ์ลูก
     const handleAdd = async () => {
         // if (!quantity || Number(id) === undefined) return;
-        if (quantity === null || Number(quantity) <= 0) return;
+        if (quantity === null || Number(quantity) <= 0 || isNaN(Number(id))) return;
 
-        await onAdd(Number(quantity)); // เรียกใช้งานฟังก์ชันเพิ่มอุปกรณ์ที่ส่งมา
+        await onAdd(Number(id), Number(quantity)); // เรียกใช้งานฟังก์ชันเพิ่มอุปกรณ์ที่ส่งมา
         setQuantity(null); // รีเซ็ตจำนวน
         setIsAddAletOpen(false);
     }
@@ -155,7 +158,7 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                         className="!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
                             if (quantity === null || Number(quantity) <= 0) {
-                                onAdd(Number(quantity));
+                                onAdd(Number(id), Number(quantity));
                                 return;
                             } else {
                                 setIsAddAletOpen(true);

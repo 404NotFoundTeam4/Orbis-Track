@@ -34,8 +34,12 @@
   },
   "homepage": "https://github.com/404NotFoundTeam4/Orbis-Track#readme",
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
     "@iconify/react": "^6.0.2",
     "@types/ioredis": "^4.28.10",
+    "browser-image-compression": "^2.0.2",
     "ioredis": "^5.7.0"
   },
   "devDependencies": {

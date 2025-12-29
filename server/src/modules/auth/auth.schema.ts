@@ -17,6 +17,8 @@ export const loginPayload = z.object({
 export const accessTokenPayload = z.object({
     sub: z.coerce.number().int().positive(), // user_id
     role: z.enum(Object.values(UserRole) as [string, ...string[]]),
+    dept: z.coerce.number().int().positive().nullable(),
+    sec: z.coerce.number().int().positive().nullable(),
     iat: z.number().optional(),
     exp: z.number().optional(),
 }).strict();
@@ -91,8 +93,8 @@ const passwordValidation = z
     .refine((val) => /\d/.test(val), {
         message: 'เลขอย่างน้อยน้อย 1 ตัว'
     })
-    .refine((val) => /[&*()\-_=+{};]/.test(val), {
-        message: 'อักขระพิเศษอย่างน้อย 1 ตัว & * ( ) - _ = + { } ;'
+    .refine((val) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val), {
+        message: 'อักขระพิเศษอย่างน้อย 1 ตัว เช่น ! @ # $ % ^ & * ( ) _ - + = { } [ ] ; : " \' < > , . ? / |'
     })
     .refine((val) => !/\s/.test(val), {
         message: 'ห้ามมีการเว้นวรรค'

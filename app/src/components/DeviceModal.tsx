@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DropDown from "./DropDown";
 import Input from "./Input";
@@ -6,8 +6,12 @@ import Button from "./Button";
 import { Icon } from "@iconify/react";
 import Checkbox from "./Checkbox";
 import QuantityInput from "./QuantityInput";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { useInventorys } from "../hooks/useInventory";
+import { AlertDialog } from "../components/AlertDialog";
+import { useToast } from "../components/Toast";
 import api from "../api/axios.js"; 
-import { AlertDialog } from "./AlertDialog.js";
 import { useToast } from "./Toast";
 import { set } from "date-fns";
 
@@ -17,19 +21,26 @@ const API_BASE_URL = "http://localhost:4041/api/v1";
 type DropdownOption = {
   id: number | string;
   label: string;
-  value: string;
+  value: number;
   deptId?: string;
+}
+type ApproverPayload = {
+  sec_id: number;
+  dept_id: number;
+  value: string;
 };
+
+interface ApproverItem {
+  id: number;
+  label: string;
+  order: number;
+}
 
 interface Approver {
   id: number;
   label: string;
   value: number;
-  approvers: {
-    id: number;
-    label: string;
-    order: number;
-  }[];
+  approvers: ApproverItem[];
 }
 
 interface MainDeviceModalProps {
@@ -67,6 +78,120 @@ const MainDeviceModal = ({
   const [description, setDescription] = useState<string>("");
   const [maxBorrowDays, setMaxBorrowDays] = useState<number>(0);
   const [totalQuantity, setTotalQuantity] = useState<number>(0);
+  const [departments, setDepartments] = useState([]);
+  const [categorys, setCategory] = useState([]);
+  const [sections, setSection] = useState([]);
+  const [titleApprove, setTitleApprove] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [approvalflows, setApprovalFlows] = useState([]);
+  const [approvalFlowSteps, setapprovalFlowSteps] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [sectionsApprove, setSectionsApprove] = useState([]);
+  const [departmentsApprove, setDepartmentsApprove] = useState([]);
+  const [openStepId, setOpenStepId] = useState<number | null>(null);
+  const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
+  const data = localStorage.getItem("User") || sessionStorage.getItem("User");
+   const userId = JSON.parse(data).us_id;
+  const fetchDataDevices = async () => {
+    try {
+      const res = await useInventorys.getDevicesAll();
+      setDepartments(res.data.departments);
+      setCategory(res.data.categories);
+      setSection(res.data.sections);
+      // us_id ที่รับมา เช่น 1
+  
+      const filteredApprovalFlows = res.data.approval_flows.filter(
+        (af: any) => af.af_us_id === userId
+      );
+      setApprovalFlows(filteredApprovalFlows);
+      setapprovalFlowSteps(res.data.approval_flow_step);
+
+      console.log(res.data);
+    } catch (error) {
+      console.error("โหลดข้อมูลไม่สำเร็จ", error);
+    }
+  };
+  useEffect(() => {
+    fetchDataDevices();
+  }, []);
+
+  const fetchDataApprove = async () => {
+    try {
+      const ap = await useInventorys.getApproveAll();
+      console.log(ap.data);
+      setDepartmentsApprove(ap.data.departments);
+      setSectionsApprove(ap.data.sections);
+      setStaff(ap.data.staff);
+    } catch (error) {
+      console.error("fetchDataApprove โหลดข้อมูลไม่สำเร็จ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDataApprove();
+  }, []);
+
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [openConfirmApprove, setOpenConfirmApprove] = useState(false);
+
+  const departmentItems: DepartmentDropdownItem[] = departments.map((dept) => ({
+    id: dept.dept_id,
+    label: dept.dept_name,
+    value: dept.dept_id,
+  }));
+
+  const categoryItem: CategoryDropdownITem[] = categorys.map((ca) => ({
+    id: ca.ca_id,
+    label: ca.ca_name,
+    value: ca.ca_id,
+  }));
+
+  const sectionItems: SectionsDropdownItem[] = sections.map((sec) => ({
+    id: sec.sec_id,
+    label: sec.sec_name,
+    value: sec.sec_id,
+  }));
+
+  const approveItems: ApproveDropdownItem[] = approvalflows.map((af) => ({
+    id: af.af_id,
+    label: af.af_name,
+    value: af.af_id,
+  }));
+
+  const staffItems: StaffDropdownItem[] = staff.map((st) => ({
+    id: st.st_sec_id,
+    label: st.st_name,
+    value: st.st_sec_id,
+  }));
+
+  // รูปภาพอุปกรณ์
+  const [preview, setPreview] = useState<string | null>(null);
+  // มีการเลือกไฟล์รูปภาพ
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
+    if (!file) return;
+
+    setImageFile(file);
+
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+  };
+
+  // ลากไฟล์รูปภาพ
+  const [isDragging, setIsDragging] = useState(false);
+  // ลากมาเหนือ Drop Zone
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  // ออกจาก Drop Zone
+  const handleLeave = () => {
+    setIsDragging(false);
+  };
+  // ปล่อยไฟล์ลง Drop Zone
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
   const [preview, setPreview] = useState<string | null>(null);
 
   const [checked, setChecked] = useState<boolean>(true);
@@ -158,6 +283,55 @@ const MainDeviceModal = ({
     fetchMasterData();
   }, []);
 
+    const url = URL.createObjectURL(file); // แปลงเป็น url
+    setPreview(url);
+  };
+
+  // แผนกท่ีเลือกใน dropdown
+  const [selectedDepartment, setSelectedDepartment] =
+    useState<Department | null>(null);
+  // หมวดหมู่ท่ีเลือกใน dropdown
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
+  // ฝ่ายย่อยท่ีเลือกใน dropdown
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
+  // ลำดับการอนุมัติ
+  const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(
+    null
+  );
+  const [selectedApproverSteps, setSelectedApproverSteps] = useState([]);
+  // modal สำหรับจัดการลำดับการอนุมัติ
+  const [isApproverModalOpen, setIsApproverModalOpen] = useState(false);
+  const [approverGroupFlow, setApproverGroupFlow] = useState([]);
+  const handleApproverGroup = (item) => {
+    setApproverGroupFlow((prev: any) =>
+      prev.some((v) => v.label === item.label) ? prev : [...prev, item]
+    );
+  };
+  const handleDeleteApproverGroup = (value: string) => {
+    setApproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
+  };
+
+  // เปิด modal
+  const openApproverModal = () => {
+    setIsApproverModalOpen(true);
+  };
+  const closeApproverModal = () => setIsApproverModalOpen(false);
+
+  // ข้อมูลใน modal (editable copy)
+  const [modalApproverList, setModalApproverList] = useState<ApproverItem[]>(
+    []
+  );
+  const [modalGroupLabel, setModalGroupLabel] = useState("");
+
+  // เลือกลำดับการอนุมัติ
+  const handleSelectApprover = (item: Approver) => {
+    setSelectedApprovers(item);
+  };
+
+  // อุปกรณ์มี Serial Number
+  const [checked, setChecked] = useState<boolean>(true);
   // --- Set Default Values (Edit Mode) ---
   useEffect(() => {
     if (mode === "edit" && defaultValues) {
@@ -262,6 +436,14 @@ const MainDeviceModal = ({
     const file = e.target.files?.[0];
     if (file) setPreview(URL.createObjectURL(file));
   };
+
+  // อัปเดตค่า Serial
+  const updateSerial = (id: number, newValue: string) => {
+    setSerialNumbers(
+      serialNumbers.map((item) =>
+        item.id === id ? { ...item, value: newValue } : item
+      )
+    );
   const [isDragging, setIsDragging] = useState(false);
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
   const handleLeave = () => setIsDragging(false);
@@ -279,6 +461,19 @@ const MainDeviceModal = ({
   const removeAccessory = (id: number) => setAccessories(accessories.filter((item) => item.id !== id));
   const updateAccessory = (id: number, key: "name" | "qty", val: string) => setAccessories(accessories.map((item) => (item.id === id ? { ...item, [key]: val } : item)));
 
+  // เพิ่ม Input อุปกรณ์เสริม
+  const addAccessory = () => {
+    setAccessories([
+      ...accessories,
+      { id: accessories.length + 1, name: "", qty: "" },
+    ]);
+  };
+
+  // อัปเดตอุปกรณ์เสริม
+  const updateAccessory = (id: number, key: "name" | "qty", value: string) => {
+    setAccessories((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
+    );
   const handleSelectApprover = (item: Approver) => {
     setSelectedApprovers(item);
   };
@@ -292,6 +487,214 @@ const MainDeviceModal = ({
     setIsAlertOpen(true);
   };
 
+  // ค่าเริ่มต้น edit
+  useEffect(() => {
+    if (mode === "edit" && defaultValues) {
+      // รูปภาพ
+      setPreview(defaultValues.de_images ?? null);
+
+      // Input text
+      setDeviceName(defaultValues.de_name ?? "");
+      setDeviceCode(defaultValues.de_serial_number ?? "");
+      setLocation(defaultValues.de_location ?? "");
+      setDescription(defaultValues.de_description ?? "");
+
+      // จำนวน
+      setMaxBorrowDays(defaultValues.de_max_borrow_days ?? 0);
+      setTotalQuantity(defaultValues.total_quantity ?? 0);
+
+      // Dropdown
+
+      setSelectedCategory(defaultValues.category ?? null);
+      setSelectedSection(defaultValues.section ?? null);
+
+      // Serial Number
+      if (defaultValues.de_serial_number) {
+        setChecked(true);
+        setSerialNumbers([
+          {
+            id: defaultValues.de_id,
+            value: defaultValues.de_serial_number,
+          },
+        ]);
+      } else {
+        setChecked(false);
+        setSerialNumbers([{ id: Date.now(), value: "" }]); // แสดงช่อง input
+      }
+
+      // อุปกรณ์เสริม
+      if (defaultValues.accessory) {
+        setAccessories([
+          {
+            id: defaultValues.accessory.acc_id,
+            name: defaultValues.accessory.acc_name,
+            qty: String(defaultValues.accessory.acc_quantity),
+          },
+        ]);
+      } else {
+        setAccessories([{ id: Date.now(), name: "", qty: "" }]); // แสดงช่อง input
+      }
+
+      // ลำดับการอนุมัติ
+      if (defaultValues.approval_flow.steps) {
+        setSelectedApprovers({
+          id: defaultValues.approval_flow.af_id,
+          label: defaultValues.approval_flow.af_name,
+          value: defaultValues.approval_flow.af_id,
+          // แปลง array เป็น approvers ที่ UI ใช้ render เช่น HOS › HOD
+          approvers: defaultValues.approval_flow.steps.map((step: any) => ({
+            id: step.afs_id, // id ของแต่ละขั้นตอน
+            label: step.afs_role, // role ที่อนุมัติ
+            order: step.afs_step_approve, // ลำดับการอนุมัติ
+          })),
+        });
+      }
+    }
+  }, [mode, defaultValues]);
+
+  const mappedAccessories = accessories
+    .filter((a) => a.name && a.qty)
+    .map((a) => ({
+      acc_name: a.name,
+      acc_quantity: Number(a.qty),
+    }));
+
+  const mappedSerialNumbers = checked
+    ? serialNumbers
+        .filter((sn) => sn.value.trim() !== "")
+        .map((sn) => ({
+          id: sn.id,
+          value: sn.value.trim(),
+        }))
+    : [];
+
+  // ส่งข้อมูล
+  const handleSubmit = () => {
+    const formData = new FormData();
+
+    //  เอาไว้ใช้ชั่วคราว
+    formData.append("data", "devices");
+    formData.append("de_serial_number", deviceCode);
+    formData.append("de_name", deviceName);
+    formData.append("de_description", description ?? "");
+    formData.append("de_location", location);
+    formData.append("de_max_borrow_days", String(maxBorrowDays));
+    formData.append("totalQuantity", String(totalQuantity));
+    formData.append("de_af_id", String(selectedApprovers?.value ?? ""));
+    formData.append("de_ca_id", String(selectedCategory?.value ?? ""));
+    formData.append("de_us_id",userId);
+    formData.append("de_sec_id", String(selectedSection?.value ?? ""));
+
+    formData.append("accessories", JSON.stringify(mappedAccessories));
+    formData.append("serialNumbers", JSON.stringify(mappedSerialNumbers));
+
+    if (imageFile) {
+      formData.append("de_images", imageFile);
+    }
+    onSubmit(formData);
+  };
+
+  const handleSumbitApprove = () => {
+    const approver: ApprovalFlowStepPayload[] = approverGroupFlow.map(
+      (ap, indexvalue) => {
+        if (ap.label.includes("เจ้าหน้าที่")) {
+          const sec = sections.find((item) => item.sec_id === ap.value);
+          console.log(sec);
+          return {
+            afs_step_approve: indexvalue + 1,
+            afs_dept_id: sec.sec_dept_id,
+            afs_sec_id: sec.sec_id,
+            afs_role: "STAFF",
+          };
+        } else if (
+          ap.label.includes("หัวหน้าแผนก") &&
+          !ap.label.includes("ฝ่ายย่อย")
+        ) {
+          const dept = departments.find((item) => item.dept_id === ap.value);
+          return {
+            afs_step_approve: indexvalue + 1,
+            afs_dept_id: dept.dept_id,
+            afs_sec_id: null,
+            afs_role: "HOD",
+          };
+        } else {
+          const sec = sections.find((item) => item.sec_id === ap.value);
+          return {
+            afs_step_approve: indexvalue + 1,
+            afs_dept_id: sec.sec_dept_id,
+            afs_sec_id: sec.sec_id,
+            afs_role: "HOS",
+          };
+        }
+      }
+    );
+    console.log(approver)
+    const formData = new FormData();
+    formData.append("data", "approve");
+    formData.append("af_name", titleApprove);
+    formData.append("af_us_id", userId);
+
+    formData.append("approvalflowsstep", JSON.stringify(approver));
+
+    onSubmit(formData);
+  };
+
+  const dragItemIndex = useRef<number | null>(null);
+  const dragOverIndex = useRef<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    dragItemIndex.current = index;
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOverStep = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    dragOverIndex.current = index;
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropStep = (e: React.DragEvent) => {
+    e.preventDefault();
+
+    const from = dragItemIndex.current;
+    const to = dragOverIndex.current;
+
+    if (from == null || to == null || from === to) {
+      dragItemIndex.current = dragOverIndex.current = null;
+      return;
+    }
+
+    setApproverGroupFlow((prev) => {
+      const newArr = [...prev];
+      const [moved] = newArr.splice(from, 1);
+      newArr.splice(to, 0, moved);
+      return newArr;
+    });
+
+    dragItemIndex.current = dragOverIndex.current = null;
+  };
+
+  const handleDragEnd = () => {
+    dragItemIndex.current = dragOverIndex.current = null;
+  };
+
+  const getUsersByLabel = (data: string) => {
+    // เจ้าหน้าที่คลัง ไป staff
+    if (data.includes("เจ้าหน้าที่คลัง")) {
+      return staff.find((s) => s.st_name === data)?.users ?? [];
+    }
+    // หัวหน้า + !ฝ่ายย่อย ไป sections
+    else if (data.includes("หัวหน้า") && !data.includes("ฝ่ายย่อย")) {
+      return (
+        departmentsApprove.find((dept) => dept.dept_name === data)?.users ?? []
+      );
+    }
+    // หัวหน้า + ฝ่ายย่อย ไป sections
+    else if (data.includes("หัวหน้าแผนก") && data.includes("ฝ่ายย่อย")) {
+      return sectionsApprove.find((s) => s.sec_name === data)?.users ?? [];
+    }
+
+    return [];
   const handleConfirmSave = async() => {
     setIsAlertOpen(false);
     const payload = {
@@ -349,9 +752,11 @@ const MainDeviceModal = ({
       <form className="flex justify-center gap-[110px] w-[1540px] min-h-[837px] px-[100px]">
         <div className="flex flex-col gap-[7px] w-[212px] h-[69px]">
           <p className="text-[20px] font-medium">ข้อมูลอุปกรณ์</p>
-          <p className="text-[16px] text-[#40A9FF] font-medium">รายละเอียดข้อมูลอุปกรณ์</p>
+          <p className="text-[16px] text-[#40A9FF] font-medium">
+            รายละเอียดข้อมูลอุปกรณ์
+          </p>
         </div>
-
+        {/* กรอกรายละเอียดอุปกรณ์ */}
         <div className="flex flex-col gap-[20px] w-[853px]">
           <div className="flex gap-[20px]">
             <div className="flex flex-col gap-[4px]">
@@ -381,6 +786,8 @@ const MainDeviceModal = ({
               value={selectedDepartment}
               className="!w-[264px]"
               label="แผนกอุปกรณ์"
+              items={departmentItems}
+              onChange={(item) => setSelectedDepartment(item)}
               items={departmentList}
               onChange={handleDepartmentChange}
               placeholder="แผนก"
@@ -389,6 +796,8 @@ const MainDeviceModal = ({
               value={selectedCategory}
               className="!w-[264px]"
               label="หมวดหมู่"
+              items={categoryItem}
+              onChange={(item) => setSelectedCategory(item)}
               items={categoryList}
               onChange={setSelectedCategory}
               placeholder="หมวดหมู่อุปกรณ์"
@@ -397,6 +806,8 @@ const MainDeviceModal = ({
               value={selectedSection}
               className="!w-[264px]"
               label="ฝ่ายย่อย"
+              items={sectionItems}
+              onChange={(item) => setSelectedSection(item)}
               items={filteredSectionList} // ใช้รายการที่กรองแล้วตามแผนก
               onChange={setSelectedSection}
               placeholder="ฝ่ายย่อย"
@@ -415,10 +826,16 @@ const MainDeviceModal = ({
                 {preview ? (
                   <img className="w-full h-full object-cover rounded-[16px]" src={preview} alt="preview" />
                 ) : (
-                  <div className="flex flex-col gap-[20px] items-center text-[#A2A2A2]">
-                    <Icon icon="famicons:image-sharp" width="48" />
+                  <div className="flex flex-col gap-[20px] items-center text-center text-[#A2A2A2]">
+                    <Icon icon="famicons:image-sharp" width="48" height="40" />
                     <div className="text-[14px] font-medium">
-                      <p className="text-[#40A9FF]">อัปโหลดไฟล์ <span className="text-[#A2A2A2]">หรือวางไฟล์ที่นี่</span></p>
+                      <p className="text-[#40A9FF]">
+                        อัปโหลดไฟล์
+                        <span className="text-[#A2A2A2]">
+                          {" "}
+                          หรือวางไฟล์ที่นี่
+                        </span>
+                      </p>
                       <p>ประเภทไฟล์ PNG, JPG</p>
                     </div>
                   </div>
@@ -428,7 +845,9 @@ const MainDeviceModal = ({
           </div>
 
           <div className="flex flex-col gap-[10px]">
-            <label className="text-[16px] font-medium">สถานที่เก็บอุปกรณ์</label>
+            <label className="text-[16px] font-medium">
+              สถานที่เก็บอุปกรณ์
+            </label>
             <textarea
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -450,11 +869,53 @@ const MainDeviceModal = ({
              <QuantityInput label="จำนวนวันสูงสุดที่สามารถยืมได้" value={maxBorrowDays} onChange={setMaxBorrowDays} />
              <QuantityInput label="จำนวนอุปกรณ์" value={totalQuantity} onChange={setTotalQuantity} />
           </div>
+          <div className="flex gap-[20px]">
+            <QuantityInput
+              label="จำนวนวันสูงสุดที่สามารถยืมได้"
+              value={maxBorrowDays}
+              onChange={(value) => setMaxBorrowDays(value)}
+            />
+            <QuantityInput
+              label="จำนวนอุปกรณ์"
+              value={totalQuantity}
+              onChange={(value) => setTotalQuantity(value)}
+            />
+          </div>
         </div>
       </form>
 
       {/* Serial / Accessories / Approval */}
       <div className="flex flex-col items-center gap-[60px] w-[1540px] px-[100px]">
+        <div className="flex items-start gap-[110px]">
+          <div className="flex flex-col gap-[7px] w-[212px] self-start">
+            <p className="text-[18px] font-medium">Serial Number</p>
+            <p className="text-[16px] font-medium text-[#40A9FF]">
+              รหัสของอุปกรณ์
+            </p>
+          </div>
+          <div className="flex flex-col gap-[15px] w-[856px]">
+            {/* checkbox อุปกร์มี Serail Number */}
+            <div className="flex gap-2">
+              <Checkbox
+                isChecked={checked}
+                onClick={() => setChecked(!checked)}
+              />
+              <p  onClick={() => setChecked(!checked)}>อุปกรณ์มี Serail Number</p>
+            </div>
+            {/* อุปกรณ์ที่มี Serail Number */}
+            {checked && (
+              <div className="flex items-start gap-[110px] ">
+                <div className="flex flex-col gap-[15px] h-full">
+                  <div className="flex gap-3">
+                    <div className="border border-[#D8D8D8] rounded-[16px] text-[16px] font-medium w-[663px] px-3 py-2">
+                      Serial Number
+                    </div>
+                    <Button
+                      className="bg-[#1890FF] w-[173px]"
+                      onClick={addSerial}
+                    >
+                      + Serial Number
+                    </Button>
          <div className="flex items-start gap-[110px]">
             <div className="flex flex-col gap-[7px] w-[212px]">
                <p className="text-[18px] font-medium">Serial Number</p>
@@ -496,6 +957,28 @@ const MainDeviceModal = ({
                    </div>
                    <Button className="bg-[#1890FF] w-[173px]" onClick={addAccessory}>+ เพิ่มอุปกรณ์เสริม</Button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* อุปกรณ์เสริม */}
+        <div className="flex items-start gap-[110px]">
+          <div className="flex flex-col gap-[7px] w-[212px] self-start">
+            <p className="text-[18px] font-medium">อุปกรณ์เสริม</p>
+            <p className="text-[16px] font-medium text-[#40A9FF]">
+              ข้อมูลของอุปกรณ์เสริม
+            </p>
+          </div>
+          <div className="flex flex-col gap-[15px] h-full">
+            <div className="flex gap-3">
+              <div className="flex justify-between border border-[#D8D8D8] rounded-[16px] text-[16px] font-medium w-[663px] px-3 py-2">
+                <span>ชื่ออุปกรณ์</span>
+                <span className="pr-38">จำนวน</span>
+              </div>
+              <Button className="bg-[#1890FF] w-[173px]" onClick={addAccessory}>
+                + เพิ่มอุปกรณ์เสริม
+              </Button>
                 {accessories.map(acc => (
                    <div key={acc.id} className="flex gap-5">
                       <Input className="!w-[419px]" value={acc.name} onChange={(e) => updateAccessory(acc.id, "name", e.target.value)} />
@@ -523,6 +1006,105 @@ const MainDeviceModal = ({
                      onChange={handleSelectApprover}
                      placeholder="ลำดับการอนุมัติ"
                   />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ลำดับการอนุมัติ */}
+        <div className="flex items-start gap-[110px]">
+          <div className="flex flex-col gap-[7px] w-[212px] self-start">
+            <p className="text-[18px] font-medium">ลำดับการอนุมัติ</p>
+            <p className="text-[16px] font-medium text-[#40A9FF]">
+              ลำดับผู้อนุมัติของอุปกรณ์
+            </p>
+          </div>
+          <div className="flex flex-col gap-[15px] h-full">
+            <div className="flex gap-3 items-end">
+              <DropDown
+                value={selectedApprovers}
+                className="w-[663px]"
+                label="ลำดับการอนุมัติ"
+                items={approveItems}
+                onChange={handleSelectApprover}
+                placeholder="ลำดับการอนุมัติ"
+              />
+              <Button
+                className="bg-[#1890FF] w-[173px]"
+                onClick={() => {
+                  openApproverModal();
+                  fetchDataApprove();
+                }}
+              >
+                + เพิ่มลำดับการอนุมัติ
+              </Button>
+            </div>
+            {selectedApprovers &&
+              (() => {
+                const steps =
+                  approvalFlowSteps?.find(
+                    (item) => item.af_id === selectedApprovers.value
+                  )?.steps ?? [];
+
+                return (
+                  <div
+                    className="
+          flex flex-wrap items-start gap-x-[6px] gap-y-[8px]
+          max-w-[800px]
+        "
+                  >
+                    {steps.map((ap, index) => (
+                      <div key={ap.afs_id} className="flex flex-col">
+                        {/* ===== ชื่อขั้น ===== */}
+                        <div className="flex items-center whitespace-nowrap">
+                          <span
+                            className="
+                  text-[16px] text-[#7BACFF] cursor-pointer
+                  hover:underline
+                "
+                            onClick={() =>
+                              setOpenStepId(
+                                openStepId === ap.afs_id ? null : ap.afs_id
+                              )
+                            }
+                          >
+                            {ap.afs_name}
+                          </span>
+
+                          {index < steps.length - 1 && (
+                            <span className="mx-[4px] text-[16px] text-[#7BACFF]">
+                              ›
+                            </span>
+                          )}
+                        </div>
+
+                        {/* ===== รายชื่อผู้ใช้ ===== */}
+                        {openStepId === ap.afs_id && (
+                          <div className="mt-[6px] ml-[8px] space-y-[2px]">
+                            {ap.users?.length ? (
+                              ap.users.map((u) => (
+                                <div
+                                  key={u.us_id}
+                                  className="text-[14px] text-gray-600"
+                                >
+                                  • {u.fullname}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-[14px] text-gray-400 italic">
+                                ไม่มีผู้ใช้งาน
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+          </div>
+        </div>
                   <Button className="bg-[#1890FF] w-[173px]">+ เพิ่มลำดับการอนุมัติ</Button>
                </div>
                {selectedApprovers && (
@@ -543,6 +1125,197 @@ const MainDeviceModal = ({
         <Button onClick={onCancel} className="bg-[#D8D8D8] border border-[#CDCDCD] text-black hover:bg-gray-200 cursor-pointer">
           ยกเลิก
         </Button>
+        <Button onClick={() => setOpenConfirm(true)} className="bg-[#1890FF]">
+          {mode === "create" ? "เพิ่มอุปกรณ์" : "บันทึก"}
+        </Button>
+      </div>
+      {/* Approver Modal (simple) */}
+      {isApproverModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={closeApproverModal}
+          />
+          <div className="relative bg-white rounded-2xl p-[45px] w-auto h-auto overflow-auto z-10 max">
+            <div className="flex flex-col justify-between  gap-10 ">
+              <div className=" space-y-4 text-[16px]">
+                <p className="text-center text-[32px] font-semibold">
+                  เพิ่มลำดับการอนุมัติใหม่
+                </p>
+                <div>
+                  <Input
+                    value={titleApprove}
+                    onChange={(e) => setTitleApprove(e.target.value)}
+                    label="ชื่อลำดับการอนุมัติ"
+                    placeholder="ชื่อของอุปกรณ์"
+                    size="md"
+                    className="w-full"
+                  />
+                </div>
+                <div className=" space-y-2.5">
+                  <div className="flex items-center gap-1">
+                    <p>เพิ่มผู้อนุมัติ</p>
+                    <p className="text-[#F5222D]">*</p>
+                  </div>
+
+                  <div className="flex gap-5  ">
+                    <DropDown
+                      value={selectedDepartment}
+                      className="max-w-[166px]"
+                      label=""
+                      items={staffItems}
+                      onChange={handleApproverGroup}
+                      placeholder="เจ้าหน้าที่คลัง"
+                    />
+                    <DropDown
+                      value={selectedDepartment}
+                      className="max-w-[166px]"
+                      label=""
+                      items={departmentItems}
+                      onChange={handleApproverGroup}
+                      placeholder="หัวหน้าแผนก"
+                    />
+                    <DropDown
+                      value={selectedSection}
+                      className="max-w-[166px]"
+                      label=""
+                      items={sectionItems}
+                      onChange={handleApproverGroup}
+                      placeholder="หัวหน้าฝ่ายย่อย"
+                    />
+                  </div>
+                  <div className=" space-y-[7px]">
+                    <div className="flex items-center gap-1">
+                      <p>ลำดับการอนุมัติ</p>
+                      <p className="text-[#F5222D]">*</p>
+                    </div>
+                    <p className=" text-[#858585]">
+                      สามารถลากเพื่อสลับลำดับผู้อนุมัติได้
+                    </p>
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto  text-[16px]">
+                    {approverGroupFlow.map((data, idx) => (
+                      <div
+                        key={data.label}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={(e) => handleDragOverStep(e, idx)}
+                        onDrop={handleDropStep}
+                        onDragEnd={handleDragEnd}
+                        className="flex"
+                      >
+                        <div className="m-2 cursor-grab py-3">
+                          <FontAwesomeIcon
+                            icon={faBars}
+                            className="text-[14px]"
+                          />
+                        </div>
+
+                        <div className="flex items-center overflow-hidden w-full">
+                          <div className="border-2 border-[#D8D8D8] border-r-0 rounded-l-2xl px-[15px] py-[12.5px]">
+                            {idx + 1}
+                          </div>
+
+                          <div className="w-full border-2 border-[#D8D8D8] border-x-0 py-0.5">
+                            <div className="font-medium truncate">
+                              {data.label}
+                            </div>
+
+                            {(() => {
+                              const users = getUsersByLabel(data.label);
+                              const MAX_SHOW = 2;
+
+                              if (!users || users.length === 0)
+                                return (
+                                  <div className="text-[14px] text-gray-500 flex flex-wrap items-center">
+                                    <div className="">
+                                      ไม่มีผู้ใช้งานในตำแหน่งนี้
+                                    </div>
+                                  </div>
+                                );
+
+                              const previewNames = users
+                                .slice(0, MAX_SHOW)
+                                .map((u: any) => u.us_name)
+                                .join(" , ");
+
+                              return (
+                                <div className=" text-[14px] text-gray-500 flex flex-wrap items-center">
+                                  <p className="text-gray-400">
+                                    ผู้ใช้งานในตำแหน่งนี้ :
+                                  </p>
+                                  <p className="truncate max-w-[220px]">
+                                    {previewNames}
+                                  </p>
+                                </div>
+                              );
+                            })()}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDeleteApproverGroup(data.label)
+                            }
+                            className="border-2 border-[#F5222D] border-l-0 rounded-r-2xl p-[12px] bg-[#F5222D]"
+                          >
+                            <Icon
+                              icon="solar:trash-bin-trash-linear"
+                              width="24"
+                              height="24"
+                              className="text-white"
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2.5 justify-end">
+                <Button
+                  onClick={() => setIsApproverModalOpen(false)}
+                  className="bg-[#D9D9D9]"
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  onClick={() => setOpenConfirmApprove(true)}
+                  className="bg-[#1890FF]"
+                >
+                  บันทึก
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <AlertDialog
+        open={openConfirm}
+        onOpenChange={setOpenConfirm}
+        tone="success"
+        title="ยืนยันการบันทึก"
+        description="คุณต้องการบันทึกข้อมูลอุปกรณ์นี้ใช่หรือไม่"
+        confirmText="บันทึก"
+        cancelText="ยกเลิก"
+        onConfirm={async () => {
+          handleSubmit();
+        }}
+        onCancel={() => {}}
+      />
+      <AlertDialog
+        open={openConfirmApprove}
+        onOpenChange={setOpenConfirmApprove}
+        tone="success"
+        title="ยืนยันการบันทึก"
+        description="คุณต้องการบันทึกการอนุมัตินี้ใช่หรือไม่"
+        confirmText="บันทึก"
+        cancelText="ยกเลิก"
+        onConfirm={async () => {
+          handleSumbitApprove();
+     
+        }}
+        onCancel={() => {}}
         <Button onClick={handleSaveClick} className="bg-[#1890FF] cursor-pointer ">
           {mode === "create" ? "เพิ่มอุปกรณ์" : "บันทึก"}
         </Button>

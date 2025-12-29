@@ -1,5 +1,4 @@
 import { Router } from "../../core/router.js";
-import { upload } from "../upload/upload.service.js";
 import { CartController } from "./cart.controller.js";
 import {
   idParamSchema,
@@ -10,7 +9,6 @@ import {
   cartDeviceDetailSchema,
   updateCartDeviceDetailParamSchema,
   updateCartDeviceDetailBodySchema,
-  UpdateCartDeviceDetailBodyDto,
   borrowReturnTicketsSchema,
   updateCartDeviceDetailDataSchema,
   deleteCartItemPayload,

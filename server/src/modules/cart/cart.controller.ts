@@ -10,10 +10,8 @@ import {
   getCartDeviceDetailParamSchema,
   CartDeviceDetailSchema,
   UpdateCartDeviceDetailDataSchema,
-  UpdateCartDeviceDetailBodySchema,
   updateCartDeviceDetailBodySchema,
   updateCartDeviceDetailParamSchema,
-  CartItemSchema,
   deleteCartItemPayload
 } from "./cart.schema.js";
 
@@ -41,7 +39,7 @@ export class CartController extends BaseController {
     res: Response,
     next: NextFunction
   ): Promise<BaseResponse<CartItemListResponse>> {
-    const id = idParamSchema.parse({ id: req.user.sub });
+    const id = idParamSchema.parse({ id: req.user?.sub });
     const cartItems = await cartsService.getCartItem(id);
     return { data: cartItems };
   }

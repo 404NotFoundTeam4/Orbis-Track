@@ -353,9 +353,6 @@ export const updateCartDeviceDetailBodySchema = z.object({
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const updateCartDeviceDetailDataSchema = cartDeviceDetailSchema;
-export const updateCartDeviceDetailResponseSchema = z.object({
-  data: updateCartDeviceDetailDataSchema,
-});
 
 export type IdParamDto = z.infer<typeof idParamSchema>;
 export type CartSchema = z.infer<typeof cartSchema>;
@@ -380,5 +377,4 @@ export type UpdateCartDeviceDetailBodySchema = z.infer<typeof updateCartDeviceDe
 export type CartDeviceDetailSchema = z.infer<typeof cartDeviceDetailSchema>;
 export type GetCartDeviceDetailParamDto = z.infer<typeof getCartDeviceDetailParamSchema>;
 export type UpdateCartDeviceDetailParamDto = z.infer<typeof updateCartDeviceDetailParamSchema>;
-export type UpdateCartDeviceDetailResponseSchema = z.infer<typeof updateCartDeviceDetailResponseSchema>;
 export type UpdateCartDeviceDetailBodyDto = z.infer<typeof updateCartDeviceDetailBodySchema>;

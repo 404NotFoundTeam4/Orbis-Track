@@ -11,8 +11,8 @@ import {
   updateCartDeviceDetailParamSchema,
   updateCartDeviceDetailBodySchema,
   UpdateCartDeviceDetailBodyDto,
-  updateCartDeviceDetailResponseSchema,
   borrowReturnTicketsSchema,
+  updateCartDeviceDetailDataSchema,
 } from "./cart.schema.js";
 
 const cartsController = new CartController();
@@ -56,7 +56,7 @@ router.patchDoc(
     auth: true,
     params: updateCartDeviceDetailParamSchema,
     body: updateCartDeviceDetailBodySchema,
-    res: updateCartDeviceDetailResponseSchema,
+    res: updateCartDeviceDetailDataSchema,
   },
   cartsController.updateCartDeviceDetail
 );

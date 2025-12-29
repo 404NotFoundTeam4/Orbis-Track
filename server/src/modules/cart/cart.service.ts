@@ -1,5 +1,5 @@
 import { prisma } from "../../infrastructure/database/client.js";
-import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, updateCartDeviceDetailBodySchema, updateCartDeviceDetailParamSchema, getCartDeviceDetailParamSchema, CartDeviceDetailSchema, UpdateCartDeviceDetailBodySchema,UpdateCartDeviceDetailBodyDto } from "./cart.schema.js";
+import { AccessoriesSchema, ApprovalFlowsSchema, ApprovalFlowStepsSchema, BorrowReturnTicketsSchema,UpdateCartDeviceDetailDataSchema, CartDeviceChildSchema, CartItemSchema, CartSchema, CategoriesSchema, CreateBorrowTicketPayload, CreateBorrowTicketStagePayload, CreateTicketDevicePayload, DeviceChildSchema, DeviceSchema, IdParamDto, TicketDevicesSchema, updateCartDeviceDetailBodySchema, updateCartDeviceDetailParamSchema, getCartDeviceDetailParamSchema, CartDeviceDetailSchema, UpdateCartDeviceDetailBodySchema,UpdateCartDeviceDetailBodyDto } from "./cart.schema.js";
 import { DepartmentSchema, SectionSchema } from "../departments/departments.schema.js";
 
 /**
@@ -719,7 +719,7 @@ async function getCartDeviceDetail(
 async function updateCartDeviceDetail(
   ctiId: number,
   payload: UpdateCartDeviceDetailBodyDto
-): Promise<CartDeviceDetailSchema> {
+): Promise<UpdateCartDeviceDetailDataSchema> {
   const exists = await prisma.cart_items.findFirst({
     where: { cti_id: ctiId, deleted_at: null },
   });

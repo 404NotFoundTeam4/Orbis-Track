@@ -11,7 +11,6 @@ import {
   deleteDeviceChildPayload,
   GetDeviceWithChildsSchema,
   idParamSchema,
-  UploadFileDeviceChildSchema,
   GetDeviceWithSchema,
   CreateApprovalFlowsPayload,
   GetApprovalFlowSchema,
@@ -20,7 +19,6 @@ import {
   updateDevicePayload
 } from "./inventory.schema.js";
 import { ValidationError } from "../../errors/errors.js";
-import { prisma } from "../../infrastructure/database/client.js";
 
 export class InventoryController extends BaseController {
   constructor() {

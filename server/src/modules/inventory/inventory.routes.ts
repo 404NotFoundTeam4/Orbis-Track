@@ -13,7 +13,7 @@ import {
     idParamSchema,
     uploadFileDeviceChildSchema,
     getDeviceWithSchema,
-    getApprovalFlowSchema
+    getApprovalFlowSchema,
     inventorySchema,
     softDeleteResponseSchema,
     updateDevicePayload

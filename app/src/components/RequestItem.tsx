@@ -175,16 +175,34 @@ const RequestItem = ({
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
 
+  /**
+   * Description: ดึงสถานะปัจจุบันของ ticket (สำหรับ Timeline)
+   * Input      : void
+   * Output     : TicketStatus | undefined
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const getStepTicket = () => {
     return ticketDetail?.status;
   };
 
+  /**
+   * Description: เปิด DeviceManageModal และโหลด ticketDetail (ไม่ expand UI)
+   * Input      : void
+   * Output     : void - เปิด modal จัดการอุปกรณ์
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const manageButton = () => {
     // โหลด ticketDetail โดยไม่ expand UI
     onExpand(ticket.id, false);
     setIsManageModalOpen(true);
   };
 
+  /**
+   * Description: Toggle การเปิด/ปิดรายละเอียด ticket
+   * Input      : void
+   * Output     : void - เปลี่ยน isExpanded และเรียก onExpand
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const toggleExpand = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
@@ -194,6 +212,12 @@ const RequestItem = ({
     }
   };
 
+  /**
+   * Description: ส่งการเปลี่ยนแปลงอุปกรณ์ไปยัง parent component
+   * Input      : changes (DeviceChildChanges) - การเปลี่ยนแปลง (เพิ่ม/ลบ/อัปเดต)
+   * Output     : Promise<void>
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const handleManageDeviceChilds = async (changes: DeviceChildChanges) => {
     if (onManage && ticketDetail) {
       onManage(ticket.id, ticketDetail.devices, changes);
@@ -391,16 +415,16 @@ const RequestItem = ({
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
+                        ? "border-[#4CAF50] text-[#4CAF50]"
+                        : getStepTicket() === "APPROVED"
                           ? "border-[#4CAF50] text-[#4CAF50]"
-                          : getStepTicket() === "APPROVED"
+                          : getStepTicket() === "IN_USE"
                             ? "border-[#4CAF50] text-[#4CAF50]"
-                            : getStepTicket() === "IN_USE"
+                            : getStepTicket() === "COMPLETED"
                               ? "border-[#4CAF50] text-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
+                              : getStepTicket() === "REJECTED"
                                 ? "border-[#4CAF50] text-[#4CAF50]"
-                                : getStepTicket() === "REJECTED"
-                                  ? "border-[#4CAF50] text-[#4CAF50]"
-                                  : "border-[#9E9E9E] text-[#9E9E9E]"
+                                : "border-[#9E9E9E] text-[#9E9E9E]"
                         }`}
                     >
                       <Icon
@@ -412,16 +436,16 @@ const RequestItem = ({
                     </div>
                     <div
                       className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
+                        ? "bg-[#4CAF50]"
+                        : getStepTicket() === "APPROVED"
                           ? "bg-[#4CAF50]"
-                          : getStepTicket() === "APPROVED"
+                          : getStepTicket() === "IN_USE"
                             ? "bg-[#4CAF50]"
-                            : getStepTicket() === "IN_USE"
+                            : getStepTicket() === "COMPLETED"
                               ? "bg-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
+                              : getStepTicket() === "REJECTED"
                                 ? "bg-[#4CAF50]"
-                                : getStepTicket() === "REJECTED"
-                                  ? "bg-[#4CAF50]"
-                                  : "bg-[#9E9E9E]"
+                                : "bg-[#9E9E9E]"
                         }`}
                     ></div>
                   </div>
@@ -429,16 +453,16 @@ const RequestItem = ({
                   <div className="pt-2">
                     <span
                       className={`text-sm font-medium ${getStepTicket() === "PENDING"
+                        ? " text-[#4CAF50]"
+                        : getStepTicket() === "APPROVED"
                           ? " text-[#4CAF50]"
-                          : getStepTicket() === "APPROVED"
+                          : getStepTicket() === "IN_USE"
                             ? " text-[#4CAF50]"
-                            : getStepTicket() === "IN_USE"
-                              ? " text-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : getStepTicket() === "REJECTED"
                                 ? "text-[#4CAF50]"
-                                : getStepTicket() === "REJECTED"
-                                  ? "text-[#4CAF50]"
-                                  : " text-[#9E9E9E]"
+                                : " text-[#9E9E9E]"
                         }`}
                     >
                       ส่งคำร้อง
@@ -451,16 +475,16 @@ const RequestItem = ({
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
-                          ? "border-[#000000] text-[#000000]"
-                          : getStepTicket() === "APPROVED"
+                        ? "border-[#000000] text-[#000000]"
+                        : getStepTicket() === "APPROVED"
+                          ? "border-[#4CAF50] text-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
                             ? "border-[#4CAF50] text-[#4CAF50]"
-                            : getStepTicket() === "IN_USE"
+                            : getStepTicket() === "COMPLETED"
                               ? "border-[#4CAF50] text-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "border-[#4CAF50] text-[#4CAF50]"
-                                : getStepTicket() === "REJECTED"
-                                  ? "border-[#FF4D4F] text-[#FF4D4F]"
-                                  : "border-[#9E9E9E] text-[#9E9E9E]"
+                              : getStepTicket() === "REJECTED"
+                                ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                : "border-[#9E9E9E] text-[#9E9E9E]"
                         }`}
                     >
                       {getStepTicket() !== "REJECTED" ? (
@@ -475,30 +499,30 @@ const RequestItem = ({
                     </div>
                     <div
                       className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
-                          ? "bg-[#9E9E9E]"
-                          : getStepTicket() === "APPROVED"
+                        ? "bg-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? "bg-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
                             ? "bg-[#4CAF50]"
-                            : getStepTicket() === "IN_USE"
+                            : getStepTicket() === "COMPLETED"
                               ? "bg-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "bg-[#4CAF50]"
-                                : "bg-[#9E9E9E]"
+                              : "bg-[#9E9E9E]"
                         }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
                       className={`cursor-pointer ${getStepTicket() === "PENDING"
-                          ? " text-[#000000]"
-                          : getStepTicket() === "APPROVED"
+                        ? " text-[#000000]"
+                        : getStepTicket() === "APPROVED"
+                          ? " text-[#4CAF50]"
+                          : getStepTicket() === "IN_USE"
                             ? " text-[#4CAF50]"
-                            : getStepTicket() === "IN_USE"
-                              ? " text-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "text-[#4CAF50]"
-                                : getStepTicket() === "REJECTED"
-                                  ? "border-[#FF4D4F] text-[#FF4D4F]"
-                                  : " text-[#9E9E9E]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : getStepTicket() === "REJECTED"
+                                ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                : " text-[#9E9E9E]"
                         }`}
                     >
                       อนุมัติ
@@ -528,12 +552,12 @@ const RequestItem = ({
                                   <div className="flex flex-col items-center">
                                     <div
                                       className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
-                                          ? "border-[#4CAF50] text-[#4CAF50]"
-                                          : stage.status === "REJECTED"
-                                            ? "border-[#FF4D4F] text-[#FF4D4F]"
-                                            : isNextApprover
-                                              ? "border-[#000000] text-[#000000]"
-                                              : "border-[#9E9E9E] text-[#9E9E9E]"
+                                        ? "border-[#4CAF50] text-[#4CAF50]"
+                                        : stage.status === "REJECTED"
+                                          ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                          : isNextApprover
+                                            ? "border-[#000000] text-[#000000]"
+                                            : "border-[#9E9E9E] text-[#9E9E9E]"
                                         }`}
                                     >
                                       {stage.status === "REJECTED" ? (
@@ -554,8 +578,8 @@ const RequestItem = ({
                                     {!isLast && (
                                       <div
                                         className={`w-0.5 h-12 -my-1 ${stage.status === "APPROVED"
-                                            ? "bg-[#4CAF50]"
-                                            : "bg-[#9E9E9E]"
+                                          ? "bg-[#4CAF50]"
+                                          : "bg-[#9E9E9E]"
                                           }`}
                                       ></div>
                                     )}
@@ -566,12 +590,12 @@ const RequestItem = ({
                                   >
                                     <span
                                       className={`text-sm ${stage.status === "APPROVED"
-                                          ? "text-[#4CAF50]"
-                                          : stage.status === "REJECTED"
-                                            ? "text-[#FF4D4F]"
-                                            : isNextApprover
-                                              ? "text-[#000000]"
-                                              : "text-[#9E9E9E]"
+                                        ? "text-[#4CAF50]"
+                                        : stage.status === "REJECTED"
+                                          ? "text-[#FF4D4F]"
+                                          : isNextApprover
+                                            ? "text-[#000000]"
+                                            : "text-[#9E9E9E]"
                                         }`}
                                     >
                                       {stage.role_name}
@@ -618,14 +642,14 @@ const RequestItem = ({
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
-                          ? "border-[#9E9E9E] text-[#9E9E9E]"
-                          : getStepTicket() === "APPROVED"
-                            ? "border-[#000000] text-[#000000]"
-                            : getStepTicket() === "IN_USE"
+                        ? "border-[#9E9E9E] text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? "border-[#000000] text-[#000000]"
+                          : getStepTicket() === "IN_USE"
+                            ? "border-[#4CAF50] text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
                               ? "border-[#4CAF50] text-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "border-[#4CAF50] text-[#4CAF50]"
-                                : "border-[#9E9E9E] text-[#9E9E9E]"
+                              : "border-[#9E9E9E] text-[#9E9E9E]"
                         }`}
                     >
                       <Icon
@@ -637,28 +661,28 @@ const RequestItem = ({
                     </div>
                     <div
                       className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
+                        ? "bg-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
                           ? "bg-[#9E9E9E]"
-                          : getStepTicket() === "APPROVED"
-                            ? "bg-[#9E9E9E]"
-                            : getStepTicket() === "IN_USE"
+                          : getStepTicket() === "IN_USE"
+                            ? "bg-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
                               ? "bg-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "bg-[#4CAF50]"
-                                : "bg-[#9E9E9E]"
+                              : "bg-[#9E9E9E]"
                         }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
                       className={`${getStepTicket() === "PENDING"
-                          ? " text-[#9E9E9E]"
-                          : getStepTicket() === "APPROVED"
-                            ? " text-[#000000]"
-                            : getStepTicket() === "IN_USE"
-                              ? " text-[#4CAF50]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "text-[#4CAF50]"
-                                : " text-[#9E9E9E]"
+                        ? " text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
+                          ? " text-[#000000]"
+                          : getStepTicket() === "IN_USE"
+                            ? " text-[#4CAF50]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : " text-[#9E9E9E]"
                         }`}
                     >
                       กำลังใช้งาน
@@ -671,14 +695,14 @@ const RequestItem = ({
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
+                        ? "border-[#9E9E9E] text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
                           ? "border-[#9E9E9E] text-[#9E9E9E]"
-                          : getStepTicket() === "APPROVED"
-                            ? "border-[#9E9E9E] text-[#9E9E9E]"
-                            : getStepTicket() === "IN_USE"
-                              ? "border-[#000000] text-[#000000]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "border-[#4CAF50] text-[#4CAF50]"
-                                : "border-[#9E9E9E] text-[#9E9E9E]"
+                          : getStepTicket() === "IN_USE"
+                            ? "border-[#000000] text-[#000000]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "border-[#4CAF50] text-[#4CAF50]"
+                              : "border-[#9E9E9E] text-[#9E9E9E]"
                         }`}
                     >
                       <Icon
@@ -692,14 +716,14 @@ const RequestItem = ({
                   <div className="pt-2">
                     <span
                       className={`${getStepTicket() === "PENDING"
+                        ? " text-[#9E9E9E]"
+                        : getStepTicket() === "APPROVED"
                           ? " text-[#9E9E9E]"
-                          : getStepTicket() === "APPROVED"
-                            ? " text-[#9E9E9E]"
-                            : getStepTicket() === "IN_USE"
-                              ? " text-[#000000]"
-                              : getStepTicket() === "COMPLETED"
-                                ? "text-[#4CAF50]"
-                                : " text-[#9E9E9E]"
+                          : getStepTicket() === "IN_USE"
+                            ? " text-[#000000]"
+                            : getStepTicket() === "COMPLETED"
+                              ? "text-[#4CAF50]"
+                              : " text-[#9E9E9E]"
                         }`}
                     >
                       คืนอุปกรณ์
@@ -888,8 +912,8 @@ const RequestItem = ({
                     ) && ticket.status === "PENDING" ? (
                       <textarea
                         className={`w-[80%] h-[100px] p-3 bg-white border rounded-xl resize-none text-sm transition-all ${isInvalid
-                            ? "border-red-500 ring-1 ring-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.2)]"
-                            : "border-[#BFBFBF] focus:border-[#40A9FF] focus:ring-1 focus:ring-[#40A9FF]"
+                          ? "border-red-500 ring-1 ring-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.2)]"
+                          : "border-[#BFBFBF] focus:border-[#40A9FF] focus:ring-1 focus:ring-[#40A9FF]"
                           }`}
                         placeholder="กรอกสถานที่รับอุปกรณ์ (เช่น ตึก A ชั้น 2)"
                         value={pickupLocation}

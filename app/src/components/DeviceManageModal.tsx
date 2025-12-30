@@ -100,10 +100,11 @@ const DeviceManageModal = ({
     tone: "success",
   });
 
-  // Sync local state when devices prop changes
-  useEffect(() => {
-    setLocalDevices(devices);
-    // Reset all related states when devices prop changes
+  /**
+   * Description: Reset state ที่เกี่ยวกับการจัดการอุปกรณ์ทั้งหมด
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  const resetStates = () => {
     setUpdateDeviceChild({
       devicesToAdd: [],
       devicesToRemove: [],
@@ -111,14 +112,50 @@ const DeviceManageModal = ({
     });
     setRemovedOriginalDevices([]);
     setAvailableDevices([]);
-  }, [devices]);
+  };
 
+  /**
+   * Description: Sync local state เมื่อเปิด modal หรือ devices prop เปลี่ยน
+   * Input      : devices (TicketDevice[]), isOpen (boolean)
+   * Output     : void - อัปเดต localDevices และ reset states
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  useEffect(() => {
+    if (isOpen) {
+      setLocalDevices(devices);
+      resetStates();
+    }
+  }, [devices, isOpen]);
+
+  /**
+   * Description: อัปเดต deviceChildLength เมื่อ localDevices เปลี่ยน
+   * Input      : localDevices (TicketDevice[]) - รายการอุปกรณ์ปัจจุบัน
+   * Output     : void - อัปเดตจำนวน device childs
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   useEffect(() => {
     setDeviceChildLength(localDevices.length - 1);
   }, [localDevices]);
 
+  /**
+   * Description: Clear state ทั้งหมดและปิด Modal
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  const handleClose = () => {
+    setLocalDevices([]);
+    resetStates();
+    setConfirmOpen(false);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
+  /**
+   * Description: อัปเดตสถานะอุปกรณ์ใน dropdown (BORROWED, DAMAGED, LOST)
+   * Input      : index (number) - ตำแหน่งใน array, newStatus (string) - สถานะใหม่
+   * Output     : void - อัปเดต localDevices และ devicesToUpdate
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const updateStatus = (index: number, newStatus: string) => {
     const deviceToUpdate = localDevices[index];
     const isNotInUpdateList = !updateDeviceChild.devicesToUpdate.some(
@@ -153,7 +190,12 @@ const DeviceManageModal = ({
     );
   };
 
-  // เปิด confirm dialog ก่อนลบ
+  /**
+   * Description: เปิด confirm dialog ก่อนลบอุปกรณ์ออกจากรายการ
+   * Input      : index (number) - ตำแหน่งอุปกรณ์ที่จะลบ
+   * Output     : void - เปิด AlertDialog และจัดการ state เมื่อยืนยัน
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const handleDeleteClick = (index: number) => {
     const device = localDevices[index];
 
@@ -214,6 +256,12 @@ const DeviceManageModal = ({
     setConfirmOpen(true);
   };
 
+  /**
+   * Description: เพิ่มอุปกรณ์ที่เลือกจาก DeviceSelectModal เข้า localDevices
+   * Input      : newDevices (TicketDevice[]) - รายการอุปกรณ์ที่เลือก
+   * Output     : void - อัปเดต localDevices และ devicesToAdd
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const handleAddDevices = (newDevices: TicketDevice[]) => {
     const existingChildIds = new Set(localDevices.map((device) => device.child_id));
     const uniqueNewDevices = newDevices.filter(
@@ -270,6 +318,12 @@ const DeviceManageModal = ({
     setIsSelectModalOpen(false);
   };
 
+  /**
+   * Description: ดึงรายการอุปกรณ์ที่ว่างจาก API และเปิด DeviceSelectModal
+   * Input      : void
+   * Output     : Promise<void> - เรียก API และเปิด modal
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const handleAddDevicesButton = async () => {
     const result = await ticketsService.getDeviceAvailable({
       deviceId: deviceSummary?.deviceId,
@@ -289,10 +343,22 @@ const DeviceManageModal = ({
     setIsSelectModalOpen(true);
   };
 
+  /**
+   * Description: ตรวจสอบว่าเป็น index สุดท้ายหรือไม่ (สำหรับ styling)
+   * Input      : currIndex (number), lengthDeviceChild (number)
+   * Output     : boolean
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const checkLastIndex = (currIndex: number, lengthDeviceChild: number) => {
     return currIndex === lengthDeviceChild;
   };
 
+  /**
+   * Description: เปิด confirm dialog สำหรับยืนยันการบันทึกการเปลี่ยนแปลง
+   * Input      : void
+   * Output     : void - เปิด AlertDialog และเรียก onConfirm เมื่อยืนยัน
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const handleConfirm = () => {
     setConfirmData({
       title: "ยืนยันการบันทึก?",
@@ -321,7 +387,7 @@ const DeviceManageModal = ({
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/50" onClick={onClose}></div>
+        <div className="absolute inset-0 bg-black/50" onClick={handleClose}></div>
 
         {/* Modal */}
         <div

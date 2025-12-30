@@ -46,11 +46,22 @@ const DeviceListModal = ({
 }: DeviceListModalProps) => {
   if (!isOpen) return null;
 
-  // Check if any device has serial number
+  /**
+   * Description: ตรวจสอบว่ามีอุปกรณ์ใดมี Serial Number หรือไม่ (สำหรับแสดง/ซ่อน column)
+   * Input      : devices (TicketDevice[])
+   * Output     : boolean
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const hasSerialNumber = devices.some(
     (device) => device.serial && device.serial.trim() !== "",
   );
 
+  /**
+   * Description: ดึง style (label, className) ตามสถานะอุปกรณ์
+   * Input      : status (string) - สถานะ (READY, BORROWED, DAMAGED, etc.)
+   * Output     : { label: string, className: string }
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
   const getStatusStyle = (status: string) => {
     return (
       statusConfig[status] || {

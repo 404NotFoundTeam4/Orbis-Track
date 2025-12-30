@@ -10,7 +10,16 @@ import { Plus } from 'lucide-react';
 import { AlertDialog } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { usersService } from '../services/ProfileService';
+import getImageUrl from "../services/GetImage.js";
 
+
+/**
+ * InputField Component
+ * Description: คอมโพเนนต์อินพุตฟิลด์ที่ปรับแต่งได้ พร้อมรองรับการแสดงไอคอนและข้อความแสดงข้อผิดพลาด
+ * Input      : label, name, value, onChange, disabled, type, width, icon, error, placeholder
+ * Output     : อินพุตฟิลด์ที่มีการจัดรูปแบบและฟีเจอร์ตามที่กำหนด
+ * Author     : Niyada Butchan (Da) 66160361
+ */
 const InputField = ({ 
   label, 
   name, 
@@ -106,6 +115,14 @@ const Profile: React.FC = () => {
     fetchProfile();
   }, []);
 
+  /**
+   *  handleChange
+   * Description: จัดการการเปลี่ยนแปลงในฟิลด์อินพุตต่างๆ ของโปรไฟล์
+   * Input      : e (React.ChangeEvent<HTMLInputElement>)
+   * Output     : อัปเดตสถานะ profileData และ phoneError ตามการเปลี่ยนแปลง
+   * Author     : Niyada Butchan (Da) 66160361
+
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const { name, value } = e.target;
 
@@ -139,6 +156,14 @@ const Profile: React.FC = () => {
     }
   };
 
+
+/**
+ * fetchProfile
+ * Description: ดึงข้อมูลโปรไฟล์ของผู้ใช้งานจาก API
+ * Input      : ไม่มี
+ * Output     : ข้อมูลโปรไฟล์ของผู้ใช้งาน (us_firstname, us_lastname, us_phone, us_email, us_images)
+ * Author     : Niyada Butchan (Da) 66160361
+ */
 const fetchProfile = async () => {
   try {
     const userData = await usersService.getProfile();
@@ -163,23 +188,26 @@ const fetchProfile = async () => {
   }
 };
 
+/**
+   * handleSaveProfile
+   * Description: รวบรวมข้อมูลจากฟอร์มเพื่อส่งไปอัปเดตโปรไฟล์ผู้ใช้งาน
+   * Input      : us_firstname, us_lastname, us_phone, us_email, us_images
+   * Output     : การแจ้งเตือนบนหน้าจอ (Toast/Push Notification)
+   * Author     : Niyada Butchan (Da) 66160361
+   */
 const handleSaveProfile = async () => {
     try {
       const formData = new FormData();
-      
-      // 1. ใส่ข้อมูลที่จะอัปเดต (ตรวจสอบ Key ให้ตรงกับ EditAccountSchema)
+
       formData.append('us_phone', profileData.us_phone);
       formData.append('us_firstname', profileData.us_firstname);
       formData.append('us_lastname', profileData.us_lastname);
       formData.append('us_email', profileData.us_email);
       
-      // 2. ส่งรูปภาพโดยใช้ Key 'us_images' ตามที่ Router เพื่อนกำหนด
       if (selectedFile) {
           formData.append('us_images', selectedFile); 
       }
-      
-      // 3. เรียก Service โดยส่ง ID ไปด้วย (เพื่อแก้ปัญหา id: NaN)
-      // สมมติ userId เก็บอยู่ใน profileData.us_id
+
       await usersService.updateProfile(profileData.us_id, formData);
       
       push({ tone: "success", message: "บันทึกข้อมูลสำเร็จ!" });
@@ -189,6 +217,13 @@ const handleSaveProfile = async () => {
     }
 };
 
+/**
+   * handleUpdatePassword
+   * Description: รวบรวมข้อมูลจากฟอร์มเพื่อส่งไปอัปเดตรหัสผ่านใหม่
+   * Input      : old_password, new_password, confirm_password
+   * Output     : การแจ้งเตือนบนหน้าจอ (Toast/Push Notification)
+   * Author     : Niyada Butchan (Da) 66160361
+   */
 const handleUpdatePassword = async () => {
     try {
       //  Map คีย์ให้ตรงกับ Backend (oldPassword, newPassword, confirmPassword)
@@ -205,6 +240,7 @@ const handleUpdatePassword = async () => {
       push({ tone: "danger", message: "เปลี่ยนรหัสผ่านไม่สำเร็จ" });
     }
 };
+
   return (
     <div className="w-full min-h-screen bg-[#F5F7FA] p-8 flex flex-col items-center">
       <div className="w-full max-w-[1663px]">
@@ -246,7 +282,9 @@ const handleUpdatePassword = async () => {
                   <div className="w-[184px] h-[184px] rounded-full overflow-hidden bg-[#F3F4F6] border border-black flex items-center justify-center">
                     {previewUrl || profileData.us_images ? (
                       <img 
-                        src={previewUrl || profileData.us_images} 
+                        // 1. ถ้ามี previewUrl (รูปที่เพิ่งเลือก) ให้ใช้ previewUrl ทันที
+                        // 2. ถ้าไม่มีให้ใช้ getImageUrl ครอบชื่อไฟล์จากฐานข้อมูล
+                        src={previewUrl ? previewUrl : getImageUrl(profileData.us_images)} 
                         alt="Avatar" 
                         className="w-full h-full object-cover" 
                       />
@@ -258,8 +296,8 @@ const handleUpdatePassword = async () => {
                       </div>
                     )}
                   </div>
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                  <button onClick={() => fileInputRef.current?.click()} className="px-6 py-2 flex items-center justify-center gap-2 text-[14px] border border-[#A2A2A2] rounded-full hover:bg-gray-50">
+                      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                      <button onClick={() => fileInputRef.current?.click()} className="px-6 py-2 flex items-center justify-center gap-2 text-[14px] border border-[#A2A2A2] rounded-full hover:bg-gray-50">
                     <Plus size={16} /> {profileData.us_images ? 'เปลี่ยนรูปภาพ' : 'เพิ่มรูปภาพ'}
                   </button>
                 </div>
@@ -317,9 +355,7 @@ const handleUpdatePassword = async () => {
                     disabled={true} 
                     width="w-full lg:w-[533px]" 
                     icon={
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 0C9.06087 0 10.0783 0.421427 10.8284 1.17157C11.5786 1.92172 12 2.93913 12 4C12 5.06087 11.5786 6.07828 10.8284 6.82843C10.0783 7.57857 9.06087 8 8 8C6.93913 8 5.92172 7.57857 5.17157 6.82843C4.42143 6.07828 4 5.06087 4 4C4 2.93913 4.42143 1.92172 5.17157 1.17157C5.92172 0.421427 6.93913 0 8 0ZM8 10C12.42 10 16 11.79 16 14V16H0V14C0 11.79 3.58 10 8 10Z" fill="black"/>
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4a4 4 0 0 1 4 4a4 4 0 0 1-4 4a4 4 0 0 1-4-4a4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4"/></svg>
                     }
                   />
                   
@@ -331,9 +367,8 @@ const handleUpdatePassword = async () => {
                     value={passwordForm.old_password}
                     width="w-full lg:w-[533px]" 
                     icon={
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" clipRule="evenodd" d="M22.0004 8.293C22.0004 11.769 19.1704 14.587 15.6804 14.587C15.0444 14.587 13.5944 14.441 12.8894 13.855L12.0074 14.733C11.4884 15.25 11.6284 15.402 11.8594 15.652C11.9554 15.757 12.0674 15.878 12.1544 16.051C12.1544 16.051 12.8894 17.075 12.1544 18.1C11.7134 18.685 10.4784 19.504 9.06845 18.1L8.77445 18.392C8.77445 18.392 9.65545 19.417 8.92144 20.442C8.48044 21.027 7.30445 21.612 6.27545 20.588L5.24745 21.612C4.54145 22.315 3.67945 21.905 3.33745 21.612L2.45445 20.734C1.63145 19.914 2.11145 19.026 2.45445 18.684L10.0964 11.074C10.0964 11.074 9.36145 9.904 9.36145 8.294C9.36145 4.818 12.1914 2 15.6814 2C19.1714 2 22.0004 4.818 22.0004 8.293ZM15.6814 10.489C16.2647 10.4901 16.8246 10.2594 17.2379 9.84782C17.6512 9.4362 17.8841 8.8773 17.8854 8.294C17.8849 8.00509 17.8275 7.71912 17.7165 7.4524C17.6054 7.18568 17.4429 6.94345 17.2383 6.73954C17.0336 6.53562 16.7908 6.37401 16.5237 6.26393C16.2565 6.15386 15.9704 6.09747 15.6814 6.098C15.3925 6.09747 15.1064 6.15386 14.8392 6.26393C14.5721 6.37401 14.3293 6.53562 14.1246 6.73954C13.92 6.94345 13.7575 7.18568 13.6464 7.4524C13.5354 7.71912 13.478 8.00509 13.4774 8.294C13.4788 8.8773 13.7117 9.4362 14.125 9.84782C14.5383 10.2594 15.0981 10.4901 15.6814 10.489Z" fill="black"/>
-                        </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                      <path fill="currentColor" fill-rule="evenodd" d="M22 8.293c0 3.476-2.83 6.294-6.32 6.294c-.636 0-2.086-.146-2.791-.732l-.882.878c-.519.517-.379.669-.148.919c.096.105.208.226.295.399c0 0 .735 1.024 0 2.049c-.441.585-1.676 1.404-3.086 0l-.294.292s.881 1.025.147 2.05c-.441.585-1.617 1.17-2.646.146l-1.028 1.024c-.706.703-1.568.293-1.91 0l-.883-.878c-.823-.82-.343-1.708 0-2.05l7.642-7.61s-.735-1.17-.735-2.78c0-3.476 2.83-6.294 6.32-6.294S22 4.818 22 8.293m-6.319 2.196a2.2 2.2 0 0 0 2.204-2.195a2.2 2.2 0 0 0-2.204-2.196a2.2 2.2 0 0 0-2.204 2.196a2.2 2.2 0 0 0 2.204 2.195" clip-rule="evenodd"/></svg>
                         }
                   />
                   
@@ -346,9 +381,8 @@ const handleUpdatePassword = async () => {
                       value={passwordForm.new_password}
                       width="w-full lg:w-[533px]" 
                       icon={
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" clipRule="evenodd" d="M22.0004 8.293C22.0004 11.769 19.1704 14.587 15.6804 14.587C15.0444 14.587 13.5944 14.441 12.8894 13.855L12.0074 14.733C11.4884 15.25 11.6284 15.402 11.8594 15.652C11.9554 15.757 12.0674 15.878 12.1544 16.051C12.1544 16.051 12.8894 17.075 12.1544 18.1C11.7134 18.685 10.4784 19.504 9.06845 18.1L8.77445 18.392C8.77445 18.392 9.65545 19.417 8.92144 20.442C8.48044 21.027 7.30445 21.612 6.27545 20.588L5.24745 21.612C4.54145 22.315 3.67945 21.905 3.33745 21.612L2.45445 20.734C1.63145 19.914 2.11145 19.026 2.45445 18.684L10.0964 11.074C10.0964 11.074 9.36145 9.904 9.36145 8.294C9.36145 4.818 12.1914 2 15.6814 2C19.1714 2 22.0004 4.818 22.0004 8.293ZM15.6814 10.489C16.2647 10.4901 16.8246 10.2594 17.2379 9.84782C17.6512 9.4362 17.8841 8.8773 17.8854 8.294C17.8849 8.00509 17.8275 7.71912 17.7165 7.4524C17.6054 7.18568 17.4429 6.94345 17.2383 6.73954C17.0336 6.53562 16.7908 6.37401 16.5237 6.26393C16.2565 6.15386 15.9704 6.09747 15.6814 6.098C15.3925 6.09747 15.1064 6.15386 14.8392 6.26393C14.5721 6.37401 14.3293 6.53562 14.1246 6.73954C13.92 6.94345 13.7575 7.18568 13.6464 7.4524C13.5354 7.71912 13.478 8.00509 13.4774 8.294C13.4788 8.8773 13.7117 9.4362 14.125 9.84782C14.5383 10.2594 15.0981 10.4901 15.6814 10.489Z" fill="black"/>
-                        </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                      <path fill="currentColor" fill-rule="evenodd" d="M22 8.293c0 3.476-2.83 6.294-6.32 6.294c-.636 0-2.086-.146-2.791-.732l-.882.878c-.519.517-.379.669-.148.919c.096.105.208.226.295.399c0 0 .735 1.024 0 2.049c-.441.585-1.676 1.404-3.086 0l-.294.292s.881 1.025.147 2.05c-.441.585-1.617 1.17-2.646.146l-1.028 1.024c-.706.703-1.568.293-1.91 0l-.883-.878c-.823-.82-.343-1.708 0-2.05l7.642-7.61s-.735-1.17-.735-2.78c0-3.476 2.83-6.294 6.32-6.294S22 4.818 22 8.293m-6.319 2.196a2.2 2.2 0 0 0 2.204-2.195a2.2 2.2 0 0 0-2.204-2.196a2.2 2.2 0 0 0-2.204 2.196a2.2 2.2 0 0 0 2.204 2.195" clip-rule="evenodd"/></svg>
                         }
                     />
                                 
@@ -374,9 +408,8 @@ const handleUpdatePassword = async () => {
                       value={passwordForm.confirm_password}
                       width="w-full lg:w-[533px]" 
                       icon={
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" clipRule="evenodd" d="M22.0004 8.293C22.0004 11.769 19.1704 14.587 15.6804 14.587C15.0444 14.587 13.5944 14.441 12.8894 13.855L12.0074 14.733C11.4884 15.25 11.6284 15.402 11.8594 15.652C11.9554 15.757 12.0674 15.878 12.1544 16.051C12.1544 16.051 12.8894 17.075 12.1544 18.1C11.7134 18.685 10.4784 19.504 9.06845 18.1L8.77445 18.392C8.77445 18.392 9.65545 19.417 8.92144 20.442C8.48044 21.027 7.30445 21.612 6.27545 20.588L5.24745 21.612C4.54145 22.315 3.67945 21.905 3.33745 21.612L2.45445 20.734C1.63145 19.914 2.11145 19.026 2.45445 18.684L10.0964 11.074C10.0964 11.074 9.36145 9.904 9.36145 8.294C9.36145 4.818 12.1914 2 15.6814 2C19.1714 2 22.0004 4.818 22.0004 8.293ZM15.6814 10.489C16.2647 10.4901 16.8246 10.2594 17.2379 9.84782C17.6512 9.4362 17.8841 8.8773 17.8854 8.294C17.8849 8.00509 17.8275 7.71912 17.7165 7.4524C17.6054 7.18568 17.4429 6.94345 17.2383 6.73954C17.0336 6.53562 16.7908 6.37401 16.5237 6.26393C16.2565 6.15386 15.9704 6.09747 15.6814 6.098C15.3925 6.09747 15.1064 6.15386 14.8392 6.26393C14.5721 6.37401 14.3293 6.53562 14.1246 6.73954C13.92 6.94345 13.7575 7.18568 13.6464 7.4524C13.5354 7.71912 13.478 8.00509 13.4774 8.294C13.4788 8.8773 13.7117 9.4362 14.125 9.84782C14.5383 10.2594 15.0981 10.4901 15.6814 10.489Z" fill="black"/>
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                      <path fill="currentColor" fill-rule="evenodd" d="M22 8.293c0 3.476-2.83 6.294-6.32 6.294c-.636 0-2.086-.146-2.791-.732l-.882.878c-.519.517-.379.669-.148.919c.096.105.208.226.295.399c0 0 .735 1.024 0 2.049c-.441.585-1.676 1.404-3.086 0l-.294.292s.881 1.025.147 2.05c-.441.585-1.617 1.17-2.646.146l-1.028 1.024c-.706.703-1.568.293-1.91 0l-.883-.878c-.823-.82-.343-1.708 0-2.05l7.642-7.61s-.735-1.17-.735-2.78c0-3.476 2.83-6.294 6.32-6.294S22 4.818 22 8.293m-6.319 2.196a2.2 2.2 0 0 0 2.204-2.195a2.2 2.2 0 0 0-2.204-2.196a2.2 2.2 0 0 0-2.204 2.196a2.2 2.2 0 0 0 2.204 2.195" clip-rule="evenodd"/></svg>
                         }
                     />
                   </div>

@@ -1,36 +1,33 @@
 import { Router } from "../../core/router.js";
 import { UsersController } from "./users.controller.js";
-import { upload } from "../../middlewares/multer.js";
-import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { upload } from "../upload/upload.service.js";
 import { changePasswordSchema } from "./users.schema.js";
-import { AccountsController } from "../accounts/accounts.controller.js";
-import { editAccountSchema } from "../accounts/accounts.schema.js";
-
-
+import { updateMyProfilePayload } from "./users.schema.js";
 const usersController = new UsersController();
-const accountsController = new AccountsController();
+
 const router = new Router(undefined, "/user");
+
 
 // GET profile
 router.getDoc(
   "/",
-  { tag: "Users", auth: true },
-  authMiddleware as any,
-  usersController.getMyProfile as any
+  { tag: "Users", auth: true }, 
+  usersController.getMyProfile 
 );
-
-//  UPDATE profile + upload image
-
-router.postDoc("/:id", 
+// UPDATE profile
+router.patchDoc(
+  "/:id", 
   { 
-    tag: "Accounts", 
-    body: editAccountSchema, 
+    tag: "Users", 
     auth: true, 
+    body: updateMyProfilePayload, 
     contentType: "multipart/form-data" 
-  },
+  }, 
   upload.single("us_images"), 
-  accountsController.update as any 
+  usersController.updateMyProfile
 );
+
+// UPDATE password
 router.patchDoc(
   "/update-password",
   { 
@@ -38,8 +35,7 @@ router.patchDoc(
     auth: true,
     body: changePasswordSchema 
   },
-  authMiddleware as any,
-  usersController.updatePassword as any
+  usersController.updatePassword 
 );
 
 export default router.instance;

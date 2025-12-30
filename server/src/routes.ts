@@ -11,8 +11,7 @@ import { notificationsRouter } from "./modules/notifications/index.js";
 import { borrowReturnRouter } from "./modules/tickets/borrow-return/index.js";
 import { cartsRouter } from "./modules/cart/index.js";
 import userRoutes from "./modules/users/users.routes.js";
-import express from "express";
-import path from "path";
+
 
 
 /**
@@ -46,10 +45,6 @@ export function routes(app: Express) {
 
   api.use("/borrow/cart", authMiddleware, cartsRouter);
   api.use("/user", authMiddleware, userRoutes);
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "uploads"))
-);
 
   
 

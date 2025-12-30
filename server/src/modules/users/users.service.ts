@@ -4,9 +4,9 @@ import * as argon2 from "argon2";
 
 /**
  * Description: Service สำหรับจัดการข้อมูลโปรไฟล์ผู้ใช้งาน (User Profile)
- * Functions   : 
- * - getProfile: ดึงข้อมูลโปรไฟล์โดยละเอียดพร้อมชื่อแผนกและฝ่ายย่อย
- * - updateProfile: อัปเดตข้อมูลโปรไฟล์และรูปภาพประจำตัว
+ * Logic      : ดึงข้อมูลโปรไฟล์จากฐานข้อมูล Prisma และจัดการรูปภาพให้เป็น URL ที่สามารถใช้งานได้จริง
+ * Input       : userId - ID ของผู้ใช้งาน
+ * Output      : Object ข้อมูลโปรไฟล์พร้อม URL รูปภาพที่ใช้งานได้จริง
  * Author      : Niyada Butchan (Da) 66160361
  */
 
@@ -80,47 +80,42 @@ async function updateProfile(userId: number, body: UpdateMyProfilePayload, image
 }
 /**
    * updatePassword
-   * Description: ดำเนินการตรวจสอบรหัสผ่านเดิมและอัปเดตรหัสผ่านใหม่ด้วยการเข้ารหัส
-   * Logic      : 
-   * 1. ค้นหาข้อมูลผู้ใช้งานจาก Database ผ่าน userId
-   * 2. หากไม่พบผู้ใช้งาน จะทำการ Throw Error 404 เพื่อแจ้งเตือน Controller
-   * 3. ใช้ argon2.verify เพื่อเปรียบเทียบรหัสผ่านเดิมที่ผู้ใช้ส่งมากับรหัสที่ Hash ไว้ใน DB
-   * 4. หากรหัสผ่านเดิมไม่ถูกต้อง จะทำการ Throw Error 400 ทันที
-   * 5. หากถูกต้อง จะทำการเข้ารหัส (Hash) รหัสผ่านใหม่ด้วย argon2.hash
-   * 6. บันทึกรหัสผ่านใหม่ที่ผ่านการเข้ารหัสแล้วลงในฐานข้อมูล Prisma
+   * Description: ตรวจสอบความถูกต้องของรหัสผ่านเดิม และดำเนินการเปลี่ยนรหัสผ่านใหม่โดยการเข้ารหัสด้วย Argon2
    * Input      : 
-   * - userId: ID ของผู้ใช้งาน
-   * - oldPassword: รหัสผ่านปัจจุบัน (แบบ Plain text)
-   * - newPassword: รหัสผ่านใหม่ที่ต้องการเปลี่ยน
-   * Output     : ข้อมูลผลลัพธ์การอัปเดตจาก Prisma
+   * - userId: รหัสประจำตัวผู้ใช้งาน (ID)
+   * - oldPassword: รหัสผ่านปัจจุบันที่ผู้ใช้กรอก
+   * - newPassword: รหัสผ่านชุดใหม่ที่ต้องการใช้งาน
+   * - confirmPassword: รหัสผ่านเพื่อยืนยันความถูกต้อง (ใช้สำหรับตรวจสอบความตรงกันก่อนบันทึก)
+   * Output     : ข้อมูลบันทึกผลการอัปเดตจาก Prisma Database
    * Author     : Niyada Butchan (Da) 66160361
    */
 
-export const updatePassword = async (userId: number, oldPassword: string, newPassword: string) => {
-  // ดึงข้อมูล User มาจาก DB
-  const user = await prisma.users.findUnique({ where: { us_id: userId } });
+export const updatePassword = async (userId: number, oldPassword: string, newPassword: string, confirmPassword: string) => {
   
+  // 1. เช็คว่ารหัสใหม่ตรงกับยืนยันรหัสหรือไม่ 
+  if (newPassword !== confirmPassword) {
+    const error: any = new Error("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
+    error.status = 400;
+    throw error;
+  }
+
+  const user = await prisma.users.findUnique({ where: { us_id: userId } });
   if (!user) {
     const error: any = new Error("ไม่พบผู้ใช้ในระบบ");
     error.status = 404;
     throw error;
   }
 
-  // ตรวจสอบรหัสผ่าน: คืนค่าเป็น boolean (true/false)
-
-const isMatch = await argon2.verify(user.us_password, oldPassword);
-
-  
-  //  ถ้า false ให้หยุดและ throw error ทันที
+  // 2. ตรวจสอบรหัสผ่านเดิม
+  const isMatch = await argon2.verify(user.us_password, oldPassword);
   if (!isMatch) {
     const error: any = new Error("รหัสผ่านเดิมไม่ถูกต้อง");
     error.status = 400; 
-    throw error; // บรรทัดนี้จะหยุดฟังก์ชันนี้ และส่ง error ไปที่ Controller
+    throw error;
   }
 
-  // ถ้าผ่านมาถึงตรงนี้แสดงว่ารหัสถูก
+  // 3. เข้ารหัสและบันทึก
   const hashedNewPassword = await argon2.hash(newPassword);
-
   return await prisma.users.update({
     where: { us_id: userId },
     data: { us_password: hashedNewPassword }

@@ -31,7 +31,7 @@ export const usersService = {
   /**
    * updateProfile
    * Description: อัปเดตข้อมูลโปรไฟล์ส่วนตัว (รองรับการแก้ไขข้อมูลทั่วไปและรูปภาพ)
-   * Method     : POST
+   * Method     : PATCH
    * Endpoint   : /user/:id
    * Input      : id (number), formData (FormData: us_phone, us_images ฯลฯ)
    * Logic      :
@@ -45,7 +45,7 @@ updateProfile: async (id: number, formData: FormData) => {
   const token = localStorage.getItem("token");
 
   // ส่งไปที่ Endpoint ที่มี ID ต่อท้ายเพื่อให้ผ่าน idParamSchema.parse
-  const { data } = await api.post(`/user/${id}`, formData, {
+  const { data } = await api.patch(`/user/${id}`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
       Authorization: `Bearer ${token}`,

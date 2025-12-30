@@ -18,6 +18,6 @@ router.getDoc('/devices', { tag: "Borrow", res: getInventorySchema, auth: true }
 router.getDoc('/devices/:id', { tag: "Borrow", params: idParamSchema, res: getDeviceForBorrowSchema, auth: true }, borrowController.getDeviceForBorrow);
 router.getDoc('/available/:id', { tag: "Borrow", params: idParamSchema, res: getAvailableSchema, auth: true }, borrowController.getAvailable);
 router.postDoc('/send-ticket', { tag: "Borrow", body: createBorrowTicketPayload, res: createBorrowTicketSchema, auth: true  }, borrowController.createBorrowTicket);
-router.postDoc('/add-cart', { tag: "Borrow", body: addToCartPayload, res: addToCartSchema }, borrowController.addToCart);
+router.postDoc('/add-cart', { tag: "Borrow", body: addToCartPayload, res: addToCartSchema, auth: true }, borrowController.addToCart);
 
 export default router.instance;

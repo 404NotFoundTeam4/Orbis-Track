@@ -548,7 +548,7 @@ export class BorrowReturnRepository {
     startDate: Date;
     endDate: Date;
     devicesToAdd?: { id: number }[];
-    devicesToRemove?: { id: number }[];
+    devicesToRemove?: { id: number; status: DEVICE_CHILD_STATUS }[];
     devicesToUpdate?: {
       id: number;
       oldStatus: DEVICE_CHILD_STATUS;
@@ -593,7 +593,9 @@ export class BorrowReturnRepository {
           await Promise.all([
             tx.device_childs.updateMany({
               where: {
-                dec_id: { in: devicesToAdd.map((deviceChild) => deviceChild.id) },
+                dec_id: {
+                  in: devicesToAdd.map((deviceChild) => deviceChild.id),
+                },
               },
               data: {
                 dec_status: DEVICE_CHILD_STATUS.BORROWED,
@@ -620,40 +622,52 @@ export class BorrowReturnRepository {
           tx.ticket_devices.deleteMany({
             where: {
               td_brt_id: ticketId,
-              td_dec_id: { in: devicesToRemove.map((deviceChild) => deviceChild.id) },
+              td_dec_id: {
+                in: devicesToRemove.map((deviceChild) => deviceChild.id),
+              },
             },
           }),
           tx.device_availabilities.updateMany({
             where: {
               da_brt_id: ticketId,
-              da_dec_id: { in: devicesToRemove.map((deviceChild) => deviceChild.id) },
+              da_dec_id: {
+                in: devicesToRemove.map((deviceChild) => deviceChild.id),
+              },
             },
             data: { da_status: DA_STATUS.COMPLETED },
           }),
         ]);
 
         if (ticketStatus === BRT_STATUS.IN_USE) {
-          await Promise.all([
-            tx.device_childs.updateMany({
-              where: {
-                dec_id: { in: devicesToRemove.map((deviceChild) => deviceChild.id) },
-              },
-              data: {
-                dec_status: DEVICE_CHILD_STATUS.READY,
-              },
-            }),
-            tx.log_device_childs.createMany({
-              data: devicesToRemove.map((deviceChild) => ({
-                ldc_action: LDC_ACTION.RETURNED,
-                ldc_old_status: DEVICE_CHILD_STATUS.BORROWED,
-                ldc_new_status: DEVICE_CHILD_STATUS.READY,
-                ldc_note: `ลบอุปกรณ์ออกจากคำขอยืม (Ticket ID: ${ticketId})`,
-                ldc_actor_id: actorId,
-                ldc_brt_id: ticketId,
-                ldc_dec_id: deviceChild.id,
-              })),
-            }),
-          ]);
+          for (const device of devicesToRemove) {
+            const currentStatus =
+              device.status === DEVICE_CHILD_STATUS.BORROWED
+                ? DEVICE_CHILD_STATUS.READY
+                : device.status;
+            await Promise.all([
+              tx.device_childs.updateMany({
+                where: {
+                  dec_id: {
+                    in: devicesToRemove.map((deviceChild) => deviceChild.id),
+                  },
+                },
+                data: {
+                  dec_status: currentStatus,
+                },
+              }),
+              tx.log_device_childs.createMany({
+                data: devicesToRemove.map((deviceChild) => ({
+                  ldc_action: LDC_ACTION.RETURNED,
+                  ldc_old_status: DEVICE_CHILD_STATUS.BORROWED,
+                  ldc_new_status: currentStatus,
+                  ldc_note: `ลบอุปกรณ์ออกจากคำขอยืม (Ticket ID: ${ticketId})`,
+                  ldc_actor_id: actorId,
+                  ldc_brt_id: ticketId,
+                  ldc_dec_id: deviceChild.id,
+                })),
+              }),
+            ]);
+          }
         }
       }
 

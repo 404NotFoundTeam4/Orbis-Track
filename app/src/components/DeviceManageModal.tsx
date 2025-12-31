@@ -31,6 +31,7 @@ interface DeviceManageModalProps {
 
 interface DeviceChildAddRemove {
   id: number;
+  status?: string;
 }
 
 interface DeviceChildUpdate {
@@ -227,17 +228,17 @@ const DeviceManageModal = ({
             ...prev,
             devicesToRemove: [
               ...prev.devicesToRemove,
-              { id: deviceToRemove.child_id },
+              { id: deviceToRemove.child_id, status: deviceToRemove.current_status },
             ],
             devicesToUpdate: prev.devicesToUpdate.filter(
               (deviceUpdate) => deviceUpdate.id !== deviceToRemove.child_id,
             ),
           }));
 
-          // เพิ่มเข้า removedOriginalDevices เพื่อแสดงในรายการ "เลือกอุปกรณ์"
+          // เพิ่มเข้า removedOriginalDevices เพื่อแสดงในรายการ "เลือกอุปกรณ์" (เฉพาะที่สถานะ READY เท่านั้น)
           setRemovedOriginalDevices((prev) => [
             ...prev,
-            { ...deviceToRemove, current_status: "READY" },
+            { ...deviceToRemove },
           ]);
         }
 
@@ -333,10 +334,13 @@ const DeviceManageModal = ({
     });
 
     // รวม device ที่ถูกลบ (removedOriginalDevices) เข้าไปด้วย
-    // กรองเฉพาะตัวที่ยังไม่ได้ถูกเพิ่มกลับเข้า localDevices
+    // กรองเฉพาะตัวที่ยังไม่ได้ถูกเพิ่มกลับเข้า localDevices และสถานะไม่ใช่ ชำรุด/สูญหาย
     const currentChildIds = new Set(localDevices.map((device) => device.child_id));
     const filteredRemovedDevices = removedOriginalDevices.filter(
-      (removedDevice) => !currentChildIds.has(removedDevice.child_id),
+      (removedDevice) =>
+        !currentChildIds.has(removedDevice.child_id) &&
+        removedDevice.current_status !== "DAMAGED" &&
+        removedDevice.current_status !== "LOST",
     );
 
     setAvailableDevices([...result, ...filteredRemovedDevices]);

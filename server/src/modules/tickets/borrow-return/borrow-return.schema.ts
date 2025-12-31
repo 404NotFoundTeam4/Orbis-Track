@@ -183,7 +183,10 @@ export const devicesToAdd = z.object({
   id: z.coerce.number(),
 });
 
-export const devicesToRemove = devicesToAdd;
+export const devicesToRemove = z.object({
+  id: z.coerce.number(),
+  status: z.nativeEnum(DEVICE_CHILD_STATUS).optional(),
+});
 
 export const devicesToUpdate = z.object({
   id: z.coerce.number(),

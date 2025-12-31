@@ -792,15 +792,22 @@ const RequestItem = ({
                   <div className="grid grid-cols-[140px_1fr] items-start">
                     <span className="text-[#000000] text-sm">รหัสอุปกรณ์</span>
                     <div className="grid grid-cols-3 gap-1.5 w-fit">
-                      {ticketDetail?.devices?.slice(0, 8).map((device, index) => (
-                        <span
-                          key={device.child_id || index}
-                          className="bg-[#F0F0F0] border border-[#BFBFBF] px-1 py-0.5 mb-0 rounded-full text-[#636363] text-[11px] text-center w-[88px] truncate"
-                          title={device.asset_code}
-                        >
-                          {device.asset_code || "CH-001"}
-                        </span>
-                      ))}
+                      {ticketDetail?.devices
+                        ?.filter(
+                          (device) =>
+                            device.current_status !== "DAMAGED" &&
+                            device.current_status !== "LOST"
+                        )
+                        .slice(0, 8)
+                        .map((device, index) => (
+                          <span
+                            key={device.child_id || index}
+                            className="bg-[#F0F0F0] border border-[#BFBFBF] px-1 py-0.5 mb-0 rounded-full text-[#636363] text-[11px] text-center w-[88px] truncate"
+                            title={device.asset_code}
+                          >
+                            {device.asset_code || "CH-001"}
+                          </span>
+                        ))}
                       {ticketDetail?.devices && (
                         <button
                           onClick={() => setIsDeviceModalOpen(true)}

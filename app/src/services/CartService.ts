@@ -1,15 +1,17 @@
 /**
- * Description: Service เรียก API ตะกร้าจาก Backend
- * Author: Nontapat Sinthum (Guitar) 66160104
+ * Description: Service สำหรับเรียก API ตะกร้าจาก Backend (Cart / Borrow)
+ * Output : CartService (object) สำหรับเรียกใช้งาน API
+ * Author : Nontapat Sinthum (Guitar) 66160104
  */
 
 import api from "../api/axios.js"; // ต้องมี axios.d.ts สำหรับ TS
 
 /**
- * Description : โครงสร้าง Envelope มาตรฐานที่ Backend ส่งกลับมา
- * ใช้ครอบข้อมูล response จริง
+ * Description: โครงสร้าง Envelope มาตรฐานที่ Backend ส่งกลับมา (ใช้ครอบข้อมูล response จริง)
+ * Input : T (Generic type ของข้อมูลใน field data)
+ * Output : ApiEnvelope<T>
  * Author : Nontapat Sinhum (Guitar) 66160104
- */
+ **/
 type ApiEnvelope<T> = {
   success?: boolean;
   message?: string;
@@ -26,7 +28,15 @@ export type CreateBorrowTicketPayload = {
     cartItemId: number;
 };
 
-// Type ของ Cart Item แต่ละชิ้น
+export type DeleteCartItemPayload = {
+    cartItemId: number;
+};
+
+/**
+ * Description: โครงสร้างข้อมูล Cart Item ที่ frontend ใช้หลังดึงจาก backend
+ * Output : CartItem (type)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 export type CartItem = {
   cti_id: number;
   cti_us_name: string;
@@ -40,12 +50,20 @@ export type CartItem = {
   cti_dec_id: number | null;
 };
 
-// Type ของผลลัพธ์จาก GET /borrow/cart/:id
+/**
+ * Description: โครงสร้างผลลัพธ์จาก API GET /borrow/cart/:id
+ * Output : CartItemListResponse
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 export type CartItemListResponse = {
   itemData: CartItem[];
 };
 
-// Type ของ DELETE response
+/**
+ * Description: โครงสร้างผลลัพธ์จาก API DELETE /borrow/cart/:cti_id
+ * Output : DeleteCartItemResponse
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 export type DeleteCartItemResponse = {
   message: string;
 };

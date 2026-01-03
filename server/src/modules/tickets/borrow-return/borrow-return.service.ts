@@ -21,7 +21,7 @@ import { HttpStatus } from "../../../core/http-status.enum.js";
 import { HttpError } from "../../../errors/errors.js";
 import { notificationsService } from "../../notifications/notifications.service.js";
 import { prisma } from "../../../infrastructure/database/client.js";
-import { US_ROLE } from "@prisma/client";
+import { BASE_EVENT, NR_EVENT, US_ROLE } from "@prisma/client";
 import { SocketEmitter } from "../../../infrastructure/websocket/socket.emitter.js";
 import { logger } from "../../../infrastructure/logger.js";
 
@@ -165,16 +165,16 @@ export class BorrowReturnService {
       accessories:
         ticket.ticket_devices[0]?.child.device?.accessories?.length > 0
           ? [
-              {
-                acc_id:
-                  ticket.ticket_devices[0].child.device.accessories[0].acc_id,
-                acc_name:
-                  ticket.ticket_devices[0].child.device.accessories[0].acc_name,
-                acc_quantity:
-                  ticket.ticket_devices[0].child.device.accessories[0]
-                    .acc_quantity,
-              },
-            ]
+            {
+              acc_id:
+                ticket.ticket_devices[0].child.device.accessories[0].acc_id,
+              acc_name:
+                ticket.ticket_devices[0].child.device.accessories[0].acc_name,
+              acc_quantity:
+                ticket.ticket_devices[0].child.device.accessories[0]
+                  .acc_quantity,
+            },
+          ]
           : [],
 
       timeline: ticket.stages.map((stage: any) => ({
@@ -231,7 +231,7 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-          currentStageData.brts_sec_id === approvalUser?.sec;
+        currentStageData.brts_sec_id === approvalUser?.sec;
 
     if (!isGrantApproveUser)
       throw new HttpError(
@@ -253,19 +253,36 @@ export class BorrowReturnService {
     const totalStages = ticketStage.length;
 
     if (isLastStage) {
+      // เช็คว่าถึงเวลาเริ่มใช้งานแล้วหรือยัง
+      const startDate = new Date(ticket.brt_start_date);
+      const isInUseYet = startDate <= new Date();
+
       // แจ้งเตือนผู้ยืม: อนุมัติครบทุกขั้นตอน
       try {
         await notificationsService.createNotification({
           recipient_ids: [borrowUserId],
           title: "คำขอยืมถูกอนุมัติแล้ว",
           message: `[blue:สถานที่รับอุปกรณ์ : ${payload.pickupLocation || "-"}]\nโปรดรับอุปกรณ์ภายในเวลาที่กำหนด`,
-          base_event: "TICKET_APPROVED",
-          event: "YOUR_TICKET_APPROVED",
+          base_event: BASE_EVENT.TICKET_APPROVED,
+          event: NR_EVENT.YOUR_TICKET_APPROVED,
           brt_id: ticketId,
           upsert: true,
           // TO DO : add target route to ticket detail page
           // target_route: `/request-borrow-ticket/${ticketId}`,
         });
+
+        // ถ้าถึงเวลาใช้งานแล้ว ส่ง notification เพิ่ม
+        if (isInUseYet) {
+          await notificationsService.createNotification({
+            recipient_ids: [borrowUserId],
+            title: "ถึงเวลาการยืมอุปกรณ์แล้ว",
+            message: "โปรดรับอุปกรณ์ภายในเวลาที่กำหนด",
+            event: NR_EVENT.YOUR_TICKET_IN_USE,
+            base_event: BASE_EVENT.TICKET_APPROVED,
+            brt_id: ticketId,
+            upsert: true,
+          });
+        }
       } catch (error) {
         logger.error({ err: error }, "Failed to send final notification");
       }
@@ -317,9 +334,9 @@ export class BorrowReturnService {
             ...(nextStage.brts_role === "HOD"
               ? { us_dept_id: nextStage.brts_dept_id }
               : {
-                  us_dept_id: nextStage.brts_dept_id,
-                  us_sec_id: nextStage.brts_sec_id,
-                }),
+                us_dept_id: nextStage.brts_dept_id,
+                us_sec_id: nextStage.brts_sec_id,
+              }),
           },
           select: { us_id: true },
         });
@@ -396,7 +413,7 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-          currentStageData.brts_sec_id === approvalUser?.sec;
+        currentStageData.brts_sec_id === approvalUser?.sec;
 
     if (!isGrantApproveUser)
       throw new HttpError(
@@ -540,12 +557,16 @@ export class BorrowReturnService {
       actorId,
     });
 
-    // TO DO : create Notification and add target route to ticket detail page
-    
-    // ส่ง notification ไปหาผู้ยืม (requester)
+    // สร้าง notification แจ้งผู้ยืมว่าคืนอุปกรณ์เรียบร้อยแล้ว
     if (requesterId) {
-      SocketEmitter.toUser(requesterId, "TICKET_RETURNED", {
-        data: { ticketId },
+      await notificationsService.createNotification({
+        recipient_ids: [requesterId],
+        title: "คืนอุปกรณ์เรียบร้อยแล้ว",
+        message: "ระบบบันทึกการคืนเรียบร้อยแล้ว",
+        event: NR_EVENT.YOUR_TICKET_RETURNED,
+        base_event: BASE_EVENT.TICKET_RETURNED,
+        brt_id: ticketId,
+        // target_route: `/requests/${ticketId}`, // TODO: add target route
       });
     }
 

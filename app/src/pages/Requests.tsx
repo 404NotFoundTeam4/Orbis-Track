@@ -275,11 +275,13 @@ const Requests = () => {
     socketService.on("REFRESH_REQUEST_PAGE", onRefreshRequest);
     socketService.on("TICKET_PROCESSED", onNotificationDismissed);
     socketService.on("TICKET_DEVICES_UPDATED", onTicketDevicesUpdated);
+    socketService.on("TICKET_RETURNED", onRefreshRequest);
 
     return () => {
       socketService.off("REFRESH_REQUEST_PAGE", onRefreshRequest);
       socketService.off("TICKET_PROCESSED", onNotificationDismissed);
       socketService.off("TICKET_DEVICES_UPDATED", onTicketDevicesUpdated);
+      socketService.off("TICKET_RETURNED", onRefreshRequest);
     };
   }, [fetchTickets]);
 

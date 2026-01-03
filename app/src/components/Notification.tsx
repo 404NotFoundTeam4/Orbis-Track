@@ -7,6 +7,8 @@ import { Icon } from "@iconify/react";
  */
 export type NotificationType =
   | "approved"
+  | "returned"
+  | "in_use"
   | "warning"
   | "overdue"
   | "repair_success"
@@ -47,6 +49,18 @@ const getIconAndColor = (type: NotificationType) => {
         color: "bg-[#00AA1A]",
         iconColor: "text-white",
       };
+    case "returned":
+      return {
+        icon: "streamline:return-2",
+        color: "bg-[#00AA1A]",
+        iconColor: "text-white",
+      }; // Green for returned
+    case "in_use":
+      return {
+        icon: "solar:box-outline",
+        color: "bg-[#40A9FF]",
+        iconColor: "text-white",
+      }; // Blue for in_use
     case "warning":
       return {
         icon: "mdi-clock-alert-outline",
@@ -131,9 +145,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-        !isRead ? "bg-white" : "bg-[#F8FAFC]"
-      }`}
+      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!isRead ? "bg-white" : "bg-[#F8FAFC]"
+        }`}
     >
       {/* Icon Circle */}
       <div

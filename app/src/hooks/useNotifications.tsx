@@ -47,6 +47,10 @@ export const useNotifications = ({
     switch (event) {
       case NR_EVENT.YOUR_TICKET_APPROVED:
         return "approved";
+      case NR_EVENT.YOUR_TICKET_RETURNED:
+        return "returned";
+      case NR_EVENT.YOUR_TICKET_IN_USE:
+        return "in_use";
       case NR_EVENT.YOUR_TICKET_REJECTED:
         return "rejected";
       case NR_EVENT.DUE_SOON_REMINDER:

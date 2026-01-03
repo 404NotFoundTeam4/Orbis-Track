@@ -119,6 +119,17 @@ async function handleStatusTransitions() {
         }
       });
 
+      // สร้าง notification แจ้งผู้ยืมว่าถึงเวลายืมอุปกรณ์แล้ว
+      await notificationsService.createNotification({
+        recipient_ids: [ticket.brt_user_id],
+        title: "ถึงเวลาการยืมอุปกรณ์แล้ว",
+        message: "โปรดรับอุปกรณ์ภายในเวลาที่กำหนด",
+        event: NR_EVENT.YOUR_TICKET_IN_USE,
+        base_event: BASE_EVENT.TICKET_APPROVED,
+        brt_id: ticket.brt_id,
+        upsert: true,
+      });
+
       if (ticket.staffer) {
         SocketEmitter.toRole({
           role: US_ROLE.STAFF,
@@ -169,7 +180,7 @@ async function handleTicketDeadlines() {
     });
 
     await notificationsService.createNotification({
-      recipient_ids: [ticket.brt_requester_id],
+      recipient_ids: [ticket.brt_user_id],
       title: "มีอุปกรณ์ใกล้กำหนดคืน",
       message: `กรุณาคืนรายการ${deviceName} ภายในเวลา ${endTime} น.`,
       event: NR_EVENT.DUE_SOON_REMINDER,
@@ -193,7 +204,7 @@ async function handleTicketDeadlines() {
       ticket.ticket_devices[0]?.child?.device?.de_name || "อุปกรณ์";
 
     await notificationsService.createNotification({
-      recipient_ids: [ticket.brt_requester_id],
+      recipient_ids: [ticket.brt_user_id],
       title: "มีอุปกรณ์ที่เลยกำหนดคืนแล้ว",
       message: `คำขอยืม${deviceName} เลยกำหนดคืนแล้ว`,
       event: NR_EVENT.OVERDUE_ALERT,

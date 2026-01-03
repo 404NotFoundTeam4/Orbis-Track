@@ -1,54 +1,62 @@
 import cron from "node-cron";
 import { prisma } from "../infrastructure/database/client.js";
 import {
+  BASE_EVENT,
   BRT_STATUS,
+  DA_STATUS,
   DEVICE_CHILD_STATUS,
   LBR_ACTION,
   LDC_ACTION,
+  NR_EVENT,
   US_ROLE,
 } from "@prisma/client";
 import { logger } from "../infrastructure/logger.js";
 import { auditLogger } from "./audit-logger.js";
 import { SocketEmitter } from "../infrastructure/websocket/socket.emitter.js";
+import { notificationsService } from "../modules/notifications/notifications.service.js";
+import { BorrowReturnRepository } from "../modules/tickets/borrow-return/borrow-return.repository.js";
+
+// Repository instance สำหรับ query tickets
+const borrowReturnRepository = new BorrowReturnRepository();
 
 /**
  * Description: ระบบตั้งเวลางานอัตโนมัติ (Cron Job) สำหรับจัดการ Ticket และการแจ้งเตือน
  * Input     : ไม่มี
- * Output    : void - ตั้งค่า Cron Jobs สำหรับการเปลี่ยนสถานะ Ticket และแจ้งเตือนรายวัน
- * Note      : รัน 2 งาน: (1) ทุก 10 นาที - เปลี่ยน APPROVED เป็น IN_USE (2) ทุกวัน 00:01 น. - แจ้งเตือนก่อนคืน/เกินกำหนด
+ * Output    : void - ตั้งค่า Cron Jobs สำหรับการเปลี่ยนสถานะ Ticket และแจ้งเตือน
+ * Note      : รันทุก 10 นาที - เปลี่ยน APPROVED → IN_USE, แจ้งเตือนก่อนคืน 30 นาที, แจ้งเตือนเกินกำหนด
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 export const initCronJobs = () => {
   /**
-   * Description: Cron Job ทุก 10 นาที - ตรวจสอบและเปลี่ยนสถานะ Ticket
+   * Description: Cron Job ทุก 10 นาที - ตรวจสอบ Ticket ทุกประเภท
    * Schedule  : every 10 minutes (ทุก 10 นาที)
-   * Action    : เปลี่ยน APPROVED → IN_USE เมื่อถึงเวลา brt_start_date
+   * Action    : 1. เปลี่ยน APPROVED → IN_USE 2. แจ้งเตือนก่อนคืน 30 นาที 3. แจ้งเตือนเกินกำหนด
    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   cron.schedule("*/10 * * * *", async () => {
     logger.info(
-      `Running 10-min cron job at ${new Date().toISOString()}: Checking for status transitions...`,
+      `Running 10-min cron job at ${new Date().toISOString()}: Processing tickets...`,
     );
     try {
       await handleStatusTransitions();
+      await handleTicketDeadlines();
     } catch (error) {
-      logger.error({ error }, "Failed to run status transitions cron job");
+      logger.error({ error }, "Failed to run cron job");
     }
   });
 
   /**
-   * Description: Cron Job รายวันเวลา 00:01 น. - ตรวจสอบการแจ้งเตือนกำหนดคืน
-   * Schedule  : 1 0 * * * (ทุกวัน เวลา 00:01)
-   * Action    : แจ้งเตือน Ticket ที่ใกล้ถึงกำหนดคืน (Due Soon) และที่เกินกำหนด (Overdue)
-   * Note      : ยังไม่เปิดใช้งาน (handleTicketDeadlines ถูก comment ไว้)
+   * Description: Cron Job เที่ยงคืน - ทำความสะอาดข้อมูล
+   * Schedule  : 0 0 * * * (ทุกวัน เวลา 00:00)
+   * Action    : ลบ device_availabilities ที่ COMPLETED
    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
-  cron.schedule("1 0 * * *", async () => {
-    logger.info("Running midnight cron job: Checking ticket deadlines...");
+  cron.schedule("0 0 * * *", async () => {
+    logger.info("Running midnight cron job: Cleaning up data...");
     try {
-      // await handleTicketDeadlines();
+      await cleanupCompletedAvailabilities();
     } catch (error) {
-      logger.error({ error }, "Failed to run ticket deadlines cron job");
+      logger.error({ error }, "Failed to run cleanup cron job");
     }
   });
 
@@ -57,38 +65,17 @@ export const initCronJobs = () => {
 
 /**
  * Description: เปลี่ยนสถานะ Ticket จาก APPROVED เป็น IN_USE อัตโนมัติเมื่อถึงเวลาเริ่มยืม
- * Input     : ไม่มี (ดึงข้อมูลจาก Database โดยตรง)
+ * Input     : ไม่มี (ใช้ Repository query)
  * Output    : Promise<void> - อัปเดตสถานะ Ticket และอุปกรณ์ พร้อมบันทึก Audit Log
- * Note      : เรียกใช้ผ่าน Cron Job ทุก 10 นาที ใช้ Transaction เพื่อความปลอดภัยของข้อมูล
+ * Note      : ใช้ Transaction เพื่อความปลอดภัยของข้อมูล
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 async function handleStatusTransitions() {
   const now = new Date();
 
-  // ค้นหา Ticket ที่อนุมัติแล้วและถึงเวลาเริ่มใช้งาน (brt_start_date <= now)
-  // Prisma จะเปรียบเทียบข้อมูล DateTime (Date + Time) ให้อย่างแม่นยำ
-  const pendingStartTickets = await prisma.borrow_return_tickets.findMany({
-    where: {
-      brt_status: BRT_STATUS.APPROVED,
-      brt_start_date: {
-        lte: now,
-      },
-      deleted_at: null,
-    },
-    include: {
-      ticket_devices: {
-        include: {
-          child: true,
-        },
-      },
-      staffer: {
-        select: {
-          us_dept_id: true,
-          us_sec_id: true,
-        },
-      },
-    },
-  });
+  // ใช้ Repository method แทน inline query
+  const pendingStartTickets =
+    await borrowReturnRepository.findTicketsNeedingTransition(now);
 
   if (pendingStartTickets.length === 0) return;
 
@@ -143,7 +130,7 @@ async function handleStatusTransitions() {
       }
 
       logger.info(
-        `Ticket #${ticket.brt_id} automatically transitioned to IN_USE and notified user`,
+        `Ticket #${ticket.brt_id} automatically transitioned to IN_USE`,
       );
     } catch (err) {
       logger.error(
@@ -154,74 +141,92 @@ async function handleStatusTransitions() {
   }
 }
 
-// /**
-//  * ตรวจสอบ Ticket ที่ใกล้ถึงกำหนด และที่เกินกำหนด
-//  */
-// async function handleTicketDeadlines() {
-//     const now = new Date();
-//     const tomorrow = new Date();
-//     tomorrow.setDate(now.getDate() + 1);
+/**
+ * Description: ตรวจสอบ Ticket ที่ใกล้ถึงกำหนด (30 นาที) และที่เกินกำหนด
+ * Input     : ไม่มี (ใช้ Repository query)
+ * Output    : Promise<void> - ส่งแจ้งเตือนไปยังผู้ยืม
+ * Note      : เรียกใช้ผ่าน Cron Job ทุก 10 นาที
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function handleTicketDeadlines() {
+  const now = new Date();
+  const thirtyMinutesLater = new Date(now.getTime() + 30 * 60 * 1000);
 
-//     // กำหนดช่วงเวลาสำหรับเปรียบเทียบ (Ignore time, focus on date)
-//     const startOfTomorrow = new Date(tomorrow.setHours(0, 0, 0, 0));
-//     const endOfTomorrow = new Date(tomorrow.setHours(23, 59, 59, 999));
+  // 1. แจ้งเตือน Ticket ที่ต้องคืนใน 30 นาทีข้างหน้า (Due Soon)
+  const dueSoonTickets = await borrowReturnRepository.findDueSoonTickets(
+    now,
+    thirtyMinutesLater,
+  );
 
-//     // 1. แจ้งเตือน Ticket ที่ต้องคืน "พรุ่งนี้" (Due Soon)
-//     const dueSoonTickets = await prisma.borrow_return_tickets.findMany({
-//         where: {
-//             brt_status: BRT_STATUS.IN_USE,
-//             brt_end_date: {
-//                 gte: startOfTomorrow,
-//                 lte: endOfTomorrow,
-//             },
-//             deleted_at: null,
-//         },
-//         select: { brt_id: true, brt_user_id: true },
-//     });
+  for (const ticket of dueSoonTickets) {
+    const deviceName =
+      ticket.ticket_devices[0]?.child?.device?.de_name || "อุปกรณ์";
 
-//     for (const ticket of dueSoonTickets) {
-//         await notificationsService.createNotification({
-//             recipient_ids: [ticket.brt_user_id],
-//             title: "⏰ แจ้งเตือน: ใกล้ถึงกำหนดคืนอุปกรณ์",
-//             message: `Ticket #${ticket.brt_id} ของคุณมีกำหนดส่งคืนในวันพรุ่งนี้ กรุณาเตรียมส่งคืนตามเวลาที่กำหนด`,
-//             event: NR_EVENT.DUE_SOON_REMINDER,
-//             base_event: BASE_EVENT.TICKET_DUE_SOON,
-//             brt_id: ticket.brt_id,
-//             upsert: true, // ป้องกันการส่งซ้ำในวันเดียวกันหากรันหลายรอบ
-//             target_route: `/requests/${ticket.brt_id}`,
-//         });
-//     }
+    const endTime = ticket.brt_end_date.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
 
-//     if (dueSoonTickets.length > 0) {
-//         logger.info(`📢 Sent ${dueSoonTickets.length} 'Due Soon' reminders`);
-//     }
+    await notificationsService.createNotification({
+      recipient_ids: [ticket.brt_requester_id],
+      title: "มีอุปกรณ์ใกล้กำหนดคืน",
+      message: `กรุณาคืนรายการ${deviceName} ภายในเวลา ${endTime} น.`,
+      event: NR_EVENT.DUE_SOON_REMINDER,
+      base_event: BASE_EVENT.TICKET_DUE_SOON,
+      brt_id: ticket.brt_id,
+      upsert: true,
+      // TO DO : add target route to ticket detail page
+      // target_route: `/requests/${ticket.brt_id}`,
+    });
+  }
 
-//     // 2. แจ้งเตือน Ticket ที่ "เกินกำหนด" แล้ว (Overdue)
-//     const overdueTickets = await prisma.borrow_return_tickets.findMany({
-//         where: {
-//             brt_status: BRT_STATUS.IN_USE,
-//             brt_end_date: {
-//                 lt: now,
-//             },
-//             deleted_at: null,
-//         },
-//         select: { brt_id: true, brt_user_id: true },
-//     });
+  if (dueSoonTickets.length > 0) {
+    logger.info(`📢 Sent ${dueSoonTickets.length} 'Due Soon' reminders`);
+  }
 
-//     for (const ticket of overdueTickets) {
-//         await notificationsService.createNotification({
-//             recipient_ids: [ticket.brt_user_id],
-//             title: "🚨 แจ้งเตือน: คืนอุปกรณ์เกินกำหนด",
-//             message: `Ticket #${ticket.brt_id} ของคุณเกินกำหนดส่งคืนแล้ว กรุณาดำเนินการส่งคืนโดยเร็วที่สุด`,
-//             event: NR_EVENT.OVERDUE_ALERT,
-//             base_event: BASE_EVENT.TICKET_OVERDUE,
-//             brt_id: ticket.brt_id,
-//             upsert: true,
-//             target_route: `/requests/${ticket.brt_id}`,
-//         });
-//     }
+  // 2. แจ้งเตือน Ticket ที่ "เกินกำหนด" แล้ว (Overdue)
+  const overdueTickets = await borrowReturnRepository.findOverdueTickets(now);
 
-//     if (overdueTickets.length > 0) {
-//         logger.info(`📢 Sent ${overdueTickets.length} 'Overdue' alerts`);
-//     }
-// }
+  for (const ticket of overdueTickets) {
+    const deviceName =
+      ticket.ticket_devices[0]?.child?.device?.de_name || "อุปกรณ์";
+
+    await notificationsService.createNotification({
+      recipient_ids: [ticket.brt_requester_id],
+      title: "มีอุปกรณ์ที่เลยกำหนดคืนแล้ว",
+      message: `คำขอยืม${deviceName} เลยกำหนดคืนแล้ว`,
+      event: NR_EVENT.OVERDUE_ALERT,
+      base_event: BASE_EVENT.TICKET_OVERDUE,
+      brt_id: ticket.brt_id,
+      upsert: true,
+      // TO DO : add target route to ticket detail page
+      // target_route: `/requests/${ticket.brt_id}`,
+    });
+  }
+
+  if (overdueTickets.length > 0) {
+    logger.info(`📢 Sent ${overdueTickets.length} 'Overdue' alerts`);
+  }
+}
+
+/**
+ * Description: ลบ device_availabilities ที่มี status เป็น COMPLETED
+ * Input     : ไม่มี
+ * Output    : Promise<void> - ลบ records ที่ไม่จำเป็นออก
+ * Note      : เรียกใช้ผ่าน Cron Job ทุก 10 นาที เพื่อ cleanup ข้อมูล
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function cleanupCompletedAvailabilities() {
+  const result = await prisma.device_availabilities.deleteMany({
+    where: {
+      da_status: DA_STATUS.COMPLETED,
+    },
+  });
+
+  if (result.count > 0) {
+    logger.info(
+      `🗑️ Cleaned up ${result.count} completed device availability records`,
+    );
+  }
+}

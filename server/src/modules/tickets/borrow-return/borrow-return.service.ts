@@ -263,6 +263,7 @@ export class BorrowReturnService {
           event: "YOUR_TICKET_APPROVED",
           brt_id: ticketId,
           upsert: true,
+          // TO DO : add target route to ticket detail page
           // target_route: `/request-borrow-ticket/${ticketId}`,
         });
       } catch (error) {
@@ -281,6 +282,7 @@ export class BorrowReturnService {
           base_event: "TICKET_STAGE_PASSED",
           event: "YOUR_TICKET_STAGE_APPROVED",
           brt_id: ticketId,
+          // TO DO : add target route to ticket detail page
           // target_route: `/request-borrow-ticket/${ticketId}`,
           upsert: true,
         });
@@ -419,6 +421,7 @@ export class BorrowReturnService {
         base_event: "TICKET_REJECTED",
         event: "YOUR_TICKET_REJECTED",
         brt_id: ticketId,
+        // TO DO : add target route to ticket detail page
         // target_route: `/request-borrow-ticket/${ticketId}`,
         upsert: true,
       }),
@@ -537,6 +540,8 @@ export class BorrowReturnService {
       actorId,
     });
 
+    // TO DO : create Notification and add target route to ticket detail page
+    
     // ส่ง notification ไปหาผู้ยืม (requester)
     if (requesterId) {
       SocketEmitter.toUser(requesterId, "TICKET_RETURNED", {

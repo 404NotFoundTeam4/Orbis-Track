@@ -81,8 +81,8 @@ export class BorrowReturnRepository {
       brt_status: status
         ? status
         : {
-            in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
-          },
+          in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
+        },
     };
 
     if (search) {
@@ -797,6 +797,86 @@ export class BorrowReturnRepository {
       });
 
       return true;
+    });
+  }
+
+  // ================== Cron Job Queries ==================
+
+  /**
+   * Description: ค้นหา Ticket ที่อนุมัติแล้วและถึงเวลาเริ่มใช้งาน (สำหรับ Cron Job)
+   * Input     : now (Date) - เวลาปัจจุบัน
+   * Output    : Promise<Ticket[]> - รายการ Ticket ที่ต้องเปลี่ยนเป็น IN_USE
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async findTicketsNeedingTransition(now: Date) {
+    return prisma.borrow_return_tickets.findMany({
+      where: {
+        brt_status: BRT_STATUS.APPROVED,
+        brt_start_date: { lte: now },
+        deleted_at: null,
+      },
+      include: {
+        ticket_devices: {
+          include: { child: true },
+        },
+        staffer: {
+          select: { us_dept_id: true, us_sec_id: true },
+        },
+      },
+    });
+  }
+
+  /**
+   * Description: ค้นหา Ticket ที่ใกล้ถึงกำหนดคืน (30 นาที)
+   * Input     : now (Date), thirtyMinutesLater (Date)
+   * Output    : Promise<Ticket[]> - รายการ Ticket ใกล้กำหนดคืน
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async findDueSoonTickets(now: Date, thirtyMinutesLater: Date) {
+    return prisma.borrow_return_tickets.findMany({
+      where: {
+        brt_status: BRT_STATUS.IN_USE,
+        brt_end_date: { gte: now, lte: thirtyMinutesLater },
+        deleted_at: null,
+      },
+      include: {
+        ticket_devices: {
+          include: {
+            child: {
+              include: {
+                device: { select: { de_name: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Description: ค้นหา Ticket ที่เกินกำหนดคืนแล้ว
+   * Input     : now (Date)
+   * Output    : Promise<Ticket[]> - รายการ Ticket เกินกำหนด
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async findOverdueTickets(now: Date) {
+    return prisma.borrow_return_tickets.findMany({
+      where: {
+        brt_status: BRT_STATUS.IN_USE,
+        brt_end_date: { lt: now },
+        deleted_at: null,
+      },
+      include: {
+        ticket_devices: {
+          include: {
+            child: {
+              include: {
+                device: { select: { de_name: true } },
+              },
+            },
+          },
+        },
+      },
     });
   }
 }

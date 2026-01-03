@@ -144,7 +144,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-baseline mb-1">
+        <div className="flex justify-between items-baseline">
           <h4 className="text-lg font-bold text-gray-900 truncate pr-2">
             {title}
           </h4>
@@ -152,7 +152,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             {timestamp}
           </span>
         </div>
-        <div className="text-base text-gray-600 break-words">{description}</div>
+        <div
+          className={`text-base break-words ${type === "overdue" ? "text-[#FF4D4F]" : "text-[#565656]"}`}
+        >
+          {description}
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,17 @@
+/* Autofill ให้ input เปลี่ยนพื้นหลัง */
+.autofill-target:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #E8EEFA inset !important;
+  box-shadow: 0 0 0 1000px #E8EEFA inset !important;
+  -webkit-text-fill-color: #000 !important;
+}
+
+
+.autofill-target:-webkit-autofill ~ * {
+  background-color: #E8EEFA
+ !important;
+}
+
+.autofill-wrapper:has(.autofill-target:-webkit-autofill) {
+  background-color: #E8EEFA 
+  !important;
+}

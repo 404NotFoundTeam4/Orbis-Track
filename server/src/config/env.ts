@@ -82,11 +82,11 @@ const Env = z.object({
   SMTP_REQUIRETLS: z.coerce.boolean().default(true),
   SMTP_USER: z.string().default(""),
   SMTP_PASS: z.string().default(""),
-  SMTP_FROM_NAME: z.string().default("Obis Track"),
+  SMTP_FROM_NAME: z.string().default("Orbis Track"),
   SMTP_FROM_EMAIL: z.string().default(""),
-  APP_NAME: z.string().default("Obis Track"),
-  APP_URL: z.string().default("https://obistrack.com"),
-  SUPPORT_EMAIL: z.string().default("support@obistrack.com"),
+  APP_NAME: z.string().default("Orbis Track"),
+  APP_URL: z.string().default("https://orbistrack.com"),
+  SUPPORT_EMAIL: z.string().default("support@orbistrack.com"),
   FRONTEND_URL: z.string().default("http://localhost:4042"),
 
   // token/crypto

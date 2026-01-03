@@ -2,6 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { UserData } from "../services/AccountService.js";
 import { socketService } from "../services/SocketService.js";
+
+export type Role =
+  | "ADMIN"
+  | "HOD"
+  | "HOS"
+  | "TECHNICAL"
+  | "STAFF"
+  | "EMPLOYEE"
+
 interface User {
   us_id?: number;
   us_emp_code?: string;
@@ -9,7 +18,7 @@ interface User {
   us_firstname?: string;
   us_lastname?: string;
   us_phone?: string;
-  us_role?: string;
+  us_role?: Role;
 }
 
 interface UserStore {

@@ -24,6 +24,7 @@ interface DropDownProps<T extends DropDownItem> {
   placeholder?: string; // ข้อความแสดงเมื่อยังไม่เลือก
   searchPlaceholder?: string; // ข้อความ placeholder สำหรับช่องค้นหา
   label?: string; // ป้ายกำกับของ dropdown
+  required?: boolean; // จำเป็นต้องกรอก
   disabled?: boolean; // ปิดการใช้งาน dropdown
   searchable?: boolean; // เปิด/ปิดช่องค้นหา
   renderItem?: (item: T) => React.ReactNode; // Custom render function
@@ -31,6 +32,7 @@ interface DropDownProps<T extends DropDownItem> {
   className?: string; // CSS class ของ wrapper
   triggerClassName?: string;
   emptyMessage?: string; // ข้อความแสดงเมื่อไม่มีข้อมูล
+  dropdownHeight?: number; // ความสูงของ dropdown
 }
 
 /**
@@ -51,6 +53,7 @@ function DropDown<T extends DropDownItem>({
   placeholder = "เลือก",
   searchPlaceholder = "ค้นหา",
   label,
+  required = false,
   disabled = false,
   searchable = true,
   renderItem,
@@ -58,6 +61,7 @@ function DropDown<T extends DropDownItem>({
   className = "",
   triggerClassName = "",
   emptyMessage = "ไม่พบข้อมูล",
+  dropdownHeight = 240,
 }: Readonly<DropDownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false); // สถานะเปิด/ปิด dropdown
   const [searchTerm, setSearchTerm] = useState(""); // คำค้นหาปัจจุบัน
@@ -198,6 +202,7 @@ function DropDown<T extends DropDownItem>({
       {label && (
         <label className="block text-[16px] font-medium text-[#000000] mb-1.5">
           {label}
+          {required && <span className="text-[#F5222D] ml-1">*</span>}
         </label>
       )}
 
@@ -267,17 +272,17 @@ function DropDown<T extends DropDownItem>({
               </div>
             )}
 
-            {/* Items List */}
-            <div className="overflow-y-auto" style={{ maxHeight: "240px" }}>
-              {filteredItems.length > 0 ? (
-                <div>
-                  {filteredItems.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleSelect(item)}
-                      disabled={item.disabled}
-                      className={`
+          {/* Items List */}
+          <div className="overflow-y-auto" style={{ maxHeight: `${dropdownHeight}px` }}>
+            {filteredItems.length > 0 ? (
+              <div>
+                {filteredItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleSelect(item)}
+                    disabled={item.disabled}
+                    className={`
                         w-full px-4 py-2.5
                         text-left text-[16px]
                         transition-colors duration-150

@@ -96,7 +96,7 @@ const DeviceManageModal = ({
   }>({
     title: "",
     description: "",
-    onConfirm: async () => { },
+    onConfirm: async () => {},
     onCancel: undefined,
     tone: "success",
   });
@@ -179,14 +179,18 @@ const DeviceManageModal = ({
       setUpdateDeviceChild((prev) => ({
         ...prev,
         devicesToUpdate: prev.devicesToUpdate.map((deviceUpdate) =>
-          deviceUpdate.id === deviceToUpdate.child_id ? { ...deviceUpdate, status: newStatus } : deviceUpdate,
+          deviceUpdate.id === deviceToUpdate.child_id
+            ? { ...deviceUpdate, status: newStatus }
+            : deviceUpdate,
         ),
       }));
     }
 
     setLocalDevices((prev) =>
       prev.map((localDevice, idx) =>
-        idx === index ? { ...localDevice, current_status: newStatus } : localDevice,
+        idx === index
+          ? { ...localDevice, current_status: newStatus }
+          : localDevice,
       ),
     );
   };
@@ -228,7 +232,10 @@ const DeviceManageModal = ({
             ...prev,
             devicesToRemove: [
               ...prev.devicesToRemove,
-              { id: deviceToRemove.child_id, status: deviceToRemove.current_status },
+              {
+                id: deviceToRemove.child_id,
+                status: deviceToRemove.current_status,
+              },
             ],
             devicesToUpdate: prev.devicesToUpdate.filter(
               (deviceUpdate) => deviceUpdate.id !== deviceToRemove.child_id,
@@ -236,10 +243,7 @@ const DeviceManageModal = ({
           }));
 
           // เพิ่มเข้า removedOriginalDevices เพื่อแสดงในรายการ "เลือกอุปกรณ์" (เฉพาะที่สถานะ READY เท่านั้น)
-          setRemovedOriginalDevices((prev) => [
-            ...prev,
-            { ...deviceToRemove },
-          ]);
+          setRemovedOriginalDevices((prev) => [...prev, { ...deviceToRemove }]);
         }
 
         setLocalDevices((prev) => prev.filter((_, idx) => idx !== index));
@@ -264,7 +268,9 @@ const DeviceManageModal = ({
    * Author     : Pakkapon Chomchoey (Tonnam) 66160080
    */
   const handleAddDevices = (newDevices: TicketDevice[]) => {
-    const existingChildIds = new Set(localDevices.map((device) => device.child_id));
+    const existingChildIds = new Set(
+      localDevices.map((device) => device.child_id),
+    );
     const uniqueNewDevices = newDevices.filter(
       (newDevice) => !existingChildIds.has(newDevice.child_id),
     );
@@ -278,7 +284,9 @@ const DeviceManageModal = ({
     const addedBackChildIds = new Set(
       uniqueNewDevices
         .filter((newDevice) =>
-          removedOriginalDevices.some((removedDevice) => removedDevice.child_id === newDevice.child_id),
+          removedOriginalDevices.some(
+            (removedDevice) => removedDevice.child_id === newDevice.child_id,
+          ),
         )
         .map((newDevice) => newDevice.child_id),
     );
@@ -286,7 +294,9 @@ const DeviceManageModal = ({
     // ถ้าเคยถูกลบและเพิ่มกลับ → ลบออกจาก removedOriginalDevices และ devicesToRemove
     if (addedBackChildIds.size > 0) {
       setRemovedOriginalDevices((prev) =>
-        prev.filter((removedDevice) => !addedBackChildIds.has(removedDevice.child_id)),
+        prev.filter(
+          (removedDevice) => !addedBackChildIds.has(removedDevice.child_id),
+        ),
       );
       setUpdateDeviceChild((prev) => ({
         ...prev,
@@ -303,7 +313,10 @@ const DeviceManageModal = ({
 
     setLocalDevices((prev) => [
       ...prev,
-      ...uniqueNewDevices.map((newDevice) => ({ ...newDevice, current_status: "BORROWED" })),
+      ...uniqueNewDevices.map((newDevice) => ({
+        ...newDevice,
+        current_status: "BORROWED",
+      })),
     ]);
 
     if (trulyNewDevices.length > 0) {
@@ -335,7 +348,9 @@ const DeviceManageModal = ({
 
     // รวม device ที่ถูกลบ (removedOriginalDevices) เข้าไปด้วย
     // กรองเฉพาะตัวที่ยังไม่ได้ถูกเพิ่มกลับเข้า localDevices และสถานะไม่ใช่ ชำรุด/สูญหาย
-    const currentChildIds = new Set(localDevices.map((device) => device.child_id));
+    const currentChildIds = new Set(
+      localDevices.map((device) => device.child_id),
+    );
     const filteredRemovedDevices = removedOriginalDevices.filter(
       (removedDevice) =>
         !currentChildIds.has(removedDevice.child_id) &&
@@ -391,7 +406,10 @@ const DeviceManageModal = ({
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/50" onClick={handleClose}></div>
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={handleClose}
+        ></div>
 
         {/* Modal */}
         <div

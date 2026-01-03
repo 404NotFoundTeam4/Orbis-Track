@@ -185,7 +185,7 @@ export const devicesToAdd = z.object({
 
 export const devicesToRemove = z.object({
   id: z.coerce.number(),
-  status: z.nativeEnum(DEVICE_CHILD_STATUS).optional(),
+  status: z.nativeEnum(DEVICE_CHILD_STATUS),
 });
 
 export const devicesToUpdate = z.object({
@@ -202,6 +202,16 @@ export const updateDeviceChildInTicket = z.object({
 });
 
 export const availableDeviceChildsSchema = z.array(deviceChildSchema);
+
+// Return Ticket Schema
+export const returnDeviceSchema = z.object({
+  id: z.coerce.number(),
+  status: z.nativeEnum(DEVICE_CHILD_STATUS),
+});
+
+export const returnTicketBody = z.object({
+  devices: z.array(returnDeviceSchema),
+});
 
 export type UpdateDeviceChildInTicket = z.infer<
   typeof updateDeviceChildInTicket
@@ -224,3 +234,7 @@ export type BorrowReturnTicketDetailDto = z.infer<
 export type GetBorrowTicketQuery = z.infer<typeof getBorrowTicketQuery>;
 
 export type TicketItemDto = z.infer<typeof ticketItemSchema>;
+
+export type ReturnDeviceSchema = z.infer<typeof returnDeviceSchema>;
+
+export type ReturnTicketBody = z.infer<typeof returnTicketBody>;

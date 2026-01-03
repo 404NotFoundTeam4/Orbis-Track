@@ -279,4 +279,18 @@ export const ticketsService = {
       payload,
     );
   },
+
+  /**
+   * Description: คืนอุปกรณ์ - อัปเดตสถานะอุปกรณ์แต่ละชิ้นและเปลี่ยน ticket เป็น COMPLETED
+   * Input     : ticketId, devices - { id, status }[]
+   * Output    : Promise<void>
+   * Endpoint  : PATCH /tickets/borrow-return/:id/return
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  returnTicket: async (
+    ticketId: number,
+    devices: { id: number; status: string }[],
+  ): Promise<void> => {
+    await api.patch(`/tickets/borrow-return/${ticketId}/return`, { devices });
+  },
 };

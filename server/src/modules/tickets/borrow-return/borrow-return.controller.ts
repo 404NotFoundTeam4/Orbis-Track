@@ -19,6 +19,7 @@ import {
   rejectTicket,
   TicketItemDto,
   updateDeviceChildInTicket,
+  returnTicketBody,
 } from "./borrow-return.schema.js";
 import { authSchema } from "../../auth/index.js";
 import { PaginatedResult } from "../../../core/paginated-result.interface.js";
@@ -160,4 +161,28 @@ export class BorrowReturnController extends BaseController {
 
     return { success: result.success };
   }
+
+  /**
+   * Description: คืนอุปกรณ์ - อัปเดตสถานะ ticket และ device childs
+   * Input     : AuthRequest { params: id, body: { devices: { id, status }[] } }
+   * Output    : BaseResponse<void>
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async returnTicketById(
+    req: authSchema.AuthRequest,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<void>> {
+    const user = req.user;
+    const param = idParamSchema.parse(req.params);
+    const { devices } = returnTicketBody.parse(req.body);
+    const result = await this.borrowReturnService.returnTicket(
+      user,
+      param,
+      devices,
+    );
+
+    return { success: result.success };
+  }
 }
+

@@ -22,6 +22,9 @@ import DeviceListModal from "./DeviceListModal";
 import DeviceManageModal, {
   type DeviceChildChanges,
 } from "./DeviceManageModal";
+import DeviceReturnModal, {
+  type DeviceReturnStatus,
+} from "./DeviceReturnModals";
 import type { TicketDevice } from "../services/TicketsService";
 import { useToast } from "./Toast";
 
@@ -41,6 +44,10 @@ interface RequestItemProps {
     ticketId: number,
     devices: TicketDevice[],
     changes: DeviceChildChanges,
+  ) => void;
+  onReturn?: (
+    ticketId: number,
+    devices: DeviceReturnStatus[],
   ) => void;
 }
 
@@ -169,11 +176,13 @@ const RequestItem = ({
   isInvalid,
   expandTrigger,
   onManage,
+  onReturn,
 }: RequestItemProps) => {
   const { push } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
   /**
    * Description: ดึงสถานะปัจจุบันของ ticket (สำหรับ Timeline)
@@ -228,6 +237,31 @@ const RequestItem = ({
       message: "บันทึกการเปลี่ยนแปลงแล้ว",
     });
     setIsManageModalOpen(false);
+  };
+
+  /**
+   * Description: เปิด DeviceReturnModal เพื่อคืนอุปกรณ์
+   * Input      : void
+   * Output     : void
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  const returnButton = () => {
+    // โหลด ticketDetail โดยไม่ expand UI
+    onExpand(ticket.id, false);
+    setIsReturnModalOpen(true);
+  };
+
+  /**
+   * Description: ส่งข้อมูลการคืนอุปกรณ์ไป parent component
+   * Input      : devicesWithStatus - { id, status }[]
+   * Output     : void
+   * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  const handleReturnDevices = (devicesWithStatus: DeviceReturnStatus[]) => {
+    if (onReturn) {
+      onReturn(ticket.id, devicesWithStatus);
+    }
+    setIsReturnModalOpen(false);
   };
 
   // Handle external force expansion (e.g. from notification navigation)
@@ -324,7 +358,7 @@ const RequestItem = ({
               <>
                 <Button
                   variant="primary"
-                  onClick={() => onApprove(ticket.id)}
+                  onClick={() => returnButton()}
                   style={{ width: 105, height: 44, padding: "5px 15px" }}
                 >
                   รับคืน
@@ -957,6 +991,16 @@ const RequestItem = ({
         ticketDate={ticketDetail?.details?.dates}
         onConfirm={(_, changes) => {
           handleManageDeviceChilds(changes);
+        }}
+      />
+
+      {/* Device Return Modal */}
+      <DeviceReturnModal
+        isOpen={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        devices={ticketDetail?.devices || []}
+        onConfirm={(devicesWithStatus) => {
+          handleReturnDevices(devicesWithStatus);
         }}
       />
     </div>

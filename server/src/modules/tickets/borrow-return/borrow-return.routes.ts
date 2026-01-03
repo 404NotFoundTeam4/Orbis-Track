@@ -10,6 +10,7 @@ import {
   borrowReturnTicketDetailSchema,
   approveTicket,
   updateDeviceChildInTicket,
+  returnTicketBody,
 } from "./borrow-return.schema.js";
 
 import { borrowReturnService } from "./borrow-return.provider.js";
@@ -84,6 +85,17 @@ router.patchDoc(
     auth: true,
   },
   borrowReturnController.manageDeviceChildsInTicket,
+);
+
+router.patchDoc(
+  "/:id/return",
+  {
+    tag: "Borrow Return",
+    params: idParamSchema,
+    body: returnTicketBody,
+    auth: true,
+  },
+  borrowReturnController.returnTicketById,
 );
 
 export default router.instance;

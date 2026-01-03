@@ -27,6 +27,7 @@ import {
 import { AlertDialog } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { socketService } from "../services/SocketService";
+import type { DeviceReturnStatus } from "../components/DeviceReturnModals";
 
 const Requests = () => {
   const [searchFilter, setSearchFilter] = useState({ search: "" });
@@ -88,7 +89,7 @@ const Requests = () => {
   }>({
     title: "",
     description: "",
-    onConfirm: async () => {},
+    onConfirm: async () => { },
     tone: "success",
   });
 
@@ -378,6 +379,35 @@ const Requests = () => {
   };
 
   /**
+   * Description: จัดการคืนอุปกรณ์
+   * Input : ticketId, devices (รายการอุปกรณ์พร้อมสถานะ)
+   * Output : void
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  const handleReturn = async (
+    ticketId: number,
+    devices: DeviceReturnStatus[]
+  ) => {
+    try {
+      await ticketsService.returnTicket(ticketId, devices);
+      push({
+        tone: "success",
+        message: "รับคืนอุปกรณ์แล้ว",
+      });
+      // รีเฟรช
+      delete ticketDetails[ticketId];
+      fetchTickets();
+    } catch (err) {
+      console.error("Failed to return ticket:", err);
+      push({
+        tone: "danger",
+        message: "คืนอุปกรณ์ไม่สำเร็จ",
+        description: "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+      });
+    }
+  };
+
+  /**
    * Description: เปิด modal สำหรับกรอกเหตุผลปฏิเสธ
    * Input : id - ticket ID
    * Output : void
@@ -615,6 +645,7 @@ const Requests = () => {
                     }
                   }}
                   isInvalid={validationErrors[ticket.id]}
+                  onReturn={handleReturn}
                 />
               ))}
 

@@ -28,7 +28,7 @@ export type CreateBorrowTicketPayload = {
 
 // Type ของ Cart Item แต่ละชิ้น
 export type CartItem = {
-  cti_id: number;
+  ctiId: number;
   cti_us_name: string;
   cti_phone: string;
   cti_note: string;
@@ -85,12 +85,12 @@ export const CartService = {
   },
 
   /**
-   * DELETE: ลบ cart item ตาม cti_id
+   * DELETE: ลบ cart item ตาม ctiid
    */
-  async deleteCartItem(cti_id: number): Promise<string> {
+  async deleteCartItem(ctiId: number): Promise<string> {
     try {
       const res = await api.delete<ApiEnvelope<DeleteCartItemResponse>>(
-        `/borrow/cart/${cti_id}`
+        `/borrow/cart/${ctiId}`
       );
       return res.data.message ?? "Delete successfully";
     } catch (error) {
@@ -99,7 +99,7 @@ export const CartService = {
     }
   },
   /**
-   * UPDATE: แก้ไข cart item ตาม cti_id
+   * UPDATE: แก้ไข cart item ตาม ctiId
    */
   /**
    * Description: แก้ไขรายละเอียดอุปกรณ์ในรถเข็น (Edit Cart)
@@ -109,9 +109,9 @@ export const CartService = {
    * - รองรับการแก้ไขจำนวน, วันที่ยืม–คืน, ผู้ยืม, เหตุผล และสถานที่ใช้งาน
    *
    * Flow การทำงาน:
-   * 1. รับ cti_id และข้อมูลที่แก้ไขจากฟอร์ม
+   * 1. รับ ctiId และข้อมูลที่แก้ไขจากฟอร์ม
    * 2. แปลง Date → ISO string ก่อนส่งไป Backend
-   * 3. เรียก API PUT /borrow/cart/:cti_id
+   * 3. เรียก API PUT /borrow/cart/:ctiId
    * 4. Backend อัปเดตข้อมูลในระบบ
    *
    * Result:
@@ -121,11 +121,11 @@ export const CartService = {
    * Author: Salsabeela Sa-e (San) 66160349
    */
   async updateCartItem(
-    cti_id: number,
+    ctiId: number,
     payload: UpdateCartItemPayload
   ): Promise<string> {
     try {
-      const res = await api.put<ApiEnvelope<null>>(`/borrow/cart/${cti_id}`, {
+      const res = await api.put<ApiEnvelope<null>>(`/borrow/cart/${ctiId}`, {
         cti_us_name: payload.borrower,
         cti_phone: payload.phone,
         cti_note: payload.reason,

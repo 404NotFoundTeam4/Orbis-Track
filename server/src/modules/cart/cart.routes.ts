@@ -15,20 +15,6 @@ router.getDoc("/:id", { tag: "Carts", res: cartItemListResponseSchema, auth: tru
 router.deleteDoc("/:id", { tag: "Carts", res: cartItemSchema, auth: true, params: idParamSchema }, cartsController.deleteCartItem);
 router.postDoc("/:id", { tag: "Carts", params: idParamSchema, body: createBorrowTicketPayload, auth: true }, cartsController.create);
 
-/**
- * PATCH: แก้ไข cart item ตาม cti_id
- */
-router.patchDoc(
-  "/:id",
-  {
-    tag: "Carts",
-    auth: true,
-    params: idParamSchema,
-    body: updateCartItemSchema, // 👈 body สำหรับ update
-  },
-  cartsController.updateCartItem
-);
-
 router.putDoc(
   "/:id",
   {
@@ -41,9 +27,6 @@ router.putDoc(
 );
 
 
-/**
- * DELETE: ลบ cart item ตาม cti_id
- */
 router.deleteDoc(
   "/:id",
   {

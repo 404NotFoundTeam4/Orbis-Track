@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
+import { ValidationError } from "../../errors/errors.js";
 import {
   CartItemSchema,
   idParamSchema,
   CartItemListResponse,
   createBorrowTicketPayload,
+  updateCartItemSchema,
 } from "./cart.schema.js";
 import { cartsService } from "./cart.service.js";
 
@@ -57,17 +59,22 @@ export class CartController extends BaseController {
    *   3. ส่งผลลัพธ์การอัปเดตกลับไปยัง Client
    * Author      : Salsabeela Sa-e (San) 66160349
    */
-  async updateCartItem(ctx: any) {
-    const { params, body } = ctx;
+  async updateCartItem(data: any): Promise<BaseResponse> {
+  const { params, body } = data;
+  console.log("UpdateCartItem params:", params);
+  console.log("UpdateCartItem body:", body);
+  // params.id เป็น number แล้ว
+  // body เป็น object ที่ผ่าน cartItemSchema.partial() แล้ว
+  const updated = await cartsService.updateCartItemById(params, body);
 
-    const updated = await cartsService.updateCartItemById(params, body);
+  return {
+    success: true,
+    message: "Update cart item successfully",
+    data: updated,
+  };
+}
 
-    return {
-      success: true,
-      message: "Update cart item successfully",
-      data: updated,
-    };
-  }
+
 
   /**
    * Description : สร้าง Borrow Return Ticket จากรายการอุปกรณ์ที่เลือกในรถเข็น

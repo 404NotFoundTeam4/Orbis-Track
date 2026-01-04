@@ -4,7 +4,7 @@
  * และสามารถแก้ไขข้อมูล เช่น จำนวน วันที่ยืม เหตุผล ฯลฯ แล้วบันทึกกลับเข้าสู่ระบบได้
  *
  * Flow การทำงาน:
- * 1. รับ cti_id จาก route state
+ * 1. รับ ctiId จาก route state
  * 2. ดึงข้อมูลอุปกรณ์จาก CartService
  * 3. แปลงข้อมูลให้อยู่ในรูปแบบที่ BorrowDeviceModal ใช้งานได้
  * 4. เมื่อกดบันทึก จะเรียก API เพื่ออัปเดตข้อมูลในรถเข็น
@@ -20,7 +20,7 @@ import CartService from "../services/CartService";
 import { useToast } from "../components/Toast";
 
 export interface CartItem {
-  cti_id: number;
+  ctiId: number;
   deviceId: number;
   name: string;
   code: string;
@@ -57,24 +57,42 @@ const EditCart = () => {
   const navigate = useNavigate();
   const { push } = useToast();
 
-  const { cti_id } = (location.state as { cti_id?: number }) ?? {};
+  const { ctiId } = (location.state as { ctiId?: number }) ?? {};
 
   const [cartItem, setCartItem] = useState<CartItem | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!cti_id) {
+    if (!ctiId) {
       navigate("/list-devices/cart", { replace: true });
       return;
     }
 
+    /**
+     * Description:ฟังก์ชันสำหรับดึงข้อมูลรายการอุปกรณ์ที่อยู่ในตะกร้า (Cart Item)
+     * เพื่อนำมาแสดงและแก้ไขข้อมูลในหน้า Edit Cart
+     *
+     * Note:ใช้สำหรับโหลดข้อมูลเดิมของรายการยืมอุปกรณ์จากระบบ
+     * โดยดึงข้อมูลจาก API ตาม ctiId และแปลงให้อยู่ในรูปแบบ CartItem
+     * เพื่อใช้งานภายในฝั่ง Frontend
+     *
+     * Flow การทำงาน: 1. เรียก CartService.getCartItems(ctiId) เพื่อดึงข้อมูลรายการในตะกร้า
+     * 2. เลือกข้อมูลรายการแรกจากผลลัพธ์ที่ได้ (itemData[0])
+     * 3. Map ข้อมูลจาก API ให้อยู่ในรูปแบบ CartItem
+     * 4. บันทึกข้อมูลลง state ด้วย setCartItem()
+     * 5. ถ้าเกิดข้อผิดพลาด จะ redirect ผู้ใช้กลับไปหน้ารายการตะกร้า
+     * 6. ปิดสถานะ loading เมื่อทำงานเสร็จ
+     *
+     * Author: Salsabeela Sa-e (San) 66160349
+     */
+
     const loadCartItem = async () => {
       try {
-        const res = await CartService.getCartItems(cti_id);
+        const res = await CartService.getCartItems(ctiId);
         const item = res.itemData[0];
 
         const mapped: CartItem = {
-          cti_id: item.cti_id,
+          ctiId: item.ctiId,
           deviceId: item.device?.de_id,
           name: item.device?.de_name ?? "",
           code: item.device?.de_serial_number ?? "",
@@ -104,7 +122,7 @@ const EditCart = () => {
     };
 
     loadCartItem();
-  }, [cti_id, navigate]);
+  }, [ctiId, navigate]);
 
   if (loading) {
     return <div className="p-6 text-center">กำลังโหลดข้อมูล...</div>;
@@ -112,6 +130,22 @@ const EditCart = () => {
 
   if (!cartItem) return null;
 
+  /**
+ * Description:ฟังก์ชันสำหรับบันทึกการแก้ไขข้อมูลรายการยืมอุปกรณ์ในตะกร้า (Cart Item)
+ * หลังจากผู้ใช้งานแก้ไขข้อมูลในฟอร์มและกดปุ่มบันทึก
+ *
+ * Note:ใช้สำหรับอัปเดตข้อมูลการยืมอุปกรณ์ เช่น จำนวน วันที่ยืม–คืน
+ * ข้อมูลผู้ยืม และสถานที่ใช้งาน ลงในระบบผ่าน API
+ *
+ * Flow การทำงาน: 1. รับข้อมูลจากฟอร์ม (BorrowFormData)
+ * 2. แปลงวันที่ยืมและวันที่คืนเป็นรูปแบบ ISO String (หากไม่มีค่า จะส่งเป็น null)
+ * 3. เรียก CartService.updateCartItem() เพื่ออัปเดตข้อมูลในระบบ
+ * 4. แสดงข้อความแจ้งเตือนเมื่อบันทึกสำเร็จ
+ * 5. Redirect ผู้ใช้กลับไปยังหน้ารายการตะกร้า
+ * 6. ถ้าเกิดข้อผิดพลาด จะแสดงข้อความแจ้งเตือนกรณีบันทึกไม่สำเร็จ
+ *
+ * Author: Salsabeela Sa-e (San) 66160349
+ */
   const handleSubmit = async ({
     data,
   }: {
@@ -119,7 +153,7 @@ const EditCart = () => {
     data: BorrowFormData;
   }) => {
     try {
-      await CartService.updateCartItem(cartItem.cti_id, {
+      await CartService.updateCartItem(cartItem.ctiId, {
         quantity: data.quantity,
         borrowDate: data.borrowDate ? data.borrowDate.toISOString() : null,
         returnDate: data.returnDate ? data.returnDate.toISOString() : null,

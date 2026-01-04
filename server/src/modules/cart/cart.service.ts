@@ -147,7 +147,7 @@ async function updateCartItemById(
   const ctiId = Number(params.id);
 
   if (isNaN(ctiId)) {
-    throw new Error("Invalid cti_id");
+    throw new Error("Invalid ctiId");
   }
 
   const cartItem = await prisma.cart_items.findUnique({

@@ -828,7 +828,7 @@ async function getDeviceById(params: IdParamDto) {
  * Output: รายการอุปกรณ์ทั้งหมด พร้อมสถานะ
  * Author: Worrawat Namwat (Wave) 66160372
  */
-async function getAllDevices() {
+async function getAllWithDevices() {
   const devices = await prisma.devices.findMany({
     where: { deleted_at: null },
     include: {
@@ -969,6 +969,7 @@ export const inventoryService = {
   getDeviceWithChilds,
   createDeviceChild,
   uploadFileDeviceChild,
+  getAllWithDevices,
   deleteDeviceChild,
   getDeviceById,
   getAllDevices,

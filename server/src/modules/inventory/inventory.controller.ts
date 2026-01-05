@@ -174,7 +174,7 @@ export class InventoryController extends BaseController {
     res: Response,
     next: NextFunction
   ): Promise<BaseResponse<InventorySchema[]>> {
-    const devices = await inventoryService.getAllDevices();
+    const devices = await inventoryService.getAllWithDevices();
     return { data: devices };
   }
 

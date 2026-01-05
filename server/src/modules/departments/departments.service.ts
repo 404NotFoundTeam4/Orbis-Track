@@ -1,6 +1,7 @@
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
 import { prisma } from "../../infrastructure/database/client.js";
+import { logger } from "../../infrastructure/logger.js";
 
 import {
   DeleteSectionPayload,
@@ -270,7 +271,7 @@ async function addSection(deptId: number, section: string) {
     },
   });
 
-  console.log("New Section Added:", createdSection);
+  logger.info({ section: createdSection }, "New Section Added");
   return createdSection;
 }
 
@@ -455,8 +456,6 @@ async function addDepartments(payload: AddDepartmentsPayload) {
   return await prisma.departments.create({
     data: {
       dept_name: newDept,
-      created_at: new Date(),
-      updated_at: new Date(),
     },
   });
 }

@@ -15,7 +15,9 @@ interface ButtonProps {
     | "danger"
     | "dangerIcon"
     | "addSection"
-    | "confirm";
+    | "confirm"
+    | "accept"
+    | "manage";
   size?: "sm" | "md" | "lg";
   children: React.ReactNode;
   onClick?: () => void;
@@ -45,19 +47,25 @@ const Button: React.FC<ButtonProps> = ({
 
   // โทนสีและพฤติกรรม hover/active แยกตามชนิดปุ่ม
   const variantStyles = {
-    primary: "bg-[#40A9FF] text-[#FFFFFF] hover:bg-blue-500 active:bg-blue-600",
+    primary:
+      "bg-[#40A9FF] text-[#FFFFFF] hover:bg-[#1890FF] active:bg-[#1890FF]",
     secondary:
       "bg-[#9F9F9F] text-[#FFFFFF] hover:bg-gray-300 active:bg-gray-400",
     outline:
       "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 active:bg-blue-100",
     ghost: "bg-[#D9D9D9] text-[#F1F1F1]",
-    danger: "bg-[#FF4D4F] text-[#FFFFFF] hover:bg-red-500 active:bg-red-600",
+    danger:
+      "bg-[#FF4D4F] text-[#FFFFFF] hover:bg-[#F5222D] active:bg-[#CF1322]",
     dangerIcon:
       "bg-[#DF203B] text-[#FFFFFF] hover:bg-red-700 active:bg-red-800",
     addSection:
       "bg-[#FFFFFF] text-[#008CFF] hover:bg-[#F5F5F5] border border-[#008CFF]",
     confirm:
       "bg-[#52C41A] text-[#FFFFFF] hover:bg-green-700 active:bg-green-600",
+    accept:
+      "bg-[#73D13D] text-[#FFFFFF] hover:bg-[#52C41A] active:bg-[#389E0D]",
+    manage:
+      "bg-[#BFBFBF] text-[#FFFFFF] hover:bg-[#8C8C8C] active:bg-[#595959]",
   };
 
   // ขนาดปุ่ม (ระยะห่างและขนาดตัวอักษร) แยกเป็น sm / md / lg

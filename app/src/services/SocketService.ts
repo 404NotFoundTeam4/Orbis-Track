@@ -1,3 +1,12 @@
+/**
+ * Description: Singleton Service สำหรับจัดการ Socket.IO Client
+ * - connect(): เชื่อมต่อ Socket พร้อม JWT Auth
+ * - disconnect(): ตัดการเชื่อมต่อ
+ * - on/off/emit: Proxy methods สำหรับ Event handling
+ * Input : Token จาก localStorage/sessionStorage
+ * Output : Socket instance
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { io, Socket } from "socket.io-client";
 
 class SocketService {
@@ -8,6 +17,12 @@ class SocketService {
     // Private constructor ensures singleton
   }
 
+  /**
+   * Description: ดึง instance ของ SocketService (Singleton)
+   * Input : -
+   * Output : SocketService instance
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
   public static getInstance(): SocketService {
     if (!SocketService.instance) {
       SocketService.instance = new SocketService();
@@ -15,6 +30,12 @@ class SocketService {
     return SocketService.instance;
   }
 
+  /**
+   * Description: เชื่อมต่อ Socket.IO พร้อม JWT Authentication
+   * Input : url?: string (optional socket URL)
+   * Output : Socket instance
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
   public connect(url?: string): Socket {
     if (this.socket?.connected) {
       return this.socket;
@@ -50,6 +71,12 @@ class SocketService {
     return this.socket;
   }
 
+  /**
+   * Description: ตัดการเชื่อมต่อ Socket
+   * Input : -
+   * Output : void
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
   public disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();
@@ -57,6 +84,12 @@ class SocketService {
     }
   }
 
+  /**
+   * Description: ดึง Socket instance ปัจจุบัน
+   * Input : -
+   * Output : Socket | null
+   * Author: Pakkapon Chomchoey (Tonnam) 66160080
+   */
   public getSocket(): Socket | null {
     return this.socket;
   }

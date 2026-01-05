@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import "../styles/css/icon.css";
 import "../styles/css/Navbar.css";
 import { Outlet } from "react-router-dom";
@@ -23,9 +23,18 @@ import Logo from "../assets/images/navbar/Logo.png";
 import LogoGiag from "../assets/images/navbar/logo giga.png";
 import getImageUrl from "../services/GetImage";
 
+import { useNotifications } from "../hooks/useNotifications.tsx";
+import { NotificationList } from "./Notification";
+
 export const Navbar = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [active, setActive] = useState<"bell" | "cart" | null>(null);
+  const handleOpenNotifications = useCallback(() => setActive("bell"), []);
+
+  const { notifications, unreadCount, loadMore, hasMore } = useNotifications({
+    onOpenNotifications: handleOpenNotifications,
+  });
+
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
   };
@@ -98,55 +107,64 @@ export const Navbar = () => {
         </div>
 
         <div className="flex items-center  h-full">
-          <button
-            type="button"
-            onClick={() => setActive(active === "bell" ? null : "bell")}
-            className={`h-full px-6.5 ${
-              active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
-          >
-            {active !== "bell" && (
-              <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
+          <div className="relative h-full flex items-center">
+            <button
+              type="button"
+              onClick={() => setActive(active === "bell" ? null : "bell")}
+              className={`h-full px-6.5 ${active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+                } flex justify-center items-center relative`}
+            >
+              {unreadCount > 0 && (
+                <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
+              )}
+              <FontAwesomeIcon
+                icon={faBell}
+                className={`text-[23px] ${active === "bell" ? "text-white" : "text-[#595959]"
+                  }`}
+              />
+            </button>
+
+            {active === "bell" && (
+              <div className="absolute top-[100%] right-0 mt-2 z-50 shadow-xl">
+                <NotificationList
+                  notifications={notifications}
+                  onClose={() => setActive(null)}
+                  onLoadMore={loadMore}
+                  hasMore={hasMore}
+                />
+              </div>
             )}
-            <FontAwesomeIcon
-              icon={faBell}
-              className={`text-[23px] ${
-                active === "bell" ? "text-white" : "text-[#595959]"
-              }`}
-            />
-          </button>
+          </div>
 
           <button
             type="button"
             onClick={() => setActive(active === "cart" ? null : "cart")}
-            className={`h-full px-6.5 ${
-              active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
+            className={`h-full px-6.5 ${active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+              } flex justify-center items-center relative`}
           >
             {active !== "cart" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"></div>
             )}
             <FontAwesomeIcon
               icon={faCartShopping}
-              className={`text-[23px] ${
-                active === "cart" ? "text-white" : "text-[#595959]"
-              }`}
+              className={`text-[23px] ${active === "cart" ? "text-white" : "text-[#595959]"
+                }`}
             />
           </button>
 
           <div className="flex gap-5 items-centerx border-l border-l-[#D9D9D9] ml-[21px] pl-11  pr-1 ">
             <div className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
               <img
-                src={getImageUrl(User.us_images)}
+                src={getImageUrl(User?.us_images)}
                 alt=""
                 className="w-9 h-9 rounded-full"
               />
               <div className=" text-left text-black pr-8">
                 <div className="text-[16px] font-semibold">
-                  {User.us_firstname}
+                  {User?.us_firstname ?? "-"}
                 </div>
                 <div className="text-[13px] font-normal">
-                  {UserRoleTH[User.us_role as UserRole]}
+                  {User?.us_role ? UserRoleTH[User.us_role as UserRole] : "-"}
                 </div>
               </div>
             </div>
@@ -176,32 +194,29 @@ export const Navbar = () => {
                     toggleDropdown();
                     handleMenuClick("managements");
                   }}
-                  className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
-                    isDropdownOpen
+                  className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen
                       ? "bg-[#40A9FF] text-white"
                       : "hover:bg-[#F0F0F0]"
-                  }`}
+                    }`}
                 >
                   <FontAwesomeIcon icon={faServer} />
                   <span>การจัดการ</span>
                   <FontAwesomeIcon
                     icon={faChevronUp}
-                    className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${
-                      isDropdownOpen ? "rotate-0" : "rotate-180"
-                    }`}
+                    className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
+                      }`}
                   />
                 </div>
 
                 <ul
-                  className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${
-                    isDropdownOpen
-                      ? "max-h-[500px] opacity-100"
+                  className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${isDropdownOpen
+                      ? "max-h-[500px] opacity-100 "
                       : "max-h-0 opacity-0"
-                  }`}
+                    }`}
                 >
                   <li>
                     <Link
-                      to="/requests"
+                      to="/request-borrow-ticket"
                       onClick={() => handleSubMenuClick("requests")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "requests" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
@@ -221,7 +236,7 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/users"
+                      to="/account-management"
                       onClick={() => handleSubMenuClick("users")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "users" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
@@ -241,7 +256,7 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/administrator/departments-management"
+                      to="/departments-management"
                       onClick={() => handleSubMenuClick("departments")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "departments" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >

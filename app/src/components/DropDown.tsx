@@ -5,6 +5,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface DropDownItem {
   id: string | number; // รหัสประจำตัวของรายการ (ใช้เป็น key)
@@ -64,16 +65,21 @@ function DropDown<T extends DropDownItem>({
 }: Readonly<DropDownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false); // สถานะเปิด/ปิด dropdown
   const [searchTerm, setSearchTerm] = useState(""); // คำค้นหาปัจจุบัน
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 }); // position สำหรับ portal
   const dropdownRef = useRef<HTMLDivElement>(null); // อ้างอิงถึง container ของ dropdown
+  const buttonRef = useRef<HTMLButtonElement>(null); // อ้างอิงถึง trigger button
   const searchInputRef = useRef<HTMLInputElement>(null); // อ้างอิงถึง input ค้นหา
+  const menuRef = useRef<HTMLDivElement>(null); // อ้างอิงถึง portal menu
 
   // ปิด dropdown เมื่อคลิกข้างนอก
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      // ตรวจสอบว่าคลิกอยู่นอก dropdownRef และ menuRef (ถ้ามี)
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+      const isOutsideMenu = !menuRef.current || !menuRef.current.contains(target);
+
+      if (isOutsideDropdown && isOutsideMenu) {
         setIsOpen(false);
         setSearchTerm("");
       }
@@ -122,10 +128,18 @@ function DropDown<T extends DropDownItem>({
    * Description: สลับสถานะเปิด/ปิด dropdown
    * Input: -
    * Output: void
-   * Note: ถ้า disabled = true จะไม่ทำงาน
+   * Note: ถ้า disabled = true จะไม่ทำงาน, คำนวณ position เมื่อเปิด
    */
   const handleToggle = () => {
     if (!disabled) {
+      if (!isOpen && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setMenuPosition({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
       setIsOpen(!isOpen);
       if (isOpen) {
         setSearchTerm("");
@@ -194,6 +208,7 @@ function DropDown<T extends DropDownItem>({
 
       {/* Dropdown Trigger Button */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleToggle}
         disabled={disabled}
@@ -219,37 +234,43 @@ function DropDown<T extends DropDownItem>({
         </span>
         <FontAwesomeIcon
           icon={faChevronDown}
-          className={`w-3 h-3 text-[#000000] transition-transform duration-200 ${
-            isOpen ? "transform rotate-180" : ""
-          }`}
+          className={`w-3 h-3 text-[#000000] transition-transform duration-200 ${isOpen ? "transform rotate-180" : ""
+            }`}
         />
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className="absolute z-50 w-full mt-1 bg-white border border-[#D9D9D9] rounded-[16px] shadow-sm overflow-hidden"
-          style={{ maxHeight: "320px" }}
-        >
-          {/* Search Input */}
-          {searchable && (
-            <div className="p-1 border-b border-[#D9D9D9]">
-              <div className="relative">
-                <FontAwesomeIcon
-                  icon={faMagnifyingGlass}
-                  className="w-3 h-3 text-[#949494] shrink-0 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  className="w-full pl-9 pr-3 py-2 text-[16px] rounded-[16px] text-[#000000] placeholder:text-[#9E9E9E] focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-                />
+      {/* Dropdown Menu - rendered via Portal */}
+      {isOpen &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-[9999] bg-white border border-[#D9D9D9] rounded-[16px] shadow-lg overflow-hidden"
+            style={{
+              top: menuPosition.top,
+              left: menuPosition.left,
+              width: menuPosition.width,
+              maxHeight: "320px",
+            }}
+          >
+            {/* Search Input */}
+            {searchable && (
+              <div className="p-1 border-b border-[#D9D9D9]">
+                <div className="relative">
+                  <FontAwesomeIcon
+                    icon={faMagnifyingGlass}
+                    className="w-3 h-3 text-[#949494] shrink-0 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                  />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={searchPlaceholder}
+                    className="w-full pl-9 pr-3 py-2 text-[16px] rounded-[16px] text-[#000000] placeholder:text-[#9E9E9E] focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Items List */}
           <div className="overflow-y-auto" style={{ maxHeight: `${dropdownHeight}px` }}>
@@ -267,19 +288,20 @@ function DropDown<T extends DropDownItem>({
                         transition-colors duration-150
                         ${item.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-[#EBF3FE] cursor-pointer"}
                         `}
-                  >
-                    {renderItem ? renderItem(item) : defaultRenderItem(item)}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="px-4 py-3 text-center text-[16px] text-gray-500">
-                {emptyMessage}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+                    >
+                      {renderItem ? renderItem(item) : defaultRenderItem(item)}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-4 py-3 text-center text-[16px] text-gray-500">
+                  {emptyMessage}
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

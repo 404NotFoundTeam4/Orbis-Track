@@ -1,4 +1,3 @@
-import { create } from "domain";
 import { z } from "zod";
 
 /**
@@ -36,18 +35,18 @@ export const cartSchema = z.object({
 */
 export const cartItemSchema = z.object({
     cti_id: z.coerce.number(),
-    cti_us_name: z.string().min(1).max(120),
-    cti_phone: z.string().min(1).max(20),
-    cti_note: z.string().min(1).max(255),
-    cti_usage_location: z.string().min(1).max(255),
-  cti_quantity: z.coerce.number(),
-  cti_start_date: z.date().nullable(),
-  cti_end_date: z.date().nullable(),
-  cti_ct_id: z.coerce.number().int().positive().nullable().optional(),
-  cti_de_id: z.coerce.number().int().positive().nullable().optional(),
-  created_at: z.date().nullable(),
-  updated_at: z.date().nullable(),
-  deleted_at: z.date().nullable(),
+    cti_us_name: z.string().max(120).nullable(),
+    cti_phone: z.string().max(20).nullable(),
+    cti_note: z.string().max(255).nullable(),
+    cti_usage_location: z.string().max(255).nullable(),
+    cti_quantity: z.coerce.number(),
+    cti_start_date: z.date().nullable(),
+    cti_end_date: z.date().nullable(),
+    cti_ct_id: z.coerce.number().int().positive().nullable().optional(),
+    cti_de_id: z.coerce.number().int().positive().nullable().optional(),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable(),
+    deleted_at: z.date().nullable(),
 });
 
 /**
@@ -63,19 +62,7 @@ export const cartDeviceChildSchema = z.object({
     deleted_at: z.date().nullable(),
     reserved_at: z.date().nullable(),
 })
-/**
-* Description: Schema โครงสร้างข้อมูล Cart Device Child (ความสัมพันธ์ Cart Item กับ Device Child)
-* Author : Nontapat Sinhum (Guitar) 66160104
-**/
-export const cartDeviceChildSchema = z.object({
-    cdc_id: z.coerce.number(),
-    cdc_cti_id: z.coerce.number(),
-    cdc_dec_id: z.coerce.number(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
-    reserved_at: z.date().nullable(),
-})
+
 /**
 * Description : Schema โครงสร้างข้อมูล Device Child
 * Author : Nontapat Sinhum (Guitar) 66160104
@@ -336,12 +323,12 @@ export const updateCartDeviceDetailParamSchema = idParamSchema;
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const cartDeviceDetailSchema = cartItemSchema.extend({
-  cart: cartSchema,
-  cart_device_childs: z.array(
-    z.object({
-      device_child: deviceChildSchema,
-    })
-  ).optional().default([]),
+    cart: cartSchema,
+    cart_device_childs: z.array(
+        z.object({
+            device_child: deviceChildSchema,
+        })
+    ).optional().default([]),
 });
 
 /* ---------- PATCH Body ---------- */
@@ -355,13 +342,13 @@ export const cartDeviceDetailSchema = cartItemSchema.extend({
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const updateCartDeviceDetailBodySchema = z.object({
-  cti_us_name: z.string().nullable().optional(),
-  cti_phone: z.string().nullable().optional(),
-  cti_quantity: z.number().int().positive().optional(),
-  cti_note: z.string().nullable().optional(),
-  cti_usage_location: z.string().nullable().optional(),
-  cti_start_date: z.coerce.date().nullable().optional(),
-  cti_end_date: z.coerce.date().nullable().optional(),
+    cti_us_name: z.string().nullable().optional(),
+    cti_phone: z.string().nullable().optional(),
+    cti_quantity: z.number().int().positive().optional(),
+    cti_note: z.string().nullable().optional(),
+    cti_usage_location: z.string().nullable().optional(),
+    cti_start_date: z.coerce.date().nullable().optional(),
+    cti_end_date: z.coerce.date().nullable().optional(),
 });
 
 /* ---------- PATCH Response ---------- */

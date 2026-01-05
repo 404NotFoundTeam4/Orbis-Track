@@ -28,7 +28,7 @@ router.postDoc(
     res: borrowReturnTicketsSchema,
     auth: true,
   },
-  cartsController.create
+  cartsController.createTicket
 );
 
 /* =========================

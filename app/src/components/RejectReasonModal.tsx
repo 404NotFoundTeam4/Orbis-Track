@@ -61,7 +61,7 @@ const RejectReasonModal = ({
                         className="w-full h-40 md:h-48 p-4 border border-[#A2A2A2] rounded-2xl resize-none"
                         placeholder="ระบุเหตุผล"
                         value={reason}
-                        onChange={(e) => setReason(e.target.value)}
+                        onChange={(event) => setReason(event.target.value)}
                     />
                 </div>
 

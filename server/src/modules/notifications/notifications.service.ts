@@ -172,13 +172,13 @@ async function getUserNotifications(
     take: limit,
   });
 
-  const data = recipients.map((r) => ({
-    ...r.notification,
-    nr_id: r.nr_id,
-    status: r.nr_status,
-    event: r.nr_event,
-    read_at: r.read_at,
-    dismissed_at: r.dismissed_at,
+  const data = recipients.map((recipient) => ({
+    ...recipient.notification,
+    nr_id: recipient.nr_id,
+    status: recipient.nr_status,
+    event: recipient.nr_event,
+    read_at: recipient.read_at,
+    dismissed_at: recipient.dismissed_at,
   }));
 
   return {
@@ -263,24 +263,24 @@ async function getUnreadCount(userId: number) {
  * Author : Pakkapon Chomchoey (Tonnam) 66160080
  */
 async function dismissNotificationsByTicket(params: {
-  brt_id?: number;
-  ti_id?: number;
+  brtId?: number;
+  tiId?: number;
   event: NR_EVENT;
   approvalUser: number;
   type: "borrow" | "repair";
-  target_role?: string;
-  target_dept?: number;
-  target_sec?: number;
+  targetRole?: string;
+  targetDept?: number;
+  targetSec?: number;
 }) {
   const {
-    brt_id,
-    ti_id,
+    brtId,
+    tiId,
     event,
     approvalUser,
     type,
-    target_role,
-    target_dept,
-    target_sec,
+    targetRole,
+    targetDept,
+    targetSec,
   } = params;
 
   // หาผู้รับการแจ้งเตือนที่มี nr_event นี้ และ n_brt_id หรือ n_ti_id นี้
@@ -289,7 +289,7 @@ async function dismissNotificationsByTicket(params: {
       where: {
         nr_event: event,
         notification: {
-          ...(brt_id ? { n_brt_id: brt_id } : { n_ti_id: ti_id }),
+          ...(brtId ? { n_brt_id: brtId } : { n_ti_id: tiId }),
         },
         // nr_status: "UNREAD",
       },
@@ -302,8 +302,8 @@ async function dismissNotificationsByTicket(params: {
 
   if (recipients.length === 0) return;
 
-  const notiIds = Array.from(new Set(recipients.map((r) => r.nr_n_id)));
-  const recipientIds = recipients.map((r) => r.nr_id);
+  const notificationIds = Array.from(new Set(recipients.map((recipient) => recipient.nr_n_id)));
+  const recipientIds = recipients.map((recipient) => recipient.nr_id);
   const fullnameApprovalUser = approvalUserName
     ? `${approvalUserName.us_firstname} ${approvalUserName.us_lastname}`
     : "Unknown User";
@@ -323,7 +323,7 @@ async function dismissNotificationsByTicket(params: {
 
   await prisma.$transaction([
     prisma.notifications.updateMany({
-      where: { n_id: { in: notiIds } },
+      where: { n_id: { in: notificationIds } },
       data: {
         n_title: title,
         n_message: `${messagePrefix} : ${fullnameApprovalUser}`,
@@ -349,31 +349,31 @@ async function dismissNotificationsByTicket(params: {
   // ส่ง socket เพื่อบอกให้ frontend ลบออก หรือ อัปเดตสถานะ
   try {
     const socketPayload = {
-      id: notiIds[0], // ใช้ ID แรกเป็นตัวแทนสำหรับ refresh
-      nr_id: recipientIds[0],
-      ticketId: brt_id || ti_id,
+      id: notificationIds[0], // ใช้ ID แรกเป็นตัวแทนสำหรับ refresh
+      nrId: recipientIds[0],
+      ticketId: brtId || tiId,
       newTitle: title,
       newMessage: `${messagePrefix} : ${fullnameApprovalUser}`,
       actorId: approvalUser,
     };
 
-    if (target_role) {
+    if (targetRole) {
       // ส่งแบบ Room (เร็วกว่า)
       SocketEmitter.toRole({
-        role: target_role,
-        dept: target_dept || 0,
-        sec: target_sec || 0,
+        role: targetRole,
+        dept: targetDept || 0,
+        sec: targetSec || 0,
         event: "TICKET_PROCESSED",
         data: socketPayload,
       });
     } else {
       // Fallback: ส่งรายคน
-      recipients.forEach((r) => {
-        if (r.nr_us_id !== approvalUser) {
-          SocketEmitter.toUser(r.nr_us_id, "TICKET_PROCESSED", {
+      recipients.forEach((recipient) => {
+        if (recipient.nr_us_id !== approvalUser) {
+          SocketEmitter.toUser(recipient.nr_us_id, "TICKET_PROCESSED", {
             ...socketPayload,
-            id: r.nr_n_id,
-            nr_id: r.nr_id,
+            id: recipient.nr_n_id,
+            nrId: recipient.nr_id,
           });
         }
       });

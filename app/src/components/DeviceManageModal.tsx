@@ -442,9 +442,9 @@ const DeviceManageModal = ({
               <div className="w-[140px] md:w-[180px] font-medium text-black text-left">
                 สถานะ
               </div>
-              <div className="w-[80px] md:w-[100px] font-medium text-black text-end">
+              {/*<div className="w-[80px] md:w-[100px] font-medium text-black text-end">
                 จัดการ
-              </div>
+              </div>*/}
             </div>
 
             {/* Table Body */}
@@ -487,7 +487,7 @@ const DeviceManageModal = ({
                         className="w-[130px]"
                       />
                     </div>
-                    <div className="w-[80px] md:w-[100px] flex justify-end">
+                    {/*<div className="w-[80px] md:w-[100px] flex justify-end">
                       <button
                         onClick={() => handleDeleteClick(index)}
                         className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
@@ -499,7 +499,7 @@ const DeviceManageModal = ({
                           color="white"
                         />
                       </button>
-                    </div>
+                    </div>*/}
                   </div>
                 ))
               )}

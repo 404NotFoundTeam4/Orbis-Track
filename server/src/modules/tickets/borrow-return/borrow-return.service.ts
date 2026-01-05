@@ -26,7 +26,7 @@ import { SocketEmitter } from "../../../infrastructure/websocket/socket.emitter.
 import { logger } from "../../../infrastructure/logger.js";
 
 export class BorrowReturnService {
-  constructor(private readonly repository: BorrowReturnRepository) {}
+  constructor(private readonly repository: BorrowReturnRepository) { }
 
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อมรายละเอียดสำหรับแต่ละรายการ
@@ -311,12 +311,12 @@ export class BorrowReturnService {
       try {
         notificationsService.dismissNotificationsByTicket({
           approvalUser: approvalUser.sub,
-          brt_id: ticketId,
+          brtId: ticketId,
           event: "APPROVAL_REQUESTED",
           type: "borrow",
-          target_role: currentStageData.brts_role,
-          target_dept: currentStageData.brts_dept_id || 0,
-          target_sec: currentStageData.brts_sec_id || 0,
+          targetRole: currentStageData.brts_role,
+          targetDept: currentStageData.brts_dept_id || 0,
+          targetSec: currentStageData.brts_sec_id || 0,
         });
       } catch (error) {
         logger.error(
@@ -444,20 +444,20 @@ export class BorrowReturnService {
       }),
       notificationsService.dismissNotificationsByTicket({
         approvalUser: approvalUser.sub,
-        brt_id: ticketId,
+        brtId: ticketId,
         event: "APPROVAL_REQUESTED",
         type: "borrow",
-        target_role: currentStageData.brts_role,
-        target_dept: currentStageData.brts_dept_id || 0,
-        target_sec: currentStageData.brts_sec_id || 0,
+        targetRole: currentStageData.brts_role,
+        targetDept: currentStageData.brts_dept_id || 0,
+        targetSec: currentStageData.brts_sec_id || 0,
       }),
     ]);
 
-    results.forEach((result, index) => {
+    results.forEach((result, taskIndex) => {
       if (result.status === "rejected") {
         logger.error(
           { err: result.reason },
-          `Reject notification task ${index + 1} failed`,
+          `Reject notification task ${taskIndex + 1} failed`,
         );
       }
     });

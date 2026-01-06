@@ -328,7 +328,7 @@ export const Navbar = () => {
                 </Link>
 
                 <Link
-                  to="/setting"
+                  to={`${basePath}/setting`}
                   onClick={() => {
                     closeDropdown();
                     handleMenuClick("setting");

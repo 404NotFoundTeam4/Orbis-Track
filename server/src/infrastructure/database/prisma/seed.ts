@@ -591,6 +591,7 @@ async function main() {
       name: string;
       role: any;
       deptId: number | null;
+      secId?: number | null; // เพิ่ม secId สำหรับ HOS/STAFF
       status: any;
       usId?: number | null;
     }[];
@@ -635,8 +636,9 @@ async function main() {
           brts_name: s.name,
           brts_role: s.role,
           brts_dept_id: s.deptId,
+          brts_sec_id: s.secId || null, // เพิ่ม sec_id สำหรับ HOS/STAFF
           brts_dept_name: "Mock Dept",
-          brts_sec_name: "N/A",
+          brts_sec_name: s.secId ? "Section A" : null, // ถ้ามี secId ให้ใส่ชื่อ
           brts_status: s.status,
           brts_us_id: s.usId || null,
           created_at: daysAgo(5 - index),
@@ -658,7 +660,7 @@ async function main() {
     endDate: daysFromNow(5),
     currentStage: 2,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
     ],
   });
@@ -689,9 +691,9 @@ async function main() {
     endDate: daysFromNow(2),
     currentStage: 3,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "PENDING" },
+      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "PENDING" },
     ],
   });
 
@@ -706,7 +708,7 @@ async function main() {
     endDate: daysFromNow(3),
     currentStage: 1,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "REJECTED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "REJECTED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
     ],
   });
@@ -722,7 +724,7 @@ async function main() {
     endDate: daysAgo(7),
     currentStage: 2,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
     ],
   });
@@ -738,9 +740,9 @@ async function main() {
     endDate: daysAgo(1), // เลยกำหนดคืนแล้ว
     currentStage: 3,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "APPROVED", usId: staffMedia.us_id },
+      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: staffMedia.us_id },
     ],
   });
 
@@ -757,7 +759,7 @@ async function main() {
       endDate: daysFromNow(15 + i),
       currentStage: 1,
       stages: [
-        { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "PENDING" },
+        { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "PENDING" },
         { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
       ],
     });

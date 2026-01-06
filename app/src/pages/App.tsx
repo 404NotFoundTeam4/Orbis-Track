@@ -27,13 +27,13 @@ function App() {
 
   const DASHBOARD_ROLE: Role[] = ["ADMIN", "HOD", "HOS", "STAFF"];
 
-  const HOD_HOS_STAFF_ROLES: Role[] = ["HOD", "HOS", "STAFF"];
+  const HOD_HOS_STAFF_ROLES: Role[] = ["HOD", "HOS", "STAFF", "ADMIN"];
 
-  const TECHNICAL_ROLES: Role[] = ["TECHNICAL"];
+  const TECHNICAL_ROLES: Role[] = ["TECHNICAL", "ADMIN"];
 
-  const HOD_HOS_ROLES: Role[] = ["HOD", "HOS"];
+  const HOD_HOS_ROLES: Role[] = ["HOD", "HOS", "ADMIN"];
 
-  const STAFF_ROLES: Role[] = ["STAFF"];
+  const STAFF_ROLES: Role[] = ["STAFF", "ADMIN"];
 
   // route ที่ทุก role สามารถใช้งานได้
   const commonRoutes = (
@@ -107,8 +107,10 @@ function App() {
                       {commonRoutes}
                       {ADMIN_ONLY.includes(role as Role) && adminRoutes}
                       {DASHBOARD_ROLE.includes(role as Role) && dashboardRoutes}
-                      {HOD_HOS_STAFF_ROLES.includes(role as Role) && hodHosStaffRoutes}
-                      {TECHNICAL_ROLES.includes(role as Role) && technicalRoutes}
+                      {HOD_HOS_STAFF_ROLES.includes(role as Role) &&
+                        hodHosStaffRoutes}
+                      {TECHNICAL_ROLES.includes(role as Role) &&
+                        technicalRoutes}
                       {STAFF_ROLES.includes(role as Role) && staffRoutes}
                     </Route>
                   </Route>
@@ -149,7 +151,6 @@ function App() {
               <Route path="/example-component" element={<RolePathRedirect />} />
 
               <Route path="/dashboard" element={<Dashboard />} />
-
             </Route>
             {/* 404 Not Found - สำหรับ routes ที่ไม่ match ใน protected area */}
             <Route path="*" element={<NotFound />} />

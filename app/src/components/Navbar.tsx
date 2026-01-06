@@ -22,6 +22,7 @@ import { UserRole, UserRoleTH } from "../utils/role.enum";
 import Logo from "../assets/images/navbar/Logo.png";
 import LogoGiag from "../assets/images/navbar/logo giga.png";
 import getImageUrl from "../services/GetImage";
+import { getBasePath } from "../constants/rolePath";
 
 import { useNotifications } from "../hooks/useNotifications.tsx";
 import { NotificationList } from "./Notification";
@@ -39,7 +40,7 @@ export const Navbar = () => {
     setDropdownOpen(!isDropdownOpen);
   };
   const navigate = useNavigate();
-  const { user, logout } = useUserStore();
+  const { logout } = useUserStore();
   const [User, setUser] = useState(() => {
     const data = localStorage.getItem("User") || sessionStorage.getItem("User");
     return data ? JSON.parse(data) : null;
@@ -91,6 +92,9 @@ export const Navbar = () => {
   const handleSubMenuClick = (menu: string) => {
     setActiveSubMenu(menu);
   };
+
+  // สร้าง basePath จาก role ของ user ปัจจุบัน
+  const basePath = getBasePath(User?.us_role) || "";
 
   return (
     <div className="flex flex-col background w-full min-h-screen ">
@@ -177,7 +181,7 @@ export const Navbar = () => {
           <div className="flex flex-col justify-between h-[calc(100vh-100px)] px-2 py-4 text-lg whitespace-nowrap">
             <div className="text-left">
               <Link
-                to="/home"
+                to={`${basePath}/home`}
                 onClick={() => {
                   closeDropdown();
                   handleMenuClick("home");
@@ -195,8 +199,8 @@ export const Navbar = () => {
                     handleMenuClick("managements");
                   }}
                   className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen
-                      ? "bg-[#40A9FF] text-white"
-                      : "hover:bg-[#F0F0F0]"
+                    ? "bg-[#40A9FF] text-white"
+                    : "hover:bg-[#F0F0F0]"
                     }`}
                 >
                   <FontAwesomeIcon icon={faServer} />
@@ -210,13 +214,13 @@ export const Navbar = () => {
 
                 <ul
                   className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${isDropdownOpen
-                      ? "max-h-[500px] opacity-100 "
-                      : "max-h-0 opacity-0"
+                    ? "max-h-[500px] opacity-100 "
+                    : "max-h-0 opacity-0"
                     }`}
                 >
                   <li>
                     <Link
-                      to="/request-borrow-ticket"
+                      to={`${basePath}/request-borrow-ticket`}
                       onClick={() => handleSubMenuClick("requests")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "requests" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
@@ -236,7 +240,7 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/account-management"
+                      to={`${basePath}/account-management`}
                       onClick={() => handleSubMenuClick("users")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "users" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
@@ -256,7 +260,7 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/departments-management"
+                      to={`${basePath}/departments-management`}
                       onClick={() => handleSubMenuClick("departments")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "departments" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >

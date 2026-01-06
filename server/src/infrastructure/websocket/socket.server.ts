@@ -21,8 +21,18 @@ let io: SocketIOServer | null = null;
  */
 export const initSocket = (httpServer: HttpServer) => {
   io = new SocketIOServer(httpServer, {
-    cors: { origin: "*" },
+    cors: {
+      origin: [
+        "http://localhost:4040",
+        "http://localhost:4140",
+        "http://seteam.bsospace.com:4140",
+        "https://404notfound-front.bsospace.com",
+        "https://orbistrack.bsospace.com",
+      ],
+      credentials: true,
+    },
     path: "/socket.io",
+    transports: ["websocket", "polling"], // fallback support
   });
 
   io.use(socketAuthMiddleware);

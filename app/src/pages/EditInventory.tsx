@@ -91,7 +91,10 @@ const EditInventory = () => {
       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
     }
   };
+  const handleSubmit = async(data:FormData) =>{
 
+  //  DeviceService.updateDevices()
+  }
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}
@@ -109,7 +112,9 @@ const EditInventory = () => {
       <MainDeviceModal
         mode="edit"
         defaultValues={parentDevice}
-        onSubmit={() => console.log("Submit Device")}
+        onSubmit={(data) => {
+          handleSubmit(data);
+        }}
       />
       <DevicesChilds
         devicesChilds={deviceChilds}

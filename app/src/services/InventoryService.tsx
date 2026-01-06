@@ -211,4 +211,19 @@ export const DeviceService = {
     const { data } = await api.get("/inventory/add-approval");
     return data;
   },
+
+   /**
+   * Description: ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
+   * Input     : id - รหัสอุปกรณ์แม่
+   * Output    : data - ข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
+   * Endpoint  : GET /api/inventory/devices/:id
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  updateDevices: async (
+    id: number,
+    payload: CreateDevicePayload
+  ): Promise<CreateDeviceResponse> => {
+    const { data } = await api.patch(`/inventory/devices/${id}`,payload);
+    return data.data;
+  },
 };

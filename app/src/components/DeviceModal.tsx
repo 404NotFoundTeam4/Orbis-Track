@@ -10,7 +10,7 @@ import { faBars, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useInventorys } from "../hooks/useInventory";
 import { AlertDialog } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
-
+import getImageUrl from "../services/GetImage.js";
 // โครงสร้างข้อมูลของแผนก
 interface Department {
   id: number;
@@ -112,7 +112,7 @@ const MainDeviceModal = ({
       setApprovalFlows(filteredApprovalFlows);
       setapprovalFlowSteps(res.data.approval_flow_step);
 
-      console.log(res.data);
+     
     } catch (error) {
       console.error("โหลดข้อมูลไม่สำเร็จ", error);
     }
@@ -120,7 +120,7 @@ const MainDeviceModal = ({
   const fetchDataApprove = async () => {
     try {
       const ap = await useInventorys.getApproveAll();
-      console.log(ap.data);
+   
       setDepartmentsApprove(ap.data.departments);
       setSectionsApprove(ap.data.sections);
       setStaff(ap.data.staff);
@@ -230,7 +230,6 @@ const MainDeviceModal = ({
   const [staff, setStaff] = useState([]);
   const [sectionsApprove, setSectionsApprove] = useState([]);
   const [departmentsApprove, setDepartmentsApprove] = useState([]);
-
   /*========================== func เพิ่ม-ลบ  เพิ่มลำดับอนุมัติ ========================== */
   const handleApproverGroup = (item: any) => {
     setApproverGroupFlow((prev: any) =>
@@ -369,13 +368,18 @@ const MainDeviceModal = ({
           label: defaultValues.approval_flow.af_name,
           value: defaultValues.approval_flow.af_id,
           // แปลง array เป็น approvers ที่ UI ใช้ render เช่น HOS › HOD
-          approvers: defaultValues.approval_flow.steps.map((step: any) => ({
-            id: step.afs_id, // id ของแต่ละขั้นตอน
-            label: step.afs_role, // role ที่อนุมัติ
-            order: step.afs_step_approve, // ลำดับการอนุมัติ
-          })),
+          
         });
+    //  const   approvers = defaultValues.approval_flow.steps.map((step: any,index:number) => ({
+    //         id: step.afs_id, // id ของแต่ละขั้นตอน
+    //         label: step.afs_role, // role ที่อนุมัติ
+    //         value: index, // ลำดับการอนุมัติ
+    //       }))
+    //     console.log(approvers)
+    //     setApproverGroupFlow(
+    //      approvers)
       }
+      
     }
   }, [mode, defaultValues]);
 

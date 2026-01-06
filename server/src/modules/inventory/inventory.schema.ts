@@ -307,22 +307,27 @@ export const softDeleteResponseSchema = z.object({
  * Author: Worrawat Namwat (Wave) 66160372
  */
 export const updateDevicePayload = z.object({
-  device_name: z.string().optional(),
-  device_code: z.string().optional(), // รหัสอุปกรณ์ (Serial Number แม่)
-  location: z.string().optional(),
-  description: z.string().optional(),
-  maxBorrowDays: z.coerce.number().optional(),
-  totalQuantity: z.coerce.number().optional(),
-  imageUrl: z.string().nullable().optional(),
+    de_serial_number: z.string().optional(),
+  de_name: z.string().optional(),
+  de_description: z.string().optional(),
+  de_location: z.string().optional(),
+  de_max_borrow_days: z.number().optional(),
+  de_images: z.string().nullable().optional(),
 
-  // Foreign Keys
-  department_id: z.coerce.number().nullable().optional(),
-  category_id: z.coerce.number().nullable().optional(),
-  sub_section_id: z.coerce.number().nullable().optional(),
-  approver_flow_id: z.coerce.number().nullable().optional(),
+  de_af_id: z.number().optional(),
+  de_ca_id: z.number().optional(),
+  de_us_id: z.number().optional(),
+  de_sec_id: z.number().optional(),
 
-  serialNumbers: z.array(z.any()).optional(),
-  accessories: z.array(z.any()).optional(),
+  totalQuantity: z.number().optional(),
+  serialNumbers: z.array(z.string()).optional(),
+
+  accessories: z.array(
+    z.object({
+      acc_name: z.string(),
+      acc_quantity: z.number(),
+    })
+  ).optional(),
 });
 
 export type InventorySchema = z.infer<typeof inventorySchema>;

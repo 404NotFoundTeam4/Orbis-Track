@@ -916,34 +916,38 @@ export async function softDeleteDevice(de_id: number) {
  * Output: ข้อมูลอุปกรณ์ที่ถูกแก้ไขแล้ว
  * Author: Worrawat Namwat (Wave) 66160372
  */
-export async function updateDevice(id: number, data: UpdateDevicePayload) {
-  const existing = await prisma.devices.findUnique({ where: { de_id: id } });
-  if (!existing) throw new Error("Device not found");
-  //ทำการ Update (Map ให้ตรงกับ Schema)
+export async function updateDevice(
+  id: number,
+  data: UpdateDevicePayload
+) {
+  const {
+    accessories,
+    serialNumbers,
+    totalQuantity,
+    de_images,
+    ...deviceData
+  } = data;
+
+  const existing = await prisma.devices.findUnique({
+    where: { de_id: id },
+  });
+
+  if (!existing) {
+    throw new Error("Device not found");
+  }
+
   const updated = await prisma.devices.update({
     where: { de_id: id },
     data: {
-      // ข้อมูลทั่วไป
-      de_name: data.device_name,
-      de_serial_number: data.device_code,
-      de_location: data.location,
-      de_description: data.description,
-      de_max_borrow_days: data.maxBorrowDays,
-      de_images: data.imageUrl,
-
-      // Foreign Keys (ต้อง Map จาก Payload มาเป็นชื่อ Field ใน DB)
-      de_ca_id: data.category_id ? Number(data.category_id) : undefined, // Category
-      de_sec_id: data.sub_section_id ? Number(data.sub_section_id) : undefined, // Section (ฝ่ายย่อย)
-      de_af_id: data.approver_flow_id
-        ? Number(data.approver_flow_id)
-        : undefined, // Approval Flow
-
-      // อัปเดตเวลาล่าสุด
+      ...deviceData,          
+      de_images: de_images,  
       updated_at: new Date(),
     },
   });
+
   return updated;
 }
+
 // ดึงข้อมูลแผนก
 async function getDepartments() {
   return await prisma.departments.findMany({ orderBy: { dept_id: "asc" } });

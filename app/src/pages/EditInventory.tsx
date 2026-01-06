@@ -8,7 +8,7 @@ import {
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
 import { useLocation } from "react-router-dom";
-
+import { useInventorys } from "../hooks/useInventory";
 const EditInventory = () => {
   // ดึง url ปัจจุบัน
   const location = useLocation();
@@ -29,6 +29,10 @@ const EditInventory = () => {
     setDeviceChilds(device?.device_childs ?? []); // เก็บข้อมูลอุปกรณ์ลูกเข้า state
   };
 
+    const userString =
+    sessionStorage.getItem("User") || localStorage.getItem("User");
+
+  const user = userString ? JSON.parse(userString) : null;
   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
     fetchDevice();
@@ -91,9 +95,38 @@ const EditInventory = () => {
       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
     }
   };
-  const handleSubmit = async(data:FormData) =>{
+  const handleSubmit = async(formData:FormData) =>{
+    const payload = 
+    {
+  "de_serial_number": "SN-DEV-2026-0001",
+  "de_name": "MacBook Pro 14-inch M3",
+  "de_description": "โน้ตบุ๊กสำหรับงานพัฒนาโปรแกรม ใช้ในทีม Backend",
+  "de_location": "ห้อง IT ชั้น 9 อาคาร A",
+  "de_max_borrow_days": 7,
+  "totalQuantity":3,
+  "de_af_id": 1,
+  "de_ca_id": 1,
+  "de_us_id": user?.us_id,
+  "de_sec_id": 1,
+  
+  "accessories": [
+    {
+      "acc_name": "สายชาร์จ USB-C",
+      "acc_quantity": 1
+    },
+    {
+      "acc_name": "Adapter 96W",
+      "acc_quantity": 1
+    },
+    {
+      "acc_name": "กระเป๋าโน้ตบุ๊ก",
+      "acc_quantity": 1
+    }
+  ],
+  "de_images": "",
+}
 
-  //  DeviceService.updateDevices()
+   useInventorys.updateDevicesdata(1,payload)
   }
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">

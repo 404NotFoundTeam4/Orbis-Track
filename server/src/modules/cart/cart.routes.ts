@@ -17,20 +17,6 @@ import {
 const cartsController = new CartController();
 const router = new Router(undefined, '/borrow/cart');
 
-router.getDoc("/:id", { tag: "Carts", res: cartItemListResponseSchema, auth: true, params: idParamSchema }, cartsController.getCartItemList);
-router.deleteDoc("/:id", { tag: "Carts", res: cartItemSchema, auth: true, params: idParamSchema }, cartsController.deleteCartItem);
-router.postDoc(
-  "/:id",
-  {
-    tag: "Carts",
-    params: idParamSchema,
-    body: createBorrowTicketPayload,
-    res: borrowReturnTicketsSchema,
-    auth: true,
-  },
-  cartsController.createTicket
-);
-
 /* =========================
  * GET /borrow/cart/device/:id
  * ========================= */

@@ -20,13 +20,13 @@ CREATE TYPE "TI_RESULT" AS ENUM ('SUCCESS', 'FAILED', 'IN_PROGRESS');
 CREATE TYPE "DA_STATUS" AS ENUM ('ACTIVE', 'COMPLETED');
 
 -- CreateEnum
-CREATE TYPE "BASE_EVENT" AS ENUM ('DEVICE_CREATED', 'TICKET_CREATED', 'TICKET_APPROVED', 'TICKET_REJECTED', 'TICKET_STAGE_PASSED', 'TICKET_RETURNED', 'TICKET_DUE_SOON', 'TICKET_OVERDUE', 'ISSUE_REPORTED', 'ISSUE_ASSIGNED', 'ISSUE_RESOLVED', 'ISSUE_MARK_DAMAGED');
+CREATE TYPE "BASE_EVENT" AS ENUM ('DEVICE_CREATED', 'APPROVAL_REQUESTED', 'NOTIFICATION_FULFILLED', 'NOTIFICATION_RESOLVED', 'TICKET_CREATED', 'TICKET_APPROVED', 'TICKET_REJECTED', 'TICKET_STAGE_PASSED', 'TICKET_RETURNED', 'TICKET_DUE_SOON', 'TICKET_OVERDUE', 'ISSUE_REPORTED', 'ISSUE_ASSIGNED', 'ISSUE_RESOLVED', 'ISSUE_MARK_DAMAGED');
 
 -- CreateEnum
 CREATE TYPE "NR_STATUS" AS ENUM ('UNREAD', 'READ', 'DISMISSED');
 
 -- CreateEnum
-CREATE TYPE "NR_EVENT" AS ENUM ('APPROVAL_REQUESTED', 'YOUR_TICKET_APPROVED', 'YOUR_TICKET_REJECTED', 'YOUR_TICKET_IN_USE', 'YOUR_TICKET_RETURNED', 'DUE_SOON_REMINDER', 'OVERDUE_ALERT', 'ISSUE_NEW_FOR_TECH', 'ISSUE_ASSIGNED_TO_YOU', 'ISSUE_RESOLVED_FOR_REPORTER');
+CREATE TYPE "NR_EVENT" AS ENUM ('APPROVAL_REQUESTED', 'REQUEST_FULFILLED', 'REQUEST_RESOLVED', 'YOUR_TICKET_APPROVED', 'YOUR_TICKET_STAGE_APPROVED', 'YOUR_TICKET_REJECTED', 'YOUR_TICKET_IN_USE', 'YOUR_TICKET_RETURNED', 'DUE_SOON_REMINDER', 'OVERDUE_ALERT', 'ISSUE_NEW_FOR_TECH', 'ISSUE_ASSIGNED_TO_YOU', 'ISSUE_RESOLVED_FOR_REPORTER');
 
 -- CreateEnum
 CREATE TYPE "CM_ROLE" AS ENUM ('user', 'assistant', 'system', 'tool', 'admin');
@@ -48,7 +48,7 @@ CREATE TABLE "departments" (
     "dept_id" SERIAL NOT NULL,
     "dept_name" VARCHAR(200) NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "departments_pkey" PRIMARY KEY ("dept_id")
@@ -60,7 +60,7 @@ CREATE TABLE "sections" (
     "sec_name" VARCHAR(50) NOT NULL,
     "sec_dept_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "sections_pkey" PRIMARY KEY ("sec_id")
@@ -82,7 +82,7 @@ CREATE TABLE "users" (
     "us_sec_id" INTEGER,
     "us_is_active" BOOLEAN NOT NULL DEFAULT true,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("us_id")
@@ -102,7 +102,7 @@ CREATE TABLE "devices" (
     "de_us_id" INTEGER NOT NULL,
     "de_sec_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "devices_pkey" PRIMARY KEY ("de_id")
@@ -117,7 +117,7 @@ CREATE TABLE "device_childs" (
     "dec_status" "DEVICE_CHILD_STATUS" NOT NULL,
     "dec_de_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "device_childs_pkey" PRIMARY KEY ("dec_id")
@@ -129,7 +129,7 @@ CREATE TABLE "carts" (
     "ct_quantity" INTEGER NOT NULL DEFAULT 1,
     "ct_us_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "carts_pkey" PRIMARY KEY ("ct_id")
@@ -148,7 +148,7 @@ CREATE TABLE "cart_items" (
     "cti_ct_id" INTEGER NOT NULL,
     "cti_de_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "cart_items_pkey" PRIMARY KEY ("cti_id")
@@ -160,7 +160,7 @@ CREATE TABLE "cart_device_childs" (
     "cdc_cti_id" INTEGER NOT NULL,
     "cdc_dec_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
     "reserved_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
 
@@ -173,7 +173,7 @@ CREATE TABLE "refresh_tokens" (
     "rt_us_id" INTEGER NOT NULL,
     "rt_token_hash" VARCHAR(255) NOT NULL,
     "rt_revoked_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("rt_id")
@@ -186,7 +186,7 @@ CREATE TABLE "accessories" (
     "acc_quantity" INTEGER NOT NULL,
     "acc_de_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "accessories_pkey" PRIMARY KEY ("acc_id")
@@ -197,7 +197,7 @@ CREATE TABLE "categories" (
     "ca_id" SERIAL NOT NULL,
     "ca_name" VARCHAR(100) NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "categories_pkey" PRIMARY KEY ("ca_id")
@@ -210,7 +210,7 @@ CREATE TABLE "approval_flows" (
     "af_is_active" BOOLEAN NOT NULL DEFAULT true,
     "af_us_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "approval_flows_pkey" PRIMARY KEY ("af_id")
@@ -225,7 +225,7 @@ CREATE TABLE "approval_flow_steps" (
     "afs_role" "US_ROLE" NOT NULL,
     "afs_af_id" INTEGER NOT NULL,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "approval_flow_steps_pkey" PRIMARY KEY ("afs_id")
@@ -240,7 +240,7 @@ CREATE TABLE "device_availabilities" (
     "da_end" TIMESTAMPTZ(6) NOT NULL,
     "da_status" "DA_STATUS" NOT NULL DEFAULT 'ACTIVE',
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL,
 
     CONSTRAINT "device_availabilities_pkey" PRIMARY KEY ("da_id")
 );
@@ -264,7 +264,7 @@ CREATE TABLE "borrow_return_tickets" (
     "brt_user_id" INTEGER NOT NULL,
     "brt_staff_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "borrow_return_tickets_pkey" PRIMARY KEY ("brt_id")
@@ -284,7 +284,7 @@ CREATE TABLE "borrow_return_ticket_stages" (
     "brts_brt_id" INTEGER NOT NULL,
     "brts_us_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "borrow_return_ticket_stages_pkey" PRIMARY KEY ("brts_id")
@@ -297,7 +297,7 @@ CREATE TABLE "ticket_devices" (
     "td_dec_id" INTEGER NOT NULL,
     "td_origin_cti_id" INTEGER,
     "deleted_at" TIMESTAMPTZ(6),
-    "created_at" TIMESTAMPTZ(6),
+    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6),
 
     CONSTRAINT "ticket_devices_pkey" PRIMARY KEY ("td_id")
@@ -320,7 +320,7 @@ CREATE TABLE "ticket_issues" (
     "success_at" TIMESTAMPTZ(6),
     "deleted_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL,
 
     CONSTRAINT "ticket_issues_pkey" PRIMARY KEY ("ti_id")
 );

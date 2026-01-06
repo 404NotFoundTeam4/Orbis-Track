@@ -833,6 +833,20 @@ async function main() {
     "  Username: admin, hod.media, hod.it, hos.media.a, tech.it, staff.media, emp.media, emp.it",
   );
   console.log("  Password: password123");
+
+  //ป้องกัน id ซ้ำกันหลังจาก seed
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('borrow_return_tickets', 'brt_id'),
+      (SELECT COALESCE(MAX(brt_id), 0) FROM borrow_return_tickets)
+    );
+  `);
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('borrow_return_ticket_stages', 'brts_id'),
+      (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
+    );
+  `);
 }
 
 main()

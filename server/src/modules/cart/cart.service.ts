@@ -292,24 +292,36 @@ async function getCartItem(params: IdParamDto) {
 
 /**
  * Description: ฟังก์ชันลบรายการอุปกรณ์ออกจากรถเข็นตาม Cart Item ID (ลบแบบถาวร)
- * Input : params (IdParamDto) = { id: number } (Cart Item ID)
+ *              - ตรวจสอบว่ามี Cart Item อยู่จริง
+ *              - ลบข้อมูลลูกในตาราง cart_device_childs ที่ผูกกับ Cart Item ก่อน เพื่อหลีกเลี่ยง Foreign Key Constraint
+ *              - ลบ Cart Item หลังจากลบข้อมูลลูกสำเร็จ
+ *              - ทำงานภายใต้ Transaction เพื่อให้ลบสำเร็จทั้งหมดหรือ Rollback ทั้งหมด
+ * Input : params (DeleteCartItemPayload) = { cartItemId: number }
  * Output : Promise<{ message: string }>
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
 async function deleteCartItemById(params: DeleteCartItemPayload) {
   const { cartItemId } = params;
 
-  const cartItem = await prisma.cart_items.findUnique({
-    where: { cti_id: cartItemId },
-  });
-  if (!cartItem) throw new Error("CartItem not found");
+  return prisma.$transaction(async (tx) => {
+    const cartItem = await tx.cart_items.findUnique({
+      where: { cti_id: cartItemId },
+      select: { cti_id: true },
+    });
+    if (!cartItem) throw new Error("CartItem not found");
 
-  // ลบจริง
-  await prisma.cart_items.delete({
-    where: { cti_id: cartItemId },
-  });
+    // ลบรายการลูกที่ผูกกับ cart item นี้ทั้งหมดก่อน (กัน FK พัง)
+    await tx.cart_device_childs.deleteMany({
+      where: { cdc_cti_id: cartItemId },
+    });
 
-  return { message: "Delete Cart Item successfully" };
+    // ค่อยลบ cart item
+    await tx.cart_items.delete({
+      where: { cti_id: cartItemId },
+    });
+
+    return { message: "Delete Cart Item successfully" };
+  });
 }
 
 /**

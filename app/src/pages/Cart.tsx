@@ -54,12 +54,12 @@ export const Cart = () => {
    */
   const [items, setItems] = useState<CartItem[]>([]);
 
- /**
- * Description: ฟังก์ชันสำหรับโหลดข้อมูลรถเข็นของผู้ใช้ และแปลงข้อมูลให้อยู่ในรูปแบบ CartItem เพื่อใช้แสดงผลใน UI
- * Input : userId (ดึงจาก session/local storage หรือ state ภายใน component)
- * Output : อัปเดตข้อมูลรายการรถเข็นใน state (items)
- * Author : Nontapat Sinhum (Guitar) 66160104
- **/
+  /**
+   * Description: ฟังก์ชันสำหรับโหลดข้อมูลรถเข็นของผู้ใช้ และแปลงข้อมูลให้อยู่ในรูปแบบ CartItem เพื่อใช้แสดงผลใน UI
+   * Input : userId (ดึงจาก session/local storage หรือ state ภายใน component)
+   * Output : อัปเดตข้อมูลรายการรถเข็นใน state (items)
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
   const loadCart = useCallback(async () => {
     try {
       if (!userId) return;
@@ -74,7 +74,9 @@ export const Cart = () => {
         department: cti.de_dept_name ?? "ไม่ระบุ",
         qty: cti.cti_quantity ?? 1,
         image: cti.device?.de_images ?? "/images/default.png",
-        section: cti.de_sec_name ? cti.de_sec_name.trim().split(" ").pop() : "-",
+        section: cti.de_sec_name
+          ? cti.de_sec_name.trim().split(" ").pop()
+          : "-",
         availability: cti.dec_availability,
         borrowDate: formatThaiDateTime(cti.cti_start_date) ?? "ยังไม่กำหนด",
         returnDate: formatThaiDateTime(cti.cti_end_date) ?? "ยังไม่กำหนด",
@@ -212,7 +214,9 @@ export const Cart = () => {
           )
         );
 
-        setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
+        setItems((prev) =>
+          prev.filter((item) => !selectedItems.includes(item.id))
+        );
 
         push({
           tone: "danger",
@@ -263,7 +267,9 @@ export const Cart = () => {
     );
   };
 
-  const selectableItems = items.filter((item) => item.availability === "พร้อมใช้งาน");
+  const selectableItems = items.filter(
+    (item) => item.availability === "พร้อมใช้งาน"
+  );
   const selectableIds = selectableItems.map((item) => item.id);
 
   const selectedItemCount = selectedItems.length;
@@ -335,7 +341,10 @@ export const Cart = () => {
       <div className="flex-1">
         {/* แถบนำทาง */}
         <div className="mb-[24px] space-x-[9px] text-sm">
-          <span className="text-[#858585]">รายการอุปกรณ์</span>
+          <Link to="/list-devices" className="text-[#858585]">
+            รายการอุปกรณ์
+          </Link>
+          {/* <span className="text-[#858585]">รายการอุปกรณ์</span> */}
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000] font-medium">รถเข็น</span>
         </div>

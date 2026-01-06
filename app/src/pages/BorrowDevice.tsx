@@ -1,227 +1,231 @@
-import { useLocation, useNavigate } from "react-router-dom"
-import BorrowEquipmentModal from "../components/BorrowDeviceModal"
-import { borrowService, type GetAvailable, type GetDeviceForBorrow } from "../services/BorrowService";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import BorrowEquipmentModal from "../components/BorrowDeviceModal";
+import {
+  borrowService,
+  type GetAvailable,
+  type GetDeviceForBorrow,
+} from "../services/BorrowService";
 import { useEffect, useState } from "react";
 import { useToast } from "../components/Toast";
 
 interface BorrowForm {
-    dateRange: [Date | null, Date | null];
-    quantity: number;
-    reason: string;
-    placeOfUse: string;
-    borrowTime: string;
-    returnTime: string;
+  dateRange: [Date | null, Date | null];
+  quantity: number;
+  reason: string;
+  placeOfUse: string;
+  borrowTime: string;
+  returnTime: string;
 }
 
 interface AddToCart {
-    deviceId: number;
-    borrower: string;
-    phone: string,
-    reason: string,
-    placeOfUse: string,
-    quantity: number,
-    dateRange: [Date | null, Date | null];
-    borrowTime: string;
-    returnTime: string;
+  deviceId: number;
+  borrower: string;
+  phone: string;
+  reason: string;
+  placeOfUse: string;
+  quantity: number;
+  dateRange: [Date | null, Date | null];
+  borrowTime: string;
+  returnTime: string;
 }
 
 const BorrowDevice = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const location = useLocation();
-    // รับรหัสอุปกรณ์แม่ที่ส่งมาจาก state ของ navigate
-    const deId = location.state?.deviceId;
-    // เก็บข้อมูลอุปกรณ์แม่
-    const [device, setDevice] = useState<GetDeviceForBorrow | null>(null);
+  const location = useLocation();
+  // รับรหัสอุปกรณ์แม่ที่ส่งมาจาก state ของ navigate
+  const deId = location.state?.deviceId;
+  // เก็บข้อมูลอุปกรณ์แม่
+  const [device, setDevice] = useState<GetDeviceForBorrow | null>(null);
 
-    // เก็บข้อมูลอุปกรณ์ลูก
-    const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
-    // เก็บอุปกรณ์ที่ผู้ใช้เลือก
-    const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
-    // เก็บจำนวนอุปกรณ์ที่สถานะ READY
-    const [availableCount, setAvailableCount] = useState(0);
+  // เก็บข้อมูลอุปกรณ์ลูก
+  const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
+  // เก็บอุปกรณ์ที่ผู้ใช้เลือก
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
+  // เก็บจำนวนอุปกรณ์ที่สถานะ READY
+  const [availableCount, setAvailableCount] = useState(0);
 
-    // ใช้ำสำหรับแสดง toast
-    const { push } = useToast();
+  // ใช้ำสำหรับแสดง toast
+  const { push } = useToast();
 
-    // ดึงข้อมูลอุปกรณ์แม่เมื่อเรนเดอร์หน้าเว็บครั้งแรก
-    useEffect(() => {
-        const fetchDevice = async () => {
-            const res = await borrowService.getDeviceForBorrow(deId);
-            // เก็บข้อมูลลงใน state
-            setDevice(res);
-        }
+  // ดึงข้อมูลอุปกรณ์แม่เมื่อเรนเดอร์หน้าเว็บครั้งแรก
+  useEffect(() => {
+    const fetchDevice = async () => {
+      const res = await borrowService.getDeviceForBorrow(deId);
+      // เก็บข้อมูลลงใน state
+      setDevice(res);
+    };
 
-        fetchDevice();
-    }, [deId]);
+    fetchDevice();
+  }, [deId]);
 
-    if (!device) {
-        return null;
+  if (!device) {
+    return null;
+  }
+
+  // อุปกรณ์เสริม
+  const accessory = device.accessories
+    ? device.accessories?.map((acc) => ({
+        name: acc.acc_name,
+        qty: acc.acc_quantity,
+      }))
+    : [];
+
+  // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
+  const equipment = {
+    serialNumber: device.de_serial_number,
+    name: device.de_name,
+    category: device.category?.ca_name ?? "",
+    department: device.department ?? "",
+    section: device.section ?? "",
+    imageUrl: device.de_images ?? "",
+    storageLocation: device.de_location,
+    total: device.total,
+    remain: device.ready,
+    maxBorrowDays: device.de_max_borrow_days,
+    accessories: accessory,
+  };
+
+  /**
+   * Description: ฟังก์ชันสำหรับรวมวันที่และเวลาเป็น Date (ISO)
+   * Input : date - วันที่, time - เวลา
+   * Output : วันที่และเวลาที่ถูกรวมแล้ว
+   * Author : Thakdanai Makmi (Ryu) 66160355
+   **/
+  const buildDateTime = (date: Date, time: string) => {
+    // แยกชั่วโมงและนาที
+    const [hh, mm] = time.split(":").map(Number);
+    // clone วันที่
+    const dateTime = new Date(date);
+    // ตั้งค่าเวลาให้วันที่
+    dateTime.setHours(hh, mm, 0, 0);
+    return dateTime;
+  };
+
+  /**
+   * Description: ฟังก์ชันสำหรับจัดการเมื่อมีการเปลี่ยนวันที่หรือเวลาที่เลือก
+   * Input : -
+   * Output : อัปเดตข้อมูลอุปกรณ์ที่ว่าง, จำนวนอุปกรณ์ที่ว่าง และรีเซ็ตการเลือกอุปกรณ์
+   * Author : Thakdanai Makmi (Ryu) 66160355
+   **/
+  const handleDateTimeChange = async () => {
+    // ดึงข้อมูล device childs ทั้งหมด พร้อมเวลาที่ถูกยืม
+    const res = await borrowService.getAvailable(deId);
+    setAvailableDevices(res);
+
+    // นับจำนวนอุปกรณ์ที่ว่าง
+    const readyCount = res.filter((d) => d.dec_status === "READY").length;
+    setAvailableCount(readyCount);
+
+    // reset การเลือก ถ้าเวลาเปลี่ยน
+    setSelectedDeviceIds([]);
+  };
+
+  /**
+   * Description: ฟังก์ชันสำหรับส่งคำร้องยืมอุปกรณ์
+   * Input : data - ข้อมูลฟอร์มการยืมอุปกรณ์
+   * Output : สร้างคำร้องยืมอุปกรณ์ และนำทางกลับไปยังหน้ารายการอุปกรณ์
+   * Author : Thakdanai Makmi (Ryu) 66160355
+   **/
+  const handleSubmit = async ({ data }: { data: BorrowForm }) => {
+    try {
+      // วันที่ยืมและวันที่คืน
+      const [borrowDate, returnDateRaw] = data.dateRange;
+      // วันที่คืน (กรณียืมวันเดียว)
+      const returnDate = returnDateRaw ?? borrowDate;
+
+      if (!borrowDate || !returnDate) return;
+
+      // รวมวันเวลาที่ยืมและคืนเป็น Date
+      const borrowStart = buildDateTime(borrowDate, data.borrowTime);
+      const borrowEnd = buildDateTime(returnDate, data.returnTime);
+
+      const payload = {
+        deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
+        borrowStart: borrowStart.toISOString(),
+        borrowEnd: borrowEnd.toISOString(),
+        reason: data.reason,
+        placeOfUse: data.placeOfUse,
+      };
+
+      await borrowService.createBorrowTicket(payload);
+
+      push({ tone: "success", message: "ส่งคำร้องเสร็จสิ้น!" });
+    } catch (error) {
+      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง!" });
+    } finally {
+      navigate("/list-devices"); // กลับไปหน้ารายการอุปกรณ์
     }
+  };
 
-    // อุปกรณ์เสริม
-    const accessory = device.accessories
-        ? device.accessories?.map((acc) => ({
-            name: acc.acc_name,
-            qty: acc.acc_quantity,
-        }))
-        : [];
+  /**
+   * Description: ฟังก์ชันสำหรับเพิ่มอุปกรณ์ลงในรถเข็น
+   * Input : data - ข้อมูลฟอร์มการยืมอุปกรณ์
+   * Output : เพิ่มอุปกรณ์ลงรถเข็น และนำทางกลับไปยังหน้ารายการอุปกรณ์
+   * Author : Thakdanai Makmi (Ryu) 66160355
+   **/
+  const handleAddToCart = async ({ data }: { data: AddToCart }) => {
+    try {
+      // วันที่ยืมและวันที่คืน
+      const [borrowDate, returnDateRaw] = data.dateRange;
+      // วันที่คืน (กรณียืมวันเดียว)
+      const returnDate = returnDateRaw ?? borrowDate;
 
-    // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
-    const equipment = {
-        serialNumber: device.de_serial_number,
-        name: device.de_name,
-        category: device.category?.ca_name ?? "",
-        department: device.department ?? "",
-        section: device.section ?? "",
-        imageUrl: device.de_images ?? "",
-        storageLocation: device.de_location,
-        total: device.total,
-        remain: device.ready,
-        maxBorrowDays: device.de_max_borrow_days,
-        accessories: accessory
-    };
+      if (!borrowDate || !returnDate) return;
 
-    /**
-    * Description: ฟังก์ชันสำหรับรวมวันที่และเวลาเป็น Date (ISO)
-    * Input : date - วันที่, time - เวลา
-    * Output : วันที่และเวลาที่ถูกรวมแล้ว
-    * Author : Thakdanai Makmi (Ryu) 66160355
-    **/
-    const buildDateTime = (date: Date, time: string) => {
-        // แยกชั่วโมงและนาที
-        const [hh, mm] = time.split(":").map(Number);
-        // clone วันที่
-        const dateTime = new Date(date);
-        // ตั้งค่าเวลาให้วันที่
-        dateTime.setHours(hh, mm, 0, 0);
-        return dateTime;
-    };
+      // รวมวันเวลาที่ยืมและคืนเป็น Date
+      const borrowStart = buildDateTime(borrowDate, data.borrowTime);
+      const borrowEnd = buildDateTime(returnDate, data.returnTime);
 
-    /**
-    * Description: ฟังก์ชันสำหรับจัดการเมื่อมีการเปลี่ยนวันที่หรือเวลาที่เลือก
-    * Input : -
-    * Output : อัปเดตข้อมูลอุปกรณ์ที่ว่าง, จำนวนอุปกรณ์ที่ว่าง และรีเซ็ตการเลือกอุปกรณ์
-    * Author : Thakdanai Makmi (Ryu) 66160355
-    **/
-    const handleDateTimeChange = async () => {
-        // ดึงข้อมูล device childs ทั้งหมด พร้อมเวลาที่ถูกยืม
-        const res = await borrowService.getAvailable(deId);
-        setAvailableDevices(res);
+      const payload = {
+        deviceId: deId,
+        borrower: data.borrower,
+        phone: data.phone,
+        reason: data.reason,
+        placeOfUse: data.placeOfUse,
+        quantity: selectedDeviceIds.length,
+        borrowStart: borrowStart.toISOString(),
+        borrowEnd: borrowEnd.toISOString(),
+        deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
+      };
 
-        // นับจำนวนอุปกรณ์ที่ว่าง
-        const readyCount = res.filter(d => d.dec_status === "READY").length;
-        setAvailableCount(readyCount);
+      await borrowService.addToCart(payload);
 
-        // reset การเลือก ถ้าเวลาเปลี่ยน
-        setSelectedDeviceIds([]);
-    };
-
-    /**
-    * Description: ฟังก์ชันสำหรับส่งคำร้องยืมอุปกรณ์
-    * Input : data - ข้อมูลฟอร์มการยืมอุปกรณ์
-    * Output : สร้างคำร้องยืมอุปกรณ์ และนำทางกลับไปยังหน้ารายการอุปกรณ์
-    * Author : Thakdanai Makmi (Ryu) 66160355
-    **/
-    const handleSubmit = async ({ data }: { data: BorrowForm }) => {
-        try {
-            // วันที่ยืมและวันที่คืน
-            const [borrowDate, returnDateRaw] = data.dateRange;
-            // วันที่คืน (กรณียืมวันเดียว)
-            const returnDate = returnDateRaw ?? borrowDate;
-
-            if (!borrowDate || !returnDate) return;
-
-            // รวมวันเวลาที่ยืมและคืนเป็น Date
-            const borrowStart = buildDateTime(borrowDate, data.borrowTime);
-            const borrowEnd = buildDateTime(returnDate, data.returnTime);
-
-            const payload = {
-                deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
-                borrowStart: borrowStart.toISOString(),
-                borrowEnd: borrowEnd.toISOString(),
-                reason: data.reason,
-                placeOfUse: data.placeOfUse,
-            };
-
-            await borrowService.createBorrowTicket(payload);
-
-            push({ tone: "success", message: "ส่งคำร้องเสร็จสิ้น!" });
-
-        } catch (error) {
-            push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง!" });
-        } finally {
-            navigate('/list-devices'); // กลับไปหน้ารายการอุปกรณ์
-        }
-
-    };
-
-    /**
-    * Description: ฟังก์ชันสำหรับเพิ่มอุปกรณ์ลงในรถเข็น
-    * Input : data - ข้อมูลฟอร์มการยืมอุปกรณ์
-    * Output : เพิ่มอุปกรณ์ลงรถเข็น และนำทางกลับไปยังหน้ารายการอุปกรณ์
-    * Author : Thakdanai Makmi (Ryu) 66160355
-    **/
-    const handleAddToCart = async ({ data }: { data: AddToCart }) => {
-        try {
-            // วันที่ยืมและวันที่คืน
-            const [borrowDate, returnDateRaw] = data.dateRange;
-            // วันที่คืน (กรณียืมวันเดียว)
-            const returnDate = returnDateRaw ?? borrowDate;
-
-            if (!borrowDate || !returnDate) return;
-
-            // รวมวันเวลาที่ยืมและคืนเป็น Date
-            const borrowStart = buildDateTime(borrowDate, data.borrowTime);
-            const borrowEnd = buildDateTime(returnDate, data.returnTime);
-
-            const payload = {
-                deviceId: deId,
-                borrower: data.borrower,
-                phone: data.phone,
-                reason: data.reason,
-                placeOfUse: data.placeOfUse,
-                quantity: selectedDeviceIds.length,
-                borrowStart: borrowStart.toISOString(),
-                borrowEnd: borrowEnd.toISOString(),
-                deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
-            }
-
-            await borrowService.addToCart(payload);
-
-            push({ tone: "success", message: "เพิ่มไปยังรถเข็นเสร็จสิ้น!" });
-        } catch (error) {
-            push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มไปยังรถเข็น!" });
-        } finally {
-            navigate('/list-devices'); // กลับไปหน้ารายการอุปกรณ์
-        }
+      push({ tone: "success", message: "เพิ่มไปยังรถเข็นเสร็จสิ้น!" });
+    } catch (error) {
+      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มไปยังรถเข็น!" });
+    } finally {
+      navigate("/list-devices"); // กลับไปหน้ารายการอุปกรณ์
     }
+  };
 
-    return (
-        <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] px-[20px] py-[20px]">
+  return (
+    <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] px-[20px] py-[20px]">
+      <div className="space-x-[9px]">
+        <Link to="/list-devices" className="text-[#858585]">
+          รายการอุปกรณ์
+        </Link>
+        {/* <span className="text-[#858585]">รายการอุปกรณ์</span> */}
+        <span className="text-[#858585]">&gt;</span>
+        <span className="text-[#000000]">ยืมอุปกรณ์</span>
+      </div>
 
-            <div className="space-x-[9px]">
-                <span className="text-[#858585]">รายการอุปกรณ์</span>
-                <span className="text-[#858585]">&gt;</span>
-                <span className="text-[#000000]">ยืมอุปกรณ์</span>
-            </div>
+      <div className="flex items-center">
+        <h1 className="text-[36px] font-semibold">ยืมอุปกรณ์</h1>
+      </div>
+      <BorrowEquipmentModal
+        mode="borrow-equipment"
+        equipment={equipment} // ข้อมูลอุปกรณ์
+        availableDevices={availableDevices} // รายการอุปกรณ์ลูก
+        availableCount={availableCount} // จำนวนอุปกรณ์ที่พร้อมใช้งาน (READY)
+        selectedDeviceIds={selectedDeviceIds} // อุปกรณ์ที่เลือก
+        onSelectDevice={setSelectedDeviceIds} // เปลี่ยนอุปกรณ์ที่เลือก
+        onDateTimeChange={handleDateTimeChange} // เปลี่ยนวันเวลา
+        onSubmit={handleSubmit}
+        onAddToCart={handleAddToCart}
+      />
+    </div>
+  );
+};
 
-            <div className="flex items-center">
-                <h1 className="text-[36px] font-semibold">ยืมอุปกรณ์</h1>
-            </div>
-            <BorrowEquipmentModal
-                mode="borrow-equipment"
-                equipment={equipment} // ข้อมูลอุปกรณ์
-                availableDevices={availableDevices} // รายการอุปกรณ์ลูก
-                availableCount={availableCount} // จำนวนอุปกรณ์ที่พร้อมใช้งาน (READY)
-                selectedDeviceIds={selectedDeviceIds} // อุปกรณ์ที่เลือก
-                onSelectDevice={setSelectedDeviceIds} // เปลี่ยนอุปกรณ์ที่เลือก
-                onDateTimeChange={handleDateTimeChange} // เปลี่ยนวันเวลา
-                onSubmit={handleSubmit}
-                onAddToCart={handleAddToCart}
-            />
-        </div>
-    )
-}
-
-export default BorrowDevice
+export default BorrowDevice;

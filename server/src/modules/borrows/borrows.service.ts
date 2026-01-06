@@ -320,11 +320,18 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
         const getSecName = (secId?: number | null) =>
             sections.find((s) => s.sec_id === secId)?.sec_name ?? null;
 
+        // step ล่าสุดจาก approval flow
+        const lastStep = stages.length + 1;
+
+        // หา section และ department ของอุปกรณ์
+        const section = sections.find(sec => sec.sec_id === device?.de_sec_id);
+        const department = departments.find(dept => dept.dept_id === section?.sec_dept_id);
+
         // สร้าง borrow return ticket stages
         await tx.borrow_return_ticket_stages.createMany({
             data: stages.map((flow) => ({
                 brts_status: "PENDING",
-                brts_name: flow.afs_role,
+                brts_name: `${flow.afs_role} Approval`,
                 brts_step_approve: flow.afs_step_approve,
                 brts_role: flow.afs_role,
                 brts_dept_id: flow.afs_dept_id,
@@ -336,6 +343,25 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
                 updated_at: new Date()
             }))
         });
+
+        // เพิ่ม stage STAFF ในลำดับสุดท้าย
+        await tx.borrow_return_ticket_stages.create({
+            data: {
+                brts_status: "PENDING",
+                brts_name: "STAFF Distribution",
+                brts_step_approve: lastStep,
+                brts_role: "STAFF",
+
+                brts_dept_id: department?.dept_id ?? null,
+                brts_sec_id: section?.sec_id ?? null,
+                brts_dept_name: department?.dept_name ?? null,
+                brts_sec_name: section?.sec_name ?? null,
+
+                brts_brt_id: ticket.brt_id,
+                created_at: new Date(),
+                updated_at: new Date()
+            }
+        })
 
         // สร้าง ticket device
         await tx.ticket_devices.createMany({
@@ -358,10 +384,27 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
             }))
         });
 
+        // ดึงข้อมูลชื่อและนามสกุลของผู้ใช้จาก userId
+        const user = await tx.users.findUnique({
+            where: {
+                us_id: userId
+            },
+            select: {
+                us_firstname: true,
+                us_lastname: true
+            }
+        });
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
         // สร้าง log borrow return
-        await tx.log_borrow_returns.createMany({
+        await tx.log_borrow_returns.create({
             data: {
                 lbr_action: "CREATED",
+                lbr_new_status: "CREATED",
+                lbr_note: `${user.us_firstname} ${user.us_lastname} ส่งคำร้องการยืมอุปกรณ์`,
                 lbr_brt_id: ticket.brt_id,
                 lbr_actor_id: userId
             }

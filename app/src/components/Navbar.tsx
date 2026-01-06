@@ -328,7 +328,7 @@ export const Navbar = () => {
                 </Link>
 
                 <Link
-                  to="/users"
+                  to="/setting"
                   onClick={() => {
                     closeDropdown();
                     handleMenuClick("setting");

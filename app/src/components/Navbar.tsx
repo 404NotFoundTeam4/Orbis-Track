@@ -281,7 +281,7 @@ export const Navbar = () => {
         </div>
 
         <main className="flex-1 bg-[#FAFAFA] pl-[213px] pt-[110px]">
-          <div className=" w-full min-h-[calc(100vh-150px)]  ">
+          <div className=" w-full min-h-[calc(100vh-150px)]">
             <Outlet />
           </div>
         </main>

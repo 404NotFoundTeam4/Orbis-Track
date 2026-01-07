@@ -336,7 +336,8 @@ export const Cart = () => {
   };
 
   return (
-    <div className="w-full h-full min-h-0 flex flex-row items-start p-4 gap-6 overflow-hidden">
+    // <div className="h-[calc(100vh-126px)] overflow-hidden">
+    <div className="w-full h-full min-h-0 flex flex-row items-start p-4 gap-6 overflow-hidden min-h-screen">
       {/* LEFT SIDE: Cart Items */}
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
         <div className="shrink-0">
@@ -386,8 +387,10 @@ export const Cart = () => {
             )}
           </div>
         </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
+        
+        <div className="flex-1 min-h-0">
+        {/* <div className="h-full min-h-0 overflow-y-auto overflow-x-hidden space-y-4 pr-1"> */}
+        <div className="max-h-[calc(100vh-110px-220px)] overflow-y-auto overflow-x-hidden space-y-4 pr-1">
           {items.length === 0 ? (
             <div className="text-center text-lg text-[#858585] py-10 border rounded-xl bg-white">
               ไม่มีรายการอุปกรณ์ในรถเข็น
@@ -484,11 +487,12 @@ export const Cart = () => {
             ))
           )}
         </div>
+        </div>
       </div>
 
       {/* RIGHT SIDE: Summary (Sidebar) */}
-      <div className="w-[300px] h-full shrink-0">
-        <div className="top-[126px] h-[calc(100vh-142px)]">
+      <div className="w-[400px] h-full shrink-0">
+        <div className="fixed top-[126px] right-4 w-[400px] h-[calc(100vh-142px)] z-20">
           <div className="bg-white rounded-xl shadow-md p-5 flex flex-col h-full">
             <h2 className="font-bold text-xl mb-4 flex items-center justify-center">
               สรุปรายการยืมอุปกรณ์
@@ -536,5 +540,6 @@ export const Cart = () => {
         />
       )}
     </div>
+    // </div>
   );
 };

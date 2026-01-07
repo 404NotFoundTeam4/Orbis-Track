@@ -201,21 +201,10 @@ export class InventoryController extends BaseController {
     };
   }
 
-  // ดึงข้อมูลแผนก
-  async getDepartments(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await inventoryService.getDepartments();
-    return { data };
-  }
 
-  // ดึงข้อมูลหมวดหมู่
-  async getCategories(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await inventoryService.getCategories();
-    return { data };
-  }
-
-  // ดึงข้อมูลฝ่ายย่อย
-  async getSubSections(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await inventoryService.getSubSections();
+  // ดึงข้อมูลที่จำเป็น
+  async getDefaultsdatas(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    const data = await inventoryService.getDefaultsdata();
     return { data };
   }
 

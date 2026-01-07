@@ -6,6 +6,7 @@ export const idParamSchema = z.object({
   id: z.coerce.number().positive(),
 });
 const createAccessoriesPayload = z.object({
+  acc_id: z.coerce.number().int(),
   acc_name: z.string().min(1).max(100),
   acc_quantity: z.coerce.number().int().nonnegative(),
 });

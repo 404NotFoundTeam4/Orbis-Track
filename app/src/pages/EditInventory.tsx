@@ -19,6 +19,7 @@ const EditInventory = () => {
 
   // เก็บข้อมูลอุปกรณ์แม่
   const [parentDevice, setParentDevice] = useState<GetDeviceWithChildsResponse | null>(null);
+ 
   // เก็บข้อมูลอุปกรณ์ลูก
   const [deviceChilds, setDeviceChilds] = useState<DeviceChild[]>([]);
 
@@ -97,12 +98,11 @@ const EditInventory = () => {
   };
   const handleSubmit = async(formData:FormData) =>{
       formData.delete("data");
-   for (const [key, value] of formData.entries()) {
-  console.log(key, value);
-}
+ 
 
 
-   useInventorys.updateDevicesdata(1,formData)
+
+   useInventorys.updateDevicesdata(parentId,formData)
   }
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">

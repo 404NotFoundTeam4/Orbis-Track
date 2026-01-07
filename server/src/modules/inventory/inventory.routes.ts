@@ -27,9 +27,8 @@ router.getDoc("/add-devices", { tag: "Inventory", res: getDeviceWithSchema, auth
 router.postDoc("/approval", { tag: "Inventory", body:createApprovalFlowsPayload   , res: createApprovalFlowResponseSchema, auth: true }, inventoryController.createFlows);
 router.getDoc("/add-approval", { tag: "Inventory", res: getApprovalFlowSchema, auth: true }, inventoryController.getFlows);
 
-router.getDoc("/departments", { tag: "Inventory", auth: true }, inventoryController.getDepartments);
-router.getDoc("/categories", { tag: "Inventory", auth: true }, inventoryController.getCategories);
-router.getDoc("/sub-sections", { tag: "Inventory", auth: true }, inventoryController.getSubSections);
+router.getDoc("/defaultdata", { tag: "Inventory", auth: true }, inventoryController.getDefaultsdatas);
+
 router.getDoc("/approval-flows", { tag: "Inventory", auth: true }, inventoryController.getApprovalFlows);
 
 router.getDoc("/devices/:id", { tag: "Inventory", params: idParamSchema,res: getDeviceWithChildsSchema, auth: true }, inventoryController.getDeviceWithChilds);

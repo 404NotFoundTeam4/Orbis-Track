@@ -6,7 +6,6 @@
  * Author: Niyada Butchan (Da) 66160361
  */
 import React, { useState, useEffect, useRef } from "react";
-import { Plus } from "lucide-react";
 import { AlertDialog } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { usersService } from "../services/ProfileService";
@@ -342,7 +341,7 @@ const Profile: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="px-6 py-2 flex items-center justify-center gap-2 text-[14px] border border-[#A2A2A2] rounded-full hover:bg-gray-50"
                   >
-                    <Plus size={16} />{" "}
+                    <Icon icon="ic:baseline-plus" width={24} height={24} />
                     {profileData.us_images ? "เปลี่ยนรูปภาพ" : "เพิ่มรูปภาพ"}
                   </button>
                 </div>

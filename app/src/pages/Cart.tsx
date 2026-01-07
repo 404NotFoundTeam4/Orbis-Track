@@ -451,12 +451,13 @@ export const Cart = () => {
                       </div>
                     </div>
                     <Link
-                      to="/list-devices/cart/edit"
+                    to="/list-devices/cart/edit"
+                      state={{ ctiId: item.id }}
                       className="mt-1 text-[#096DD9] text-sm underline hover:text-[#0050B3] transition-colors"
                     >
-                      แก้ไขรายละเอียด
-                    </Link>
-                  </div>
+                    แก้ไขรายละเอียด
+                  </Link>
+                </div>
 
                   <div className="flex flex-col items-end h-full py-2 mr-5">
                     <div className="w-full text-left text-sm space-y-[2px]">

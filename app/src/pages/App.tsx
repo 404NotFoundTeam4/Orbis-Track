@@ -16,7 +16,7 @@ import Requests from "./Requests";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword"
 import { Cart } from "./Cart";
-// import EditCart from "./EditCart";
+import EditCart from "./EditCart";
 import ListDevices from "./ListDevices";
 import BorrowDevice from "./BorrowDevice";
 
@@ -40,7 +40,7 @@ function App() {
                 element={<Users />}
               />
               <Route path="/list-devices/cart" element={<Cart />}/>
-              {/* <Route path="/list-devices/cart/edit" element={<EditCart />}/> */}
+              <Route path="/list-devices/cart/edit" element={<EditCart />}/>
               <Route path="/users" element={<Users />} />
               <Route
                 path="/administrator/departments-management"

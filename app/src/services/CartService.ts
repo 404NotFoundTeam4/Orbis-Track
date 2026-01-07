@@ -33,6 +33,28 @@ export type DeleteCartItemPayload = {
 };
 
 /**
+ * Description: Payload สำหรับการแก้ไขรายละเอียดในตะกร้า 
+ * Input :  - borrower        : ชื่อผู้ยืม
+ * - phone           : เบอร์โทรศัพท์ผู้ยืม
+ * - reason          : เหตุผลในการยืม
+ * - placeOfUse      : สถานที่ใช้งานอุปกรณ์
+ * - quantity        : จำนวนอุปกรณ์ที่ต้องการยืม
+ * - borrowDate      : วันที่เริ่มยืม (Date | ISO string | null)
+ * - returnDate      : วันที่คืนอุปกรณ์ (Date | ISO string | null)
+ * Output : UpdateCartItemPayload
+ * Author : Salsabeela (San) 66160349
+ **/
+export type UpdateCartItemPayload = {
+  borrower: string;
+  phone: string;
+  reason: string;
+  placeOfUse: string;
+  quantity: number;
+  borrowDate: Date | string | null;
+  returnDate: Date | string | null;
+};
+
+/**
  * Description: โครงสร้างข้อมูล Cart Item ที่ frontend ใช้หลังดึงจาก backend
  * Output : CartItem (type)
  * Author : Nontapat Sinhum (Guitar) 66160104
@@ -86,7 +108,7 @@ export const CartService = {
     **/
     async getCartItems(): Promise<CartItemListResponse> {
         const res = await api.get<ApiEnvelope<CartItemListResponse>>(
-            `/borrow/cart/`
+            `/borrow/cart`
         );
         return res.data.data;
     },
@@ -120,6 +142,56 @@ export const CartService = {
         );
         return res.data.data;
     },
-};
 
+    /**
+   * UPDATE: แก้ไข cart item ตาม ctiId
+   */
+  /**
+   * Description: แก้ไขรายละเอียดอุปกรณ์ในรถเข็น (Edit Cart)
+   *
+   * Note:
+   * - ใช้ในหน้า Edit Cart
+   * - รองรับการแก้ไขจำนวน, วันที่ยืม–คืน, ผู้ยืม, เหตุผล และสถานที่ใช้งาน
+   *
+   * Flow การทำงาน:
+   * 1. รับ ctiId และข้อมูลที่แก้ไขจากฟอร์ม
+   * 2. แปลง Date → ISO string ก่อนส่งไป Backend
+   * 3. เรียก API PUT /borrow/cart/:ctiId
+   * 4. Backend อัปเดตข้อมูลในระบบ
+   *
+   * Result:
+   * - สำเร็จ → return message
+   * - ไม่สำเร็จ → throw error ให้หน้า Edit Cart จัดการ
+   *
+   * Author: Salsabeela Sa-e (San) 66160349
+   */
+  async updateCartItem( 
+    ctiId: number,
+    payload: UpdateCartItemPayload
+  ): Promise<string> {
+    try {
+const datapayload = {
+  cti_us_name: payload.borrower,
+        cti_phone: payload.phone,
+        cti_note: payload.reason,
+        cti_usage_location: payload.placeOfUse,
+        cti_quantity: payload.quantity,
+        cti_start_date: payload.borrowDate
+          ? new Date(payload.borrowDate).toISOString()
+          : null,
+        cti_end_date: payload.returnDate
+          ? new Date(payload.returnDate).toISOString()
+          : null,
+
+}
+     
+      const res = await api.patch<ApiEnvelope<null>>(`/borrow/cart/device/${ctiId}`, datapayload);
+
+      return res.data.message ?? "Update successfully";
+    } catch (error) {
+      console.error("API UPDATE /borrow/cart error:", error);
+      throw error;
+    }
+  },
+};
 export default CartService;

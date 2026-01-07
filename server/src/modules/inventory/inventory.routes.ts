@@ -67,6 +67,6 @@ router.patchDoc("/devices/:id", {
     body: updateDevicePayload, 
     res: inventorySchema,  
     auth: true 
-}, inventoryController.update);
+},upload.single("de_images"), inventoryController.update);
 
 export default router.instance;

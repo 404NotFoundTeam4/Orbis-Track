@@ -918,16 +918,17 @@ export async function softDeleteDevice(de_id: number) {
  */
 export async function updateDevice(
   id: number,
-  data: UpdateDevicePayload
+  data: UpdateDevicePayload,
+   images?: string
 ) {
   const {
     accessories,
     serialNumbers,
     totalQuantity,
-    de_images,
+     de_images: payloadImages,
     ...deviceData
   } = data;
-
+   const finalImages = images ?? payloadImages ?? null;
   const existing = await prisma.devices.findUnique({
     where: { de_id: id },
   });
@@ -940,7 +941,7 @@ export async function updateDevice(
     where: { de_id: id },
     data: {
       ...deviceData,          
-      de_images: de_images,  
+      de_images: finalImages,  
       updated_at: new Date(),
     },
   });

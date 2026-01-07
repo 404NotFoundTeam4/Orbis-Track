@@ -96,37 +96,13 @@ const EditInventory = () => {
     }
   };
   const handleSubmit = async(formData:FormData) =>{
-    const payload = 
-    {
-  "de_serial_number": "SN-DEV-2026-0001",
-  "de_name": "MacBook Pro 14-inch M3",
-  "de_description": "โน้ตบุ๊กสำหรับงานพัฒนาโปรแกรม ใช้ในทีม Backend",
-  "de_location": "ห้อง IT ชั้น 9 อาคาร A",
-  "de_max_borrow_days": 7,
-  "totalQuantity":3,
-  "de_af_id": 1,
-  "de_ca_id": 1,
-  "de_us_id": user?.us_id,
-  "de_sec_id": 1,
-  
-  "accessories": [
-    {
-      "acc_name": "สายชาร์จ USB-C",
-      "acc_quantity": 1
-    },
-    {
-      "acc_name": "Adapter 96W",
-      "acc_quantity": 1
-    },
-    {
-      "acc_name": "กระเป๋าโน้ตบุ๊ก",
-      "acc_quantity": 1
-    }
-  ],
-  "de_images": "",
+      formData.delete("data");
+   for (const [key, value] of formData.entries()) {
+  console.log(key, value);
 }
 
-   useInventorys.updateDevicesdata(1,payload)
+
+   useInventorys.updateDevicesdata(1,formData)
   }
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">

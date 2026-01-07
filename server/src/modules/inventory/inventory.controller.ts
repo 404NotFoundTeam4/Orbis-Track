@@ -233,8 +233,8 @@ export class InventoryController extends BaseController {
   async update(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
     const { id } = idParamSchema.parse(req.params); 
     const body = updateDevicePayload.parse(req.body);
-    
-    const result = await inventoryService.updateDevice(id, body);
+    const imagePath = req.file?.path;
+    const result = await inventoryService.updateDevice(id, body,imagePath);
     return { data: result };
   }
 }

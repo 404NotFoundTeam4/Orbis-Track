@@ -307,27 +307,50 @@ export const softDeleteResponseSchema = z.object({
  * Author: Worrawat Namwat (Wave) 66160372
  */
 export const updateDevicePayload = z.object({
-    de_serial_number: z.string().optional(),
-  de_name: z.string().optional(),
-  de_description: z.string().optional(),
-  de_location: z.string().optional(),
-  de_max_borrow_days: z.number().optional(),
+  de_serial_number: z.string().min(1).max(100).optional(),
+  de_name: z.string().min(1).max(200).optional(),
+  de_description: z.string().max(200).nullable().optional(),
+  de_location: z.string().min(1).max(200).optional(),
+
+  de_max_borrow_days: z.coerce.number().int().positive().optional(),
+  totalQuantity: z.coerce.number().int().positive().optional(),
+
   de_images: z.string().nullable().optional(),
 
-  de_af_id: z.number().optional(),
-  de_ca_id: z.number().optional(),
-  de_us_id: z.number().optional(),
-  de_sec_id: z.number().optional(),
+  de_af_id: z.coerce.number().int().positive().optional(),
+  de_ca_id: z.coerce.number().int().positive().optional(),
+  de_us_id: z.coerce.number().int().positive().optional(),
+  de_sec_id: z.coerce.number().int().positive().nullable().optional(),
 
-  totalQuantity: z.number().optional(),
-  serialNumbers: z.array(z.string()).optional(),
+  accessories: z.preprocess(
+    (val) => {
+      if (!val) return undefined;
+      if (typeof val === "string") {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return undefined;
+        }
+      }
+      return val;
+    },
+    z.array(createAccessoriesPayload).optional()
+  ),
 
-  accessories: z.array(
-    z.object({
-      acc_name: z.string(),
-      acc_quantity: z.number(),
-    })
-  ).optional(),
+  serialNumbers: z.preprocess(
+    (val) => {
+      if (!val) return undefined;
+      if (typeof val === "string") {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return undefined;
+        }
+      }
+      return val;
+    },
+    z.array(serialNumbersPayload).optional()
+  ),
 });
 
 export type InventorySchema = z.infer<typeof inventorySchema>;

@@ -91,7 +91,7 @@ const EditCart = () => {
     const loadCartItem = async () => {
       try {
         const res = await CartService.getCartItems();
-        const item = res.itemData.find((i) => i.cti_id === ctiId);
+        const item = res.itemData.find((items) => items.cti_id === ctiId);
         if (!item) {
           throw new Error("ไม่พบรายการในตะกร้า");
         }

@@ -45,33 +45,47 @@ export const Settings = () => {
             <div className="text-[16px] font-semibold mb-[12px]">ภาษา</div>
 
             <div className="flex items-center gap-[18px]">
-                <LangCard
-                active={lang === "th"}
-                label="Thai"
-                flagIcon="circle-flags:th"
-                onClick={() => handleSelect("th")}
-                />
+                {langCard({
+                  isActive:lang === "th",
+                  label:"Thai",
+                  flagIcon:"circle-flags:th",
+                  onClick:() => handleSelect("th"),
+                })}
 
-                <LangCard
-                active={lang === "en"}
-                label="English"
-                flagIcon="circle-flags:gb"
-                onClick={() => handleSelect("en")}
-                />
+                {langCard({
+                  isActive: lang === "en",
+                  label: "English",
+                  flagIcon: "circle-flags:gb",
+                  onClick: () => handleSelect("en"),
+                })}
             </div>
             </div>
         </div>
         </div>
     );
 };
+/**
+ * Description: การ์ดเลือกภาษา (Language option card) สำหรับหน้า Settings
+ *              - แสดงไอคอนธง (flagIcon) แบบวงกลม
+ *              - แสดงชื่อภาษา (label)
+ *              - แสดงเครื่องหมายถูกเมื่อถูกเลือก (isActive)
+ *              - เมื่อกดจะเรียก callback onClick เพื่อเปลี่ยนภาษา
+ * Input     : props
+ *             - isActive: boolean        สถานะว่าภาษานี้ถูกเลือกอยู่หรือไม่
+ *             - label: string            ชื่อภาษาที่จะแสดงบนการ์ด
+ *             - flagIcon: string         ชื่อไอคอนจาก Iconify สำหรับธงประเทศ
+ *             - onClick: () => void      ฟังก์ชันที่ทำงานเมื่อผู้ใช้กดเลือกการ์ด
+ * Output    : JSX.Element (ปุ่มการ์ดสำหรับเลือกภาษา)
+ * Author    : Chanwit Muangma (Boom) 66160224
+ */
 
-function LangCard(props: {
-  active: boolean;
+function langCard(props: {
+  isActive: boolean;
   label: string;
   flagIcon: string;
   onClick: () => void;
 }) {
-  const { active, label, flagIcon, onClick } = props;
+  const { isActive, label, flagIcon, onClick } = props;
 
   return (
     <button
@@ -82,7 +96,7 @@ function LangCard(props: {
         "grid grid-cols-[30px_1fr_22px] items-center",
         "px-[18px] gap-[12px]",
         "transition-colors duration-150",
-        active
+        isActive
           ? "bg-[#1890FF] border-[#1890FF] text-white"
           : "bg-white border-[#E5E5E5] text-black hover:bg-[#F5F5F5]",
       ].join(" ")}
@@ -100,7 +114,7 @@ function LangCard(props: {
         icon="cuida:check-outline"
         width="22"
         height="22"
-        className={active ? "opacity-100" : "opacity-0"}
+        className={isActive ? "opacity-100" : "opacity-0"}
       />
     </button>
   );

@@ -413,6 +413,7 @@ export const Cart = () => {
                   </div>
                   <Link
                     to="/list-devices/cart/edit"
+                     state={{ ctiId: item.id }}
                     className="mt-1 text-[#096DD9] text-sm underline hover:text-[#0050B3] transition-colors"
                   >
                     แก้ไขรายละเอียด

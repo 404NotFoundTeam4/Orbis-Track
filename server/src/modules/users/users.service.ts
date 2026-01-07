@@ -85,7 +85,7 @@ async function updateProfile(userId: number, body: UpdateMyProfilePayload, image
  * Author     : Niyada Butchan (Da) 66160361
  */
 
-export async function updatePassword(userId: number, oldPassword: string, newPassword: string, confirmPassword: string) {
+async function updatePassword(userId: number, oldPassword: string, newPassword: string, confirmPassword: string) {
     if (newPassword !== confirmPassword) throw new Error("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
 
     const user = await prisma.users.findUnique({ where: { us_id: userId } });

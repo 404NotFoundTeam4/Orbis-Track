@@ -3,33 +3,30 @@ import api from "../api/axios";
 export const usersService = {
 /**
    * getProfile
-   * Description : ดึงข้อมูลโปรไฟล์ของผู้ใช้งานปัจจุบันจากระบบ
-   * Method      : GET
-   * Endpoint    : /user
-   * Logic       :
-   * - ตรวจสอบความถูกต้องของสิทธิ์ (Token) จาก LocalStorage หรือ SessionStorage
-   * - หากไม่พบสิทธิ์การใช้งาน จะทำการโยนข้อผิดพลาด (Throw Error)
-   * - แนบ Timestamp (`t=${Date.now()}`) และ Cache-Control เพื่อป้องกัน Browser จำค่ารูปภาพเก่า (Cache)
-   * - ดึงข้อมูลโปรไฟล์ล่าสุดที่ประกอบด้วย ชื่อ, นามสกุล, เบอร์โทร, และรูปภาพ
-   * Output      : วัตถุข้อมูลโปรไฟล์ของผู้ใช้งาน (User Profile Object)
-   * Author      : Niyada Butchan (Da) 66160361
+   * Description: ดึงข้อมูลโปรไฟล์ของผู้ใช้ปัจจุบัน
+   * Method     : GET
+   * Endpoint   : /user
+   * Logic      :
+   * - ดึง Token จาก localStorage 
+   * - ตรวจสอบว่ามี Token หรือไม่ ถ้าไม่มีให้ Throw Error ("Token not found")
+   * - ส่ง Request ไปยัง API พร้อมแนบ Authorization Header (Bearer Token)
+   * Output     : ข้อมูล User Profile (Object)
+   * Author     : Niyada Butchan (Da) 66160361
    */
 
 getProfile: async () => {
-    const token = localStorage.getItem("token") ?? sessionStorage.getItem("token");
-    if (!token) throw new Error("Token not found");
-
-    const { data } = await api.get(`/user?t=${Date.now()}`, {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Token not found");
+    }
+    const { data } = await api.get("/user", {
       headers: {
         Authorization: `Bearer ${token}`,
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0",
       },
     });
-
     return data;
-},
+  },
+
 
  /**
    * updateProfile

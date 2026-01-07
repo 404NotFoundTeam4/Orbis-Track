@@ -337,7 +337,7 @@ export const Cart = () => {
 
   return (
     // <div className="h-[calc(100vh-126px)] overflow-hidden">
-    <div className="w-full h-full min-h-0 flex flex-row items-start p-4 gap-6 overflow-hidden min-h-screen">
+    <div className="w-full h-full min-h-0 flex flex-row p-4 gap-6 overflow-hidden">
       {/* LEFT SIDE: Cart Items */}
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
         <div className="shrink-0">

@@ -41,7 +41,7 @@ export const Navbar = () => {
     navigate("/login");
   };
   return (
-    <div className="flex flex-col background w-full min-h-screen ">
+    <div className="background fixed inset-0 overflow-hidden">
       {/* Navbar */}
       <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[110px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex gap-15 justify-center z-51">
@@ -116,7 +116,7 @@ export const Navbar = () => {
         </div>
       </div>
       {/* Sidebar */}
-      <div className="flex  ">
+      <div className="flex h-full">
         <div className="fixed  mt-[110px] w-[213px] bg-white text-black shadow-xl z-40">
           <div className="flex flex-col justify-between h-[calc(100vh-110px)] px-2 py-4 text-lg whitespace-nowrap">
             <div className="text-left">
@@ -280,8 +280,8 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <main className="flex-1 bg-[#FAFAFA] pl-[213px] pt-[110px]">
-          <div className=" w-full min-h-[calc(100vh-150px)]">
+        <main className="flex-1 min-w-0 bg-[#FAFAFA] pl-[213px] pt-[110px] h-full overflow-hidden">
+          <div className="w-full h-full min-h-0 overflow-hidden">
             <Outlet />
           </div>
         </main>

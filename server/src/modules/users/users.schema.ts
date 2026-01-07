@@ -2,30 +2,14 @@ import { z } from "zod";
 
 /**
  * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการแก้ไขโปรไฟล์ผู้ใช้งาน (My Profile)
- * Input     : {
- *   us_firstname?: string,
- *   us_lastname?: string,
- *   us_phone?: string,
- *   us_email?: string,
- *   us_dept_id?: number | null,
- *   us_sec_id?: number | null
- * }
+ * Input     : us_phone?: string
  * Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้างของข้อมูลโปรไฟล์ผู้ใช้งาน
- * Logic     :
- *   - ทุก field เป็น optional เพื่อรองรับการแก้ไขเฉพาะบางข้อมูล
- *   - ตรวจสอบชนิดข้อมูลและความยาวของ string
- *   - แปลง us_dept_id และ us_sec_id เป็นตัวเลข และต้องเป็นจำนวนเต็มบวก
- *   - ใช้สำหรับ validate ข้อมูลก่อนส่งต่อไปยัง service หรือ controller
  * Author    : Niyada Butchan (Da) 66160361
  */
 
 export const updateMyProfilePayload = z.object({
-  us_firstname: z.string().min(1).max(120).optional(),
-  us_lastname: z.string().min(1).max(120).optional(),
   us_phone: z.string().min(10).max(15).optional(),
-  us_email: z.string().email().max(120).optional(),
-  us_dept_id: z.coerce.number().int().positive().nullable().optional(),
-  us_sec_id: z.coerce.number().int().positive().nullable().optional(),
+  
 });
 
 /**

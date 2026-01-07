@@ -19,14 +19,17 @@ export class UsersController extends BaseController {
    * Output : BaseResponse { data: profile object }
    * Author: Niyada Butchan (Da) 66160361
    */
- async getMyProfile(
+async getMyProfile(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<BaseResponse> {
   const user = (req as any).user;
-  const userId = Number(user?.us_id || user?.id || user?.sub);
   
+  // sub และแปลงเป็น Number 
+  const userId = Number(user?.sub);
+  
+  // เช็คว่าแปลงสำเร็จไหม 
   if (!userId || isNaN(userId)) {
     throw new ValidationError("User identity not found in token");
   }
@@ -42,32 +45,27 @@ export class UsersController extends BaseController {
    * Output      : BaseResponse { data: result, message: "อัปเดตข้อมูลโปรไฟล์สำเร็จ" }
    * Author      : Niyada Butchan (Da) 66160361
    */
- async updateMyProfile(
-    req: any, // ใช้ any เพื่อให้รองรับ req.file จาก Multer โดยไม่ต้องใช้ as any ใน Route
-    res: any,
-    next: any
-  ): Promise<BaseResponse> {
-    const user = req.user;
-    const userId = Number(user?.us_id || user?.id || user?.sub);
+async updateMyProfile(
+  req: Request, 
+  res: Response,
+  next: NextFunction
+): Promise<BaseResponse> {
+  const user = (req as any).user;
+    const userId = Number(user?.sub);
 
     if (!userId || isNaN(userId)) {
       throw new ValidationError("ไม่พบข้อมูลผู้ใช้ในระบบ");
     }
-
-    // จัดการไฟล์รูปภาพ 
+ 
     const imagePath = req.file ? req.file.path : null;
-
-    // ตรวจสอบข้อมูลความถูกต้องผ่าน Schema 
     const validatedData = updateMyProfilePayload.parse(req.body);
-
-    // เรียกใช้งาน Service 
     const result = await usersService.updateProfile(userId, validatedData, imagePath);
 
     return {
       data: result,
       message: "อัปเดตข้อมูลโปรไฟล์สำเร็จ",
     };
-    }
+  }
 
   /**
    * Description: จัดการคำขอเปลี่ยนรหัสผ่านของผู้ใช้งาน
@@ -75,22 +73,23 @@ export class UsersController extends BaseController {
    * Output : BaseResponse { message: string }
    * Author: Niyada Butchan (Da) 66160361
    */
-  async updatePassword(
+ async updatePassword(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<BaseResponse<void>> {
     const user = (req as any).user;
-    const userId = Number(user?.us_id || user?.id || user?.sub);
+    
+    const userId = Number(user?.sub);
 
     if (!userId || isNaN(userId)) {
       throw new ValidationError("ไม่พบข้อมูลผู้ใช้ในระบบ");
     }
 
-    // 1. ตรวจสอบ Schema ของข้อมูลรหัสผ่าน
+    // ตรวจสอบ Schema ของข้อมูลรหัสผ่าน
     const validatedData = changePasswordSchema.parse(req.body);
 
-    // 2. เรียก Service เพื่อดำเนินการตรวจสอบและอัปเดต
+    // เรียก Service เพื่อดำเนินการตรวจสอบและอัปเดต
     await usersService.updatePassword(
       userId,
       validatedData.oldPassword,
@@ -104,4 +103,3 @@ export class UsersController extends BaseController {
   }
 }
 
-export const usersController = new UsersController();

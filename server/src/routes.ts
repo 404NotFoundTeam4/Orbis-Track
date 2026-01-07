@@ -10,7 +10,7 @@ import { requireRole } from "./middlewares/role.middleware.js";
 import { notificationsRouter } from "./modules/notifications/index.js";
 import { borrowReturnRouter } from "./modules/tickets/borrow-return/index.js";
 import { cartsRouter } from "./modules/cart/index.js";
-import userRoutes from "./modules/users/users.routes.js";
+import { usersRouter } from "./modules/users/index.js";
 
 
 
@@ -44,7 +44,7 @@ export function routes(app: Express) {
   api.use("/tickets/borrow-return", authMiddleware, borrowReturnRouter);
 
   api.use("/borrow/cart", authMiddleware, cartsRouter);
-  api.use("/user", authMiddleware, userRoutes);
+  api.use("/user", authMiddleware, usersRouter);
 
   
 

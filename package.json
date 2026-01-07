@@ -36,15 +36,12 @@
   "dependencies": {
     "@iconify/react": "^6.0.2",
     "@types/ioredis": "^4.28.10",
-    "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
-    "ioredis": "^5.7.0",
-    "lucide-react": "^0.562.0"
+    "ioredis": "^5.7.0"
   },
   "devDependencies": {
     "@iconify/tailwind": "^1.2.0",
     "@iconify/tailwind4": "^1.0.6",
-    "@types/bcrypt": "^6.0.0",
     "@types/multer": "^2.0.0",
     "argon2": "^0.44.0",
     "axios": "^1.12.2",

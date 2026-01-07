@@ -14,6 +14,17 @@ router.getDoc(
   { tag: "Users", auth: true }, 
   usersController.getMyProfile 
 );
+// UPDATE password
+router.patchDoc(
+  "/update-password",
+  { 
+    tag: "Users", 
+    auth: true,
+    body: changePasswordSchema 
+  },
+  usersController.updatePassword 
+);
+
 // UPDATE profile
 router.patchDoc(
   "/:id", 
@@ -25,17 +36,6 @@ router.patchDoc(
   }, 
   upload.single("us_images"), 
   usersController.updateMyProfile
-);
-
-// UPDATE password
-router.patchDoc(
-  "/update-password",
-  { 
-    tag: "Users", 
-    auth: true,
-    body: changePasswordSchema 
-  },
-  usersController.updatePassword 
 );
 
 export default router.instance;

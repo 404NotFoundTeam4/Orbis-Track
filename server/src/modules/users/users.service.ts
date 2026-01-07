@@ -60,10 +60,8 @@ async function updateProfile(userId: number, body: UpdateMyProfilePayload, image
         updated_at: new Date(),
     };
 
-    // 2. จัดการรูปภาพ (ถ้ามีไฟล์ใหม่)
     if (imagePath) {
-        // แปลง \ เป็น / ให้ Windows ใช้งานได้
-        updateData.us_images = imagePath.replace(/\\/g, "/");
+      updateData.us_images = imagePath;
     }
 
     // 3. บันทึก

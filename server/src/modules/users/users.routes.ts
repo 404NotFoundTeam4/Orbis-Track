@@ -11,7 +11,7 @@ const router = new Router(undefined, "/user");
 // GET profile
 router.getDoc(
   "/",
-  { tag: "Users", auth: true }, 
+  { tag: "Users", res: updateMyProfilePayload ,auth: true }, 
   usersController.getMyProfile 
 );
 // UPDATE password

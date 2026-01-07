@@ -167,11 +167,25 @@ const Profile: React.FC = () => {
     }
   };
 
+  /**
+ * handlePasswordChange
+ * Description : จัดการการเปลี่ยนแปลงค่าฟิลด์รหัสผ่าน 
+ * Input       : e (React.ChangeEvent<HTMLInputElement>)
+ * Output      : อัปเดตสถานะ passwordForm ตามชื่อฟิลด์และค่าที่ผู้ใช้กรอก
+ * Author      : Niyada Butchan (Da) 66160361
+ */
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordForm((prev) => ({ ...prev, [name]: value }));
   };
 
+    /**
+ * handleFileChange
+ * Description : จัดการการเลือกไฟล์รูปภาพจาก input type="file" สำหรับรูปโปรไฟล์
+ * Input       : e (React.ChangeEvent<HTMLInputElement>)
+ * Output      : อัปเดตสถานะ selectedFile และ previewUrl เพื่อแสดงตัวอย่างรูปภาพ
+ * Author      : Niyada Butchan (Da) 66160361
+ */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -549,10 +563,6 @@ const Profile: React.FC = () => {
       {isSaveDialogOpen && (
         <AlertDialog
           open={true}
-          onOpenChange={(open) => {
-            if (!open) setIsSaveDialogOpen(false);
-          }}
-          width={728}
           onConfirm={async () => {
             await handleSaveProfile();
             setIsSaveDialogOpen(false);

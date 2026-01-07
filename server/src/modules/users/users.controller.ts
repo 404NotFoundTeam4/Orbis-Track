@@ -5,6 +5,7 @@ import { BaseResponse } from "../../core/base.response.js";
 import {
   updateMyProfilePayload,
   changePasswordSchema,
+  UpdateMyProfilePayload,
 } from "./users.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 
@@ -25,16 +26,17 @@ async getMyProfile(
   next: NextFunction
 ): Promise<BaseResponse> {
   const user = (req as any).user;
-  
-  // sub และแปลงเป็น Number 
+
+  // sub และแปลงเป็น Number
   const userId = Number(user?.sub);
-  
-  // เช็คว่าแปลงสำเร็จไหม 
+
+  // เช็คว่าแปลงสำเร็จไหม
   if (!userId || isNaN(userId)) {
     throw new ValidationError("User identity not found in token");
   }
 
   const profile = await usersService.getProfile(userId);
+
   return { data: profile };
 }
 

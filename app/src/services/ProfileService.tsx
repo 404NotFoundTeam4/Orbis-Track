@@ -2,30 +2,31 @@ import api from "../api/axios";
 
 export const usersService = {
 /**
-   * getProfile
-   * Description: ดึงข้อมูลโปรไฟล์ของผู้ใช้ปัจจุบัน
-   * Method     : GET
-   * Endpoint   : /user
-   * Logic      :
-   * - ดึง Token จาก localStorage 
-   * - ตรวจสอบว่ามี Token หรือไม่ ถ้าไม่มีให้ Throw Error ("Token not found")
-   * - ส่ง Request ไปยัง API พร้อมแนบ Authorization Header (Bearer Token)
-   * Output     : ข้อมูล User Profile (Object)
-   * Author     : Niyada Butchan (Da) 66160361
-   */
-
+ * getProfile
+ * Description : ดึงข้อมูลโปรไฟล์ผู้ใช้ โดยตรวจสอบ token จาก sessionStorage
+ *               หากไม่พบ จะตรวจสอบจาก localStorage
+ * Input       : -
+ * Output      : ข้อมูลโปรไฟล์ผู้ใช้
+ * Author      : Niyada Butchan (Da) 66160361
+ */
 getProfile: async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Token not found");
-    }
-    const { data } = await api.get("/user", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return data;
-  },
+  const token =
+    sessionStorage.getItem("token") ||
+    localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("Token not found");
+  }
+
+  const { data } = await api.get("/user", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return data;
+},
+
 
 
  /**

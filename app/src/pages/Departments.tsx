@@ -284,8 +284,9 @@ const Departments = () => {
   }, [filtered, page, pageSize]);
 
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
-      <div className="flex-1">
+    // <div className="w-full min-h-screen flex flex-col p-4">
+    <div className="w-full flex flex-col p-4 h-[calc(100vh-140px)] overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">
           <span className="text-[#858585]">การจัดการ</span>
@@ -335,10 +336,12 @@ const Departments = () => {
           </div>
         </div>
 
-        <div className="w-full">
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Header */}
           <div
-            className="grid [grid-template-columns:130px_1fr_1fr_1fr_130px]
-                                bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[62px] items-center "
+            className="shrink-0 grid [grid-template-columns:130px_1fr_1fr_1fr_130px]
+                 bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700
+                 rounded-[16px] mb-[16px] h-[62px] items-center"
           >
             <div className="py-2 px-4 text-left flex items-center"></div>
             <div className="py-2 px-4 text-left flex items-center">
@@ -394,6 +397,9 @@ const Departments = () => {
             </div>
             <div className="py-2 px-4 text-left flex items-center">จัดการ</div>
           </div>
+
+          {/* รายการแผนกและฝ่ายย่อย */}
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
           {pageRows.map((dep) => (
             <div
               key={dep.dept_id}
@@ -557,89 +563,92 @@ const Departments = () => {
               }
             </div>
           ))}
-        </div>
-        {/* ปุ่มหน้า */}
-        <div className="mt-25 pt-3 mr-[24px] flex items-center justify-end">
-          {/* ขวา: ตัวแบ่งหน้า */}
-          <div className="flex items-center gap-2">
-            {/* ปุ่มก่อนหน้า */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
-            >
-              {"<"}
-            </button>
-
-            {/* หน้า 1 */}
-            <button
-              type="button"
-              onClick={() => setPage(1)}
-              className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
-            >
-              1
-            </button>
-
-            {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
-            {page > 2 && <span className="px-1 text-gray-400">…</span>}
-            {page > 1 && page < totalPages && (
+          </div>
+          
+          {/* ปุ่มหน้า */}
+          <div className="shrink-0 pt-3 mr-[24px] flex items-center justify-end">
+            {/* ขวา: ตัวแบ่งหน้า */}
+            <div className="flex items-center gap-2">
+              {/* ปุ่มก่อนหน้า */}
               <button
                 type="button"
-                className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
               >
-                {page}
+                {"<"}
               </button>
-            )}
-            {page < totalPages - 1 && (
-              <span className="px-1 text-gray-400">…</span>
-            )}
 
-            {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
-            {totalPages > 1 && (
+              {/* หน้า 1 */}
               <button
                 type="button"
-                onClick={() => setPage(totalPages)}
-                className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                onClick={() => setPage(1)}
+                className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
               >
-                {totalPages}
+                1
               </button>
-            )}
 
-            {/* ถัดไป */}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
-            >
-              {">"}
-            </button>
+              {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
+              {page > 2 && <span className="px-1 text-gray-400">…</span>}
+              {page > 1 && page < totalPages && (
+                <button
+                  type="button"
+                  className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                >
+                  {page}
+                </button>
+              )}
+              {page < totalPages - 1 && (
+                <span className="px-1 text-gray-400">…</span>
+              )}
 
-            {/* ไปหน้าที่ */}
-            <form
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const fd = new FormData(e.currentTarget);
-                  const v = Number(fd.get("goto"));
-                  if (!Number.isNaN(v))
-                    setPage(Math.min(totalPages, Math.max(1, v)));
-                }
-              }}
-              className="flex items-center gap-1"
-            >
-              <span>ไปที่หน้า</span>
-              <input
-                name="goto"
-                type="number"
-                min={1}
-                max={totalPages}
-                className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
-              />
-            </form>
+              {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
+              {totalPages > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPage(totalPages)}
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                >
+                  {totalPages}
+                </button>
+              )}
+
+              {/* ถัดไป */}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+              >
+                {">"}
+              </button>
+
+              {/* ไปหน้าที่ */}
+              <form
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const fd = new FormData(e.currentTarget);
+                    const v = Number(fd.get("goto"));
+                    if (!Number.isNaN(v))
+                      setPage(Math.min(totalPages, Math.max(1, v)));
+                  }
+                }}
+                className="flex items-center gap-1"
+              >
+                <span>ไปที่หน้า</span>
+                <input
+                  name="goto"
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
+                />
+              </form>
+            </div>
           </div>
         </div>
+
       </div>
       {/* Modal */}
       <DepartmentModal

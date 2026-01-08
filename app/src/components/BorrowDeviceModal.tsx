@@ -276,9 +276,9 @@ onSubmit({ data: submitData });
   }, [form.dateRange, form.borrowTime, form.returnTime]);
 
   return (
-    <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
+    <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px]">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
-      <form className="flex flex-col justify-between gap-[30px] text-[16px] bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] w-[1048px] px-[40px] py-[40px]">
+      <form className="flex flex-col justify-between gap-[30px] text-[16px] bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] w-[1048px] px-[40px] py-[40px] h-[698px] overflow-y-auto pr-2">
         {/* หัวข้อ */}
         <div className="flex flex-col gap-[20px]">
           <div className="flex flex-col gap-[7px]">

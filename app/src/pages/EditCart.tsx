@@ -209,7 +209,12 @@ const EditCart = () => {
       <div className="flex-1">
         {/* Breadcrumb */}
         <div className="mb-[24px] space-x-[9px] text-sm">
-          <span className="text-[#858585]">รายการอุปกรณ์</span>
+          <span
+            className="text-[#858585] cursor-pointer hover:underline"
+            onClick={() => navigate("/list-devices")}
+          >
+            รายการอุปกรณ์
+          </span>
           <span className="text-[#858585]">&gt;</span>
           <span
             className="text-[#858585] cursor-pointer hover:underline"

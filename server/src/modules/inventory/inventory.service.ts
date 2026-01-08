@@ -80,6 +80,7 @@ async function getDeviceWithChilds(params: IdParamDto) {
           },
         },
       },
+
       // อุปกรณ์เสริม
       accessories: {
         where: {
@@ -116,7 +117,7 @@ async function getDeviceWithChilds(params: IdParamDto) {
       },
     },
   });
-
+  console.log(device)
   return {
     ...device,
     total_quantity: device?.device_childs.length,
@@ -950,53 +951,53 @@ export async function updateDevice(
       updated_at: new Date(),
     },
   });
-if (Array.isArray(accessories)) {
-  const incomingAccIds = accessories
-    .filter(a => a.acc_id)
-    .map(a => a.acc_id);
+  if (Array.isArray(accessories)) {
+    const incomingAccIds = accessories
+      .filter(a => a.acc_id)
+      .map(a => a.acc_id);
 
-  // 1. soft delete
-  await prisma.accessories.updateMany({
-    where: {
-      acc_de_id: id,
-      deleted_at: null,
-      acc_id: {
-        notIn: incomingAccIds.length ? incomingAccIds : [0],
-      },
-    },
-    data: {
-      deleted_at: new Date(),
-    },
-  });
-
-  // 2. update
-  for (const acc of accessories) {
-    if (!acc.acc_id) continue;
-
-    await prisma.accessories.update({
-      where: { acc_id: acc.acc_id },
-      data: {
-        acc_name: acc.acc_name,
-        acc_quantity: Number(acc.acc_quantity),
-        updated_at: new Date(),
-        deleted_at: null,
-      },
-    });
-  }
-
-  // 3. create
-  const newAccs = accessories.filter(a => !a.acc_id);
-  if (newAccs.length) {
-    await prisma.accessories.createMany({
-      data: newAccs.map(acc => ({
+    // 1. soft delete
+    await prisma.accessories.updateMany({
+      where: {
         acc_de_id: id,
-        acc_name: acc.acc_name,
-        acc_quantity: Number(acc.acc_quantity),
-        created_at: new Date(),
-      })),
+        deleted_at: null,
+        acc_id: {
+          notIn: incomingAccIds.length ? incomingAccIds : [0],
+        },
+      },
+      data: {
+        deleted_at: new Date(),
+      },
     });
+
+    // 2. update
+    for (const acc of accessories) {
+      if (!acc.acc_id) continue;
+
+      await prisma.accessories.update({
+        where: { acc_id: acc.acc_id },
+        data: {
+          acc_name: acc.acc_name,
+          acc_quantity: Number(acc.acc_quantity),
+          updated_at: new Date(),
+          deleted_at: null,
+        },
+      });
+    }
+
+    // 3. create
+    const newAccs = accessories.filter(a => !a.acc_id);
+    if (newAccs.length) {
+      await prisma.accessories.createMany({
+        data: newAccs.map(acc => ({
+          acc_de_id: id,
+          acc_name: acc.acc_name,
+          acc_quantity: Number(acc.acc_quantity),
+          created_at: new Date(),
+        })),
+      });
+    }
   }
-}
 
 
 

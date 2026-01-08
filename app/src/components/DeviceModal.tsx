@@ -92,7 +92,7 @@ const MainDeviceModal = ({
   const [serialNumbers, setSerialNumbers] = useState([{ id: 1, value: "" }]);
   /*========================== accessories ========================== */
   const [accessories, setAccessories] = useState([
-    { id: 1, name: "", qty: "" },
+    { id: 1, name: "", qty: "",value :"" },
   ]);
   /*========================== รายละเอียดการอนุมัติ ========================== */
   const [titleApprove, setTitleApprove] = useState("");
@@ -206,19 +206,20 @@ const MainDeviceModal = ({
   const addAccessory = () => {
     setAccessories([
       ...accessories,
-      { id: accessories.length + 1, name: "", qty: "" },
+      { id: accessories.length + 1, name: "", qty: "",value:"" },
     ]);
   };
 
-  // อัปเดตอุปกรณ์เสริม
-  const updateAccessory = (keyId: string, key: "name" | "qty", value: string) => {
+// อัปเดตอุปกรณ์เสริม
+  const updateAccessory = (id: number, key: "name" | "qty", value: string) => {
     setAccessories((prev) =>
-      prev.map((item) => (item.name === keyId ? { ...item, [key]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
     );
   };
 
-  // ลบ Input อุปกรณ์เสริม
-  const removeAccessory = (name: string) => {
+   
+ // ลบ Input อุปกรณ์เสริม
+  const removeAccessory = (id: number) => {
     setAccessories((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -317,7 +318,7 @@ const MainDeviceModal = ({
   // ค่าเริ่มต้น edit
   useEffect(() => {
     if (mode === "edit" && defaultValues) {
-     
+   
       // รูปภาพ
       setPreview(defaultValues.de_images ?? null);
 
@@ -365,14 +366,15 @@ const MainDeviceModal = ({
       // อุปกรณ์เสริม
       if (defaultValues.accessories) {
         setAccessories(
-          defaultValues.accessories.map((acc) => ({
-            id: acc.acc_id,
+          defaultValues.accessories.map((acc,index) => ({
+            id: index,
             name: acc.acc_name,
             qty: String(acc.acc_quantity),
+            value : acc.acc_id
           }))
         );
       } else {
-        setAccessories([{ id: Date.now(), name: "", qty: "" }]); // แสดงช่อง input
+        setAccessories([{ id: Date.now(), name: "", qty: "",value:"" }]); // แสดงช่อง input
       }
      
       // ลำดับการอนุมัติ
@@ -395,13 +397,16 @@ const MainDeviceModal = ({
     }
   }, [mode, defaultValues]);
 
-  const mappedAccessories = accessories
-    .filter((a) => a.id && a.name && a.qty)
-    .map((a) => ({
-      acc_id:a.id,
-      acc_name: a.name,
-      acc_quantity: Number(a.qty),
-    }));
+const mappedAccessories = accessories
+  .filter(a => a.name && a.qty)
+  .map(a => ({
+    ...(a.value !== undefined
+      ? { acc_id: Number(a.value) }
+      : {}),
+    acc_name: a.name,
+    acc_quantity: Number(a.qty),
+  }));
+
 
   const mappedSerialNumbers = checked
     ? serialNumbers
@@ -441,7 +446,7 @@ const MainDeviceModal = ({
     label: st.st_name,
     value: st.st_sec_id,
   }));
- console.log(accessories)
+
   /*========================== func ส่งข้อมูลอุปกรณ์ ========================== */
   const handleSubmit = () => {
     const formData = new FormData();
@@ -741,13 +746,13 @@ const MainDeviceModal = ({
               </Button>
             </div>
             {accessories.map((item) => (
-              <div key={item.name} className="flex gap-5">
+              <div key={item.id} className="flex gap-5">
                 <Input
                   className="!w-[419px]"
                   placeholder="ชื่ออุปกรณ์"
                   value={item.name}
                   onChange={(e) =>
-                    updateAccessory(item.name, "name", e.target.value)
+                    updateAccessory(item.id, "name", e.target.value)
                   }
                 />
                 <Input
@@ -755,12 +760,12 @@ const MainDeviceModal = ({
                   placeholder="จำนวน"
                   value={item.qty}
                   onChange={(e) =>
-                    updateAccessory(item.name, "qty", e.target.value)
+                    updateAccessory(item.id, "qty", e.target.value)
                   }
                 />
                 <Button
                   className="bg-[#DF203B] !w-[46px] !h-[46px] !rounded-[16px] hover:bg-red-600"
-                  onClick={() => removeAccessory(item.name)}
+                  onClick={() => removeAccessory(item.id)}
                 >
                   <Icon
                     icon="solar:trash-bin-trash-outline"

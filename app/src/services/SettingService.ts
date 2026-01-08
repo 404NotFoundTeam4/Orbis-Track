@@ -23,8 +23,8 @@ const KEY = "app_language";
  * Author    : Chanwit Muangma (Boom) 66160224
  */
 export function getLanguage(): AppLanguage {
-  const v = localStorage.getItem(KEY);
-  return v === "en" ? "en" : "th"; // default th
+  const language = localStorage.getItem(KEY);
+  return language === "en" ? "en" : "th"; // default th
 }
 
 /**

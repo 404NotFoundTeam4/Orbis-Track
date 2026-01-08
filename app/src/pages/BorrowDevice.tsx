@@ -130,6 +130,7 @@ const BorrowDevice = () => {
   const handleSubmit = async ({ data }: { data: BorrowForm }) => {
     try {
       // วันที่ยืมและวันที่คืน
+    
       const [borrowDate, returnDateRaw] = data.dateRange;
       // วันที่คืน (กรณียืมวันเดียว)
       const returnDate = returnDateRaw ?? borrowDate;

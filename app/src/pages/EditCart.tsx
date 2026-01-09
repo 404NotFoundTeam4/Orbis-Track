@@ -17,7 +17,21 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BorrowDeviceModal from "../components/BorrowDeviceModal";
 import CartService from "../services/CartService";
+import { borrowService } from "../services/BorrowService";
 import { useToast } from "../components/Toast";
+
+export interface ActiveBorrow {
+  start: string;
+  end: string;
+}
+
+export interface GetAvailable {
+  dec_id: number;
+  dec_serial_number?: string;
+  dec_asset_code: string;
+  dec_status: "READY" | "BORROWED" | "REPAIRING" | "DAMAGED" | "LOST";
+  availabilities: ActiveBorrow[];
+}
 
 export interface CartItem {
   ctiId: number;
@@ -60,7 +74,12 @@ const EditCart = () => {
 
   const [cartItem, setCartItem] = useState<CartItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
+  // เก็บอุปกรณ์ที่ผู้ใช้เลือก
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
 
+
+  
   useEffect(() => {
     if (!ctiId) {
       navigate("/list-devices/cart", { replace: true });
@@ -118,6 +137,22 @@ const EditCart = () => {
         };
 
         setCartItem(mapped);
+        const decIds = item?.device_childs?.length
+          ? item.device_childs
+              .map((dec) => dec?.dec_id)
+              .filter((id): id is number => typeof id === "number")
+          : [];
+
+        setSelectedDeviceIds(decIds);
+
+        try {
+          const avail = await borrowService.getAvailable(
+            mapped.deviceId as any
+          );
+          setAvailableDevices(avail ?? []);
+        } catch (err) {
+          console.error("ไม่สามารถดึงรายการอุปกรณ์ย่อยได้:", err);
+        }
       } catch (err) {
         console.error("โหลดข้อมูลแก้ไขไม่สำเร็จ:", err);
         navigate("/list-devices/cart", { replace: true });
@@ -154,13 +189,14 @@ const EditCart = () => {
   const handleSubmit = async ({ data }: { data: BorrowFormData }) => {
     try {
       await CartService.updateCartItem(cartItem.ctiId, {
-        quantity: data.quantity,
+        quantity: selectedDeviceIds.length,
         borrower: data.borrower,
         phone: data.phone,
         reason: data.reason,
         placeOfUse: data.placeOfUse,
         borrowDate: data.borrowTime ? data.borrowTime : null,
         returnDate: data.returnTime ? data.returnTime : null,
+        deviceChilds: selectedDeviceIds,
       });
 
       push({ tone: "success", message: "แก้ไขรายละเอียดเสร็จสิ้น!" });
@@ -175,23 +211,23 @@ const EditCart = () => {
   };
 
   /**
- * Description: ฟังก์ชันสำหรับแปลงวันที่หรือเวลาให้อยู่ในรูปแบบเวลา (HH:mm)
- * ตามรูปแบบเวลาของประเทศไทย (Time Zone: Asia/Bangkok)
- *
- * Note:
- * - รองรับ input ได้ทั้ง string และ Date
- * - ใช้ locale "th-TH" เพื่อให้รูปแบบเวลาเป็นมาตรฐานของไทย
- * - แสดงผลเวลาแบบ 24 ชั่วโมง (ไม่ใช้ AM/PM)
- * - เหมาะสำหรับใช้แสดงเวลาในหน้าจอ เช่น เวลาในการยืม–คืนอุปกรณ์
- *
- * Flow การทำงาน:
- * 1. รับค่า date ที่เป็น string หรือ Date
- * 2. แปลงค่า date ให้เป็น Date object
- * 3. เรียก toLocaleTimeString() พร้อมกำหนด locale และ options
- * 4. คืนค่าเวลาในรูปแบบ HH:mm
- *
- * Author: Salsabeela Sa-e (San) 66160349
- */
+   * Description: ฟังก์ชันสำหรับแปลงวันที่หรือเวลาให้อยู่ในรูปแบบเวลา (HH:mm)
+   * ตามรูปแบบเวลาของประเทศไทย (Time Zone: Asia/Bangkok)
+   *
+   * Note:
+   * - รองรับ input ได้ทั้ง string และ Date
+   * - ใช้ locale "th-TH" เพื่อให้รูปแบบเวลาเป็นมาตรฐานของไทย
+   * - แสดงผลเวลาแบบ 24 ชั่วโมง (ไม่ใช้ AM/PM)
+   * - เหมาะสำหรับใช้แสดงเวลาในหน้าจอ เช่น เวลาในการยืม–คืนอุปกรณ์
+   *
+   * Flow การทำงาน:
+   * 1. รับค่า date ที่เป็น string หรือ Date
+   * 2. แปลงค่า date ให้เป็น Date object
+   * 3. เรียก toLocaleTimeString() พร้อมกำหนด locale และ options
+   * 4. คืนค่าเวลาในรูปแบบ HH:mm
+   *
+   * Author: Salsabeela Sa-e (San) 66160349
+   */
   const getTimeTH = (date: string | Date): string => {
     const dateObj = new Date(date);
 
@@ -202,7 +238,17 @@ const EditCart = () => {
       timeZone: "Asia/Bangkok",
     });
   };
-  const noop = () => {};
+
+  // Re-fetch available devices when date/time changes in the modal
+  const handleDateTimeChange = async () => {
+    if (!cartItem) return;
+    try {
+      const avail = await borrowService.getAvailable(cartItem.deviceId as any);
+      setAvailableDevices(avail ?? []);
+    } catch (err) {
+      console.error("refresh available devices error:", err);
+    }
+  };
 
   return (
     <div className="w-full min-h-screen flex flex-row p-4 gap-6">
@@ -256,11 +302,13 @@ const EditCart = () => {
             returnTime: getTimeTH(cartItem.returnDate ?? new Date()),
           }}
           /** props ที่ BorrowDeviceModal บังคับ แต่ edit ไม่ได้ใช้ */
-          availableDevices={[]}
-          availableCount={cartItem.readyQuantity}
-          selectedDeviceIds={[cartItem.deviceId]}
-          onSelectDevice={noop}
-          onDateTimeChange={noop}
+          availableDevices={availableDevices}
+          availableCount={
+            availableDevices.filter((d) => d.dec_status === "READY").length
+          }
+          selectedDeviceIds={selectedDeviceIds}
+          onSelectDevice={setSelectedDeviceIds} // เปลี่ยนอุปกรณ์ที่เลือก
+          onDateTimeChange={handleDateTimeChange}
           onSubmit={handleSubmit}
         />
       </div>

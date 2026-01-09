@@ -120,7 +120,7 @@ export const Users = () => {
   const roleOptions = [
     { id: "", label: "ประเภทตำแหน่ง", value: "" },
     ...Array.from(
-      new Set(users.map((u) => u.us_role)), // ตัดซ้ำ
+      new Set(users.map((u) => u.us_role)) // ตัดซ้ำ
     ).map((r, index) => ({
       id: index + 1,
       label: roleTranslation[r] || r,
@@ -390,7 +390,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "created_at",
+    "created_at"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -516,17 +516,17 @@ export const Users = () => {
   }, [filtered, page, pageSize]);
 
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
-      <div className="flex-1">
+    <div className="w-full h-full min-h-0 flex flex-col p-4 overflow-hidden">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         {/* แถบนำทาง */}
-        <div className="mb-[8px] space-x-[9px]">
+        <div className="mb-[8px] space-x-[9px] shrink-0">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">บัญชีผู้ใช้</span>
         </div>
 
         {/* ชื่อหน้า */}
-        <div className="flex items-center gap-[14px] mb-[21px]   ">
+        <div className="flex items-center gap-[14px] mb-[21px] shrink-0">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             ผู้ใช้งานทั้งหมด {users.filter((u) => u.us_is_active).length}
@@ -534,7 +534,7 @@ export const Users = () => {
         </div>
 
         {/* Filter */}
-        <div className="w-full mb-[23px]">
+        <div className="w-full mb-[23px] shrink-0">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <SearchFilter onChange={setSearchFilters} />
             <div className="flex space-x-[4px]">
@@ -571,11 +571,11 @@ export const Users = () => {
         </div>
 
         {/* ตาราง */}
-        <div className="w-auto">
+        <div className="w-auto flex-1 overflow-hidden min-h-0 flex flex-col">
           {/* หัวตาราง */}
           <div
             className="grid grid-cols-[400px_130px_203px_230px_160px_150px_180px_81px]
-              bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3"
+              bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center gap-3 shrink-0"
           >
             <div className="py-2 px-4 text-left flex items-center">
               ชื่อผู้ใช้
@@ -685,98 +685,102 @@ export const Users = () => {
             <div className="py-2 px-4 text-left flex items-center">จัดการ</div>
           </div>
 
-          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px]">
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] flex flex-col flex-1 overflow-hidden min-h-0">
             {/* แถวข้อมูล */}
-            {pageRows.map((u) => (
-              <div
-                key={u.us_id}
-                className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {pageRows.map((u) => (
+                <div
+                  key={u.us_id}
+                  className="grid [grid-template-columns:400px_130px_203px_230px_160px_150px_180px_81px]
                  items-center hover:bg-gray-50 text-[16px] gap-3"
-              >
-                {/* ชื่อผู้ใช้ */}
-                <div className="py-2 px-4 flex items-center">
-                  {u.us_images ? (
-                    <img
-                      src={getImageUrl(u.us_images)}
-                      alt={u.us_firstname}
-                      className="w-10 h-10 rounded-full object-cover"
-                      // onError={(e) => {
-                      //   (e.target as HTMLImageElement).onerror = null;
-                      //   (e.target as HTMLImageElement).src =
-                      //     `https://placehold.co/40x40/E0E7FF/3B82F6?text=${u.us_firstname.charAt(0)}`;
-                      // }}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                      <Icon icon="ph:user" width="24" />
-                    </div>
-                  )}
-                  <div className="ml-3">
-                    <div>{`${u.us_firstname} ${u.us_lastname}`}</div>
-                    <div>
-                      <span className="text-blue-600">{u.us_email} : </span>
-                      <span>{u.us_emp_code}</span>
+                >
+                  {/* ชื่อผู้ใช้ */}
+                  <div className="py-2 px-4 flex items-center">
+                    {u.us_images ? (
+                      <img
+                        src={getImageUrl(u.us_images)}
+                        alt={u.us_firstname}
+                        className="w-10 h-10 rounded-full object-cover"
+                        // onError={(e) => {
+                        //   (e.target as HTMLImageElement).onerror = null;
+                        //   (e.target as HTMLImageElement).src =
+                        //     `https://placehold.co/40x40/E0E7FF/3B82F6?text=${u.us_firstname.charAt(0)}`;
+                        // }}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                        <Icon icon="ph:user" width="24" />
+                      </div>
+                    )}
+                    <div className="ml-3">
+                      <div>{`${u.us_firstname} ${u.us_lastname}`}</div>
+                      <div>
+                        <span className="text-blue-600">{u.us_email} : </span>
+                        <span>{u.us_emp_code}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="py-2 px-4">
-                  {roleTranslation[u.us_role] || u.us_role}
-                </div>
-                <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
-                <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
-                <div className="py-2 px-4">
-                  {FormatPhone(u.us_phone) ?? "-"}
-                </div>
-                <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
+                  <div className="py-2 px-4">
+                    {roleTranslation[u.us_role] || u.us_role}
+                  </div>
+                  <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
+                  <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
+                  <div className="py-2 px-4">
+                    {FormatPhone(u.us_phone) ?? "-"}
+                  </div>
+                  <div className="py-2 px-4">
+                    {FormatThaiDate(u.created_at)}
+                  </div>
 
-                <div className="py-2 px-4">
-                  {u.us_is_active ? (
-                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
-                      ใช้งานได้ปกติ
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#FF4D4F] text-[#FF4D4F] rounded-full text-base">
-                      ถูกปิดการใช้งาน
-                    </span>
-                  )}
-                </div>
+                  <div className="py-2 px-4">
+                    {u.us_is_active ? (
+                      <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
+                        ใช้งานได้ปกติ
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#FF4D4F] text-[#FF4D4F] rounded-full text-base">
+                        ถูกปิดการใช้งาน
+                      </span>
+                    )}
+                  </div>
 
-                <div>
-                  {u.us_is_active ? (
-                    <div className="py-2 px-4 flex items-center gap-3">
-                      <button
-                        onClick={() => handleOpenEditModal(u)}
-                        className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
-                        title="แก้ไข"
-                      >
-                        <Icon
-                          icon="prime:pen-to-square"
-                          width="22"
-                          height="22"
-                        />
-                      </button>
-                      <button
-                        onClick={() => handleOpenDeleteModal(u)}
-                        className="text-[#FF4D4F] hover:text-[#FF4D4F] cursor-pointer"
-                        title="ลบ"
-                      >
-                        <Icon
-                          icon="solar:trash-bin-trash-outline"
-                          width="22"
-                          height="22"
-                        />
-                      </button>
-                    </div>
-                  ) : (
-                    <div></div>
-                  )}
+                  <div>
+                    {u.us_is_active ? (
+                      <div className="py-2 px-4 flex items-center gap-3">
+                        <button
+                          onClick={() => handleOpenEditModal(u)}
+                          className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
+                          title="แก้ไข"
+                        >
+                          <Icon
+                            icon="prime:pen-to-square"
+                            width="22"
+                            height="22"
+                          />
+                        </button>
+                        <button
+                          onClick={() => handleOpenDeleteModal(u)}
+                          className="text-[#FF4D4F] hover:text-[#FF4D4F] cursor-pointer"
+                          title="ลบ"
+                        >
+                          <Icon
+                            icon="solar:trash-bin-trash-outline"
+                            width="22"
+                            height="22"
+                          />
+                        </button>
+                      </div>
+                    ) : (
+                      <div></div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
 
             {/* ปุ่มหน้า */}
-            <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+            <div className="shrink-0 mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end ">
               {/* ขวา: ตัวแบ่งหน้า */}
               <div className="flex items-center gap-2">
                 {/* ปุ่มก่อนหน้า */}

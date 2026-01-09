@@ -12,7 +12,7 @@ import type { DeviceChild } from "../services/InventoryService"
 // โครงสร้าง props ที่ต้องส่งมาเรียกใช้งาน
 interface DevicesChildsProps {
     devicesChilds: DeviceChild[]; // ข้อมูลอุปกรณ์ลูก
-    onAdd: (parentId: number, quantity: number) => Promise<void>; // ฟังก์ชันเพิ่มอุปกรณ์ลูก
+    onAdd: ( quantity: number) => Promise<void>; // ฟังก์ชันเพิ่มอุปกรณ์ลูก
     onUpload?: (file: File | undefined) => void; // ฟังก์ชันเพิ่มอุปกรณ์ลูกแบบอัปโหลดไฟล์ (CSV / Excel)
     onDelete: (ids: number[]) => Promise<void>; // ฟังก์ชันลบอุปกรณ์ลูก
     onChangeStatus: (id: number, status: DeviceChild["dec_status"]) => void; // ฟังก์ชันเปลี่ยนสถานะอุปกรณ์ลูก
@@ -66,8 +66,8 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
     const handleAdd = async () => {
         // if (!quantity || Number(id) === undefined) return;
         if (quantity === null || Number(quantity) <= 0 || isNaN(Number(id))) return;
-
-        await onAdd(Number(id), Number(quantity)); // เรียกใช้งานฟังก์ชันเพิ่มอุปกรณ์ที่ส่งมา
+        console.log(quantity)
+        await onAdd( Number(quantity)); // เรียกใช้งานฟังก์ชันเพิ่มอุปกรณ์ที่ส่งมา
         setQuantity(null); // รีเซ็ตจำนวน
         setIsAddAletOpen(false);
     }
@@ -158,7 +158,7 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                         className="!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
                             if (quantity === null || Number(quantity) <= 0) {
-                                onAdd(Number(id), Number(quantity));
+                                onAdd( Number(quantity));
                                 return;
                             } else {
                                 setIsAddAletOpen(true);

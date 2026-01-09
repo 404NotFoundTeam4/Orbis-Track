@@ -52,6 +52,7 @@ export type UpdateCartItemPayload = {
   quantity: number;
   borrowDate: Date | string | null;
   returnDate: Date | string | null;
+  deviceChilds: number[];
 };
 
 /**
@@ -182,9 +183,9 @@ const datapayload = {
         cti_end_date: payload.returnDate
           ? new Date(payload.returnDate).toISOString()
           : null,
+        device_childs: payload.deviceChilds,
+      };
 
-}
-     
       const res = await api.patch<ApiEnvelope<null>>(`/borrow/cart/device/${ctiId}`, datapayload);
 
       return res.data.message ?? "Update successfully";

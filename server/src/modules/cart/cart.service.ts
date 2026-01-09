@@ -797,18 +797,35 @@ async function updateCartDeviceDetail(
   if (!exists) {
     throw new Error("ไม่พบข้อมูลอุปกรณ์ในรถเข็น");
   }
+  console.log("payload", payload);
+  const updated = await prisma.$transaction(async (tx) => {
+    // Delete old relations first
+    await tx.cart_device_childs.deleteMany({ where: { cdc_cti_id: ctiId } });
 
-  const updated = await prisma.cart_items.update({
-    where: { cti_id: ctiId },
-    data: payload,
-    include: {
-      cart: true,
-      cart_device_childs: {
-        include: { device_child: true },
+    // Create new relations
+    await tx.cart_device_childs.createMany({
+      data: payload.device_childs?.map((decId) => ({
+        cdc_cti_id: ctiId,
+        cdc_dec_id: decId,
+        created_at: new Date(),
+      })) || [],
+    });
+
+    // Remove device_childs from payload before updating cart_items (not a table column)
+    const updatePayload: any = { ...payload };
+    if (updatePayload.device_childs) delete updatePayload.device_childs;
+
+    return await tx.cart_items.update({
+      where: { cti_id: ctiId },
+      data: updatePayload,
+      include: {
+        cart: true,
+        cart_device_childs: {
+          include: { device_child: true },
+        },
       },
-    },
+    });
   });
-
   return updated;
 }
 

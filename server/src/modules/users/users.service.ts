@@ -23,7 +23,7 @@ async function getProfile(userId: number) {
       us_phone: true,
       us_images: true, 
       us_role: true,
-      department: { select: { dept_name: true } }, // ส่งไปแบบ Nested Object
+      department: { select: { dept_name: true } }, 
       section: { select: { sec_name: true } }
     },
   });

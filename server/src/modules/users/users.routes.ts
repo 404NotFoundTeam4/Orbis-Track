@@ -1,18 +1,19 @@
 import { Router } from "../../core/router.js";
 import { UsersController } from "./users.controller.js";
 import { upload } from "../upload/upload.service.js";
-import { changePasswordSchema } from "./users.schema.js";
-import { updateMyProfilePayload } from "./users.schema.js";
-const usersController = new UsersController();
+import { changePasswordSchema, getMyProfileResponseSchema, updateMyProfilePayload,} from "./users.schema.js";
+import z from "zod";
 
+
+const usersController = new UsersController();
 const router = new Router(undefined, "/user");
 
 
 // GET profile
 router.getDoc(
   "/",
-  { tag: "Users", res: updateMyProfilePayload ,auth: true }, 
-  usersController.getMyProfile 
+  { tag: "Users", res: getMyProfileResponseSchema, auth: true }, 
+  usersController.getMyProfile
 );
 // UPDATE password
 router.patchDoc(
@@ -25,17 +26,19 @@ router.patchDoc(
   usersController.updatePassword 
 );
 
-// UPDATE profile
-router.patchDoc(
-  "/:id", 
-  { 
-    tag: "Users", 
-    auth: true, 
-    body: updateMyProfilePayload, 
-    contentType: "multipart/form-data" 
+// users.route.ts
+
+router.patchDoc("/:id", {
+    tag: "Users",
+    auth: true,
+    params: z.object({
+      id: z.string().describe("User ID"), 
+    }),
+    
+    body: updateMyProfilePayload,
+    contentType: "multipart/form-data",
   }, 
   upload.single("us_images"), 
   usersController.updateMyProfile
 );
-
 export default router.instance;

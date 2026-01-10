@@ -5,6 +5,7 @@ import SearchFilter from "../components/SearchFilter";
 import { useToast } from "../components/Toast";
 import { categoryService, type Category } from "../services/CategoryService";
 import { AlertDialog } from "../components/AlertDialog";
+import { CategoryModal } from "../components/CategoryModal";
 
 
 
@@ -38,6 +39,9 @@ export const Categories = () => {
 
     // ========= Delete Confirm =========
     const [deleteTarget , setDeleteTarget] = useState<Category | null>(null);
+
+    // ========= Add Category Modal =========
+    const [modalOpen, setModalOpen] = useState(false);
 
 
 
@@ -178,7 +182,7 @@ export const Categories = () => {
                         <Button
                             size="md"
                             icon={<Icon icon="ic:baseline-plus" width="20px" height="20px" />}
-                            onClick={() => toast.push({ message : "ยังไม่ทำ Add Category" , tone: "warning"})}
+                            onClick={() => setModalOpen(true)}
                             className="w-[150px] h-[46px] text-[16px] font-medium flex items-center justify-center gap-2 cursor-pointer"
                         >
                             เพิ่มหมวดหมู่
@@ -343,16 +347,7 @@ export const Categories = () => {
                     </form>
                 </div>
                 </div>
-                
-                
-                
-
-
             </div>
-
-
-
-
         </div>
         <AlertDialog
             open={!!deleteTarget}
@@ -376,13 +371,21 @@ export const Categories = () => {
                 if (!deleteTarget) return;
                 await categoryService.deleteCategory(deleteTarget.ca_id);
                 toast.push({ message: "ลบหมวดหมู่สำเร็จ", tone: "confirm" });
-                setRefreshTrigger((p) => p + 1); 
+                setRefreshTrigger((p) => p + 1);
             }}
             />
 
-        
-
-
+        {/* Category Modal for Add */}
+        <CategoryModal
+            open={modalOpen}
+            onOpenChange={setModalOpen}
+            onSuccess={(newCat) => {
+                // เมื่อเพิ่มสำเร็จ ให้เอาข้อมูลใหม่ใส่หน้าแถวแรกสุดของตาราง
+                setRows((prev) => [newCat, ...prev]);
+                // เพิ่มจำนวนหมวดหมู่ทั้งหมด
+                setActiveTotal((prev) => prev + 1);
+            }}
+        />
     </div>
   )
   

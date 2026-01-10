@@ -10,6 +10,12 @@ import {
   CategorySchema,
   GetCategoriesResponseSchema,
   SoftDeleteResponseSchema,
+  addCategoryPayload,
+  editCategoryPayload,
+  AddCategoryPayload,
+  EditCategoryPayload,
+  AddCategoryResponseSchema,
+  EditCategoryResponseSchema,
 } from "./category.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 import type { z } from "zod";
@@ -76,5 +82,44 @@ export class CategoryController extends BaseController {
     const { id } = idParamSchema.parse(req.params);
     const result = await categoryService.softDeleteCategory(id);
     return { data: result, message: "Category soft-deleted successfully" };
+  }
+
+  /**
+   * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่
+   * Input     : req.body (ca_name) - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
+   * Output    : BaseResponse<Category> - ข้อมูลหมวดหมู่ที่เพิ่มเข้ามา
+   * Author    : Category Team
+   */
+  async addCategory(
+  req: Request,
+  _res: Response,
+  _next: NextFunction
+): Promise<BaseResponse<AddCategoryResponseSchema>> {
+  const payload = addCategoryPayload.parse(req.body);
+  const newCategory = await categoryService.addCategory(payload);
+  
+  return {
+    success: true,
+    data: newCategory,
+    message: "เพิ่มสำเร็จ",
+  };
+}
+
+  /**
+   * Description: แก้ไขหมวดหมู่อุปกรณ์ (Category)
+   * Input     : req.params (id) - รหัสหมวดหมู่, req.body (ca_name) - ชื่อหมวดหมู่ใหม่
+   * Output    : BaseResponse<Category> - ข้อมูลหมวดหมู่ที่อัปเดตแล้ว
+   * Author    : Category Team
+   */
+   async editCategory(
+    req: Request,
+    res: Response,
+    _next: NextFunction
+  ): Promise<BaseResponse<EditCategoryResponseSchema>> {
+    const { id } = idParamSchema.parse(req.params);
+    const payload = editCategoryPayload.parse(req.body);
+    const updatedCategory = await categoryService.editCategory({ id }, payload);
+
+    return { data: updatedCategory, message: "Category updated successfully" };
   }
 }

@@ -74,7 +74,25 @@ async function getCategories(query: GetCategoriesQuery): Promise<GetCategoriesRe
 
 
 export async function deleteCategory(id: number) {
-  return api.delete(`/category/${id}`); 
+  return api.delete(`/category/${id}`);
 }
 
-export const categoryService = { getCategories, deleteCategory };
+/**
+ * Description: เรียก API เพื่อเพิ่มหมวดหมู่อุปกรณ์ใหม่
+ * Input     : ca_name (string) - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
+ * Output    : Promise - ผลลัพธ์จากการเรียก API (response ของ axios)
+ * Author    : Category Team
+ */
+export async function addCategory(payload: { ca_name: string }): Promise<Category> {
+  // ส่งเป็น Object ที่มี key ชื่อ ca_name ให้ตรงกับที่ Backend รับ
+  const res = await api.post("/category",
+    payload
+  );
+  return res.data.data;
+}
+
+export const categoryService = { 
+  getCategories, 
+  deleteCategory, 
+  addCategory, 
+};

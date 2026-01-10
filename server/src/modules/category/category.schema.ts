@@ -16,7 +16,7 @@ export const categorySchema = z.object({
   ca_id: z.number().int(),
   ca_name: z.string(),
 
-  created_at: z.coerce.date(),
+  created_at: z.coerce.date().nullable(),
   updated_at: z.coerce.date().nullable(),
   deleted_at: z.coerce.date().nullable()
 })
@@ -69,3 +69,62 @@ export type GetCategoriesQuerySchema = z.infer<typeof getCategoriesQuerySchema>
 export type GetCategoriesResponseSchema = z.infer<typeof getCategoriesResponseSchema>
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteCategoryResponseSchema>
+
+/**
+ * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการเพิ่มหมวดหมู่ (Category)
+ * Input     : { ca_name: string } - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
+ * Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้าง { ca_name: string }
+ * Logic     :
+ *   - ตรวจสอบว่าค่าที่ส่งเข้ามาเป็น string
+ *   - ใช้สำหรับ validate ข้อมูลก่อนส่งต่อไปยัง service หรือ controller
+ * Author    : Category Team
+ */
+export const addCategoryPayload = z.object({
+  ca_name: z.string().min(1, "Category name is required"),
+});
+
+/**
+ * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการแก้ไขหมวดหมู่ (Category)
+ * Input     : { ca_name: string } - ชื่อหมวดหมู่ที่ต้องการแก้ไข
+ * Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้าง { ca_name: string }
+ * Logic     :
+ *   - ตรวจสอบว่าค่าที่ส่งเข้ามาเป็น string
+ *   - ใช้สำหรับ validate ข้อมูลก่อนส่งต่อไปยัง service หรือ controller
+ * Author    : Category Team
+ */
+export const editCategoryPayload = z.object({
+  ca_name: z.string().min(1, "Category name is required"),
+});
+
+/**
+ * Description: Schema สำหรับตอบกลับข้อมูลหลังเพิ่มหมวดหมู่สำเร็จ
+ * Input     : ไม่มี (ใช้ใน Swagger)
+ * Output    : Schema ที่กำหนดรูปแบบข้อมูลที่ตอบกลับ
+ * Author    : Category Team
+ */
+export const addCategoryResponseSchema = z.object({
+  ca_id: z.coerce.number(),
+  ca_name: z.string(),
+  created_at: z.date().nullable(),
+  updated_at: z.date().nullable(),
+  deleted_at: z.date().nullable(),
+});
+
+/**
+ * Description: Schema สำหรับตอบกลับข้อมูลหลังแก้ไขหมวดหมู่สำเร็จ
+ * Input     : ไม่มี (ใช้ใน Swagger)
+ * Output    : Schema ที่กำหนดรูปแบบข้อมูลที่ตอบกลับ
+ * Author    : Category Team
+ */
+export const editCategoryResponseSchema = z.object({
+  ca_id: z.coerce.number(),
+  ca_name: z.string(),
+  created_at: z.date().nullable(),
+  updated_at: z.date().nullable(),
+  deleted_at: z.date().nullable(),
+});
+
+export type AddCategoryPayload = z.infer<typeof addCategoryPayload>;
+export type EditCategoryPayload = z.infer<typeof editCategoryPayload>;
+export type AddCategoryResponseSchema = z.infer<typeof addCategoryResponseSchema>;
+export type EditCategoryResponseSchema = z.infer<typeof editCategoryResponseSchema>;

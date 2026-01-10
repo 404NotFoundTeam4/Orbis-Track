@@ -2,9 +2,14 @@
 import { prisma } from "../../infrastructure/database/client.js";
 import type { z } from "zod";
 import {
-    GetCategoriesQuerySchema
+    GetCategoriesQuerySchema,
+    AddCategoryPayload,
+    EditCategoryPayload,
+    idParamSchema,
 } from "./category.schema.js";
 import { ca } from "zod/locales";
+
+type IdParamDto = z.infer<typeof idParamSchema>;
 
 /**
  * Description: ดึงรายการหมวดหมู่อุปกรณ์ (Categories) พร้อมรองรับค้นหา, เรียงลำดับ และแบ่งหน้า
@@ -117,5 +122,93 @@ export async function softDeleteCategory(id: number) {
     };
     
 }
+/**
+ * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่
+ * Input     : payload { ca_name: string } - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
+ * Output    : { ca_id, ca_name, created_at, updated_at, deleted_at } - ข้อมูลหมวดหมู่ที่เพิ่มเข้ามา
+ * Logic     :
+ *   - ตรวจสอบว่าชื่อหมวดหมู่ไม่ซ้ำกับที่มีอยู่ในระบบ
+ *   - บันทึกหมวดหมู่ใหม่ลงฐานข้อมูล
+ * Author    : Category Team
+ */
+export async function addCategory(payload: AddCategoryPayload) {
+  const { ca_name } = payload;
 
-export const categoryService = {getCategories , getCategoryById , softDeleteCategory }
+  // ตรวจสอบว่าหมวดหมู่ชื่อเดียวกันมีอยู่แล้วหรือไม่
+  const existingCategory = await prisma.categories.findFirst({
+    where: {
+      ca_name: { equals: ca_name, mode: "insensitive" },
+      deleted_at: null,
+    },
+  });
+
+  if (existingCategory) {
+    throw new Error("Category name already exists");
+  }
+
+  // เพิ่มหมวดหมู่ใหม่
+  const createdCategory = await prisma.categories.create({
+    data: {
+      ca_name,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+
+  return createdCategory;
+}
+
+/**
+ * Description: แก้ไขชื่อหมวดหมู่อุปกรณ์ (Category)
+ * Input     : params { id: number } - รหัสหมวดหมู่, payload { ca_name: string } - ชื่อหมวดหมู่ใหม่
+ * Output    : { ca_id, ca_name, created_at, updated_at, deleted_at } - ข้อมูลหมวดหมู่ที่อัปเดตแล้ว
+ * Logic     :
+ *   - ตรวจสอบว่าหมวดหมู่มีอยู่จริง
+ *   - ตรวจสอบว่าชื่อหมวดหมู่ใหม่ไม่ซ้ำกับหมวดหมู่อื่น
+ *   - อัปเดตชื่อหมวดหมู่
+ * Author    : Category Team
+ */
+export async function editCategory(params: IdParamDto, payload: EditCategoryPayload) {
+  const { id } = params;
+  const { ca_name } = payload;
+
+  // ตรวจสอบว่าหมวดหมู่มีอยู่จริง
+  const existingCategory = await prisma.categories.findFirst({
+    where: { ca_id: id, deleted_at: null },
+  });
+
+  if (!existingCategory) {
+    throw new Error("Category not found");
+  }
+
+  // ตรวจสอบว่าชื่อหมวดหมู่ใหม่ไม่ซ้ำกับหมวดหมู่อื่น
+  const duplicateCategory = await prisma.categories.findFirst({
+    where: {
+      ca_name: { equals: ca_name, mode: "insensitive" },
+      ca_id: { not: id },
+      deleted_at: null,
+    },
+  });
+
+  if (duplicateCategory) {
+    throw new Error("Category name already exists");
+  }
+
+  // อัปเดตหมวดหมู่
+  const updatedCategory = await prisma.categories.update({
+    where: { ca_id: id },
+    data: {
+      ca_name,
+      updated_at: new Date(),
+    },
+  });
+return updatedCategory;
+}
+
+export const categoryService = {
+getCategories,
+getCategoryById,
+softDeleteCategory,
+addCategory,
+editCategory,
+}

@@ -10,6 +10,7 @@ import {
   CategorySchema,
   GetCategoriesResponseSchema,
   SoftDeleteResponseSchema,
+  editCategoryPayload,
 } from "./category.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 import type { z } from "zod";
@@ -76,5 +77,21 @@ export class CategoryController extends BaseController {
     const { id } = idParamSchema.parse(req.params);
     const result = await categoryService.softDeleteCategory(id);
     return { data: result, message: "Category soft-deleted successfully" };
+  }
+
+ /**
+ * Description: แก้ไขหมวดหมู่อุปกรณ์
+ * Input     : req.body (caId, caName) - รหัสหมวดหมู่อุปกรณ์, ชื่อหมวดหมู่อุปกรณ์ใหม่
+ * Output    : Promise<BaseResponse> = { message: string }
+ * Author    : Thakdanai Makmi (Ryu) 66160355
+ */
+  async editCategory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<void>> {
+    const payload = editCategoryPayload.parse(req.body);
+    const { message } = await categoryService.editCategory(payload);
+    return { message };
   }
 }

@@ -13,7 +13,7 @@ import {
 const controller = new CategoryController();
 
 // สร้าง router สำหรับ /api/v1/category (main path)
-const router = new Router(undefined, "/");
+const router = new Router(undefined, "/category");
 
 // GET /category
 router.getDoc(
@@ -54,7 +54,7 @@ router.deleteDoc(
 // POST /category - เพิ่มหมวดหมู่ใหม่
 
 router.postDoc(
-  "/",  
+  "/",
   {
     tag: "Categories",
     auth: true,

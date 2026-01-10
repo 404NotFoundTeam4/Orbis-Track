@@ -54,7 +54,7 @@ router.deleteDoc(
 // POST /category - เพิ่มหมวดหมู่ใหม่
 
 router.postDoc(
-  "/",
+  "/add-category",
   {
     tag: "Categories",
     auth: true,

@@ -1,5 +1,6 @@
 import { Socket } from "socket.io";
 import { verifyToken } from "../../utils/jwt.js";
+import { logger } from "../logger.js";
 
 declare module "socket.io" {
   interface Socket {
@@ -42,7 +43,7 @@ export const socketAuthMiddleware = (
 
     next();
   } catch (error) {
-    console.error("Socket Auth Error:", error);
+    logger.error({ err: error }, "Socket Auth Error");
     next(new Error("Authentication error: Internal Error"));
   }
 };

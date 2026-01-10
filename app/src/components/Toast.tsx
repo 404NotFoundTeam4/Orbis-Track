@@ -10,30 +10,37 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  PropsWithChildren,
 } from "react";
+import type { PropsWithChildren } from "react";
 import { Icon } from "@iconify/react";
 
-type ToastTone = "danger" | "confirm" | "success" | "warning" | "info";
+type ToastTone =
+  | "danger"
+  | "confirm"
+  | "success"
+  | "warning"
+  | "info"
+  | "notification";
 
 export type ToastOptions = {
   id?: string;
   tone?: ToastTone;
-  message: React.ReactNode; // "ลบอุปกรณ์เสร็จสิ้น!"
+  message: React.ReactNode; // "ลบอุปกรณ์เสร็จสิ้น!" - ข้อความหลัก 16px
+  description?: React.ReactNode; // รายละเอียดเพิ่มเติม 12px
   duration?: number; // ms (ปิดเอง) — default 3000
   width?: number; // default 372
   minHeight?: number; // default 70
   onClose?: () => void;
+  onClick?: () => void;
 };
 
 type ToastInternal = Required<Pick<ToastOptions, "id">> &
   ToastOptions & { leaving?: boolean };
 
 const SCHEME: Record<
-  "danger" | "confirm" | "warning" | "info",
+  "danger" | "confirm" | "warning" | "info" | "notification",
   { accent: string; bar: string; icon: string }
 > = {
-  // ตามที่ขอ
   danger: { accent: "#DF203B", bar: "#F696A3", icon: "ep:warning-filled" },
   confirm: {
     accent: "#73D13D",
@@ -44,6 +51,7 @@ const SCHEME: Record<
   // ตัวอื่นๆ เผื่อเรียกใช้งาน
   warning: { accent: "#FFC53D", bar: "#FFE58F", icon: "mdi:alert-outline" },
   info: { accent: "#40A9FF", bar: "#91CAFF", icon: "mdi:information-outline" },
+  notification: { accent: "#2989F4", bar: "#7EC4F8", icon: "mdi:bell-circle" },
 };
 
 const ToastCtx = createContext<{
@@ -56,7 +64,7 @@ const ToastCtx = createContext<{
 
 /**
  * Component: ToastProvider - Context Provider สำหรับจัดการ toast notifications
- * Description: 
+ * Description:
  *   - จัดการ state ของ toasts ทั้งหมด
  *   - รองรับการเพิ่ม/ลบ toast
  *   - แสดง toasts ที่มุมขวาบน (fixed position)
@@ -64,13 +72,13 @@ const ToastCtx = createContext<{
  * Usage: ครอบ App component ด้วย <ToastProvider>
  * Author: Pakkapon Chomchoey (Tonnam) 66160080
  */
-export function ToastProvider({ children }: PropsWithChildren<{}>) {
+export function ToastProvider({ children }: PropsWithChildren<unknown>) {
   const [toasts, setToasts] = useState<ToastInternal[]>([]);
 
   /**
    * Function: dismiss - ปิด toast โดยเล่น animation ก่อนลบออกจาก DOM
    * Input: id (string) - รหัส toast ที่ต้องการปิด
-   * Logic: 
+   * Logic:
    *   1. Set leaving flag = true เพื่อเล่น slide-out animation
    *   2. รอ 250ms (ให้ animation เล่นเสร็จ)
    *   3. ลบ toast ออกจาก state
@@ -101,11 +109,13 @@ export function ToastProvider({ children }: PropsWithChildren<{}>) {
       const item: ToastInternal = {
         id,
         tone: opt.tone ?? "confirm",
+        description: opt.description,
         message: opt.message,
         duration: opt.duration ?? 3000,
         width: opt.width ?? 372,
         minHeight: opt.minHeight ?? 70,
         onClose: opt.onClose,
+        onClick: opt.onClick,
       };
       setToasts((t) => [item, ...t]); // อันใหม่อยู่บน
       if (item.duration! > 0) {
@@ -126,7 +136,7 @@ export function ToastProvider({ children }: PropsWithChildren<{}>) {
       {children}
 
       {/* Stack ขวาบน; ให้กว้างอิสระและชิดขวา */}
-      <div className="pointer-events-none fixed right-5 top-5 z-[120] flex flex-col items-end gap-3 max-w-[min(100vw-40px,820px)]">
+      <div className="pointer-events-none fixed right-5 top-[115px] z-[120] flex flex-col items-end gap-3 max-w-[min(100vw-40px,820px)]">
         {toasts.map((t) => (
           <ToastCard
             key={t.id}
@@ -151,6 +161,7 @@ export function ToastProvider({ children }: PropsWithChildren<{}>) {
  * Note: ต้องใช้ภายใน <ToastProvider> เท่านั้น
  * Author: Pakkapon Chomchoey (Tonnam) 66160080
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   const ctx = useContext(ToastCtx);
   if (!ctx) throw new Error("useToast must be used inside <ToastProvider/>");
@@ -174,11 +185,13 @@ export function useToast() {
  */
 function ToastCard({
   tone = "confirm",
+  description,
   message,
   width = 372,
   minHeight = 70,
   leaving,
   onClose,
+  onClick,
 }: ToastInternal) {
   // รองรับคนที่ยังส่ง "success" = ใช้ schema ของ "confirm"
   const key = tone === "success" ? "confirm" : tone;
@@ -196,7 +209,11 @@ function ToastCard({
 
   return (
     <div
-      className={`pointer-events-auto select-none bg-white shadow-sm rounded-[16px] ${transition}`}
+      className={`pointer-events-auto select-none bg-white shadow-sm rounded-[16px] ${transition} cursor-pointer active:scale-95`}
+      onClick={() => {
+        onClick?.();
+        onClose?.();
+      }}
       style={{
         width,
         minHeight,
@@ -236,18 +253,34 @@ function ToastCard({
           />
         </div>
 
-        {/* ข้อความ 16 Medium */}
+        {/* ข้อความ message 16px, description 12px */}
         <div
-          className="flex-1 font-medium"
-          style={{ fontSize: 16, color: "#686868" }}
+          className="flex-1 flex flex-col justify-center"
+          style={{ color: "#686868" }}
         >
-          {message}
+          <div
+            className="font-medium"
+            style={{ fontSize: 16, color: "#686868" }}
+          >
+            {message}
+          </div>
+          {description && (
+            <div
+              className="font-medium"
+              style={{ fontSize: 12, color: "#AAAAAA" }}
+            >
+              {description}
+            </div>
+          )}
         </div>
 
         {/* ปุ่มปิด 23×23 */}
         <button
           aria-label="Close toast"
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose?.();
+          }}
           className="grid place-items-center rounded-full hover:bg-gray-50 transition-colors"
           style={{ width: 30, height: 30 }}
         >

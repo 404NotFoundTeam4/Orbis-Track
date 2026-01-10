@@ -1,3 +1,11 @@
+/**
+ * Description: Utility function สำหรับสร้าง URL รูปภาพ
+ * - รองรับ filename, blob, http URL
+ * - คืน default-profile.png ถ้าไม่มี filename
+ * Input : filename: string | null | undefined
+ * Output : string (Full image URL)
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 const BASE_URL = import.meta.env.VITE_MY_IMAGE_PATH;
 
 const getImageUrl = (filename: string | null | undefined) => {

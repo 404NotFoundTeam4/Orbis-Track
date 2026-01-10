@@ -1,8 +1,14 @@
 import React from "react";
 import { Icon } from "@iconify/react";
 
+/**
+ * Description: ประเภทของการแจ้งเตือนที่รองรับในระบบ
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export type NotificationType =
   | "approved"
+  | "returned"
+  | "in_use"
   | "warning"
   | "overdue"
   | "repair_success"
@@ -10,9 +16,17 @@ export type NotificationType =
   | "repair_new"
   | "request_new"
   | "request_pending"
-  | "rejected";
+  | "rejected"
+  | "request_fulfill"
+  | "request_resolve"
+  | "general";
 
+/**
+ * Description: Props สำหรับ NotificationItem component
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export interface NotificationItemProps {
+  id?: number;
   type: NotificationType;
   title: string;
   description: React.ReactNode;
@@ -21,71 +35,103 @@ export interface NotificationItemProps {
   onClick?: () => void;
 }
 
+/**
+ * Description: คืนค่า icon และสีตามประเภทการแจ้งเตือน
+ * Input      : type (NotificationType)
+ * Output     : { icon: string, color: string, iconColor: string }
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 const getIconAndColor = (type: NotificationType) => {
   switch (type) {
     case "approved":
       return {
-        icon: "mdi:check-bold",
-        color: "bg-[#00C853]",
+        icon: "material-symbols:check-rounded",
+        color: "bg-[#00AA1A]",
         iconColor: "text-white",
       };
+    case "returned":
+      return {
+        icon: "streamline:return-2",
+        color: "bg-[#00AA1A]",
+        iconColor: "text-white",
+      }; // Green for returned
+    case "in_use":
+      return {
+        icon: "solar:box-outline",
+        color: "bg-[#40A9FF]",
+        iconColor: "text-white",
+      }; // Blue for in_use
     case "warning":
       return {
-        icon: "mdi:clock-time-three-outline",
-        color: "bg-[#FF9100]",
+        icon: "mdi-clock-alert-outline",
+        color: "bg-[#FF7A45]",
         iconColor: "text-white",
       }; // Orange for nearing due
     case "overdue":
       return {
-        icon: "mdi:alert-circle-outline",
-        color: "bg-[#FF5252]",
+        icon: "famicons:alert-circle-outline",
+        color: "bg-[#FF4D4F]",
         iconColor: "text-white",
       }; // Red for overdue
     case "repair_success":
       return {
-        icon: "mdi:clipboard-check-outline",
-        color: "bg-[#2962FF]",
+        icon: "system-uicons:clipboard-check",
+        color: "bg-[#2563EB]",
         iconColor: "text-white",
       }; // Blue for repair success
-    case "repair_failed":
-      return {
-        icon: "mdi:clipboard-alert-outline",
-        color: "bg-[#2962FF]",
-        iconColor: "text-white",
-      }; // Blue for repair failed
+    // case "repair_failed":
+    //   return {
+    //     icon: "mdi:clipboard-alert-outline",
+    //     color: "bg-[#2962FF]",
+    //     iconColor: "text-white",
+    //   }; // Blue for repair failed
     case "repair_new":
       return {
-        icon: "mdi:wrench",
-        color: "bg-[#40C4FF]",
+        icon: "ph:wrench",
+        color: "bg-[#40A9FF]",
         iconColor: "text-white",
       }; // Light blue for new repair
     case "request_new":
       return {
-        icon: "mdi:information-variant",
-        color: "bg-[#40C4FF]",
+        icon: "famicons:alert-circle-outline",
+        color: "bg-[#40A9FF]",
         iconColor: "text-white",
       }; // Light blue for new request
     case "request_pending":
       return {
-        icon: "mdi:clock-time-three-outline",
-        color: "bg-[#FF9100]",
+        icon: "mdi-clock-alert-outline",
+        color: "bg-[#FF7A45]",
         iconColor: "text-white",
       }; // Orange for pending
     case "rejected":
       return {
-        icon: "mdi:close-thick",
-        color: "bg-[#FF5252]",
+        icon: "maki:cross",
+        color: "bg-[#FF4D4F]",
         iconColor: "text-white",
       }; // Red for rejected
+    case "request_resolve":
+    case "request_fulfill":
+      return {
+        icon: "material-symbols:check-rounded",
+        color: "bg-[#737373]",
+        iconColor: "text-white",
+      };
+    case "general":
     default:
       return {
         icon: "mdi:bell",
-        color: "bg-gray-400",
+        color: "bg-[#6366f1]", // Indigo-500 to match toast
         iconColor: "text-white",
       };
   }
 };
 
+/**
+ * Description: แสดงรายการแจ้งเตือนแต่ละรายการ พร้อม icon, title, description, timestamp
+ * Input      : NotificationItemProps { type, title, description, timestamp, isRead, onClick }
+ * Output     : JSX.Element
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   type,
   title,
@@ -99,20 +145,19 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-        !isRead ? "bg-blue-50/30" : "bg-white"
-      }`}
+      className={`flex items-start p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!isRead ? "bg-white" : "bg-[#F8FAFC]"
+        }`}
     >
       {/* Icon Circle */}
       <div
         className={`flex-shrink-0 w-12 h-12 rounded-full ${color} flex items-center justify-center mr-4`}
       >
-        <Icon icon={icon} className={`w-7 h-7 ${iconColor}`} />
+        <Icon icon={icon} className={`w-8 h-8 ${iconColor}`} />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-baseline mb-1">
+        <div className="flex justify-between items-baseline">
           <h4 className="text-lg font-bold text-gray-900 truncate pr-2">
             {title}
           </h4>
@@ -120,7 +165,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             {timestamp}
           </span>
         </div>
-        <div className="text-base text-gray-600 break-words line-clamp-2">
+        <div
+          className={`text-base break-words ${type === "overdue" ? "text-[#FF4D4F]" : "text-[#565656]"}`}
+        >
           {description}
         </div>
       </div>
@@ -128,15 +175,37 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   );
 };
 
+/**
+ * Description: Props สำหรับ NotificationList component
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export interface NotificationListProps {
   notifications: NotificationItemProps[];
   onClose: () => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 }
 
+/**
+ * Description: แสดงรายการแจ้งเตือนทั้งหมดในกล่อง popup พร้อม infinite scroll
+ * Input      : NotificationListProps { notifications, onClose, onLoadMore, hasMore }
+ * Output     : JSX.Element
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const NotificationList: React.FC<NotificationListProps> = ({
   notifications,
   onClose,
+  onLoadMore,
+  hasMore,
 }) => {
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      // Load when close to bottom
+      if (onLoadMore) onLoadMore();
+    }
+  };
+
   return (
     <div className="w-[480px] bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col max-h-[80vh]">
       {/* Header */}
@@ -151,11 +220,24 @@ export const NotificationList: React.FC<NotificationListProps> = ({
       </div>
 
       {/* List */}
-      <div className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+      <div
+        onScroll={handleScroll}
+        className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+      >
         {notifications.length > 0 ? (
-          notifications.map((notif, index) => (
-            <NotificationItem key={index} {...notif} />
-          ))
+          <>
+            {notifications.map((notif, index) => (
+              <NotificationItem key={notif.id || index} {...notif} />
+            ))}
+            {hasMore && (
+              <div className="p-4 text-center text-gray-500 text-sm">
+                LOADING...
+              </div>
+            )}
+            {!hasMore && notifications.length > 0 && (
+              <div className="p-4 text-center text-gray-400 text-xs"></div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400">
             <Icon
@@ -166,24 +248,25 @@ export const NotificationList: React.FC<NotificationListProps> = ({
           </div>
         )}
       </div>
-
-      {/* Footer (Optional) */}
-      {notifications.length > 0 && (
-        <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
-          <button className="text-blue-500 text-sm font-medium hover:underline">
-            ดูทั้งหมด
-          </button>
-        </div>
-      )}
     </div>
   );
 };
 
+/**
+ * Description: Props สำหรับ NotificationBell component
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export interface NotificationBellProps {
   count?: number;
   onClick?: () => void;
 }
 
+/**
+ * Description: ปุ่มกระดิ่งแจ้งเตือน พร้อมแสดง badge จำนวนที่ยังไม่อ่าน
+ * Input      : NotificationBellProps { count, onClick }
+ * Output     : JSX.Element
+ * Author     : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 export const NotificationBell: React.FC<NotificationBellProps> = ({
   count = 0,
   onClick,

@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { UserRole } from "../../core/roles.enum.js";
 
+// File upload schema สำหรับ Swagger จะแสดง file picker
+const fileUploadSchema = z.string().openapi({
+  type: "string",
+  format: "binary",
+  description: "ไฟล์รูปภาพ (jpg, jpeg, png, gif, webp, svg, bmp, ico)",
+});
+
 export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
@@ -15,22 +22,22 @@ export const genCodeEmpPayload = z.object({
 
 // สำหรับตรวจสอบข้อมูลที่ใช้ในการสร้างบัญชีผู้ใช้ใหม่
 export const createAccountsPayload = z.object({
-  us_emp_code: z.string().min(1).max(50).nullable().optional(),
-  us_firstname: z.string().min(1).max(120),
-  us_lastname: z.string().min(1).max(120),
-  us_username: z.string().min(1).max(120),
-  us_password: z.string().min(1).max(255),
-  us_email: z.string().min(1).max(120),
-  us_phone: z.string().min(1).max(20),
-  us_images: z.string().nullable().optional(),
-  us_role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
-  us_dept_id: z.coerce.number().int().positive().nullable().optional(),
-  us_sec_id: z.coerce.number().int().positive().nullable().optional(),
+  us_emp_code: z.string().min(1).max(50).nullable().optional().openapi({ description: "รหัสพนักงาน" }),
+  us_firstname: z.string().min(1).max(120).openapi({ description: "ชื่อ" }),
+  us_lastname: z.string().min(1).max(120).openapi({ description: "นามสกุล" }),
+  us_username: z.string().min(1).max(120).openapi({ description: "ชื่อผู้ใช้" }),
+  us_password: z.string().min(1).max(255).openapi({ description: "รหัสผ่าน" }),
+  us_email: z.string().min(1).max(120).openapi({ description: "อีเมล" }),
+  us_phone: z.string().min(1).max(20).openapi({ description: "เบอร์โทรศัพท์" }),
+  us_images: fileUploadSchema.nullable().optional(),  // ใช้ file upload schema
+  us_role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional().openapi({ description: "บทบาท" }),
+  us_dept_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัสแผนก" }),
+  us_sec_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัสหน่วยงาน" }),
   us_is_active: z.preprocess((val) => {
-          if (typeof val === 'string') return val === 'true';
-          return Boolean(val);
-      }, z.boolean()).default(true),
-});
+    if (typeof val === 'string') return val === 'true';
+    return Boolean(val);
+  }, z.boolean()).default(true).openapi({ description: "สถานะใช้งาน" }),
+}).openapi("CreateAccountsPayload");
 
 // สำหรับตรวจสอบข้อมูลผู้ใช้หลังจากสร้างบัญชีสำเร็จ
 export const createAccountsSchema = z.object({

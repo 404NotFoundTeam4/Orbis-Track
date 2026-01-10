@@ -1,6 +1,15 @@
+/**
+ * Description: Socket.IO Server สำหรับ Real-time Communication
+ * - จัดการ Authentication ผ่าน JWT Middleware
+ * - Auto-join Room ตาม User และ Role
+ * Input : HttpServer
+ * Output : SocketIOServer instance
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { socketAuthMiddleware } from "./socket.middleware.js";
+import { logger } from "../logger.js";
 
 let io: SocketIOServer | null = null;
 
@@ -12,24 +21,41 @@ let io: SocketIOServer | null = null;
  */
 export const initSocket = (httpServer: HttpServer) => {
   io = new SocketIOServer(httpServer, {
-    cors: { origin: "*" },
+    cors: {
+      origin: [
+        "http://localhost:4040",
+        "http://localhost:4140",
+        "http://seteam.bsospace.com:4140",
+        "https://404notfound-front.bsospace.com",
+        "https://orbistrack.bsospace.com",
+      ],
+      credentials: true,
+    },
     path: "/socket.io",
+    transports: ["websocket", "polling"], // fallback support
   });
 
   io.use(socketAuthMiddleware);
 
   io.on("connection", (socket: Socket) => {
     const user = socket.user;
-    console.log(`User connected: ${user?.sub}`);
+    logger.info({ userId: user?.sub }, "User connected");
 
     // Join Room อัตโนมัติ
     socket.join(`user_${user?.sub}`);
     if (user?.role) {
+      if (user.role === "HOD") socket.join(`role_${user?.role}_${user?.dept}`);
       socket.join(`role_${user?.role}_${user?.dept}_${user?.sec}`);
+      logger.debug({ userId: user.sub, role: user.role, dept: user.dept, sec: user.sec }, "User joined rooms");
     }
 
+    // For Testing: Echo notification back to sender
+    socket.on("TEST_NOTIFICATION", (payload) => {
+      socket.emit("NEW_NOTIFICATION", payload);
+    });
+
     socket.on("disconnect", () => {
-      console.log("User disconnected");
+      logger.info("User disconnected");
     });
   });
 

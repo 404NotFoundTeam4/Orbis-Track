@@ -3,8 +3,9 @@ import { Icon } from "@iconify/react";
 import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";
 import { useToast } from "../components/Toast";
-import { categoryService, type Category, type EditCategoryPayload } from "../services/CategoryService";
+import { categoryService, type Category } from "../services/CategoryService";
 import { AlertDialog } from "../components/AlertDialog";
+import { CategoryModal } from "../components/CategoryModal";
 
 
 
@@ -146,30 +147,8 @@ export const Categories = () => {
 
     // ควบคุมการเปิดปิด Modal ตอนแก้ไขหมวดหมู่
     const [isEditCategory, setIsEditCategory] = useState<boolean>(false);
-    // เก็บ id หมวดหมู่ที่จะแก้ไข
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-
-    // แปลงข้อมูลเป็นรูปแบบ camelCase
-    const categories = rows.map((ca) => ({
-        caId: ca.ca_id,
-        caName: ca.ca_name,
-    }));
-
-   /**
-   * Description: ฟังก์ชันสำหรับแก้ไขหมวดหมู่
-   * Input : payload - ข้อมูลการแก้ไขหมวดหมู่ (รหัสหมวดหมู่, ชื่อหมวดหมู่ใหม่)
-   * Output : Promise<void>
-   * Author : Thakdanai Makmi (Ryu) 66160355
-   **/
-    const handleEdit = async (payload: EditCategoryPayload) => {
-        try {
-            await categoryService.editCategory(payload);
-            toast.push({ tone: "success", message: "แก้ไขหมวดหมู่อุปกรณ์เสร็จสิ้น" });
-            setRefreshTrigger((p) => p + 1);
-        } catch (error) {
-            toast.push({ tone: "danger", message: "เกิดข้อผิดพลาดในการแก้ไขหมวดหมู่อุปกรณ์" });
-        }
-    }
+    // หมวดหมู่ที่แก้ไข
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
     return (
         <div className="w-full h-screen overflow-hidden flex flex-col p-[16px]">
@@ -258,7 +237,7 @@ export const Categories = () => {
                                             type="button"
                                             onClick={() => {
                                                 setIsEditCategory(true),
-                                                setSelectedCategory(c.ca_id)
+                                                setEditingCategory(c)
                                             }}
                                             className="group w-[40px] h-[40px] flex items-center justify-center rounded-[12px]
                                             text-[#1890FF] transition-colors duration-150
@@ -287,6 +266,18 @@ export const Categories = () => {
                             ))
                         )}
                     </div>
+                    {/* ถ้ากำลังแก้ไขให้แสดง category modal */}
+                    {
+                        isEditCategory && (
+                            <CategoryModal
+                                open={isEditCategory}
+                                mode="edit-category"
+                                initialCategory={editingCategory}
+                                onOpenChange={() => setIsEditCategory(false)}
+                                onSuccess={() => setRefreshTrigger((p) => p + 1)}
+                            />
+                        )
+                    }
 
                     {/* Pagination  */}
                     <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">

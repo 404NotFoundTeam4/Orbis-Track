@@ -99,7 +99,7 @@ const BorrowEquipmentModal = ({
     // ส่งเข้า backend เป็น ISO (UTC)
     return d.toISOString();
   }
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
   /**
    * Description: ฟังก์ชันในการตรวจสอบข้อมูลและกำหนดข้อความ error
@@ -226,19 +226,17 @@ const navigate = useNavigate();
     }
 
     // ส่งข้อมูลไปยัง parent component
-    
+
     const submitData = {
-  ...form,
-  borrowTime: applyTimeToDate(form.dateRange[0]!, form.borrowTime),
-  returnTime: applyTimeToDate(
-    form.dateRange[1] ?? form.dateRange[0]!,
-    form.returnTime
-  ),
-};
+      ...form,
+      borrowTime: applyTimeToDate(form.dateRange[0]!, form.borrowTime),
+      returnTime: applyTimeToDate(
+        form.dateRange[1] ?? form.dateRange[0]!,
+        form.returnTime
+      ),
+    };
 
-
-onSubmit({ data: submitData });
-
+    onSubmit({ data: submitData });
 
     // ปิด alert
     setIsConfirmOpen(false);
@@ -274,6 +272,22 @@ onSubmit({ data: submitData });
       onDateTimeChange();
     }
   }, [form.dateRange, form.borrowTime, form.returnTime]);
+
+  //สร้าง Set ของ selectedDeviceIds ใช้สำหรับตรวจสอบว่า dec_id ของอุปกรณ์อยู่ในรายการอุปกรณ์ที่ผู้ใช้เลือกหรือไม่
+  const selectedDeviceIdSet = new Set(selectedDeviceIds);
+
+  /**
+   * Description: คัดกรองรายการอุปกรณ์ที่สามารถใช้งานได้ (READY)
+   *              และเป็นอุปกรณ์ที่ผู้ใช้เลือกไว้ในตะกร้า
+   * Input : availableDevices, selectedDeviceIdSet
+   * Output : selectedAvailableDevices (รายการอุปกรณ์ที่ผ่านเงื่อนไข)
+   * Author : Salsabeela Sa-e (San) 66160349
+   **/
+  const selectedAvailableDevices = availableDevices.filter(
+    (device) =>
+      device.dec_status === "READY" && selectedDeviceIdSet.has(device.dec_id)
+  );
+  console.log("Selected Available Devices:", selectedAvailableDevices);
 
   return (
     <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px]">
@@ -367,10 +381,7 @@ onSubmit({ data: submitData });
                 width={489}
                 label=""
                 value={form.dateRange}
-                onChange={(range) =>
-                 setForm({ ...form, dateRange: range })
-                  
-                }
+                onChange={(range) => setForm({ ...form, dateRange: range })}
               />
               {errors.dateRange && (
                 <p className="text-sm mt-1 text-[#F5222D]">
@@ -525,8 +536,7 @@ onSubmit({ data: submitData });
               type="button"
               className="!bg-[#E5E7EB] text-black !w-[112px] !h-[46px] hover:!bg-[#D1D5DB] font-semibold"
               onClick={() => {
-               navigate("/list-devices/cart");
-
+                navigate("/list-devices/cart");
               }}
             >
               ยกเลิก
@@ -568,7 +578,7 @@ onSubmit({ data: submitData });
           <p>หมวดหมู่: {equipment.category}</p>
           <p>แผนก: {equipment.department}</p>
           <p>ฝ่ายย่อย: {equipment.section}</p>
-          <p>สถานที่เก็บอุปกรณ์: {equipment.storageLocation}</p>
+          <p>สถานที่เก็บอุปกรณ์: {equipment.storageLocation || "-"}</p>
           {/* อุปกรณ์ย่อย */}
           <div className="flex flex-col gap-[10px] border border-[#D9D9D9] rounded-[16px] w-[520px] min-h-[106px] text-[14px] px-[24px] py-[15px]">
             <div className="flex items-center gap-[10px]">
@@ -581,15 +591,15 @@ onSubmit({ data: submitData });
               <p className="text-black font-semibold">อุปกรณ์ย่อย</p>
             </div>
             {/* รายการอุปกรณ์เสริม */}
-            {equipment.accessories.length > 0 ? (
+            {selectedAvailableDevices.length > 0 ? (
               <div className="flex flex-col gap-[10px] pl-[34px] pr-[10px]">
-                {equipment.accessories.map((acc, index) => (
+                {selectedAvailableDevices.map((acc, index) => (
                   <div
                     key={index}
                     className="flex justify-between items-center"
                   >
-                    <p>{acc.name}</p>
-                    <p>{acc.qty} ชิ้น</p>
+                    <p>{acc.dec_serial_number}</p>
+                    <p>{1} ชิ้น</p>
                   </div>
                 ))}
               </div>

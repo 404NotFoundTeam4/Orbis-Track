@@ -349,6 +349,7 @@ export const updateCartDeviceDetailBodySchema = z.object({
     cti_usage_location: z.string().nullable().optional(),
     cti_start_date: z.coerce.date().nullable().optional(),
     cti_end_date: z.coerce.date().nullable().optional(),
+    device_childs: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 /* ---------- PATCH Response ---------- */

@@ -70,13 +70,11 @@ export type CartItem = {
     cti_end_date: string | null;
     cti_ct_id: number | null;
     cti_dec_id: number | null;
-
     device: any | null;
     de_ca_name: string | null;
     de_acc_name: string | null;
     de_dept_name: string | null;
     de_sec_name: string | null;
-
     dec_count: number;
     dec_ready_count: number;
     dec_availability: string; // "พร้อมใช้งาน" / "ไม่พร้อมใช้งาน"
@@ -182,9 +180,10 @@ const datapayload = {
         cti_end_date: payload.returnDate
           ? new Date(payload.returnDate).toISOString()
           : null,
+          device_childs: payload.deviceChilds || [],
+};
+console.log("UpdateCartItem payload:", datapayload);
 
-}
-     
       const res = await api.patch<ApiEnvelope<null>>(`/borrow/cart/device/${ctiId}`, datapayload);
 
       return res.data.message ?? "Update successfully";

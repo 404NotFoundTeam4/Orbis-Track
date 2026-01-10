@@ -20,6 +20,7 @@ import EditCart from "./EditCart";
 import RoleRoute from "../middlewares/RoleRoute";
 import { ROLE_BASE_PATH, type Role } from "../constants/rolePath";
 import RolePathRedirect from "../components/RolePathRedirect";
+import Profile from "./Profile";
 import NotFound from "./NotFound";
 import { Settings } from "./Setting";
 
@@ -42,6 +43,7 @@ function App() {
       <Route path="home" element={<Home />} />
       <Route path="list-devices/cart" element={<Cart />} />
       <Route path="list-devices/cart/edit" element={<EditCart />} />
+      <Route path="profile" element={<Profile />} />
       <Route path="list-devices/cart/edit/:id?" element={<EditCart />} />
       <Route path="setting" element={<Settings />} />
     </>
@@ -152,9 +154,9 @@ function App() {
                   element={<RolePathRedirect />}
                 />
               </Route>
-
+              
+              <Route path="profile" element={<RolePathRedirect />} />
               <Route path="/example-component" element={<RolePathRedirect />} />
-
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
             {/* 404 Not Found - สำหรับ routes ที่ไม่ match ใน protected area */}

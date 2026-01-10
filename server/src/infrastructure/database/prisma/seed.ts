@@ -510,6 +510,78 @@ async function main() {
     where: { dec_asset_code: "ASSET-LAP-DELL-001" },
     update: {},
     create: {
+      dec_serial_number: "SN-SONY-A7III-003",
+      dec_asset_code: "ASSET-CAM-SONY-003",
+      dec_has_serial_number: true,
+      dec_status: "READY",
+      dec_de_id: deviceCamera.de_id,
+    },
+  });
+  const childLaptop2 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-LAP-DELL-002" },
+    update: {},
+    create: {
+      dec_serial_number: "SN-DELL-XPS15-002",
+      dec_asset_code: "ASSET-LAP-DELL-002",
+      dec_has_serial_number: true,
+      dec_status: "READY",
+      dec_de_id: deviceLaptop.de_id,
+    },
+  });
+
+  // Projector (1 unit)
+  const childProjector1 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-PROJ-EPSON-001" },
+    update: {},
+    create: {
+      dec_serial_number: "SN-EPSON-EBX51-001",
+      dec_asset_code: "ASSET-PROJ-EPSON-001",
+      dec_has_serial_number: true,
+      dec_status: "READY",
+      dec_de_id: deviceProjector.de_id,
+    },
+  });
+
+  // เพิ่มกล้องอีก 3 ตัวเพื่อทดสอบ ellipsis
+  const childCam4 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-CAM-SONY-004" },
+    update: {},
+    create: {
+      dec_serial_number: "SN-SONY-A7III-004",
+      dec_asset_code: "ASSET-CAM-SONY-004",
+      dec_has_serial_number: true,
+      dec_status: "READY",
+      dec_de_id: deviceCamera.de_id,
+    },
+  });
+  const childCam5 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-CAM-SONY-005" },
+    update: {},
+    create: {
+      dec_serial_number: "SN-SONY-A7III-005",
+      dec_asset_code: "ASSET-CAM-SONY-005",
+      dec_has_serial_number: true,
+      dec_status: "READY",
+      dec_de_id: deviceCamera.de_id,
+    },
+  });
+  const childCam6 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-CAM-SONY-006" },
+    update: {},
+    create: {
+      dec_serial_number: "SN-SONY-A7III-006",
+      dec_asset_code: "ASSET-CAM-SONY-006",
+      dec_has_serial_number: true,
+      dec_status: "READY",
+      dec_de_id: deviceCamera.de_id,
+    },
+  });
+
+  // Dell Laptop (2 units)
+  const childLaptop1 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-LAP-DELL-001" },
+    update: {},
+    create: {
       dec_serial_number: "SN-DELL-XPS15-001",
       dec_asset_code: "ASSET-LAP-DELL-001",
       dec_has_serial_number: true,

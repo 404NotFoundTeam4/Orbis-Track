@@ -7,9 +7,7 @@ import {
   categorySchema,
   softDeleteCategoryResponseSchema,
   addCategoryPayload,
-  editCategoryPayload,
   addCategoryResponseSchema,
-  editCategoryResponseSchema,
 } from "./category.schema.js";
 
 const controller = new CategoryController();
@@ -54,6 +52,7 @@ router.deleteDoc(
 );
 
 // POST /category - เพิ่มหมวดหมู่ใหม่
+
 router.postDoc(
   "/",
   {
@@ -62,21 +61,7 @@ router.postDoc(
     body: addCategoryPayload,
     res: addCategoryResponseSchema,
   },
-  // cast to any to satisfy the router's handler typing
+
   controller.addCategory
 );
-
-// PUT /category/:id - แก้ไขหมวดหมู่
-router.putDoc(
-  "/:id",
-  {
-    tag: "Categories",
-    auth: true,
-    params: idParamSchema,
-    body: editCategoryPayload,
-    res: editCategoryResponseSchema,
-  },
-  controller.editCategory
-);
-
 export default router.instance;

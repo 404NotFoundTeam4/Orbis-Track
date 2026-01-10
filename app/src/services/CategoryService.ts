@@ -78,10 +78,13 @@ export async function deleteCategory(id: number) {
 }
 
 /**
- * Description: เรียก API เพื่อเพิ่มหมวดหมู่อุปกรณ์ใหม่
- * Input     : ca_name (string) - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
- * Output    : Promise - ผลลัพธ์จากการเรียก API (response ของ axios)
- * Author    : Category Team
+ * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่เข้าสู่ระบบ
+ *              - ส่งข้อมูลชื่อหมวดหมู่ไปยัง Backend ผ่าน API
+ *              - ใช้สำหรับการเพิ่มหมวดหมู่จากหน้า Category Modal
+ *              - Backend จะตรวจสอบความซ้ำของชื่อหมวดหมู่
+ * Input     : payload.ca_name (string) : ชื่อหมวดหมู่อุปกรณ์ที่ต้องการเพิ่ม
+ * Output    : Category : ข้อมูลหมวดหมู่ที่ถูกเพิ่มสำเร็จจาก Backend
+ * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export async function addCategory(payload: { ca_name: string }): Promise<Category> {
   // ส่งเป็น Object ที่มี key ชื่อ ca_name ให้ตรงกับที่ Backend รับ

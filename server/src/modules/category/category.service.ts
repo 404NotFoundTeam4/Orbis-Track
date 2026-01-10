@@ -1,10 +1,8 @@
-
 import { prisma } from "../../infrastructure/database/client.js";
 import type { z } from "zod";
 import {
     GetCategoriesQuerySchema,
     AddCategoryPayload,
-    EditCategoryPayload,
     idParamSchema,
 } from "./category.schema.js";
 import { ca } from "zod/locales";
@@ -129,7 +127,7 @@ export async function softDeleteCategory(id: number) {
  * Logic     :
  *   - ตรวจสอบว่าชื่อหมวดหมู่ไม่ซ้ำกับที่มีอยู่ในระบบ
  *   - บันทึกหมวดหมู่ใหม่ลงฐานข้อมูล
- * Author    : Category Team
+ * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export async function addCategory(payload: AddCategoryPayload) {
   const { ca_name } = payload;
@@ -158,57 +156,9 @@ export async function addCategory(payload: AddCategoryPayload) {
   return createdCategory;
 }
 
-/**
- * Description: แก้ไขชื่อหมวดหมู่อุปกรณ์ (Category)
- * Input     : params { id: number } - รหัสหมวดหมู่, payload { ca_name: string } - ชื่อหมวดหมู่ใหม่
- * Output    : { ca_id, ca_name, created_at, updated_at, deleted_at } - ข้อมูลหมวดหมู่ที่อัปเดตแล้ว
- * Logic     :
- *   - ตรวจสอบว่าหมวดหมู่มีอยู่จริง
- *   - ตรวจสอบว่าชื่อหมวดหมู่ใหม่ไม่ซ้ำกับหมวดหมู่อื่น
- *   - อัปเดตชื่อหมวดหมู่
- * Author    : Category Team
- */
-export async function editCategory(params: IdParamDto, payload: EditCategoryPayload) {
-  const { id } = params;
-  const { ca_name } = payload;
-
-  // ตรวจสอบว่าหมวดหมู่มีอยู่จริง
-  const existingCategory = await prisma.categories.findFirst({
-    where: { ca_id: id, deleted_at: null },
-  });
-
-  if (!existingCategory) {
-    throw new Error("Category not found");
-  }
-
-  // ตรวจสอบว่าชื่อหมวดหมู่ใหม่ไม่ซ้ำกับหมวดหมู่อื่น
-  const duplicateCategory = await prisma.categories.findFirst({
-    where: {
-      ca_name: { equals: ca_name, mode: "insensitive" },
-      ca_id: { not: id },
-      deleted_at: null,
-    },
-  });
-
-  if (duplicateCategory) {
-    throw new Error("Category name already exists");
-  }
-
-  // อัปเดตหมวดหมู่
-  const updatedCategory = await prisma.categories.update({
-    where: { ca_id: id },
-    data: {
-      ca_name,
-      updated_at: new Date(),
-    },
-  });
-return updatedCategory;
-}
-
 export const categoryService = {
 getCategories,
 getCategoryById,
 softDeleteCategory,
 addCategory,
-editCategory,
 }

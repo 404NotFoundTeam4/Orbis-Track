@@ -62,45 +62,30 @@ export const softDeleteCategoryResponseSchema = z.object({
     deleted_at: z.coerce.date(),
 });
 
-export type CategorySchema = z.infer<typeof categorySchema>
-
-export type GetCategoriesQuerySchema = z.infer<typeof getCategoriesQuerySchema>
-
-export type GetCategoriesResponseSchema = z.infer<typeof getCategoriesResponseSchema>
-
-export type SoftDeleteResponseSchema = z.infer<typeof softDeleteCategoryResponseSchema>
-
 /**
- * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการเพิ่มหมวดหมู่ (Category)
- * Input     : { ca_name: string } - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
- * Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้าง { ca_name: string }
+ * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการเพิ่มหมวดหมู่อุปกรณ์ (Category)
+ * Input     :  ca_name (string) : ชื่อหมวดหมู่ที่ต้องการเพิ่ม (ต้องไม่เป็นค่าว่าง)
+ * Output    :  Object { ca_name: string } ที่ผ่านการ validate แล้ว
  * Logic     :
- *   - ตรวจสอบว่าค่าที่ส่งเข้ามาเป็น string
- *   - ใช้สำหรับ validate ข้อมูลก่อนส่งต่อไปยัง service หรือ controller
- * Author    : Category Team
+ *              1. ตรวจสอบว่า ca_name เป็น string
+ *              2. ตรวจสอบว่าค่าต้องมีความยาวอย่างน้อย 1 ตัวอักษร
+ *              3. ใช้สำหรับ validate ข้อมูลก่อนส่งไปยัง Controller / Service
+ * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const addCategoryPayload = z.object({
   ca_name: z.string().min(1, "Category name is required"),
 });
 
 /**
- * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการแก้ไขหมวดหมู่ (Category)
- * Input     : { ca_name: string } - ชื่อหมวดหมู่ที่ต้องการแก้ไข
- * Output    : Object ที่ผ่านการตรวจสอบแล้วตามโครงสร้าง { ca_name: string }
- * Logic     :
- *   - ตรวจสอบว่าค่าที่ส่งเข้ามาเป็น string
- *   - ใช้สำหรับ validate ข้อมูลก่อนส่งต่อไปยัง service หรือ controller
- * Author    : Category Team
- */
-export const editCategoryPayload = z.object({
-  ca_name: z.string().min(1, "Category name is required"),
-});
-
-/**
- * Description: Schema สำหรับตอบกลับข้อมูลหลังเพิ่มหมวดหมู่สำเร็จ
- * Input     : ไม่มี (ใช้ใน Swagger)
- * Output    : Schema ที่กำหนดรูปแบบข้อมูลที่ตอบกลับ
- * Author    : Category Team
+ * Description: Schema สำหรับกำหนดรูปแบบข้อมูลที่ตอบกลับ
+ *              หลังจากเพิ่มหมวดหมู่อุปกรณ์ (Category) สำเร็จ
+ * Input     : ไม่มี (ใช้สำหรับกำหนด Response Schema ใน Swagger)
+ * Output    :  - ca_id (number)        : รหัสหมวดหมู่
+ *              - ca_name (string)      : ชื่อหมวดหมู่
+ *              - created_at (Date|null): วันที่สร้างข้อมูล
+ *              - updated_at (Date|null): วันที่แก้ไขข้อมูลล่าสุด
+ *              - deleted_at (Date|null): วันที่ลบข้อมูล (ถ้ามี)
+ * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const addCategoryResponseSchema = z.object({
   ca_id: z.coerce.number(),
@@ -110,21 +95,9 @@ export const addCategoryResponseSchema = z.object({
   deleted_at: z.date().nullable(),
 });
 
-/**
- * Description: Schema สำหรับตอบกลับข้อมูลหลังแก้ไขหมวดหมู่สำเร็จ
- * Input     : ไม่มี (ใช้ใน Swagger)
- * Output    : Schema ที่กำหนดรูปแบบข้อมูลที่ตอบกลับ
- * Author    : Category Team
- */
-export const editCategoryResponseSchema = z.object({
-  ca_id: z.coerce.number(),
-  ca_name: z.string(),
-  created_at: z.date().nullable(),
-  updated_at: z.date().nullable(),
-  deleted_at: z.date().nullable(),
-});
-
+export type CategorySchema = z.infer<typeof categorySchema>
+export type GetCategoriesQuerySchema = z.infer<typeof getCategoriesQuerySchema>
+export type GetCategoriesResponseSchema = z.infer<typeof getCategoriesResponseSchema>
+export type SoftDeleteResponseSchema = z.infer<typeof softDeleteCategoryResponseSchema>
 export type AddCategoryPayload = z.infer<typeof addCategoryPayload>;
-export type EditCategoryPayload = z.infer<typeof editCategoryPayload>;
 export type AddCategoryResponseSchema = z.infer<typeof addCategoryResponseSchema>;
-export type EditCategoryResponseSchema = z.infer<typeof editCategoryResponseSchema>;

@@ -375,18 +375,26 @@ export const Categories = () => {
             }}
             />
 
-        {/* Category Modal for Add */}
+            {    /**
+        * Description: แสดง Modal สำหรับเพิ่มหมวดหมู่อุปกรณ์ (Category)
+        *              - เปิด Modal เมื่อ modalOpen = true
+        *              - ใช้โหมด add-category เพื่อเพิ่มหมวดหมู่ใหม่
+        *              - เมื่อเพิ่มสำเร็จ จะรีเฟรชข้อมูลตารางหมวดหมู่
+        * Input     :  - modalOpen            : สถานะการเปิด/ปิด Modal
+        *              - onOpenChange         : ฟังก์ชันควบคุมการเปิด/ปิด Modal
+        *              - onSuccess            : Callback หลังเพิ่มหมวดหมู่สำเร็จ
+        * Output    :  รีเฟรชข้อมูลหมวดหมู่ใหม่ผ่าน refreshTrigger
+        * Author    :  Rachata Jitjeankhan (Tang) 66160369
+        */}
         <CategoryModal
             open={modalOpen}
+            mode="add-category"
             onOpenChange={setModalOpen}
-            onSuccess={(newCat) => {
-                // เมื่อเพิ่มสำเร็จ ให้เอาข้อมูลใหม่ใส่หน้าแถวแรกสุดของตาราง
-                setRows((prev) => [newCat, ...prev]);
-                // เพิ่มจำนวนหมวดหมู่ทั้งหมด
-                setActiveTotal((prev) => prev + 1);
+            onSuccess={() => {
+                setRefreshTrigger((p) => p + 1);
             }}
         />
-    </div>
+    </div>  
   )
   
 };

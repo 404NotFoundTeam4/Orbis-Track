@@ -52,6 +52,7 @@ export interface CartItem {
   reason: string | null;
   placeOfUse: string | null;
   image: string;
+  de_max_borrow_days: number;
 }
 
 export interface BorrowFormData {
@@ -77,9 +78,16 @@ const EditCart = () => {
   const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
   // เก็บอุปกรณ์ที่ผู้ใช้เลือก
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
+  // อุปกรณ์เสริม (accessories) ของอุปกรณ์แม่
+  const [accessories, setAccessories] = useState<
+    {
+      name: string;
+      qty: number;
+    }[]
+  >([]);
+  // สถานที่เก็บอุปกรณ์
+  const [storageLocation, setStorageLocation] = useState<string>("");
 
-
-  
   useEffect(() => {
     if (!ctiId) {
       navigate("/list-devices/cart", { replace: true });
@@ -134,6 +142,7 @@ const EditCart = () => {
           reason: item.cti_note,
           placeOfUse: item.cti_usage_location,
           image: item.device?.de_images ?? "/images/default.png",
+          de_max_borrow_days: item.device?.de_max_borrow_days ?? 0,
         };
 
         setCartItem(mapped);
@@ -144,6 +153,26 @@ const EditCart = () => {
           : [];
 
         setSelectedDeviceIds(decIds);
+
+        // ดึงรายละเอียดอุปกรณ์จาก service เพื่อให้ได้ข้อมูล accessories เหมือนหน้า BorrowDevice
+        try {
+          const deviceDetail = await borrowService.getDeviceForBorrow(
+            mapped.deviceId as any
+          );
+          const accessory = deviceDetail.accessories
+            ? deviceDetail.accessories.map((acc: any) => ({
+                name: acc.acc_name,
+                qty: acc.acc_quantity,
+              }))
+            : [];
+
+          setAccessories(accessory);
+          setStorageLocation(deviceDetail.de_location ?? "");
+        } catch (err) {
+          console.error("ไม่สามารถดึงอุปกรณ์เสริมได้:", err);
+          setAccessories([]);
+          setStorageLocation("");
+        }
 
         try {
           const avail = await borrowService.getAvailable(
@@ -239,8 +268,24 @@ const EditCart = () => {
     });
   };
 
-  // Re-fetch available devices when date/time changes in the modal
-  const handleDateTimeChange = async () => {
+  /** Description: ฟังก์ชันสำหรับรีเฟรชข้อมูลอุปกรณ์ที่พร้อมใช้งาน
+   * เมื่อมีการเปลี่ยนแปลงวันที่หรือเวลายืม–คืนในฟอร์ม
+   *
+   * Note:
+   * - ใช้ในหน้า Edit Cart
+   * - เรียก borrowService.getAvailable() เพื่อดึงข้อมูลอุปกรณ์ที่พร้อมใช้งาน
+   * - อัปเดต state availableDevices เพื่อให้ข้อมูลเป็นปัจจุบัน
+   *
+   * Flow การทำงาน:
+   * 1. ตรวจสอบว่ามี cartItem หรือไม่
+   * 2. เรียก borrowService.getAvailable() โดยใช้ deviceId จาก cartItem
+   * 3. อัปเดต state availableDevices ด้วยข้อมูลที่ได้รับ
+   * 4. จัดการข้อผิดพลาดหากเกิดขึ้นระหว่างการเรียก API
+   * 5. ใช้ useEffect ใน BorrowDeviceModal เพื่อเรียกฟังก์ชันนี้เมื่อวันที่หรือเวลายืม–คืนเปลี่ยนแปลง
+   *  
+   * Author: Salsabeela Sa-e (San) 66160349
+   **/
+   const handleDateTimeChange = async () => {
     if (!cartItem) return;
     try {
       const avail = await borrowService.getAvailable(cartItem.deviceId as any);
@@ -282,11 +327,11 @@ const EditCart = () => {
             department: cartItem.department,
             section: cartItem.section,
             imageUrl: cartItem.image,
-            storageLocation: "",
+            storageLocation: storageLocation,
             remain: cartItem.readyQuantity,
             total: cartItem.maxQuantity,
-            maxBorrowDays: 0,
-            accessories: [],
+            maxBorrowDays: cartItem.de_max_borrow_days,
+            accessories: accessories,
           }}
           defaultValue={{
             borrower: cartItem.borrower ?? "",

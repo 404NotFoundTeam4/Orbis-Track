@@ -81,6 +81,7 @@ export type CartItem = {
     dec_count: number;
     dec_ready_count: number;
     dec_availability: string; // "พร้อมใช้งาน" / "ไม่พร้อมใช้งาน"
+    de_max_borrow_days: number;
 };
 
 /**

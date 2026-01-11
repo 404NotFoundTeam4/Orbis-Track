@@ -100,7 +100,7 @@ const EditCart = () => {
   const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
   // เก็บอุปกรณ์ที่ผู้ใช้เลือก
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
-
+  
   useEffect(() => {
     if (!ctiId) {
       navigate("/list-devices/cart", { replace: true });
@@ -156,34 +156,22 @@ const EditCart = () => {
         };
 
         setCartItem(mapped);
+        const decIds = item?.device_childs?.length
+          ? item.device_childs
+              .map((dec) => dec?.dec_id)
+              .filter((id): id is number => typeof id === "number")
+          : [];
 
-        /**
-         * =========================
-         * Map ข้อมูลอุปกรณ์สำหรับ BorrowDeviceModal
-         * =========================
-         */
-        setEquipmentDetail({
-          serialNumber: item.device?.de_serial_number ?? "",
-          name: item.device?.de_name ?? "",
-          category: item.de_ca_name ?? "",
-          department: item.de_dept_name ?? "",
-          section: item.de_sec_name ?? "",
-          imageUrl: item.device?.de_images ?? "",
-          storageLocation: item.device?.de_location ?? "",
-          total: item.dec_count ?? 0,
-          remain: item.dec_ready_count ?? 0,
-          maxBorrowDays: item.device?.de_max_borrow_days ?? 0,
-          accessories:
-            item.device_childs?.map((c) => ({
-              name: c.dec_serial_number ?? "-",
-              qty: 1,
-            })) ?? [],
-        });
+        setSelectedDeviceIds(decIds);
 
-        setSelectedDeviceIds(item.device_childs?.map((c) => c.dec_id) ?? []);
-
-        const avail = await borrowService.getAvailable(mapped.deviceId);
-        setAvailableDevices(avail ?? []);
+        try {
+          const avail = await borrowService.getAvailable(
+            mapped.deviceId as any
+          );
+          setAvailableDevices(avail ?? []);
+        } catch (err) {
+          console.error("ไม่สามารถดึงรายการอุปกรณ์ย่อยได้:", err);
+        }
       } catch (err) {
         console.error("โหลดข้อมูลแก้ไขไม่สำเร็จ:", err);
         navigate("/list-devices/cart", { replace: true });
@@ -237,14 +225,14 @@ const EditCart = () => {
    */
   const handleSubmit = async ({ data }: { data: BorrowFormData }) => {
     try {
-      await CartService.updateCartItem(cartItem!.ctiId, {
+      await CartService.updateCartItem(cartItem.ctiId, {
         quantity: selectedDeviceIds.length,
         borrower: data.borrower,
         phone: data.phone,
         reason: data.reason,
         placeOfUse: data.placeOfUse,
-        borrowDate: data.borrowTime ?? null,
-        returnDate: data.returnTime ?? null,
+        borrowDate: data.borrowTime ? data.borrowTime : null,
+        returnDate: data.returnTime ? data.returnTime : null,
         deviceChilds: selectedDeviceIds,
       });
 
@@ -256,56 +244,89 @@ const EditCart = () => {
   };
 
   /**
-   * Description: ฟังก์ชันสำหรับโหลดข้อมูลอุปกรณ์ที่พร้อมใช้งานใหม่
-   * เมื่อผู้ใช้มีการเปลี่ยนแปลงวันที่หรือเวลาในการยืม–คืน
+   * Description: ฟังก์ชันสำหรับแปลงวันที่หรือเวลาให้อยู่ในรูปแบบเวลา (HH:mm)
+   * ตามรูปแบบเวลาของประเทศไทย (Time Zone: Asia/Bangkok)
    *
    * Note:
-   * - ดึงข้อมูลอุปกรณ์ที่พร้อมใช้งานจากระบบ
-   * - ใช้ deviceId ของอุปกรณ์หลักในตะกร้า
+   * - รองรับ input ได้ทั้ง string และ Date
+   * - ใช้ locale "th-TH" เพื่อให้รูปแบบเวลาเป็นมาตรฐานของไทย
+   * - แสดงผลเวลาแบบ 24 ชั่วโมง (ไม่ใช้ AM/PM)
+   * - เหมาะสำหรับใช้แสดงเวลาในหน้าจอ เช่น เวลาในการยืม–คืนอุปกรณ์
    *
    * Flow การทำงาน:
-   * 1. ตรวจสอบว่ามี cartItem อยู่หรือไม่
-   * 2. เรียก API เพื่อดึงรายการอุปกรณ์ที่พร้อมใช้งาน
-   * 3. บันทึกข้อมูลลง state เพื่ออัปเดตหน้าจอ
+   * 1. รับค่า date ที่เป็น string หรือ Date
+   * 2. แปลงค่า date ให้เป็น Date object
+   * 3. เรียก toLocaleTimeString() พร้อมกำหนด locale และ options
+   * 4. คืนค่าเวลาในรูปแบบ HH:mm
    *
    * Author: Salsabeela Sa-e (San) 66160349
    */
+  const getTimeTH = (date: string | Date): string => {
+    const dateObj = new Date(date);
+
+    return dateObj.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Bangkok",
+    });
+  };
+
+  // Re-fetch available devices when date/time changes in the modal
   const handleDateTimeChange = async () => {
     if (!cartItem) return;
-    const avail = await borrowService.getAvailable(cartItem.deviceId);
-    setAvailableDevices(avail ?? []);
+    try {
+      const avail = await borrowService.getAvailable(cartItem.deviceId as any);
+      setAvailableDevices(avail ?? []);
+    } catch (err) {
+      console.error("refresh available devices error:", err);
+    }
   };
 
   if (loading || !cartItem || !equipmentDetail) {
     return <div className="p-6 text-center">กำลังโหลดข้อมูล...</div>;
   }
 
-  return (
-    <BorrowDeviceModal
-      mode="edit-detail"
-      equipment={equipmentDetail}
-      defaultValue={{
-        borrower: cartItem.borrower ?? "",
-        phone: cartItem.phone ?? "",
-        reason: cartItem.reason ?? "",
-        placeOfUse: cartItem.placeOfUse ?? "",
-        quantity: cartItem.qty,
-        dateRange: [
-          cartItem.borrowDate ? new Date(cartItem.borrowDate) : null,
-          cartItem.returnDate ? new Date(cartItem.returnDate) : null,
-        ],
-        borrowTime: getTimeTH(cartItem.borrowDate ?? new Date()),
-        returnTime: getTimeTH(cartItem.returnDate ?? new Date()),
-      }}
-      availableDevices={availableDevices}
-      availableCount={
-        availableDevices.filter((d) => d.dec_status === "READY").length
-      }
-      selectedDeviceIds={selectedDeviceIds}
-      onSelectDevice={setSelectedDeviceIds}
-      onDateTimeChange={handleDateTimeChange}
-      onSubmit={handleSubmit}
-    />
+        <BorrowDeviceModal
+          mode="edit-detail"
+          equipment={{
+            name: cartItem.name,
+            serialNumber: cartItem.code,
+            category: cartItem.category,
+            department: cartItem.department,
+            section: cartItem.section,
+            imageUrl: cartItem.image,
+            storageLocation: "",
+            remain: cartItem.readyQuantity,
+            total: cartItem.maxQuantity,
+            maxBorrowDays: 0,
+            accessories: [],
+          }}
+          defaultValue={{
+            borrower: cartItem.borrower ?? "",
+            phone: cartItem.phone ?? "",
+            reason: cartItem.reason ?? "",
+            placeOfUse: cartItem.placeOfUse ?? "",
+            quantity: cartItem.qty,
+            dateRange: [
+              cartItem.borrowDate ? new Date(cartItem.borrowDate) : null,
+              cartItem.returnDate ? new Date(cartItem.returnDate) : null,
+            ],
+            borrowTime: getTimeTH(cartItem.borrowDate ?? new Date()),
+            returnTime: getTimeTH(cartItem.returnDate ?? new Date()),
+          }}
+          /** props ที่ BorrowDeviceModal บังคับ แต่ edit ไม่ได้ใช้ */
+          availableDevices={availableDevices}
+          availableCount={
+            availableDevices.filter((d) => d.dec_status === "READY").length
+          }
+          selectedDeviceIds={selectedDeviceIds}
+          onSelectDevice={setSelectedDeviceIds} // เปลี่ยนอุปกรณ์ที่เลือก
+          onDateTimeChange={handleDateTimeChange}
+          onSubmit={handleSubmit}
+        />
+      </div>
+    </div>
   );
 };
 

@@ -569,7 +569,7 @@ onSubmit({ data: submitData });
           <p>แผนก: {equipment.department}</p>
           <p>ฝ่ายย่อย: {equipment.section}</p>
           <p>สถานที่เก็บอุปกรณ์: {equipment.storageLocation}</p>
-          {/* อุปกรณ์ย่อย */}
+          {/* อุปกรณ์เสริม */}
           <div className="flex flex-col gap-[10px] border border-[#D9D9D9] rounded-[16px] w-[520px] min-h-[106px] text-[14px] px-[24px] py-[15px]">
             <div className="flex items-center gap-[10px]">
               <Icon
@@ -578,7 +578,7 @@ onSubmit({ data: submitData });
                 width="24"
                 height="24"
               />
-              <p className="text-black font-semibold">อุปกรณ์ย่อย</p>
+              <p className="text-black font-semibold">อุปกรณ์เสริม</p>
             </div>
             {/* รายการอุปกรณ์เสริม */}
             {equipment.accessories.length > 0 ? (
@@ -594,7 +594,7 @@ onSubmit({ data: submitData });
                 ))}
               </div>
             ) : (
-              <p className="text-center">ไม่มีอุปกรณ์ย่อย</p>
+              <p className="text-center">ไม่มีอุปกรณ์เสริม</p>
             )}
           </div>
         </div>

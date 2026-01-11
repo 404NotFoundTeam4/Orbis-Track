@@ -88,6 +88,16 @@ const EditCart = () => {
   // สถานที่เก็บอุปกรณ์
   const [storageLocation, setStorageLocation] = useState<string>("");
 
+  // ตัดคำว่า 'แผนก' หรือ 'ฝ่ายย่อย' นำหน้าให้เหลือแค่ชื่อจริง
+  const cleanBaseName = (name?: string | null): string => {
+    if (!name) return "";
+
+    return name
+      .replace(/(ฝ่ายย่อย|ฝ่าย|แผนก)/gu, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
   useEffect(() => {
     if (!ctiId) {
       navigate("/list-devices/cart", { replace: true });
@@ -123,14 +133,28 @@ const EditCart = () => {
           throw new Error("ไม่พบรายการในตะกร้า");
         }
 
+        const deptClean = cleanBaseName(item.de_dept_name ?? "");
+        const rawSection = item.de_sec_name ?? "";
+        // ลบคำขึ้นต้นเช่น 'ฝ่าย' ก่อน แล้วค่อยเอาชื่อแผนกออกจากชื่อฝ่ายย่อย
+        const sectionRawClean = cleanBaseName(rawSection);
+        const sectionWithoutDept = deptClean
+          ? sectionRawClean.replace(
+              new RegExp(
+                deptClean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                "gu"
+              ),
+              ""
+            )
+          : sectionRawClean;
+
         const mapped: CartItem = {
           ctiId: item.cti_id,
           deviceId: item.device?.de_id ?? 0,
           name: item.device?.de_name ?? "",
           code: item.device?.de_serial_number ?? "",
           category: item.de_ca_name ?? "",
-          department: item.de_dept_name ?? "",
-          section: item.de_sec_name ?? "",
+          department: deptClean,
+          section: cleanBaseName(sectionWithoutDept),
           qty: item.cti_quantity,
           readyQuantity: item.dec_ready_count ?? 0,
           maxQuantity: item.dec_count ?? 0,
@@ -282,10 +306,10 @@ const EditCart = () => {
    * 3. อัปเดต state availableDevices ด้วยข้อมูลที่ได้รับ
    * 4. จัดการข้อผิดพลาดหากเกิดขึ้นระหว่างการเรียก API
    * 5. ใช้ useEffect ใน BorrowDeviceModal เพื่อเรียกฟังก์ชันนี้เมื่อวันที่หรือเวลายืม–คืนเปลี่ยนแปลง
-   *  
+   *
    * Author: Salsabeela Sa-e (San) 66160349
    **/
-   const handleDateTimeChange = async () => {
+  const handleDateTimeChange = async () => {
     if (!cartItem) return;
     try {
       const avail = await borrowService.getAvailable(cartItem.deviceId as any);

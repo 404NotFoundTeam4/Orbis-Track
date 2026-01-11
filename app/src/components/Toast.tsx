@@ -38,7 +38,7 @@ const SCHEME: Record<
   confirm: {
     accent: "#73D13D",
     bar: "#95DE64",
-    icon: "ic:baseline-check",
+    icon: "material-symbols-light:check-circle-rounded",
   },
 
   // ตัวอื่นๆ เผื่อเรียกใช้งาน

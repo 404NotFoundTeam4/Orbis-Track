@@ -1,5 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
 import DropDown from "./DropDown";
 import Input from "./Input";
 import Button from "./Button";
@@ -11,18 +10,32 @@ import { faBars, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useInventorys } from "../hooks/useInventory";
 import { AlertDialog } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
-import api from "../api/axios.js"; 
-import { useToast } from "./Toast";
-import { set } from "date-fns";
-
-const API_BASE_URL = "http://localhost:4041/api/v1"; 
-
-// --- Types ---
-type DropdownOption = {
-  id: number | string;
+import getImageUrl from "../services/GetImage.js";
+// โครงสร้างข้อมูลของแผนก
+interface Department {
+  id: number;
   label: string;
   value: number;
-  deptId?: string;
+}
+
+// โครงสร้างข้อมูลของหมวดหมู่
+interface Category {
+  id: number;
+  label: string;
+  value: number;
+}
+
+export interface CategoryDropdownItem {
+  id: number;
+  label: string;
+  value: string;
+}
+
+// โครงสร้างข้อมูลของแผนก
+interface Section {
+  id: number;
+  label: string;
+  value: number;
 }
 type ApproverPayload = {
   sec_id: number;
@@ -42,36 +55,24 @@ interface Approver {
   value: number;
   approvers: ApproverItem[];
 }
+export interface DropdownItem {
+  id: number;
+  label: string;
+  value: string;
+}
 
 interface MainDeviceModalProps {
   mode: "create" | "edit";
-  defaultValues?: any; 
+  defaultValues?: any; // สำหรับ edit
   onSubmit: (data: any) => void;
-  onCancel?: () => void;
 }
 
 const MainDeviceModal = ({
   mode,
   defaultValues,
   onSubmit,
-  onCancel,
 }: MainDeviceModalProps) => {
-  const navigate = useNavigate();
-  const toast = useToast();
- const [isAlertOpen, setIsAlertOpen] = useState(false);
-  // --- States ---
-  const [departmentList, setDepartmentList] = useState<DropdownOption[]>([]);
-  const [categoryList, setCategoryList] = useState<DropdownOption[]>([]);
-  const [allSectionList, setAllSectionList] = useState<DropdownOption[]>([]);
-  const [approvalGroups, setApprovalGroups] = useState<Approver[]>([]);
-
-  // Selected Values
-  const [selectedDepartment, setSelectedDepartment] = useState<DropdownOption | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<DropdownOption | null>(null);
-  const [selectedSection, setSelectedSection] = useState<DropdownOption | null>(null);
-  const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(null);
-
-  // Form Fields
+  /*========================== รายละเอียดอุปกรณ์ ========================== */
   const [deviceName, setDeviceName] = useState<string>("");
   const [deviceCode, setDeviceCode] = useState<string>("");
   const [location, setLocation] = useState<string>("");
@@ -81,44 +82,43 @@ const MainDeviceModal = ({
   const [departments, setDepartments] = useState([]);
   const [categorys, setCategory] = useState([]);
   const [sections, setSection] = useState([]);
-  const [titleApprove, setTitleApprove] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [approvalflows, setApprovalFlows] = useState([]);
-  const [approvalFlowSteps, setapprovalFlowSteps] = useState([]);
-  const [staff, setStaff] = useState([]);
-  const [sectionsApprove, setSectionsApprove] = useState([]);
-  const [departmentsApprove, setDepartmentsApprove] = useState([]);
-  const [openStepId, setOpenStepId] = useState<number | null>(null);
-  const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const data = localStorage.getItem("User") || sessionStorage.getItem("User");
-   const userId = JSON.parse(data).us_id;
+  const userId = JSON.parse(data).us_id;
+  /*========================== Serial Number ========================== */
+  // อุปกรณ์มี Serial Number
+  const [checked, setChecked] = useState<boolean>(true);
+  const [serialNumbers, setSerialNumbers] = useState([{ id: 1, value: "" }]);
+  /*========================== accessories ========================== */
+  const [accessories, setAccessories] = useState([
+    { id: 1, name: "", qty: "" },
+  ]);
+  /*========================== รายละเอียดการอนุมัติ ========================== */
+  const [titleApprove, setTitleApprove] = useState("");
+  const [openStepId, setOpenStepId] = useState<number | null>(null);
+
+  /*========================== Create ========================== */
   const fetchDataDevices = async () => {
     try {
       const res = await useInventorys.getDevicesAll();
       setDepartments(res.data.departments);
       setCategory(res.data.categories);
       setSection(res.data.sections);
-      // us_id ที่รับมา เช่น 1
-  
+
       const filteredApprovalFlows = res.data.approval_flows.filter(
         (af: any) => af.af_us_id === userId
       );
       setApprovalFlows(filteredApprovalFlows);
       setapprovalFlowSteps(res.data.approval_flow_step);
-
-      console.log(res.data);
     } catch (error) {
       console.error("โหลดข้อมูลไม่สำเร็จ", error);
     }
   };
-  useEffect(() => {
-    fetchDataDevices();
-  }, []);
-
   const fetchDataApprove = async () => {
     try {
       const ap = await useInventorys.getApproveAll();
-      console.log(ap.data);
+
       setDepartmentsApprove(ap.data.departments);
       setSectionsApprove(ap.data.sections);
       setStaff(ap.data.staff);
@@ -129,44 +129,9 @@ const MainDeviceModal = ({
 
   useEffect(() => {
     fetchDataApprove();
+    fetchDataDevices();
   }, []);
 
-  const [openConfirm, setOpenConfirm] = useState(false);
-  const [openConfirmApprove, setOpenConfirmApprove] = useState(false);
-
-  const departmentItems: DepartmentDropdownItem[] = departments.map((dept) => ({
-    id: dept.dept_id,
-    label: dept.dept_name,
-    value: dept.dept_id,
-  }));
-
-  const categoryItem: CategoryDropdownITem[] = categorys.map((ca) => ({
-    id: ca.ca_id,
-    label: ca.ca_name,
-    value: ca.ca_id,
-  }));
-
-  const sectionItems: SectionsDropdownItem[] = sections.map((sec) => ({
-    id: sec.sec_id,
-    label: sec.sec_name,
-    value: sec.sec_id,
-  }));
-
-  const approveItems: ApproveDropdownItem[] = approvalflows.map((af) => ({
-    id: af.af_id,
-    label: af.af_name,
-    value: af.af_id,
-  }));
-
-  const staffItems: StaffDropdownItem[] = staff.map((st) => ({
-    id: st.st_sec_id,
-    label: st.st_name,
-    value: st.st_sec_id,
-  }));
-
-  // รูปภาพอุปกรณ์
-  const [preview, setPreview] = useState<string | null>(null);
-  // มีการเลือกไฟล์รูปภาพ
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
     if (!file) return;
@@ -176,6 +141,8 @@ const MainDeviceModal = ({
     const url = URL.createObjectURL(file);
     setPreview(url);
   };
+
+  /*========================== Create ส่วนการอนุมัติ ========================== */
 
   // ลากไฟล์รูปภาพ
   const [isDragging, setIsDragging] = useState(false);
@@ -192,101 +159,14 @@ const MainDeviceModal = ({
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-  const [preview, setPreview] = useState<string | null>(null);
 
-  const [checked, setChecked] = useState<boolean>(true);
-  const [serialNumbers, setSerialNumbers] = useState([{ id: 1, value: "" }]);
-  const [accessories, setAccessories] = useState([{ id: 1, name: "", qty: "" }]);
-
-  // --- Logic กรอง Section ตาม Department ---
-  // จะแสดง Section เฉพาะที่มี deptId ตรงกับ Department ที่เลือก
- const filteredSectionList = useMemo(() => {
-    if (!selectedDepartment) return []; 
-
-    return allSectionList
-      .filter(sec => String(sec.deptId) === String(selectedDepartment.value))
-      .map(sec => {
-         // ตัดชื่อแผนกออกจากชื่อฝ่ายย่อย
-         let cleanLabel = sec.label;
-         const deptName = selectedDepartment.label.trim();
-
-         if (cleanLabel.includes(deptName)) {
-             cleanLabel = cleanLabel.replace(deptName, "").trim();
-         }
-
-         return {
-             ...sec,
-             label: cleanLabel // ใช้ชื่อที่ตัดแล้ว
-         };
-      });
-  }, [selectedDepartment, allSectionList]);
-
-  //แผนก หมวดหมู่ ฝ่ายย่อย ลำดับการอนุมัติ
-  useEffect(() => {
-    const fetchMasterData = async () => {
-      try {
-        const [deptRes, catRes, secRes, flowRes] = await Promise.all([
-          api.get(`${API_BASE_URL}/inventory/departments`),
-          api.get(`${API_BASE_URL}/inventory/categories`),
-          api.get(`${API_BASE_URL}/inventory/sub-sections`),
-          api.get(`${API_BASE_URL}/inventory/approval-flows`),
-        ]);
-
-        // Helper: แปลงให้เป็น Array ชัวร์ๆ
-        const ensureArray = (response: any) => {
-            let data = response.data?.data || response.data;
-            if (!Array.isArray(data)) {
-               if (data && Array.isArray(data.data)) return data.data;
-               return []; 
-            }
-            return data;
-        };
-
-        const deptArray = ensureArray(deptRes);
-        setDepartmentList(deptArray.map((d: any) => ({
-            id: d.dept_id,
-            label: d.dept_name,
-            value: String(d.dept_id)
-        })));
-
-        const catArray = ensureArray(catRes);
-        setCategoryList(catArray.map((c: any) => ({
-            id: c.ca_id,
-            label: c.ca_name,
-            value: String(c.ca_id)
-        })));
-
-        const secArray = ensureArray(secRes);
-        setAllSectionList(secArray.map((s: any) => ({
-            id: s.sec_id,
-            label: s.sec_name,
-            value: String(s.sec_id),
-            deptId: String(s.sec_dept_id)
-        })));
-
-        const flowArray = ensureArray(flowRes);
-        setApprovalGroups(flowArray.map((f: any) => ({
-            id: f.af_id,
-            label: f.af_name,
-            value: f.af_id,
-            approvers: (f.steps || []).map((step: any) => ({
-                id: step.afs_id,
-                label: step.afs_role,
-                order: step.afs_step_approve
-            }))
-        })));
-
-      } catch (error) {
-        console.error("❌ Error fetching data:", error);
-      }
-    };
-    fetchMasterData();
-  }, []);
+    const file = e.dataTransfer.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
+    if (!file) return;
 
     const url = URL.createObjectURL(file); // แปลงเป็น url
     setPreview(url);
   };
-
+  /*========================== dropdown หน้าเพิ่ม ========================== */
   // แผนกท่ีเลือกใน dropdown
   const [selectedDepartment, setSelectedDepartment] =
     useState<Department | null>(null);
@@ -300,141 +180,11 @@ const MainDeviceModal = ({
   const [selectedApprovers, setSelectedApprovers] = useState<Approver | null>(
     null
   );
-  const [selectedApproverSteps, setSelectedApproverSteps] = useState([]);
-  // modal สำหรับจัดการลำดับการอนุมัติ
-  const [isApproverModalOpen, setIsApproverModalOpen] = useState(false);
-  const [approverGroupFlow, setApproverGroupFlow] = useState([]);
-  const handleApproverGroup = (item) => {
-    setApproverGroupFlow((prev: any) =>
-      prev.some((v) => v.label === item.label) ? prev : [...prev, item]
-    );
-  };
-  const handleDeleteApproverGroup = (value: string) => {
-    setApproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
-  };
 
-  // เปิด modal
-  const openApproverModal = () => {
-    setIsApproverModalOpen(true);
-  };
-  const closeApproverModal = () => setIsApproverModalOpen(false);
-
-  // ข้อมูลใน modal (editable copy)
-  const [modalApproverList, setModalApproverList] = useState<ApproverItem[]>(
-    []
-  );
-  const [modalGroupLabel, setModalGroupLabel] = useState("");
-
-  // เลือกลำดับการอนุมัติ
-  const handleSelectApprover = (item: Approver) => {
-    setSelectedApprovers(item);
-  };
-
-  // อุปกรณ์มี Serial Number
-  const [checked, setChecked] = useState<boolean>(true);
-  // --- Set Default Values (Edit Mode) ---
-  useEffect(() => {
-    if (mode === "edit" && defaultValues) {
-      console.log("🛠️ Edit Mode Loading...");
-      
-      setDeviceName(defaultValues.de_name ?? "");
-      setDeviceCode(defaultValues.de_serial_number ?? "");
-      setLocation(defaultValues.de_location ?? "");
-      setDescription(defaultValues.de_description ?? "");
-      setMaxBorrowDays(defaultValues.de_max_borrow_days ?? 0);
-      setTotalQuantity(defaultValues.total_quantity ?? 0);
-      setPreview(defaultValues.de_images ?? null);
-
-
-      // Department: ถ้าไม่มี dept_id ให้ไปเอาจาก section.sec_dept_id
-      const deptId = defaultValues.dept_id || defaultValues.section?.sec_dept_id || defaultValues.section?.department?.dept_id;
-      if (deptId) {
-        const foundDept = departmentList.find(d => String(d.value) === String(deptId));
-        // ถ้าเจอใน List ใช้ label จาก List, ถ้าไม่เจอค่อยไปหาจาก defaultValues, ถ้าไม่มีอีกให้เป็น "-"
-        const deptLabel = foundDept?.label || defaultValues.department_name || defaultValues.department || defaultValues.section?.department?.dept_name || "-";
-        
-        setSelectedDepartment({
-            id: deptId,
-            label: deptLabel, 
-            value: String(deptId)
-        });
-      }
-
-      // Category: ถ้าไม่มี ca_id ให้ไปเอาจาก category.ca_id
-      const caId = defaultValues.ca_id || defaultValues.category?.ca_id;
-      if (caId) {
-        const foundCat = categoryList.find(c => String(c.value) === String(caId));
-        const catLabel = foundCat?.label || defaultValues.category_name || defaultValues.category?.ca_name || "-";
-        
-        setSelectedCategory({
-            id: caId,
-            label: catLabel,
-            value: String(caId)
-        });
-      }
-
-      // Section: ถ้าไม่มี sec_id ให้ไปเอาจาก section.sec_id
-      const secId = defaultValues.sec_id || defaultValues.section?.sec_id;
-      if (secId) {
-        const currentDeptLabel = selectedDepartment?.label || defaultValues.department_name || defaultValues.section?.department?.dept_name || "";
-        
-        let secLabel = defaultValues.sub_section_name || defaultValues.sub_section || defaultValues.section?.sec_name || "-";
-        if (currentDeptLabel && secLabel.includes(currentDeptLabel)) {
-            secLabel = secLabel.replace(currentDeptLabel, "").trim();
-        }
-        setSelectedSection({
-            id: secId,
-            label: secLabel,
-            value: String(secId),
-            deptId: String(deptId)
-        });
-      }
-
-      // Approval Flow
-      const afId = defaultValues.af_id || defaultValues.approval_flow?.af_id;
-      if (afId) {
-         // พยายามหาจาก List ก่อนเพื่อเอา steps
-         const foundFlow = approvalGroups.find(f => String(f.id) === String(afId));
-         
-         if (foundFlow) {
-             setSelectedApprovers(foundFlow);
-         } else if (defaultValues.approval_flow) {
-             // ถ้าหาไม่เจอ ให้ใช้ข้อมูลที่ติดมาแสดงไปก่อน
-             setSelectedApprovers({
-                 id: defaultValues.approval_flow.af_id,
-                 label: defaultValues.approval_flow.af_name,
-                 value: defaultValues.approval_flow.af_id,
-                 approvers: (defaultValues.approval_flow.steps || []).map((step: any) => ({
-                    id: step.afs_id,
-                    label: step.afs_role,
-                    order: step.afs_step_approve
-                 }))
-             });
-         }
-      }
-
-      // Serial & Accessories
-      if(defaultValues.de_serial_number) {
-          setChecked(true);
-          setSerialNumbers([{ id: defaultValues.de_id, value: defaultValues.de_serial_number }]);
-      } else {
-          setChecked(false);
-      }
-      
-      if(defaultValues.accessory) {
-         setAccessories([{ 
-             id: defaultValues.accessory.acc_id, 
-             name: defaultValues.accessory.acc_name, 
-             qty: String(defaultValues.accessory.acc_quantity) 
-         }]);
-      }
-    }
-  }, [mode, defaultValues, approvalGroups, departmentList, categoryList, allSectionList]);
-
-  // --- Handlers ---
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setPreview(URL.createObjectURL(file));
+  /*========================== func Serial Number เพิ่ม-ลบ-แก้ไข ========================== */
+  // เพิ่ม Input Serial Number
+  const addSerial = () => {
+    setSerialNumbers([...serialNumbers, { id: Date.now(), value: "" }]);
   };
 
   // อัปเดตค่า Serial
@@ -444,23 +194,14 @@ const MainDeviceModal = ({
         item.id === id ? { ...item, value: newValue } : item
       )
     );
-  const [isDragging, setIsDragging] = useState(false);
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
-  const handleLeave = () => setIsDragging(false);
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) setPreview(URL.createObjectURL(file));
   };
 
-  const addSerial = () => setSerialNumbers([...serialNumbers, { id: Date.now(), value: "" }]);
-  const removeSerial = (id: number) => setSerialNumbers(serialNumbers.filter((item) => item.id !== id));
-  const updateSerial = (id: number, val: string) => setSerialNumbers(serialNumbers.map((item) => (item.id === id ? { ...item, value: val } : item)));
+  // ลบ Input Serial
+  const removeSerial = (id: number) => {
+    setSerialNumbers(serialNumbers.filter((item) => item.id !== id));
+  };
 
-  const addAccessory = () => setAccessories([...accessories, { id: Date.now(), name: "", qty: "" }]);
-  const removeAccessory = (id: number) => setAccessories(accessories.filter((item) => item.id !== id));
-  const updateAccessory = (id: number, key: "name" | "qty", val: string) => setAccessories(accessories.map((item) => (item.id === id ? { ...item, [key]: val } : item)));
-
+  /*========================== func อุปกรณืเสริม เพิ่ม-ลบ-แก้ไข ========================== */
   // เพิ่ม Input อุปกรณ์เสริม
   const addAccessory = () => {
     setAccessories([
@@ -470,175 +211,49 @@ const MainDeviceModal = ({
   };
 
   // อัปเดตอุปกรณ์เสริม
-  const updateAccessory = (id: number, key: "name" | "qty", value: string) => {
+  const updateAccessory = (keyId: string, key: "name" | "qty", value: string) => {
     setAccessories((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [key]: value } : item))
+      prev.map((item) => (item.name === keyId ? { ...item, [key]: value } : item))
     );
+  };
+
+  // ลบ Input อุปกรณ์เสริม
+  const removeAccessory = (name: string) => {
+    setAccessories((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  /*========================== Modal เพิ่มลำดับอนุมัติ ========================== */
+  // modal สำหรับจัดการลำดับการอนุมัติ
+  const [isApproverModalOpen, setIsApproverModalOpen] = useState(false);
+  const [approverGroupFlow, setApproverGroupFlow] = useState([]);
+  const [approvalflows, setApprovalFlows] = useState([]);
+  const [approvalFlowSteps, setapprovalFlowSteps] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [sectionsApprove, setSectionsApprove] = useState([]);
+  const [departmentsApprove, setDepartmentsApprove] = useState([]);
+  /*========================== func เพิ่ม-ลบ  เพิ่มลำดับอนุมัติ ========================== */
+  const handleApproverGroup = (item: any) => {
+    setApproverGroupFlow((prev: any) =>
+      prev.some((v: any) => v.label === item.label) ? prev : [...prev, item]
+    );
+  };
+  const handleDeleteApproverGroup = (value: string) => {
+    setApproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
+  };
+
+  /*========================== func เปิด-ปิด modal เพิ่มลำดับอนุมัติ ========================== */
+  const openApproverModal = () => {
+    setIsApproverModalOpen(true);
+  };
+  const closeApproverModal = () => setIsApproverModalOpen(false);
+
+  /*========================== func เลือกลำดับการอนุมัติ ========================== */
+  // เลือกลำดับการอนุมัติ
   const handleSelectApprover = (item: Approver) => {
     setSelectedApprovers(item);
   };
 
-  const handleDepartmentChange = (item: DropdownOption) => {
-    setSelectedDepartment(item);
-    setSelectedSection(null); // เคลียร์ Section เมื่อเปลี่ยนแผนก
-  };
-
-  const handleSaveClick = () => {
-    setIsAlertOpen(true);
-  };
-
-  // ค่าเริ่มต้น edit
-  useEffect(() => {
-    if (mode === "edit" && defaultValues) {
-      // รูปภาพ
-      setPreview(defaultValues.de_images ?? null);
-
-      // Input text
-      setDeviceName(defaultValues.de_name ?? "");
-      setDeviceCode(defaultValues.de_serial_number ?? "");
-      setLocation(defaultValues.de_location ?? "");
-      setDescription(defaultValues.de_description ?? "");
-
-      // จำนวน
-      setMaxBorrowDays(defaultValues.de_max_borrow_days ?? 0);
-      setTotalQuantity(defaultValues.total_quantity ?? 0);
-
-      // Dropdown
-
-      setSelectedCategory(defaultValues.category ?? null);
-      setSelectedSection(defaultValues.section ?? null);
-
-      // Serial Number
-      if (defaultValues.de_serial_number) {
-        setChecked(true);
-        setSerialNumbers([
-          {
-            id: defaultValues.de_id,
-            value: defaultValues.de_serial_number,
-          },
-        ]);
-      } else {
-        setChecked(false);
-        setSerialNumbers([{ id: Date.now(), value: "" }]); // แสดงช่อง input
-      }
-
-      // อุปกรณ์เสริม
-      if (defaultValues.accessory) {
-        setAccessories([
-          {
-            id: defaultValues.accessory.acc_id,
-            name: defaultValues.accessory.acc_name,
-            qty: String(defaultValues.accessory.acc_quantity),
-          },
-        ]);
-      } else {
-        setAccessories([{ id: Date.now(), name: "", qty: "" }]); // แสดงช่อง input
-      }
-
-      // ลำดับการอนุมัติ
-      if (defaultValues.approval_flow.steps) {
-        setSelectedApprovers({
-          id: defaultValues.approval_flow.af_id,
-          label: defaultValues.approval_flow.af_name,
-          value: defaultValues.approval_flow.af_id,
-          // แปลง array เป็น approvers ที่ UI ใช้ render เช่น HOS › HOD
-          approvers: defaultValues.approval_flow.steps.map((step: any) => ({
-            id: step.afs_id, // id ของแต่ละขั้นตอน
-            label: step.afs_role, // role ที่อนุมัติ
-            order: step.afs_step_approve, // ลำดับการอนุมัติ
-          })),
-        });
-      }
-    }
-  }, [mode, defaultValues]);
-
-  const mappedAccessories = accessories
-    .filter((a) => a.name && a.qty)
-    .map((a) => ({
-      acc_name: a.name,
-      acc_quantity: Number(a.qty),
-    }));
-
-  const mappedSerialNumbers = checked
-    ? serialNumbers
-        .filter((sn) => sn.value.trim() !== "")
-        .map((sn) => ({
-          id: sn.id,
-          value: sn.value.trim(),
-        }))
-    : [];
-
-  // ส่งข้อมูล
-  const handleSubmit = () => {
-    const formData = new FormData();
-
-    //  เอาไว้ใช้ชั่วคราว
-    formData.append("data", "devices");
-    formData.append("de_serial_number", deviceCode);
-    formData.append("de_name", deviceName);
-    formData.append("de_description", description ?? "");
-    formData.append("de_location", location);
-    formData.append("de_max_borrow_days", String(maxBorrowDays));
-    formData.append("totalQuantity", String(totalQuantity));
-    formData.append("de_af_id", String(selectedApprovers?.value ?? ""));
-    formData.append("de_ca_id", String(selectedCategory?.value ?? ""));
-    formData.append("de_us_id",userId);
-    formData.append("de_sec_id", String(selectedSection?.value ?? ""));
-
-    formData.append("accessories", JSON.stringify(mappedAccessories));
-    formData.append("serialNumbers", JSON.stringify(mappedSerialNumbers));
-
-    if (imageFile) {
-      formData.append("de_images", imageFile);
-    }
-    onSubmit(formData);
-  };
-
-  const handleSumbitApprove = () => {
-    const approver: ApprovalFlowStepPayload[] = approverGroupFlow.map(
-      (ap, indexvalue) => {
-        if (ap.label.includes("เจ้าหน้าที่")) {
-          const sec = sections.find((item) => item.sec_id === ap.value);
-          console.log(sec);
-          return {
-            afs_step_approve: indexvalue + 1,
-            afs_dept_id: sec.sec_dept_id,
-            afs_sec_id: sec.sec_id,
-            afs_role: "STAFF",
-          };
-        } else if (
-          ap.label.includes("หัวหน้าแผนก") &&
-          !ap.label.includes("ฝ่ายย่อย")
-        ) {
-          const dept = departments.find((item) => item.dept_id === ap.value);
-          return {
-            afs_step_approve: indexvalue + 1,
-            afs_dept_id: dept.dept_id,
-            afs_sec_id: null,
-            afs_role: "HOD",
-          };
-        } else {
-          const sec = sections.find((item) => item.sec_id === ap.value);
-          return {
-            afs_step_approve: indexvalue + 1,
-            afs_dept_id: sec.sec_dept_id,
-            afs_sec_id: sec.sec_id,
-            afs_role: "HOS",
-          };
-        }
-      }
-    );
-    console.log(approver)
-    const formData = new FormData();
-    formData.append("data", "approve");
-    formData.append("af_name", titleApprove);
-    formData.append("af_us_id", userId);
-
-    formData.append("approvalflowsstep", JSON.stringify(approver));
-
-    onSubmit(formData);
-  };
-
+  /*========================== func สำหรับลากและย้ายตำแหน่งการอนุมัติ ========================== */
   const dragItemIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
 
@@ -678,6 +293,7 @@ const MainDeviceModal = ({
     dragItemIndex.current = dragOverIndex.current = null;
   };
 
+  /*========================== func แสดงข้อมูล User เกี่ยวกับกับการอนุมัติ ========================== */
   const getUsersByLabel = (data: string) => {
     // เจ้าหน้าที่คลัง ไป staff
     if (data.includes("เจ้าหน้าที่คลัง")) {
@@ -695,61 +311,213 @@ const MainDeviceModal = ({
     }
 
     return [];
-  const handleConfirmSave = async() => {
-    setIsAlertOpen(false);
-    const payload = {
-      device_name: deviceName,
-      device_code: deviceCode,
-      department_id: selectedDepartment ? Number(selectedDepartment.value) : null,
-      category_id: selectedCategory ? Number(selectedCategory.value) : null,
-      sub_section_id: selectedSection ? Number(selectedSection.value) : null,
-      approver_flow_id: selectedApprovers ? Number(selectedApprovers.value) : null,
-      location,
-      maxBorrowDays,
-      totalQuantity,
-      description,
-      serialNumbers: checked ? serialNumbers : [],
-      accessories,
-      imageUrl: preview,
-    };
-    try {
-      if (mode === "edit") {
-        // --- กรณีแก้ไข (EDIT) : PATCH /inventory/devices/:id ---
-        const id = defaultValues?.de_id; // ดึง ID จากค่า defaultValues ที่ส่งเข้ามา
-        
-        if (!id) {
-          alert("❌ ไม่พบ ID อุปกรณ์ที่ต้องการแก้ไข");
-          return;
-        }
-
-        // ยิง API PATCH ตาม Route ที่ระบุ
-        await api.patch(`${API_BASE_URL}/inventory/devices/${id}`, payload);
-        toast.push({ message: "แก้ไขข้อมูลอุปกรณ์ในคลังแล้ว!", tone: "confirm"  });
-
-      } else {
-        // --- กรณีสร้างใหม่ (CREATE) : POST /inventory/devices ---
-        // ใช้ Route เดียวกันแต่เป็น POST (ตามหลัก REST API ทั่วไป)
-        await api.post(`${API_BASE_URL}/inventory/devices`, payload);
-
-        toast.push({ message: "เพิ่มอุปกรณ์สำเร็จ", tone: "confirm"  });
-      }
-      navigate("/inventory");
-
-      // ส่งข้อมูลกลับไปหา Parent Component เพื่อปิด Modal หรือ Refresh หน้าจอ
-      if (onSubmit) onSubmit(payload);
-
-    } catch (error: any) {
-      console.error("❌ Error saving data:", error);
-      
-      // ดึงข้อความ Error จาก Backend (ถ้ามี)
-      const errorMsg = error.response?.data?.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
-      alert(`⚠️ บันทึกไม่สำเร็จ: ${errorMsg}`);
-    }
   };
 
+  /*========================= Edit ========================= */
+  // ค่าเริ่มต้น edit
+  useEffect(() => {
+    if (mode === "edit" && defaultValues) {
+     
+      // รูปภาพ
+      setPreview(defaultValues.de_images ?? null);
+
+      // Input text
+      setDeviceName(defaultValues.de_name ?? "");
+      setDeviceCode(defaultValues.de_serial_number ?? "");
+      setLocation(defaultValues.de_location ?? "");
+      setDescription(defaultValues.de_description ?? "");
+
+      // จำนวน
+      setMaxBorrowDays(defaultValues.de_max_borrow_days ?? 0);
+      setTotalQuantity(defaultValues.total_quantity ?? 0);
+
+      // Dropdown
+
+      setSelectedCategory({
+        id: defaultValues.category.ca_id,
+        label: defaultValues.category.ca_name,
+        value: defaultValues.category.ca_id,
+      });
+      setSelectedSection({
+        id: defaultValues.section.sec_id,
+        label: defaultValues.section.sec_name,
+        value: defaultValues.section.sec_id,
+      });
+      setSelectedDepartment({
+        id: defaultValues.section.department.dept_id,
+        label: defaultValues.section.department.dept_name,
+        value: defaultValues.section.department.dept_id,
+      });
+
+      // Serial Number
+      if (defaultValues.de_serial_number) {
+        setChecked(true);
+        setSerialNumbers([
+          {
+            id: defaultValues.de_id,
+            value: defaultValues.de_serial_number,
+          },
+        ]);
+      } else {
+        setChecked(false);
+        setSerialNumbers([{ id: Date.now(), value: "" }]); // แสดงช่อง input
+      }
+      // อุปกรณ์เสริม
+      if (defaultValues.accessories) {
+        setAccessories(
+          defaultValues.accessories.map((acc) => ({
+            id: acc.acc_id,
+            name: acc.acc_name,
+            qty: String(acc.acc_quantity),
+          }))
+        );
+      } else {
+        setAccessories([{ id: Date.now(), name: "", qty: "" }]); // แสดงช่อง input
+      }
+     
+      // ลำดับการอนุมัติ
+      if (defaultValues.approval_flow.steps) {
+        setSelectedApprovers({
+          id: defaultValues.approval_flow.af_id,
+          label: defaultValues.approval_flow.af_name,
+          value: defaultValues.approval_flow.af_id,
+          // แปลง array เป็น approvers ที่ UI ใช้ render เช่น HOS › HOD
+        });
+        //  const   approvers = defaultValues.approval_flow.steps.map((step: any,index:number) => ({
+        //         id: step.afs_id, // id ของแต่ละขั้นตอน
+        //         label: step.afs_role, // role ที่อนุมัติ
+        //         value: index, // ลำดับการอนุมัติ
+        //       }))
+        //     console.log(approvers)
+        //     setApproverGroupFlow(
+        //      approvers)
+      }
+    }
+  }, [mode, defaultValues]);
+
+  const mappedAccessories = accessories
+    .filter((a) => a.id && a.name && a.qty)
+    .map((a) => ({
+      acc_id:a.id,
+      acc_name: a.name,
+      acc_quantity: Number(a.qty),
+    }));
+
+  const mappedSerialNumbers = checked
+    ? serialNumbers
+        .filter((sn) => sn.value.trim() !== "")
+        .map((sn) => ({
+          id: sn.id,
+          value: sn.value.trim(),
+        }))
+    : [];
+  /*========================== พื้นที่แปลงข้อมูลเข้า Dropdown ========================== */
+  const departmentItems: DropdownItem[] = departments.map((dept: any) => ({
+    id: dept.dept_id,
+    label: dept.dept_name,
+    value: dept.dept_id,
+  }));
+
+  const categoryItem: DropdownItem[] = categorys.map((ca: any) => ({
+    id: ca.ca_id,
+    label: ca.ca_name,
+    value: ca.ca_id,
+  }));
+
+  const sectionItems: DropdownItem[] = sections.map((sec: any) => ({
+    id: sec.sec_id,
+    label: sec.sec_name,
+    value: sec.sec_id,
+  }));
+
+  const approveItems: DropdownItem[] = approvalflows.map((af: any) => ({
+    id: af.af_id,
+    label: af.af_name,
+    value: af.af_id,
+  }));
+
+  const staffItems: DropdownItem[] = staff.map((st: any) => ({
+    id: st.st_sec_id,
+    label: st.st_name,
+    value: st.st_sec_id,
+  }));
+ console.log(accessories)
+  /*========================== func ส่งข้อมูลอุปกรณ์ ========================== */
+  const handleSubmit = () => {
+    const formData = new FormData();
+
+    //  เอาไว้ใช้ชั่วคราว
+    formData.append("data", "devices");
+    formData.append("de_serial_number", deviceCode);
+    formData.append("de_name", deviceName);
+    formData.append("de_description", description ?? "");
+    formData.append("de_location", location);
+    formData.append("de_max_borrow_days", String(maxBorrowDays));
+    formData.append("totalQuantity", String(totalQuantity));
+    formData.append("de_af_id", String(selectedApprovers?.value ?? ""));
+    formData.append("de_ca_id", String(selectedCategory?.value ?? ""));
+    formData.append("de_us_id", userId);
+    formData.append("de_sec_id", String(selectedSection?.value ?? ""));
+
+    formData.append("accessories", JSON.stringify(mappedAccessories));
+    formData.append("serialNumbers", JSON.stringify(mappedSerialNumbers));
+
+    if (imageFile) {
+      formData.append("de_images", imageFile);
+    }
+    onSubmit(formData);
+  };
+  /*========================== func ส่งข้อมูลเพิ่มลำดับการอนุมัติ ========================== */
+  const handleSumbitApprove = () => {
+    const approver: ApprovalFlowStepPayload[] = approverGroupFlow.map(
+      (ap: any, indexvalue) => {
+        if (ap.label.includes("เจ้าหน้าที่")) {
+          const sec = sections.find((item) => item.sec_id === ap.value);
+
+          return {
+            afs_step_approve: indexvalue + 1,
+            afs_dept_id: sec.sec_dept_id,
+            afs_sec_id: sec.sec_id,
+            afs_role: "STAFF",
+          };
+        } else if (
+          ap.label.includes("หัวหน้าแผนก") &&
+          !ap.label.includes("ฝ่ายย่อย")
+        ) {
+          const dept = departments.find((item) => item.dept_id === ap.value);
+          return {
+            afs_step_approve: indexvalue + 1,
+            afs_dept_id: dept.dept_id,
+            afs_sec_id: null,
+            afs_role: "HOD",
+          };
+        } else {
+          const sec = sections.find((item) => item.sec_id === ap.value);
+          return {
+            afs_step_approve: indexvalue + 1,
+            afs_dept_id: sec.sec_dept_id,
+            afs_sec_id: sec.sec_id,
+            afs_role: "HOS",
+          };
+        }
+      }
+    );
+    const formData = new FormData();
+    formData.append("data", "approve");
+    formData.append("af_name", titleApprove);
+    formData.append("af_us_id", userId);
+    formData.append("approvalflowsstep", JSON.stringify(approver));
+    onSubmit(formData);
+  };
+
+  /*========================== ยืนยันข้อมูล ========================== */
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [openConfirmApprove, setOpenConfirmApprove] = useState(false);
   return (
     <div className="flex flex-col gap-[60px] bg-[#FFFFFF] border border-[#BFBFBF] w-[1660px] rounded-[16px] px-[60px] py-[60px]">
+      {/* ข้อมูลอุปกรณ์ / แบบฟอร์ม */}
       <form className="flex justify-center gap-[110px] w-[1540px] min-h-[837px] px-[100px]">
+        {/* ข้อมูลอุปกรณ์ */}
         <div className="flex flex-col gap-[7px] w-[212px] h-[69px]">
           <p className="text-[20px] font-medium">ข้อมูลอุปกรณ์</p>
           <p className="text-[16px] text-[#40A9FF] font-medium">
@@ -759,6 +527,7 @@ const MainDeviceModal = ({
         {/* กรอกรายละเอียดอุปกรณ์ */}
         <div className="flex flex-col gap-[20px] w-[853px]">
           <div className="flex gap-[20px]">
+            {/* ชื่ออุปกรณ์ */}
             <div className="flex flex-col gap-[4px]">
               <Input
                 value={deviceName}
@@ -769,6 +538,7 @@ const MainDeviceModal = ({
                 className="!w-[552px]"
               />
             </div>
+            {/* รหัสอุปกรณ์ */}
             <div className="flex flex-col gap-[4px]">
               <Input
                 value={deviceCode}
@@ -780,7 +550,7 @@ const MainDeviceModal = ({
               />
             </div>
           </div>
-
+          {/* แผนก / หมวดหมู่ / ฝ่ายย่อย */}
           <div className="flex gap-[20px]">
             <DropDown
               value={selectedDepartment}
@@ -788,8 +558,6 @@ const MainDeviceModal = ({
               label="แผนกอุปกรณ์"
               items={departmentItems}
               onChange={(item) => setSelectedDepartment(item)}
-              items={departmentList}
-              onChange={handleDepartmentChange}
               placeholder="แผนก"
             />
             <DropDown
@@ -798,8 +566,6 @@ const MainDeviceModal = ({
               label="หมวดหมู่"
               items={categoryItem}
               onChange={(item) => setSelectedCategory(item)}
-              items={categoryList}
-              onChange={setSelectedCategory}
               placeholder="หมวดหมู่อุปกรณ์"
             />
             <DropDown
@@ -808,23 +574,32 @@ const MainDeviceModal = ({
               label="ฝ่ายย่อย"
               items={sectionItems}
               onChange={(item) => setSelectedSection(item)}
-              items={filteredSectionList} // ใช้รายการที่กรองแล้วตามแผนก
-              onChange={setSelectedSection}
               placeholder="ฝ่ายย่อย"
-              disabled={!selectedDepartment} 
             />
           </div>
-
+          {/* รูปภาพ */}
           <div className="flex flex-col gap-[10px]">
             <p className="text-[16px] font-medium">รูปภาพ</p>
+            {/* Upload / Preview */}
             <div
-              className={`flex flex-col items-center justify-center border rounded-[16px] w-[833px] h-[225.32px] ${isDragging ? "border-[#40A9FF] bg-blue-50" : "border-[#D9D9D9]"}`}
-              onDragOver={handleDragOver} onDragLeave={handleLeave} onDrop={handleDrop}
+              className={`flex flex-col items-center justify-center border rounded-[16px] w-[833px] h-[225.32px]
+              ${isDragging ? "border-[#40A9FF] bg-blue-50" : "border-[#D9D9D9]"}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleLeave}
+              onDrop={handleDrop}
             >
               <label className="flex flex-col items-center justify-center w-full h-full text-center cursor-pointer">
-                <input className="hidden" type="file" onChange={handleImageUpload} />
+                <input
+                  className="hidden"
+                  type="file"
+                  onChange={handleImageUpload}
+                />
+
                 {preview ? (
-                  <img className="w-full h-full object-cover rounded-[16px]" src={preview} alt="preview" />
+                  <img
+                    className="w-full h-full object-cover rounded-[16px] pointer-events-none"
+                    src={preview}
+                  />
                 ) : (
                   <div className="flex flex-col gap-[20px] items-center text-center text-[#A2A2A2]">
                     <Icon icon="famicons:image-sharp" width="48" height="40" />
@@ -843,7 +618,7 @@ const MainDeviceModal = ({
               </label>
             </div>
           </div>
-
+          {/* สถานที่เก็บอุปกรณ์ */}
           <div className="flex flex-col gap-[10px]">
             <label className="text-[16px] font-medium">
               สถานที่เก็บอุปกรณ์
@@ -853,8 +628,9 @@ const MainDeviceModal = ({
               onChange={(e) => setLocation(e.target.value)}
               className="border border-[#D8D8D8] rounded-[16px] w-[833px] h-[140px] px-[15px] py-[8px]"
               placeholder="สถานที่เก็บอุปกรณ์"
-            />
+            ></textarea>
           </div>
+          {/* รายละเอียดอุปกรณ์ */}
           <div className="flex flex-col gap-[10px]">
             <label className="text-[16px] font-medium">รายละเอียดอุปกรณ์</label>
             <textarea
@@ -862,12 +638,7 @@ const MainDeviceModal = ({
               onChange={(e) => setDescription(e.target.value)}
               className="border border-[#D8D8D8] rounded-[16px] w-[833px] h-[140px] px-[15px] py-[8px]"
               placeholder="รายละเอียดอุปกรณ์"
-            />
-          </div>
-
-          <div className="flex gap-[20px]">
-             <QuantityInput label="จำนวนวันสูงสุดที่สามารถยืมได้" value={maxBorrowDays} onChange={setMaxBorrowDays} />
-             <QuantityInput label="จำนวนอุปกรณ์" value={totalQuantity} onChange={setTotalQuantity} />
+            ></textarea>
           </div>
           <div className="flex gap-[20px]">
             <QuantityInput
@@ -875,17 +646,20 @@ const MainDeviceModal = ({
               value={maxBorrowDays}
               onChange={(value) => setMaxBorrowDays(value)}
             />
+             {(mode == "create")&&
             <QuantityInput
               label="จำนวนอุปกรณ์"
               value={totalQuantity}
               onChange={(value) => setTotalQuantity(value)}
             />
+             }  
           </div>
         </div>
       </form>
 
-      {/* Serial / Accessories / Approval */}
+      {/* Serail Number / อุปกรณ์เสริม / ลำดับการอนุมัติ */}
       <div className="flex flex-col items-center gap-[60px] w-[1540px] px-[100px]">
+        {(mode == "create")&&
         <div className="flex items-start gap-[110px]">
           <div className="flex flex-col gap-[7px] w-[212px] self-start">
             <p className="text-[18px] font-medium">Serial Number</p>
@@ -900,7 +674,9 @@ const MainDeviceModal = ({
                 isChecked={checked}
                 onClick={() => setChecked(!checked)}
               />
-              <p  onClick={() => setChecked(!checked)}>อุปกรณ์มี Serail Number</p>
+              <p onClick={() => setChecked(!checked)}>
+                อุปกรณ์มี Serail Number
+              </p>
             </div>
             {/* อุปกรณ์ที่มี Serail Number */}
             {checked && (
@@ -916,51 +692,35 @@ const MainDeviceModal = ({
                     >
                       + Serial Number
                     </Button>
-         <div className="flex items-start gap-[110px]">
-            <div className="flex flex-col gap-[7px] w-[212px]">
-               <p className="text-[18px] font-medium">Serial Number</p>
-               <p className="text-[16px] font-medium text-[#40A9FF]">รหัสของอุปกรณ์</p>
-            </div>
-            <div className="flex flex-col gap-[15px] w-[856px]">
-               <div className="flex gap-2">
-                  <Checkbox isChecked={checked} onClick={() => setChecked(!checked)} />
-                  <p>อุปกรณ์มี Serial Number</p>
-               </div>
-               {checked && (
-                  <div className="flex flex-col gap-[15px]">
-                     <div className="flex gap-3">
-                        <div className="border border-[#D8D8D8] rounded-[16px] px-3 py-2 w-[663px] font-medium">Serial Number</div>
-                        <Button className="bg-[#1890FF] w-[173px]" onClick={addSerial}>+ Serial Number</Button>
-                     </div>
-                     {serialNumbers.map(sn => (
-                        <div key={sn.id} className="flex gap-5">
-                           <Input className="!w-[568px]" value={sn.value} onChange={(e) => updateSerial(sn.id, e.target.value)} />
-                           <Button className="bg-[#DF203B] !w-[46px] !h-[46px] rounded-[16px]" onClick={() => removeSerial(sn.id)}>
-                              <Icon icon="solar:trash-bin-trash-outline" width="22" />
-                           </Button>
-                        </div>
-                     ))}
                   </div>
-               )}
-            </div>
-         </div>
 
-         <div className="flex items-start gap-[110px]">
-             <div className="flex flex-col gap-[7px] w-[212px]">
-                <p className="text-[18px] font-medium">อุปกรณ์เสริม</p>
-                <p className="text-[16px] font-medium text-[#40A9FF]">ข้อมูลของอุปกรณ์เสริม</p>
-             </div>
-             <div className="flex flex-col gap-[15px] w-[856px]">
-                <div className="flex gap-3">
-                   <div className="flex justify-between border border-[#D8D8D8] rounded-[16px] px-3 py-2 w-[663px] font-medium">
-                      <span>ชื่ออุปกรณ์</span><span>จำนวน</span>
-                   </div>
-                   <Button className="bg-[#1890FF] w-[173px]" onClick={addAccessory}>+ เพิ่มอุปกรณ์เสริม</Button>
+                  {serialNumbers.map((sn) => (
+                    <div key={sn.id} className="flex gap-5">
+                      <Input
+                        className="!w-[568px]"
+                        placeholder="ABC12-3456-7890"
+                        value={sn.value}
+                        onChange={(e) => updateSerial(sn.id, e.target.value)}
+                      />
+
+                      <Button
+                        className="bg-[#DF203B] !w-[46px] !h-[46px] !rounded-[16px] hover:bg-red-600"
+                        onClick={() => removeSerial(sn.id)}
+                      >
+                        <Icon
+                          icon="solar:trash-bin-trash-outline"
+                          width="22"
+                          height="22"
+                        />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
           </div>
         </div>
+        }
 
         {/* อุปกรณ์เสริม */}
         <div className="flex items-start gap-[110px]">
@@ -979,32 +739,33 @@ const MainDeviceModal = ({
               <Button className="bg-[#1890FF] w-[173px]" onClick={addAccessory}>
                 + เพิ่มอุปกรณ์เสริม
               </Button>
-                {accessories.map(acc => (
-                   <div key={acc.id} className="flex gap-5">
-                      <Input className="!w-[419px]" value={acc.name} onChange={(e) => updateAccessory(acc.id, "name", e.target.value)} />
-                      <Input className="!w-[133px]" value={acc.qty} onChange={(e) => updateAccessory(acc.id, "qty", e.target.value)} />
-                      <Button className="bg-[#DF203B] !w-[46px] !h-[46px] rounded-[16px]" onClick={() => removeAccessory(acc.id)}>
-                         <Icon icon="solar:trash-bin-trash-outline" width="22" />
-                      </Button>
-                   </div>
-                ))}
-             </div>
-         </div>
-
-         <div className="flex items-start gap-[110px]">
-            <div className="flex flex-col gap-[7px] w-[212px]">
-               <p className="text-[18px] font-medium">ลำดับการอนุมัติ</p>
-               <p className="text-[16px] font-medium text-[#40A9FF]">ลำดับผู้อนุมัติของอุปกรณ์</p>
             </div>
-            <div className="flex flex-col gap-[15px] w-[856px]">
-               <div className="flex gap-3 items-end">
-                  <DropDown
-                     value={selectedApprovers}
-                     className="w-[663px]"
-                     label="ลำดับการอนุมัติ"
-                     items={approvalGroups}
-                     onChange={handleSelectApprover}
-                     placeholder="ลำดับการอนุมัติ"
+            {accessories.map((item) => (
+              <div key={item.name} className="flex gap-5">
+                <Input
+                  className="!w-[419px]"
+                  placeholder="ชื่ออุปกรณ์"
+                  value={item.name}
+                  onChange={(e) =>
+                    updateAccessory(item.name, "name", e.target.value)
+                  }
+                />
+                <Input
+                  className="!w-[133px]"
+                  placeholder="จำนวน"
+                  value={item.qty}
+                  onChange={(e) =>
+                    updateAccessory(item.name, "qty", e.target.value)
+                  }
+                />
+                <Button
+                  className="bg-[#DF203B] !w-[46px] !h-[46px] !rounded-[16px] hover:bg-red-600"
+                  onClick={() => removeAccessory(item.name)}
+                >
+                  <Icon
+                    icon="solar:trash-bin-trash-outline"
+                    width="22"
+                    height="22"
                   />
                 </Button>
               </div>
@@ -1105,24 +866,11 @@ const MainDeviceModal = ({
               })()}
           </div>
         </div>
-                  <Button className="bg-[#1890FF] w-[173px]">+ เพิ่มลำดับการอนุมัติ</Button>
-               </div>
-               {selectedApprovers && (
-                  <div className="flex items-center gap-[9px]">
-                     {selectedApprovers.approvers.map((appr, index) => (
-                        <div key={appr.id} className="flex items-center gap-2">
-                           <span className="text-[16px] text-[#7BACFF]">{appr.label}</span>
-                           {index < selectedApprovers.approvers.length - 1 && <span className="text-[#7BACFF]">›</span>}
-                        </div>
-                     ))}
-                  </div>
-               )}
-            </div>
-         </div>
       </div>
 
+      {/* ปุ่ม */}
       <div className="flex justify-end gap-[20px]">
-        <Button onClick={onCancel} className="bg-[#D8D8D8] border border-[#CDCDCD] text-black hover:bg-gray-200 cursor-pointer">
+        <Button className="bg-[#D8D8D8] border border-[#CDCDCD] text-black hover:bg-gray-200">
           ยกเลิก
         </Button>
         <Button onClick={() => setOpenConfirm(true)} className="bg-[#1890FF]">
@@ -1313,26 +1061,8 @@ const MainDeviceModal = ({
         cancelText="ยกเลิก"
         onConfirm={async () => {
           handleSumbitApprove();
-     
         }}
         onCancel={() => {}}
-        <Button onClick={handleSaveClick} className="bg-[#1890FF] cursor-pointer ">
-          {mode === "create" ? "เพิ่มอุปกรณ์" : "บันทึก"}
-        </Button>
-      </div>
-                
-      {/* Alert Dialog */}
-       <AlertDialog
-        open={isAlertOpen}                
-        onOpenChange={setIsAlertOpen}     
-        onConfirm={handleConfirmSave}      
-        title={mode === "create" ? "ยืนยันการเพิ่มอุปกรณ์" : "ยืนยันการแก้ไขข้อมูลอุปกรณ์นี้หรือไม่?"}
-        description={mode === "create" ? "คุณต้องการเพิ่มอุปกรณ์นี้ใช่หรือไม่?" : "ข้อมูลอุปกรณ์จะถูกแก้ไขในรายการคลังของคุณ?"} 
-        confirmText="ยืนยัน"           
-        cancelText="ยกเลิก"      
-        tone="editDevice"     
-        icon={<Icon icon="material-symbols-light:box-edit-outline-sharp" width="80%" height="80%" />}
-        padX={26}          
       />
     </div>
   );

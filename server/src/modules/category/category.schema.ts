@@ -62,6 +62,15 @@ export const softDeleteCategoryResponseSchema = z.object({
     deleted_at: z.coerce.date(),
 });
 
+/**
+* Description : Payload สำหรับแก้ไขหมวดหมู่อุปกรณ์
+* Author : Thakdanai Makmi (Ryu) 66160355
+*/
+export const editCategoryPayload = z.object({
+  caId: z.coerce.number().int().positive(),
+  caName: z.string(),
+});
+
 export type CategorySchema = z.infer<typeof categorySchema>
 
 export type GetCategoriesQuerySchema = z.infer<typeof getCategoriesQuerySchema>
@@ -69,3 +78,5 @@ export type GetCategoriesQuerySchema = z.infer<typeof getCategoriesQuerySchema>
 export type GetCategoriesResponseSchema = z.infer<typeof getCategoriesResponseSchema>
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteCategoryResponseSchema>
+
+export type EditCategoryPayload = z.infer<typeof editCategoryPayload>

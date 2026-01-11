@@ -174,7 +174,7 @@ export class InventoryController extends BaseController {
     res: Response,
     next: NextFunction
   ): Promise<BaseResponse<InventorySchema[]>> {
-    const devices = await inventoryService.getAllDevices();
+    const devices = await inventoryService.getAllWithDevices();
     return { data: devices };
   }
 
@@ -201,21 +201,10 @@ export class InventoryController extends BaseController {
     };
   }
 
-  // ดึงข้อมูลแผนก
-  async getDepartments(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await inventoryService.getDepartments();
-    return { data };
-  }
 
-  // ดึงข้อมูลหมวดหมู่
-  async getCategories(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await inventoryService.getCategories();
-    return { data };
-  }
-
-  // ดึงข้อมูลฝ่ายย่อย
-  async getSubSections(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await inventoryService.getSubSections();
+  // ดึงข้อมูลที่จำเป็น
+  async getDefaultsdatas(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
+    const data = await inventoryService.getDefaultsdata();
     return { data };
   }
 
@@ -233,8 +222,8 @@ export class InventoryController extends BaseController {
   async update(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
     const { id } = idParamSchema.parse(req.params); 
     const body = updateDevicePayload.parse(req.body);
-    
-    const result = await inventoryService.updateDevice(id, body);
+    const imagePath = req.file?.path;
+    const result = await inventoryService.updateDevice(id, body,imagePath);
     return { data: result };
   }
 }

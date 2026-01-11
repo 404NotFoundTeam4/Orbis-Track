@@ -2,6 +2,7 @@
 import { prisma } from "../../infrastructure/database/client.js";
 import type { z } from "zod";
 import {
+    EditCategoryPayload,
     GetCategoriesQuerySchema
 } from "./category.schema.js";
 import { ca } from "zod/locales";
@@ -20,30 +21,30 @@ import { ca } from "zod/locales";
  *             - meta          : ข้อมูลประกอบการแบ่งหน้า (page, limit, total, totalPages)
  * Author    : Chanwit Muangma (Boom) 66160224
  */
-export async function getCategories (query: GetCategoriesQuerySchema) {
-    const { q, page, limit, sortBy , sortOrder, includeDeleted} = query;
+export async function getCategories(query: GetCategoriesQuerySchema) {
+    const { q, page, limit, sortBy, sortOrder, includeDeleted } = query;
 
-    const where: any =  {
-        ...(includeDeleted ? {} : { deleted_at: null}),
-        ...(q ? { ca_name: { contains: q, mode: "insensitive"}} : {} ),
+    const where: any = {
+        ...(includeDeleted ? {} : { deleted_at: null }),
+        ...(q ? { ca_name: { contains: q, mode: "insensitive" } } : {}),
     }
-    
+
     const skip = (page - 1) * limit;
 
-    const [total , data] = await Promise.all([
+    const [total, data] = await Promise.all([
         prisma.categories.count({ where }),
         prisma.categories.findMany({
             where,
             skip,
             take: limit,
-            orderBy: {[sortBy]: sortOrder},
+            orderBy: { [sortBy]: sortOrder },
             select: {
                 ca_id: true,
                 ca_name: true,
                 created_at: true,
                 updated_at: true,
-                 deleted_at: true,
-                
+                deleted_at: true,
+
             }
         })
     ]);
@@ -67,16 +68,16 @@ export async function getCategories (query: GetCategoriesQuerySchema) {
  */
 export async function getCategoryById(id: number) {
     return prisma.categories.findFirst({
-    where: { ca_id: id, deleted_at: null },
-    select: {
-      ca_id: true,
-      ca_name: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
-  });
-    
+        where: { ca_id: id, deleted_at: null },
+        select: {
+            ca_id: true,
+            ca_name: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+        },
+    });
+
 }
 
 /**
@@ -92,12 +93,12 @@ export async function softDeleteCategory(id: number) {
 
     //เช็คว่ามีและยังไม่โดนลบ
     const existing = await prisma.categories.findFirst({
-        where: { ca_id: id , deleted_at: null},
-        select: {ca_id: true},
+        where: { ca_id: id, deleted_at: null },
+        select: { ca_id: true },
     });
 
     //ถ้าไม่พบข้อมูล ให้แจ้งว่าไม่พบหมวดหมู่
-    if(!existing){
+    if (!existing) {
         throw new Error("Category not Found");
 
     }
@@ -105,17 +106,75 @@ export async function softDeleteCategory(id: number) {
     //ตั้งเวลาลบ แล้วอัปเดต deleted_at เพื่อเป็นการ Soft Delete
     const deletedAt = new Date();
     const updated = await prisma.categories.update({
-        where: { ca_id: id},
+        where: { ca_id: id },
         data: { deleted_at: deletedAt },
-        select: { ca_id: true, deleted_at: true},
+        select: { ca_id: true, deleted_at: true },
     });
 
-    return{
+    return {
         ca_id: updated.ca_id,
         deleted_at: updated.deleted_at!,
 
     };
-    
+
 }
 
-export const categoryService = {getCategories , getCategoryById , softDeleteCategory }
+/**
+ * Description: แก้ไขหมวดหมู่อุปกรณ์
+ * Input     : payload (caId, caName) - รหัสหมวดหมู่และชื่อหมวดหมู่ใหม่
+ * Output    : { message } - ข้อความแจ้งเตือนอัปเดตเสร็จสิ้น
+ * Author    : Thakdanai Makmi (Ryu) 66160355
+ */
+export async function editCategory(payload: EditCategoryPayload) {
+    // ดึงข้อมูลจาก payload ที่ส่งมา
+    const { caId, caName } = payload;
+
+    // ค้นหาว่ามี category id นี้ หรือไม่
+    const existing = await prisma.categories.findUnique({
+        where: {
+            ca_id: caId
+        }
+    });
+
+    // ถ้าไม่เจอ category id ที่ส่งมา
+    if (!existing) {
+        throw new Error("Category not found");
+    }
+
+    // ตัดช่องว่างออกจากชื่อที่ส่งมา
+    const trimmedName = caName.trim();
+
+    // ถ้าตัดช่องว่างออกแล้วเป็นค่าว่าง ("")
+    if (!trimmedName) {
+        throw new Error("Category name is required");
+    }
+
+    // ค้นหาชื่อที่แก้ไขใหม่ว่ามีอยู่แล้วหรือไม่ (ยกเว้นของตัวเอง)
+    const duplicateName = await prisma.categories.findFirst({
+        where: {
+            ca_id: {
+                not: caId
+            },
+            ca_name: trimmedName
+        }
+    });
+
+    // ถ้ามีชื่อที่ซ้ำกัน
+    if (duplicateName) {
+        throw new Error("Category name already exists");
+    }
+
+    // อัปเดตชื่อหมวดหมู่
+    await prisma.categories.update({
+        where: {
+            ca_id: caId
+        },
+        data: {
+            ca_name: trimmedName
+        }
+    });
+
+    return { message: "Category updated successfully" };
+}
+
+export const categoryService = { getCategories, getCategoryById, softDeleteCategory, editCategory }

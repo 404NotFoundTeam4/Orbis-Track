@@ -8,7 +8,7 @@ import {
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
 import { useLocation } from "react-router-dom";
-
+import { useInventorys } from "../hooks/useInventory";
 const EditInventory = () => {
   // ดึง url ปัจจุบัน
   const location = useLocation();
@@ -19,6 +19,7 @@ const EditInventory = () => {
 
   // เก็บข้อมูลอุปกรณ์แม่
   const [parentDevice, setParentDevice] = useState<GetDeviceWithChildsResponse | null>(null);
+ 
   // เก็บข้อมูลอุปกรณ์ลูก
   const [deviceChilds, setDeviceChilds] = useState<DeviceChild[]>([]);
 
@@ -29,6 +30,10 @@ const EditInventory = () => {
     setDeviceChilds(device?.device_childs ?? []); // เก็บข้อมูลอุปกรณ์ลูกเข้า state
   };
 
+    const userString =
+    sessionStorage.getItem("User") || localStorage.getItem("User");
+
+  const user = userString ? JSON.parse(userString) : null;
   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
     fetchDevice();
@@ -91,7 +96,14 @@ const EditInventory = () => {
       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
     }
   };
+  const handleSubmit = async(formData:FormData) =>{
+      formData.delete("data");
+ 
 
+
+
+   useInventorys.updateDevicesdata(parentId,formData)
+  }
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}
@@ -109,7 +121,9 @@ const EditInventory = () => {
       <MainDeviceModal
         mode="edit"
         defaultValues={parentDevice}
-        onSubmit={() => console.log("Submit Device")}
+        onSubmit={(data) => {
+          handleSubmit(data);
+        }}
       />
       <DevicesChilds
         devicesChilds={deviceChilds}

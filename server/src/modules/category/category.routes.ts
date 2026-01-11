@@ -7,6 +7,7 @@ import {
   getCategoriesResponseSchema,
   categorySchema,
   softDeleteCategoryResponseSchema,
+  editCategoryPayload,
 } from "./category.schema.js";
 const controller = new CategoryController();
 const router = new Router(undefined, "/category");
@@ -46,5 +47,8 @@ router.deleteDoc(
   },
   controller.softDeleteCategory
 );
+
+// PUT /category
+router.putDoc("/", { tag: "Categories", body: editCategoryPayload, auth: true }, controller.editCategory);
 
 export default router.instance;

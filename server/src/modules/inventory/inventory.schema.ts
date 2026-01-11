@@ -6,6 +6,7 @@ export const idParamSchema = z.object({
   id: z.coerce.number().positive(),
 });
 const createAccessoriesPayload = z.object({
+  acc_id: z.coerce.number().int(),
   acc_name: z.string().min(1).max(100),
   acc_quantity: z.coerce.number().int().nonnegative(),
 });
@@ -307,22 +308,50 @@ export const softDeleteResponseSchema = z.object({
  * Author: Worrawat Namwat (Wave) 66160372
  */
 export const updateDevicePayload = z.object({
-  device_name: z.string().optional(),
-  device_code: z.string().optional(), // รหัสอุปกรณ์ (Serial Number แม่)
-  location: z.string().optional(),
-  description: z.string().optional(),
-  maxBorrowDays: z.coerce.number().optional(),
-  totalQuantity: z.coerce.number().optional(),
-  imageUrl: z.string().nullable().optional(),
+  de_serial_number: z.string().min(1).max(100).optional(),
+  de_name: z.string().min(1).max(200).optional(),
+  de_description: z.string().max(200).nullable().optional(),
+  de_location: z.string().min(1).max(200).optional(),
 
-  // Foreign Keys
-  department_id: z.coerce.number().nullable().optional(),
-  category_id: z.coerce.number().nullable().optional(),
-  sub_section_id: z.coerce.number().nullable().optional(),
-  approver_flow_id: z.coerce.number().nullable().optional(),
+  de_max_borrow_days: z.coerce.number().int().positive().optional(),
+  totalQuantity: z.coerce.number().int().positive().optional(),
 
-  serialNumbers: z.array(z.any()).optional(),
-  accessories: z.array(z.any()).optional(),
+  de_images: z.string().nullable().optional(),
+
+  de_af_id: z.coerce.number().int().positive().optional(),
+  de_ca_id: z.coerce.number().int().positive().optional(),
+  de_us_id: z.coerce.number().int().positive().optional(),
+  de_sec_id: z.coerce.number().int().positive().nullable().optional(),
+
+  accessories: z.preprocess(
+    (val) => {
+      if (!val) return undefined;
+      if (typeof val === "string") {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return undefined;
+        }
+      }
+      return val;
+    },
+    z.array(createAccessoriesPayload).optional()
+  ),
+
+  serialNumbers: z.preprocess(
+    (val) => {
+      if (!val) return undefined;
+      if (typeof val === "string") {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return undefined;
+        }
+      }
+      return val;
+    },
+    z.array(serialNumbersPayload).optional()
+  ),
 });
 
 export type InventorySchema = z.infer<typeof inventorySchema>;

@@ -18,8 +18,6 @@ import Requests from "./Requests";
 import Inventory from "./Inventory";
 import AddInventory from "./AddInventory";
 import ModalToggleExample from "./ModalToggleExample";
-
-import { Inventory } from "./Inventory";
 import EditInventory from "./EditInventory";
 import { Categories } from "./Categories";
 
@@ -51,7 +49,7 @@ function App() {
               />
 
               <Route path="/inventory" element={<Inventory />} />
-              <Route path="/inventory/edit" element={<EditInventory />} />
+              <Route path="/inventory/edit/:id" element={<EditInventory />} />
 
               <Route path="/administrator/category" element={<Categories />} />
               <Route path="/staff/category" element={<Categories />} />
@@ -61,7 +59,7 @@ function App() {
               <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route
-                path="/administrator/inventory/edit/:id"
+                path="/administrator/inventory"
                 element={<Inventory/>}
               />
             </Route>

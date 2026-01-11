@@ -11,7 +11,8 @@ import { DeviceService } from "../services/InventoryService";
 import type {
   getAllDevices,
   createDevices,
-  createApprove
+  createApprove,
+
 } from "../services/InventoryService";
 
 /**
@@ -39,6 +40,11 @@ export async function getDevicesAll(): Promise<getAllDevices> {
  */
 export async function createDevicesdata(payload: createDevices) {
   const res = await DeviceService.createDevices(payload);
+  return res;
+}
+
+export async function updateDevicesdata(id:number,payload: createDevices) {
+  const res = await DeviceService.updateDevices(id,payload);
   return res;
 }
 
@@ -81,4 +87,5 @@ export const useInventorys = {
   createDevicesdata,
   createApprovedata,
   getApproveAll,
+  updateDevicesdata
 };

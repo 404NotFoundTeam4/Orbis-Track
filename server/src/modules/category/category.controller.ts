@@ -10,6 +10,7 @@ import {
   CategorySchema,
   GetCategoriesResponseSchema,
   SoftDeleteResponseSchema,
+  editCategoryPayload,
   addCategoryPayload,
   AddCategoryPayload,
   AddCategoryResponseSchema,
@@ -81,6 +82,21 @@ export class CategoryController extends BaseController {
     return { data: result, message: "Category soft-deleted successfully" };
   }
 
+ /**
+ * Description: แก้ไขหมวดหมู่อุปกรณ์
+ * Input     : req.body (caId, caName) - รหัสหมวดหมู่อุปกรณ์, ชื่อหมวดหมู่อุปกรณ์ใหม่
+ * Output    : Promise<BaseResponse> = { message: string }
+ * Author    : Thakdanai Makmi (Ryu) 66160355
+ */
+  async editCategory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<void>> {
+    const payload = editCategoryPayload.parse(req.body);
+    const { message } = await categoryService.editCategory(payload);
+    return { message };
+  }
   /**
    * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่
    * Input     : req.body (ca_name) - ชื่อหมวดหมู่ที่ต้องการเพิ่ม

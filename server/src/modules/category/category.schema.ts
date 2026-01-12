@@ -63,6 +63,15 @@ export const softDeleteCategoryResponseSchema = z.object({
 });
 
 /**
+* Description : Payload สำหรับแก้ไขหมวดหมู่อุปกรณ์
+* Author : Thakdanai Makmi (Ryu) 66160355
+*/
+export const editCategoryPayload = z.object({
+  caId: z.coerce.number().int().positive(),
+  caName: z.string(),
+});
+
+export type CategorySchema = z.infer<typeof categorySchema>
  * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการเพิ่มหมวดหมู่อุปกรณ์ (Category)
  * Input     :  ca_name (string) : ชื่อหมวดหมู่ที่ต้องการเพิ่ม (ต้องไม่เป็นค่าว่าง)
  * Output    :  Object { ca_name: string } ที่ผ่านการ validate แล้ว
@@ -99,5 +108,7 @@ export type CategorySchema = z.infer<typeof categorySchema>
 export type GetCategoriesQuerySchema = z.infer<typeof getCategoriesQuerySchema>
 export type GetCategoriesResponseSchema = z.infer<typeof getCategoriesResponseSchema>
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteCategoryResponseSchema>
+
+export type EditCategoryPayload = z.infer<typeof editCategoryPayload>
 export type AddCategoryPayload = z.infer<typeof addCategoryPayload>;
 export type AddCategoryResponseSchema = z.infer<typeof addCategoryResponseSchema>;

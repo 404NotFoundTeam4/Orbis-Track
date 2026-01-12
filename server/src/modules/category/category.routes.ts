@@ -6,6 +6,7 @@ import {
   getCategoriesResponseSchema,
   categorySchema,
   softDeleteCategoryResponseSchema,
+  editCategoryPayload,
   addCategoryPayload,
   addCategoryResponseSchema,
 } from "./category.schema.js";
@@ -51,6 +52,10 @@ router.deleteDoc(
   controller.softDeleteCategory
 );
 
+// PUT /category
+router.putDoc("/", { tag: "Categories", body: editCategoryPayload, auth: true }, controller.editCategory);
+
+export default router.instance;
 // POST /category - เพิ่มหมวดหมู่ใหม่
 
 router.postDoc(

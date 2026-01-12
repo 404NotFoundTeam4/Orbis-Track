@@ -35,6 +35,11 @@ export type GetCategoriesResult = {
   meta: CategoriesMeta;
 };
 
+export type EditCategoryPayload = {
+  caId: number;
+  caName: string;
+}
+
 /**
  * Description: เรียก API เพื่อดึงรายการหมวดหมู่อุปกรณ์ (Categories) จาก Backend
  *              รองรับค้นหา (q), แบ่งหน้า (page/limit), เรียงลำดับ (sortBy/sortOrder)
@@ -78,6 +83,17 @@ export async function deleteCategory(id: number) {
 }
 
 /**
+ * Description: แก้ไขหมวดหมู่อุปกรณ์
+ * Input     : payload (caId, caName) - รหัสหมวดหมู่และชื่อหมวดหมู่ใหม่
+ * Output    : Promise<{ message: string }> - ข้อความอัปเดตเสร็จสิ้น
+ * Endpoint  : PUT /api/category
+ * Author    : Thakdanai Makmi (Ryu) 66160355
+ */
+export async function editCategory(payload: EditCategoryPayload): Promise<string> {
+  return await api.put('/category', payload);
+}
+
+export const categoryService = { getCategories, deleteCategory, editCategory };
  * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่เข้าสู่ระบบ
  *              - ส่งข้อมูลชื่อหมวดหมู่ไปยัง Backend ผ่าน API
  *              - ใช้สำหรับการเพิ่มหมวดหมู่จากหน้า Category Modal

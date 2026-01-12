@@ -90,6 +90,7 @@ export function CategoryModal({
         setPendingName(trimmedName);
         setConfirmOpen(true);
     };
+
     
     const handleConfirmAdd = async () => {
         if (!pendingName) return;
@@ -104,6 +105,14 @@ export function CategoryModal({
                     message: "เพิ่มหมวดหมู่อุปกรณ์เสร็จสิ้น!",
                 });
             } else {
+                // ถ้าไม่มีค่าเดิมของหมวดหมู่ (ตอนแก้ไข)
+                if (!initialCategory) return;
+                // เรียกใช้งาน category api
+                await categoryService.editCategory({
+                    caId: initialCategory.ca_id,
+                    caName: pendingName
+                });
+
                 toast.push({ tone: "success", message: "แก้ไขหมวดหมู่อุปกรณ์เสร็จสิ้น!" });
             }
 
@@ -121,6 +130,7 @@ export function CategoryModal({
                 setConfirmOpen(false);
                 return;
             }
+
             
             toast.push({
                 tone: "danger",

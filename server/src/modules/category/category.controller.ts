@@ -10,6 +10,9 @@ import {
   CategorySchema,
   GetCategoriesResponseSchema,
   SoftDeleteResponseSchema,
+  addCategoryPayload,
+  AddCategoryPayload,
+  AddCategoryResponseSchema,
 } from "./category.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 import type { z } from "zod";
@@ -77,4 +80,25 @@ export class CategoryController extends BaseController {
     const result = await categoryService.softDeleteCategory(id);
     return { data: result, message: "Category soft-deleted successfully" };
   }
+
+  /**
+   * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่
+   * Input     : req.body (ca_name) - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
+   * Output    : BaseResponse<Category> - ข้อมูลหมวดหมู่ที่เพิ่มเข้ามา
+   * Author    : Rachata Jitjeankhan (Tang) 66160369
+   */
+  async addCategory(
+  req: Request,
+  _res: Response,
+  _next: NextFunction
+): Promise<BaseResponse<AddCategoryResponseSchema>> {
+  const payload = addCategoryPayload.parse(req.body);
+  const newCategory = await categoryService.addCategory(payload);
+  
+  return {
+    success: true,
+    data: newCategory,
+    message: "เพิ่มสำเร็จ",
+  };
+}
 }

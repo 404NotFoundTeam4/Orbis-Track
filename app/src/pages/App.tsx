@@ -51,9 +51,8 @@ function App() {
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/inventory/edit/:id" element={<EditInventory />} />
 
-              <Route path="/administrator/category" element={<Categories />} />
-              <Route path="/staff/category" element={<Categories />} />
-
+              <Route path="/category" element={<Categories />} />
+          
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
               <Route path="/requests" element={<Requests />} />

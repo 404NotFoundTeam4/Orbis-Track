@@ -5,6 +5,7 @@ import SearchFilter from "../components/SearchFilter";
 import { useToast } from "../components/Toast";
 import { categoryService, type Category } from "../services/CategoryService";
 import { AlertDialog } from "../components/AlertDialog";
+import { CategoryModal } from "../components/CategoryModal";
 
 
 
@@ -38,6 +39,9 @@ export const Categories = () => {
 
     // ========= Delete Confirm =========
     const [deleteTarget , setDeleteTarget] = useState<Category | null>(null);
+
+    // ========= Add Category Modal =========
+    const [modalOpen, setModalOpen] = useState(false);
 
 
 
@@ -178,7 +182,7 @@ export const Categories = () => {
                         <Button
                             size="md"
                             icon={<Icon icon="ic:baseline-plus" width="20px" height="20px" />}
-                            onClick={() => toast.push({ message : "ยังไม่ทำ Add Category" , tone: "warning"})}
+                            onClick={() => setModalOpen(true)}
                             className="w-[150px] h-[46px] text-[16px] font-medium flex items-center justify-center gap-2 cursor-pointer"
                         >
                             เพิ่มหมวดหมู่
@@ -343,16 +347,7 @@ export const Categories = () => {
                     </form>
                 </div>
                 </div>
-                
-                
-                
-
-
             </div>
-
-
-
-
         </div>
         <AlertDialog
             open={!!deleteTarget}
@@ -376,14 +371,30 @@ export const Categories = () => {
                 if (!deleteTarget) return;
                 await categoryService.deleteCategory(deleteTarget.ca_id);
                 toast.push({ message: "ลบหมวดหมู่สำเร็จ", tone: "confirm" });
-                setRefreshTrigger((p) => p + 1); 
+                setRefreshTrigger((p) => p + 1);
             }}
             />
 
-        
-
-
-    </div>
+            {    /**
+        * Description: แสดง Modal สำหรับเพิ่มหมวดหมู่อุปกรณ์ (Category)
+        *              - เปิด Modal เมื่อ modalOpen = true
+        *              - ใช้โหมด add-category เพื่อเพิ่มหมวดหมู่ใหม่
+        *              - เมื่อเพิ่มสำเร็จ จะรีเฟรชข้อมูลตารางหมวดหมู่
+        * Input     :  - modalOpen            : สถานะการเปิด/ปิด Modal
+        *              - onOpenChange         : ฟังก์ชันควบคุมการเปิด/ปิด Modal
+        *              - onSuccess            : Callback หลังเพิ่มหมวดหมู่สำเร็จ
+        * Output    :  รีเฟรชข้อมูลหมวดหมู่ใหม่ผ่าน refreshTrigger
+        * Author    :  Rachata Jitjeankhan (Tang) 66160369
+        */}
+        <CategoryModal
+            open={modalOpen}
+            mode="add-category"
+            onOpenChange={setModalOpen}
+            onSuccess={() => {
+                setRefreshTrigger((p) => p + 1);
+            }}
+        />
+    </div>  
   )
   
 };

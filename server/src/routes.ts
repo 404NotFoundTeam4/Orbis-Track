@@ -43,8 +43,6 @@ export function routes(app: Express) {
 
   api.use("/inventory", authMiddleware, inventoryRouter);
 
-  api.use("/inventory", authMiddleware, inventoryRouter);
-
   api.use("/category", authMiddleware, categoryRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1

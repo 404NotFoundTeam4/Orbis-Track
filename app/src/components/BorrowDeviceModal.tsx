@@ -7,7 +7,7 @@ import { Icon } from "@iconify/react";
 import TimePickerField from "./TimePickerField";
 import { AlertDialog } from "./AlertDialog";
 import type { GetAvailable } from "../services/BorrowService";
-
+import BorrowModal from "../components/BorrowDate/BorrowModal";
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
     serialNumber: string;

@@ -19,6 +19,7 @@ import { Cart } from "./Cart";
 // import EditCart from "./EditCart";
 import ListDevices from "./ListDevices";
 import BorrowDevice from "./BorrowDevice";
+import BorrowModalDate from "./BorrowModalDate";
 
 function App() {
   return (
@@ -31,7 +32,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/" element={<Login />} />
-
+          <Route path="/date" element={<BorrowModalDate />} />
           {/* Protected Routes ที่มี Navbar และถูกครอบด้วย Layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Navbar />}>

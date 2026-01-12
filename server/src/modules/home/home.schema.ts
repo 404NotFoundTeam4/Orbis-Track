@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 //Schema ของข้อมูลภายใน (data) ที่จะส่งกลับใน Response
-export const HomeStatsSchema = z.object({
+export const homeStatsSchema = z.object({
   borrowed: z.number(),
   returned: z.number(),
   waiting: z.number(),
   report: z.number(),
 });
-export const TicketHomeItemSchema = z.object({
+export const ticketHomeItemSchema = z.object({
   id: z.number(),
   status: z.string(),
   dates: z.object({
@@ -34,16 +34,16 @@ export const TicketHomeItemSchema = z.object({
 });
 
 // Schema ของ Response ทั้งหมด
-export const GetStatsResponseSchema = z.object({
+export const getStatsResponseSchema = z.object({
   status: z.string().default("success"),
-  data: HomeStatsSchema,
+  data: homeStatsSchema,
 });
 
-export const GetRecentTicketsResponseSchema = z.object({
+export const getRecentTicketsResponseSchema = z.object({
   status: z.string().default("success"),
-  data: z.array(TicketHomeItemSchema),
+  data: z.array(ticketHomeItemSchema),
 });
 
 // Export Type
-export type GetStatsResponse = z.infer<typeof GetStatsResponseSchema>;
-export type GetRecentTicketsResponse = z.infer<typeof GetRecentTicketsResponseSchema>;
+export type HomeStats = z.infer<typeof homeStatsSchema>;
+export type TicketHomeItem = z.infer<typeof ticketHomeItemSchema>;

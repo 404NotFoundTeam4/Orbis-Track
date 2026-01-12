@@ -1,6 +1,6 @@
 import { Router } from "../../core/router.js";
 import { HomeController } from "./home.controller.js";
-import { GetStatsResponseSchema, GetRecentTicketsResponseSchema } from "./home.schema.js";
+import { getStatsResponseSchema, getRecentTicketsResponseSchema } from "./home.schema.js";
 
 const homeController = new HomeController(); 
 const router = new Router(undefined, '/home'); 
@@ -14,7 +14,7 @@ const router = new Router(undefined, '/home');
  */
 router.getDoc("/stats", { 
   tag: "Home", 
-  res: GetStatsResponseSchema, 
+  res: getStatsResponseSchema, 
   auth: true 
 }, homeController.getStats);
 
@@ -27,7 +27,7 @@ router.getDoc("/stats", {
  */
 router.getDoc("/tickets", { 
   tag: "Home", 
-  res: GetRecentTicketsResponseSchema, 
+  res: getRecentTicketsResponseSchema, 
   auth: true 
 }, homeController.getRecentTickets);
 

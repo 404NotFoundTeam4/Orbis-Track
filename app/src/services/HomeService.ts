@@ -12,6 +12,7 @@ export interface TicketRequester {
   empcode: string | null;
   image: string | null;
   department: string | null;
+  us_phone?: string | null;
 }
 // Interface สำหรับสรุปอุปกรณ์ในคำร้อง
 export interface TicketDeviceSummary {
@@ -20,7 +21,7 @@ export interface TicketDeviceSummary {
   serial_number: string;
   description: string | null;
   location: string;
-  max_borrow_days: number | string | null;
+  maxBorrowDays: number | string | null;
   image: string | null;
   category: string;
   section: string;
@@ -73,6 +74,7 @@ export interface TicketDetailData {
   reject_reason: string | null;
   reject_date: string | null;
   dates: TicketDates;
+  location_use: string;
   locations: {
     pickup: string | null;
     return: string | null;
@@ -85,6 +87,8 @@ export interface TicketDetail {
   details: TicketDetailData;
   timeline: TicketTimeline[];
   devices: TicketDeviceChild[];
+  accessories?: TicketAccessory[]; 
+  requester?: TicketRequester;
 }
 // Interface สำหรับสถิติหน้า Home
 export interface HomeStats {
@@ -92,6 +96,12 @@ export interface HomeStats {
   returned: number;
   waiting: number;
   report: number;
+}
+// Interface สำหรับอุปกรณ์เสริมในหน้ารายละเอียดคำร้อง
+export interface TicketAccessory {
+  acc_id: number;
+  acc_name: string;
+  acc_quantity: number;
 }
 
 export const homeService = {

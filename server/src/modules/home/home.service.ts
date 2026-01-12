@@ -16,10 +16,10 @@ const addDays = (date: Date, days: number) => {
 // Type สำหรับดึงข้อมูลคำร้องพร้อมความสัมพันธ์ที่จำเป็น
 type TicketWithRelations = Prisma.borrow_return_ticketsGetPayload<{
   include: {
-    requester: true; 
+    requester: true;
     ticket_devices: {
       include: {
-        child: { 
+        child: {
           include: {
             device: {
               include: {
@@ -83,33 +83,44 @@ async function getHomeStats() {
  * Author    : Worrawat Namwat (Wave) 66160372
  */
 async function getRecentTickets() {
-  const tickets: TicketWithRelations[] = await prisma.borrow_return_tickets.findMany({
-    take: 5,
-    orderBy: { created_at: "desc" },
-    where: { deleted_at: null },
-    include: {
-      requester: true, 
-      ticket_devices: {
-        include: {
-          child: { 
-            include: {
-              device: { 
-                include: {
-                  category: true,
-                  section: { include: { department: true } },
+  const tickets: TicketWithRelations[] =
+    await prisma.borrow_return_tickets.findMany({
+      take: 5,
+      orderBy: { created_at: "desc" },
+      where: { deleted_at: null },
+      include: {
+        requester: true,
+        ticket_devices: {
+          include: {
+            child: {
+              include: {
+                device: {
+                  include: {
+                    category: true,
+                    section: { include: { department: true } },
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    });
 
   // แปลงข้อมูลให้อยู่ในรูปแบบที่ต้องการ
   const formattedTickets = tickets.map((ticket) => {
     const deviceChild = ticket.ticket_devices[0]?.child;
     const mainDevice = deviceChild?.device;
+    const deptName = mainDevice?.section?.department?.dept_name || "-";
+    const sectionName = mainDevice?.section?.sec_name || "-";
+
+    // ตัดคำ "แผนก " ออก
+    const cleanDept = deptName.replace(/^แผนก\s*/, "");
+
+    // ตัด "แผนก มีเดีย ฝ่ายย่อย " ให้เหลือแค่ตัวอักษรท้าย
+    const cleanSection = sectionName
+      .replace(/^.*ฝ่ายย่อย\s*/i, "")
+      .trim();
 
     return {
       id: ticket.brt_id,
@@ -117,17 +128,22 @@ async function getRecentTickets() {
       dates: {
         start: ticket.brt_start_date.toISOString(),
         end: ticket.brt_end_date.toISOString(),
-        pickup: ticket.brt_pickup_datetime ? ticket.brt_pickup_datetime.toISOString() : null,
-        return: ticket.brt_return_datetime ? ticket.brt_return_datetime.toISOString() : null,
+        pickup: ticket.brt_pickup_datetime
+          ? ticket.brt_pickup_datetime.toISOString()
+          : null,
+        return: ticket.brt_return_datetime
+          ? ticket.brt_return_datetime.toISOString()
+          : null,
       },
       device_summary: {
         name: mainDevice?.de_name || "Unknown Device",
         // ใช้ serial ของลูก (child) ถ้ามี หรือของแม่ (main)
-        serial_number: deviceChild?.dec_serial_number || mainDevice?.de_serial_number || "-", 
+        serial_number:
+          deviceChild?.dec_serial_number || mainDevice?.de_serial_number || "-",
         total_quantity: ticket.brt_quantity,
         category: mainDevice?.category?.ca_name || "-",
-        department: mainDevice?.section?.department?.dept_name || "-",
-        section: mainDevice?.section?.sec_name || "-",
+        department: cleanDept || "-",
+        section: cleanSection || "-",
         description: mainDevice?.de_description || null,
         image: mainDevice?.de_images || null,
         max_borrow_days: mainDevice?.de_max_borrow_days || 0,

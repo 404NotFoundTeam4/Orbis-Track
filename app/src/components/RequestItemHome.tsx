@@ -655,7 +655,7 @@ const RequestItemHome = ({
                 {/* Footer Alert */}
                 <div className="bg-[#FFE8E8] border border-[#FF4D4F] text-[#FF4D4F] p-1 rounded-lg text-sm text-center">
                   *อุปกรณ์นี้ถูกยืมได้สูงสุด{" "}
-                  {ticket.device_summary.max_borrow_days ?? "-"} วัน
+                  {ticket.device_summary.maxBorrowDays ?? "-"} วัน
                 </div>
               </div>
 
@@ -757,7 +757,7 @@ const RequestItemHome = ({
                       เบอร์โทรศัพท์ผู้ยืม
                     </span>
                     <span className="text-[#636363] text-sm">
-                      {ticketDetail?.requester.us_phone
+                      {ticketDetail?.requester?.us_phone
                         ? ticketDetail.requester.us_phone.replace(
                           /(\d{3})(\d{3})(\d{4})/,
                           "$1-$2-$3",
@@ -784,7 +784,7 @@ const RequestItemHome = ({
                           - {acc.acc_name}
                         </span>
                         <span className="text-[#636363] text-sm">
-                          {acc.acc_quantity} ชิ้น
+                          {acc.acc_quantity * ticket.device_summary.total_quantity} ชิ้น
                         </span>
                       </div>
                     ))
@@ -797,29 +797,10 @@ const RequestItemHome = ({
 
                   {/* Textarea */}
                   <div className="grid grid-cols-[150px_1fr] items-start">
-                    <span className="text-[#000000] text-sm">
-                      สถานะที่รับอุปกรณ์
+                    <span className="text-black text-sm">สถานที่รับอุปกรณ์</span>
+                    <span className="text-gray-600 text-sm">
+                      {ticketDetail?.details.locations.pickup || "-"}
                     </span>
-                    {checkLastStage(
-                      ticketDetail?.details.current_stage,
-                      ticketDetail?.timeline?.length || 0,
-                    ) && ticket.status === "PENDING" ? (
-                      <textarea
-                        className={`w-[80%] h-[100px] p-3 bg-white border rounded-xl resize-none text-sm transition-all ${isInvalid
-                          ? "border-red-500 ring-1 ring-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.2)]"
-                          : "border-[#BFBFBF] focus:border-[#40A9FF] focus:ring-1 focus:ring-[#40A9FF]"
-                          }`}
-                        placeholder="กรอกสถานที่รับอุปกรณ์ (เช่น ตึก A ชั้น 2)"
-                        value={pickupLocation}
-                        onChange={(e) =>
-                          onPickupLocationChange?.(ticket.id, e.target.value)
-                        }
-                      ></textarea>
-                    ) : (
-                      <span className="text-[#000000] text-sm">
-                        {ticketDetail?.details.locations.pickup || "-"}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>

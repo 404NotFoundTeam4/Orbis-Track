@@ -135,7 +135,7 @@ export const MenuConfig: menuItem[] = [
       {
         key: "categories",
         label: "หมวดหมู่อุปกรณ์",
-        path: "/administrator/departments-management",
+        path: "/category",
         roles: [UserRole.ADMIN,UserRole.STAFF],
       },
     ],

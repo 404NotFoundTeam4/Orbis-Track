@@ -1,4 +1,3 @@
-import { templateLiteral } from "zod";
 import { Router } from "../../core/router.js";
 import { CategoryController } from "./category.controller.js";
 import {
@@ -8,11 +7,16 @@ import {
   categorySchema,
   softDeleteCategoryResponseSchema,
   editCategoryPayload,
+  addCategoryPayload,
+  addCategoryResponseSchema,
 } from "./category.schema.js";
+
 const controller = new CategoryController();
+
+// สร้าง router สำหรับ /api/v1/category (main path)
 const router = new Router(undefined, "/category");
 
-// GET /categories
+// GET /category
 router.getDoc(
   "/",
   {
@@ -24,7 +28,7 @@ router.getDoc(
   controller.getCategories
 );
 
-// GET /categories/:id
+// GET /category/:id
 router.getDoc(
   "/:id",
   {
@@ -36,7 +40,7 @@ router.getDoc(
   controller.getCategory
 );
 
-// DELETE /categories/:id (Soft Delete Category)
+// DELETE /category/:id (Soft Delete Category)
 router.deleteDoc(
   "/:id",
   {
@@ -51,4 +55,18 @@ router.deleteDoc(
 // PUT /category
 router.putDoc("/", { tag: "Categories", body: editCategoryPayload, auth: true }, controller.editCategory);
 
+export default router.instance;
+// POST /category - เพิ่มหมวดหมู่ใหม่
+
+router.postDoc(
+  "/",
+  {
+    tag: "Categories",
+    auth: true,
+    body: addCategoryPayload,
+    res: addCategoryResponseSchema,
+  },
+
+  controller.addCategory
+);
 export default router.instance;

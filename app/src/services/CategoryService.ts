@@ -79,7 +79,7 @@ async function getCategories(query: GetCategoriesQuery): Promise<GetCategoriesRe
 
 
 export async function deleteCategory(id: number) {
-  return api.delete(`/category/${id}`); 
+  return api.delete(`/category/${id}`);
 }
 
 /**
@@ -94,3 +94,24 @@ export async function editCategory(payload: EditCategoryPayload): Promise<string
 }
 
 export const categoryService = { getCategories, deleteCategory, editCategory };
+ * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่เข้าสู่ระบบ
+ *              - ส่งข้อมูลชื่อหมวดหมู่ไปยัง Backend ผ่าน API
+ *              - ใช้สำหรับการเพิ่มหมวดหมู่จากหน้า Category Modal
+ *              - Backend จะตรวจสอบความซ้ำของชื่อหมวดหมู่
+ * Input     : payload.ca_name (string) : ชื่อหมวดหมู่อุปกรณ์ที่ต้องการเพิ่ม
+ * Output    : Category : ข้อมูลหมวดหมู่ที่ถูกเพิ่มสำเร็จจาก Backend
+ * Author    : Rachata Jitjeankhan (Tang) 66160369
+ */
+export async function addCategory(payload: { ca_name: string }): Promise<Category> {
+  // ส่งเป็น Object ที่มี key ชื่อ ca_name ให้ตรงกับที่ Backend รับ
+  const res = await api.post("/category",
+    payload
+  );
+  return res.data.data;
+}
+
+export const categoryService = { 
+  getCategories, 
+  deleteCategory, 
+  addCategory, 
+};

@@ -1,11 +1,15 @@
-
 import { prisma } from "../../infrastructure/database/client.js";
 import type { z } from "zod";
 import {
     EditCategoryPayload,
-    GetCategoriesQuerySchema
+    GetCategoriesQuerySchema,
+    GetCategoriesQuerySchema,
+    AddCategoryPayload,
+    idParamSchema,
 } from "./category.schema.js";
 import { ca } from "zod/locales";
+
+type IdParamDto = z.infer<typeof idParamSchema>;
 
 /**
  * Description: ดึงรายการหมวดหมู่อุปกรณ์ (Categories) พร้อมรองรับค้นหา, เรียงลำดับ และแบ่งหน้า
@@ -176,5 +180,46 @@ export async function editCategory(payload: EditCategoryPayload) {
 
     return { message: "Category updated successfully" };
 }
+/**
+ * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่
+ * Input     : payload { ca_name: string } - ชื่อหมวดหมู่ที่ต้องการเพิ่ม
+ * Output    : { ca_id, ca_name, created_at, updated_at, deleted_at } - ข้อมูลหมวดหมู่ที่เพิ่มเข้ามา
+ * Logic     :
+ *   - ตรวจสอบว่าชื่อหมวดหมู่ไม่ซ้ำกับที่มีอยู่ในระบบ
+ *   - บันทึกหมวดหมู่ใหม่ลงฐานข้อมูล
+ * Author    : Rachata Jitjeankhan (Tang) 66160369
+ */
+export async function addCategory(payload: AddCategoryPayload) {
+  const { ca_name } = payload;
 
-export const categoryService = { getCategories, getCategoryById, softDeleteCategory, editCategory }
+  // ตรวจสอบว่าหมวดหมู่ชื่อเดียวกันมีอยู่แล้วหรือไม่
+  const existingCategory = await prisma.categories.findFirst({
+    where: {
+      ca_name: { equals: ca_name, mode: "insensitive" },
+      deleted_at: null,
+    },
+  });
+
+  if (existingCategory) {
+    throw new Error("Category name already exists");
+  }
+
+  // เพิ่มหมวดหมู่ใหม่
+  const createdCategory = await prisma.categories.create({
+    data: {
+      ca_name,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+
+  return createdCategory;
+}
+
+export const categoryService = {
+getCategories,
+getCategoryById,
+softDeleteCategory,
+  editCategory,
+addCategory,
+}

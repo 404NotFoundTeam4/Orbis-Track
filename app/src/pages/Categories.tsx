@@ -40,6 +40,9 @@ export const Categories = () => {
     // ========= Delete Confirm =========
     const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
+    // ========= Add Category Modal =========
+    const [modalOpen, setModalOpen] = useState(false);
+
 
 
     /**
@@ -159,6 +162,21 @@ export const Categories = () => {
                     <span className="text-[#858585]">&gt;</span>
                     <span className="text-[#000000]">หมวดหมู่อุปกรณ์</span>
                 </div>
+                    {/* ช่องค้นหา */}
+                    <div className="w-[420px] max-w-full">
+                        <SearchFilter onChange={setSearchFilters} />
+                    </div>
+
+                    {/* Button -เพิ่มหมวดหมู่ */}
+                    <div className="flex items-center gap-2">
+                        <Button
+                            size="md"
+                            icon={<Icon icon="ic:baseline-plus" width="20px" height="20px" />}
+                            onClick={() => setModalOpen(true)}
+                            className="w-[150px] h-[46px] text-[16px] font-medium flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                            เพิ่มหมวดหมู่
+                        </Button>
 
                 {/* Title จัดการหมวดหมู่*/}
                 <div className="flex items-center gap-[14px] mb-[21px] h-[34px]">
@@ -361,16 +379,7 @@ export const Categories = () => {
                             </form>
                         </div>
                     </div>
-
-
-
-
-
                 </div>
-
-
-
-
             </div>
             <AlertDialog
                 open={!!deleteTarget}
@@ -397,11 +406,139 @@ export const Categories = () => {
                     setRefreshTrigger((p) => p + 1);
                 }}
             />
-
-
-
-
         </div>
     )
 
+                {/* Pagination  */}
+                <div className="mt-3 mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+                {/* ขวา: ตัวแบ่งหน้า */}
+                <div className="flex items-center gap-2">
+                    {/* ปุ่มก่อนหน้า */}
+                    <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-[gray-50]"
+                    >
+                    {"<"}
+                    </button>
+
+                    {/* หน้า 1 */}
+                    <button
+                    type="button"
+                    onClick={() => setPage(1)}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                    >
+                    1
+                    </button>
+
+                    {/* หน้าปัจจุบันถ้าไม่ใช่ 1 และไม่ใช่หน้าสุดท้าย แสดงด้วยกรอบดำ */}
+                    {page > 2 && <span className="px-1 text-gray-400">…</span>}
+                    {page > 1 && page < totalPages && (
+                    <button
+                        type="button"
+                        className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                    >
+                        {page}
+                    </button>
+                    )}
+                    {page < totalPages - 1 && (
+                    <span className="px-1 text-gray-400">…</span>
+                    )}
+
+                    {/* หน้าสุดท้าย (ถ้ามากกว่า 1) */}
+                    {totalPages > 1 && (
+                    <button
+                        type="button"
+                        onClick={() => setPage(totalPages)}
+                        className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"}`}
+                    >
+                        {totalPages}
+                    </button>
+                    )}
+
+                    {/* ถัดไป */}
+                    <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+                    >
+                    {">"}
+                    </button>
+
+                    {/* ไปหน้าที่ */}
+                    <form
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                        e.preventDefault();
+                        const fd = new FormData(e.currentTarget);
+                        const v = Number(fd.get("goto"));
+                        if (!Number.isNaN(v))
+                            setPage(Math.min(totalPages, Math.max(1, v)));
+                        }
+                    }}
+                    className="flex items-center gap-1"
+                    >
+                    <span>ไปที่หน้า</span>
+                    <input
+                        name="goto"
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        className="h-8 w-14 rounded border border-[#D9D9D9] px-2 text-sm"
+                    />
+                    </form>
+                </div>
+                </div>
+            </div>
+        </div>
+        <AlertDialog
+            open={!!deleteTarget}
+            onOpenChange={(open) => {
+                if (!open) setDeleteTarget(null);
+            }}
+            tone="danger"
+            title="ยืนยันการลบหมวดหมู่"
+            description={
+                deleteTarget ? (
+                <>
+                    ต้องการลบหมวดหมู่{" "}
+                    <span className="font-semibold">{deleteTarget.ca_name}</span>{" "}
+                    ใช่หรือไม่
+                </>
+                ) : null
+            }
+            confirmText="ลบ"
+            cancelText="ยกเลิก"
+            onConfirm={async () => {
+                if (!deleteTarget) return;
+                await categoryService.deleteCategory(deleteTarget.ca_id);
+                toast.push({ message: "ลบหมวดหมู่สำเร็จ", tone: "confirm" });
+                setRefreshTrigger((p) => p + 1);
+            }}
+            />
+
+            {    /**
+        * Description: แสดง Modal สำหรับเพิ่มหมวดหมู่อุปกรณ์ (Category)
+        *              - เปิด Modal เมื่อ modalOpen = true
+        *              - ใช้โหมด add-category เพื่อเพิ่มหมวดหมู่ใหม่
+        *              - เมื่อเพิ่มสำเร็จ จะรีเฟรชข้อมูลตารางหมวดหมู่
+        * Input     :  - modalOpen            : สถานะการเปิด/ปิด Modal
+        *              - onOpenChange         : ฟังก์ชันควบคุมการเปิด/ปิด Modal
+        *              - onSuccess            : Callback หลังเพิ่มหมวดหมู่สำเร็จ
+        * Output    :  รีเฟรชข้อมูลหมวดหมู่ใหม่ผ่าน refreshTrigger
+        * Author    :  Rachata Jitjeankhan (Tang) 66160369
+        */}
+        <CategoryModal
+            open={modalOpen}
+            mode="add-category"
+            onOpenChange={setModalOpen}
+            onSuccess={() => {
+                setRefreshTrigger((p) => p + 1);
+            }}
+        />
+    </div>  
+  )
+  
 };

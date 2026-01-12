@@ -244,7 +244,7 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/users"
+                      to="/administrator/category"
                       onClick={() => handleSubMenuClick("categories")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "categories" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >

@@ -1,5 +1,4 @@
 import { Outlet } from "react-router-dom";
-import { useUserStore } from "../stores/userStore";
 import type { Role } from "../stores/userStore";
 import Forbidden from "../pages/Forbidden";
 
@@ -8,8 +7,11 @@ interface RoleRouteProps {
 }
 
 export default function RoleRoute({ allowedRoles }: RoleRouteProps) {
-    const user = useUserStore((state) => state.user); // ดึงข้อมูล user จาก store
-    console.log(user)
+    const userRaw =
+        sessionStorage.getItem("User") || localStorage.getItem("User");
+
+    const user = userRaw ? JSON.parse(userRaw) : null;
+
     // ถ้า user ยังไม่โหลด แสดง loading (หรือรอ ProtectedRoute จัดการ)
     if (!user) {
         return (

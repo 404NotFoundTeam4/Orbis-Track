@@ -8,6 +8,7 @@ import TimePickerField from "./TimePickerField";
 import { AlertDialog } from "./AlertDialog";
 import type { GetAvailable } from "../services/BorrowService";
 import { useNavigate } from "react-router-dom";
+import getImageUrl from "../services/GetImage";
 
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
@@ -564,7 +565,7 @@ const BorrowEquipmentModal = ({
         <div className="border border-[#D9D9D9] rounded-[16px] w-[520px] h-[118px]">
           <img
             className="w-full h-full object-cover rounded-[16px]"
-            src={equipment.imageUrl}
+            src={getImageUrl(equipment.imageUrl)}
           />
         </div>
         {/* รายละเอียดอุปกรณ์ */}

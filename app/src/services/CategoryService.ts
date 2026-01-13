@@ -93,8 +93,8 @@ export async function editCategory(payload: EditCategoryPayload): Promise<string
   return await api.put('/category', payload);
 }
 
-export const categoryService = { getCategories, deleteCategory, editCategory };
- * Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่เข้าสู่ระบบ
+
+ /* Description: เพิ่มหมวดหมู่อุปกรณ์ (Category) ใหม่เข้าสู่ระบบ
  *              - ส่งข้อมูลชื่อหมวดหมู่ไปยัง Backend ผ่าน API
  *              - ใช้สำหรับการเพิ่มหมวดหมู่จากหน้า Category Modal
  *              - Backend จะตรวจสอบความซ้ำของชื่อหมวดหมู่
@@ -114,4 +114,5 @@ export const categoryService = {
   getCategories, 
   deleteCategory, 
   addCategory, 
+  editCategory
 };

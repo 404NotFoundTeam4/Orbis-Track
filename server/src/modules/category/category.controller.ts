@@ -39,7 +39,7 @@ export class CategoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<GetCategoriesResponseSchema>>  {
+  ): Promise<BaseResponse<GetCategoriesResponseSchema>> {
     const query = getCategoriesQuerySchema.parse(req.query);
     const result = await categoryService.getCategories(query);
     return { data: result };
@@ -55,7 +55,7 @@ export class CategoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<CategorySchema>>  {
+  ): Promise<BaseResponse<CategorySchema>> {
     const { id } = idParamSchema.parse(req.params);
     const category = await categoryService.getCategoryById(id);
 
@@ -82,12 +82,12 @@ export class CategoryController extends BaseController {
     return { data: result, message: "Category soft-deleted successfully" };
   }
 
- /**
- * Description: แก้ไขหมวดหมู่อุปกรณ์
- * Input     : req.body (caId, caName) - รหัสหมวดหมู่อุปกรณ์, ชื่อหมวดหมู่อุปกรณ์ใหม่
- * Output    : Promise<BaseResponse> = { message: string }
- * Author    : Thakdanai Makmi (Ryu) 66160355
- */
+  /**
+  * Description: แก้ไขหมวดหมู่อุปกรณ์
+  * Input     : req.body (caId, caName) - รหัสหมวดหมู่อุปกรณ์, ชื่อหมวดหมู่อุปกรณ์ใหม่
+  * Output    : Promise<BaseResponse> = { message: string }
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
   async editCategory(
     req: Request,
     res: Response,
@@ -104,17 +104,17 @@ export class CategoryController extends BaseController {
    * Author    : Rachata Jitjeankhan (Tang) 66160369
    */
   async addCategory(
-  req: Request,
-  _res: Response,
-  _next: NextFunction
-): Promise<BaseResponse<AddCategoryResponseSchema>> {
-  const payload = addCategoryPayload.parse(req.body);
-  const newCategory = await categoryService.addCategory(payload);
-  
-  return {
-    success: true,
-    data: newCategory,
-    message: "เพิ่มสำเร็จ",
-  };
-}
+    req: Request,
+    _res: Response,
+    _next: NextFunction
+  ): Promise<BaseResponse<AddCategoryResponseSchema>> {
+    const payload = addCategoryPayload.parse(req.body);
+    const newCategory = await categoryService.addCategory(payload);
+
+    return {
+      success: true,
+      data: newCategory,
+      message: "เพิ่มสำเร็จ",
+    };
+  }
 }

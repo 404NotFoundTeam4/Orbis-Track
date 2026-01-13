@@ -55,7 +55,7 @@ router.deleteDoc(
 // PUT /category
 router.putDoc("/", { tag: "Categories", body: editCategoryPayload, auth: true }, controller.editCategory);
 
-export default router.instance;
+
 // POST /category - เพิ่มหมวดหมู่ใหม่
 
 router.postDoc(

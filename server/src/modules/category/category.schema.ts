@@ -71,8 +71,8 @@ export const editCategoryPayload = z.object({
   caName: z.string(),
 });
 
-export type CategorySchema = z.infer<typeof categorySchema>
- * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการเพิ่มหมวดหมู่อุปกรณ์ (Category)
+
+/* Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการเพิ่มหมวดหมู่อุปกรณ์ (Category)
  * Input     :  ca_name (string) : ชื่อหมวดหมู่ที่ต้องการเพิ่ม (ต้องไม่เป็นค่าว่าง)
  * Output    :  Object { ca_name: string } ที่ผ่านการ validate แล้ว
  * Logic     :

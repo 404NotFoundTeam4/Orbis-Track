@@ -18,7 +18,7 @@ import {
   faClockRotateLeft,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
-import { UserRole, UserRoleTH } from "../utils/role.enum";
+import { UserRole, UserRoleTH } from "../utils/RoleEnum";
 import Logo from "../assets/images/navbar/Logo.png";
 import LogoGiag from "../assets/images/navbar/logo giga.png";
 import getImageUrl from "../services/GetImage";
@@ -110,7 +110,7 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <div className="flex items-center  h-full">
+        <div className="flex items-center h-full">
           <div className="relative h-full flex items-center">
             <button
               type="button"
@@ -214,7 +214,7 @@ export const Navbar = () => {
 
                 <ul
                   className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${isDropdownOpen
-                    ? "max-h-[500px] opacity-100 "
+                    ? "max-h-[500px] opacity-100"
                     : "max-h-0 opacity-0"
                     }`}
                 >
@@ -270,7 +270,7 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/users"
+                      to="/administrator/category"
                       onClick={() => handleSubMenuClick("categories")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "categories" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >

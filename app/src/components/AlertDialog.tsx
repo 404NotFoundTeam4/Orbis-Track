@@ -7,7 +7,7 @@
 import React, { useEffect, useId } from "react";
 import Button from "./Button";
 
-export type AlertTone = "success" | "warning" | "danger" | "reject" | "confirm";
+export type AlertTone = "success" | "warning" | "danger" | "reject" | "confirm" | "devicewarning" | "editDevice";
 
 export type AlertDialogProps = {
   open: boolean;
@@ -48,9 +48,11 @@ export type AlertDialogProps = {
 };
 
 const TONE_HEX: Record<AlertTone, string> = {
-  success: "#FFC53D",
+  success: "#52C41A",
   warning: "#FFC53D",
   danger: "#FF4D4F",
+  devicewarning: "#FFC53D",
+  editDevice: "#52C41A",
   reject: "#FFC53D",
   confirm: "#52C41A",
 };
@@ -59,6 +61,8 @@ const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
   success: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white",
   warning: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ยืนยันปกติให้เขียว
   danger: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
+  devicewarning: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
+  editDevice: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white",
   reject: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white", // ปุ่มแดง ไอค่อนเหลือง
   confirm: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ปุ่มเขียว วงเขียว
 };
@@ -198,7 +202,7 @@ export function AlertDialog({
           >
             <Button
               variant="secondary"
-              className={cx("rounded-full", `!text-[${buttonTextPx}px]`)}
+              className={cx("rounded-full cursor-pointer", `!text-[${buttonTextPx}px]`)}
               onClick={() => {
                 onCancel?.();
                 onOpenChange?.(false);
@@ -214,7 +218,7 @@ export function AlertDialog({
                 tone === "danger" || tone === "reject" ? "danger" : "primary"
               }
               className={cx(
-                "rounded-full",
+                "rounded-full cursor-pointer",
                 confirmCls,
                 `!text-[${buttonTextPx}px]`,
               )}

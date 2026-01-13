@@ -226,7 +226,7 @@ async function main() {
     },
   });
 
-  // ---- CATEGORIES & ACCESSORIES ----
+   // ---- CATEGORIES & ACCESSORIES ----
   console.log("📦 Creating categories & accessories...");
   const catCamera = await prisma.categories.upsert({
     where: { ca_id: 1 },
@@ -243,9 +243,7 @@ async function main() {
     update: { ca_name: "โปรเจคเตอร์" },
     create: { ca_name: "โปรเจคเตอร์" },
   });
-
-  // Accessories will be created after devices (since they now reference devices)
-
+  
   // ---- APPROVAL FLOWS ----
   console.log("🔄 Creating approval flows...");
   const flowMedia = await prisma.approval_flows.upsert({

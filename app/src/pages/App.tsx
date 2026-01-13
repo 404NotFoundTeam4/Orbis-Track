@@ -8,13 +8,18 @@ import Dashboard from "./Dashboard";
 import "../styles/css/index.css";
 import ResetPassword from "./ResetPassword";
 import { Otppassword } from "./Otppassword";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Navbar/Navbar";
 import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword";
 import Requests from "./Requests";
+import Inventory from "./Inventory";
+import AddInventory from "./AddInventory";
+import ModalToggleExample from "./ModalToggleExample";
+import EditInventory from "./EditInventory";
+import { Categories } from "./Categories";
 import { Cart } from "./Cart";
 import EditCart from "./EditCart";
 import RoleRoute from "../middlewares/RoleRoute";
@@ -90,6 +95,7 @@ function App() {
         <Routes>
           {/* Public Route */}
           <Route path="/login" element={<Login />} />
+           <Route path="/date" element={<ModalToggleExample />} />
           <Route path="/otp" element={<Otppassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -129,6 +135,27 @@ function App() {
                   />
                 }
               >
+
+              <Route
+                path="/administrator/account-management"
+                element={<Users />}
+              />
+               <Route path="/inventory/add" element={<AddInventory />} />
+              <Route path="/users" element={<Users />} />
+              <Route
+                path="/administrator/departments-management"
+                element={<Departments />}
+              />
+
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/inventory/edit/:id" element={<EditInventory />} />
+
+              <Route path="/category" element={<Categories />} />
+          
+              <Route path="/example-component" element={<TestDropDown />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/requests" element={<Requests />} />
+                
                 <Route path="/home" element={<RolePathRedirect />} />
 
                 <Route path="/setting" element={<RolePathRedirect />} />
@@ -158,6 +185,10 @@ function App() {
               <Route path="profile" element={<RolePathRedirect />} />
               <Route path="/example-component" element={<RolePathRedirect />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route
+                path="/administrator/inventory"
+                element={<Inventory/>}
+              />
             </Route>
             {/* 404 Not Found - สำหรับ routes ที่ไม่ match ใน protected area */}
             <Route path="*" element={<NotFound />} />

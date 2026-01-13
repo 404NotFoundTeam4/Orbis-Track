@@ -46,7 +46,6 @@ interface BorrowEquipmentModalProps {
   equipment: EquipmentDetail; // รายละเอียดอุปกรณ์
   onSubmit: (data: { data: BorrowFormData }) => void; // ฟังก์ชันส่งข้อมูลตอน “ส่งคำร้อง” หรือ “บันทึก”
   onAddToCart?: (data: { data: any }) => void; // ฟังก์ชันเพิ่มไปยังรถเข็น
-
   availableDevices: GetAvailable[]; // รายการอุปกรณ์ลูก
   availableCount: number; // จำนวนอุปกรณ์ที่พร้อมใช้งาน
   selectedDeviceIds: number[]; // อุปกรณ์ที่เลือก

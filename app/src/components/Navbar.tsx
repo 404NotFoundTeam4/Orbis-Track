@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import "../styles/css/icon.css";
 import "../styles/css/Navbar.css";
 import { Outlet } from "react-router-dom";
@@ -13,37 +13,93 @@ import {
   faCartShopping,
   faServer,
   faBoxArchive,
-  faBoxesStacked,
   faWrench,
   faChartLine,
   faClockRotateLeft,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
+import { UserRole, UserRoleTH } from "../utils/RoleEnum";
 import Logo from "../assets/images/navbar/Logo.png";
 import LogoGiag from "../assets/images/navbar/logo giga.png";
 import getImageUrl from "../services/GetImage";
+import { getBasePath } from "../constants/rolePath";
+
+import { useNotifications } from "../hooks/useNotifications.tsx";
+import { NotificationList } from "./Notification";
 
 export const Navbar = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [active, setActive] = useState<"bell" | "cart" | null>(null);
+  const handleOpenNotifications = useCallback(() => setActive("bell"), []);
+
+  const { notifications, unreadCount, loadMore, hasMore } = useNotifications({
+    onOpenNotifications: handleOpenNotifications,
+  });
+
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
   };
   const navigate = useNavigate();
-  const { user, logout } = useUserStore();
-  const dataUser =
-    localStorage.getItem("User") || sessionStorage.getItem("User");
-  const User = dataUser ? JSON.parse(dataUser) : null;
+  const { logout } = useUserStore();
+  const [User, setUser] = useState(() => {
+    const data = localStorage.getItem("User") || sessionStorage.getItem("User");
+    return data ? JSON.parse(data) : null;
+  });
 
-  const closeDropdown = () => setDropdownOpen(false);
+  useEffect(() => {
+    let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const handleStorageChange = () => {
+      const data =
+        localStorage.getItem("User") || sessionStorage.getItem("User");
+
+      const parsed = data ? JSON.parse(data) : null;
+
+      if (JSON.stringify(parsed) !== JSON.stringify(User)) {
+        reloadTimeout = setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
+
+      setUser(parsed);
+    };
+
+    window.addEventListener("user-updated", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("user-updated", handleStorageChange);
+      if (reloadTimeout) clearTimeout(reloadTimeout);
+    };
+  }, [User]);
+
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+    setActiveSubMenu("");
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  const handleMenuClick = (menu: string) => {
+    setActiveMenu(menu);
+  };
+
+  const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
+  const handleSubMenuClick = (menu: string) => {
+    setActiveSubMenu(menu);
+  };
+
+  // สร้าง basePath จาก role ของ user ปัจจุบัน
+  const basePath = getBasePath(User?.us_role) || "";
+
   return (
     <div className="background fixed inset-0 overflow-hidden">
       {/* Navbar */}
-      <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[110px] flex justify-between items-center  top-0 left-0 z-50">
+      <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[100px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex gap-15 justify-center z-51">
           <div className="px-7.5">
             <img src={Logo} alt="" className=" w-[264px] h-[67px]" />
@@ -54,24 +110,35 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <div className="flex items-center  h-full">
-          <button
-            type="button"
-            onClick={() => setActive(active === "bell" ? null : "bell")}
-            className={`h-full px-6.5 ${
-              active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
-          >
-            {active !== "bell" && (
-              <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
+        <div className="flex items-center h-full">
+          <div className="relative h-full flex items-center">
+            <button
+              type="button"
+              onClick={() => setActive(active === "bell" ? null : "bell")}
+              className={`h-full px-6.5 ${active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+                } flex justify-center items-center relative`}
+            >
+              {unreadCount > 0 && (
+                <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
+              )}
+              <FontAwesomeIcon
+                icon={faBell}
+                className={`text-[23px] ${active === "bell" ? "text-white" : "text-[#595959]"
+                  }`}
+              />
+            </button>
+
+            {active === "bell" && (
+              <div className="absolute top-[100%] right-0 mt-2 z-50 shadow-xl">
+                <NotificationList
+                  notifications={notifications}
+                  onClose={() => setActive(null)}
+                  onLoadMore={loadMore}
+                  hasMore={hasMore}
+                />
+              </div>
             )}
-            <FontAwesomeIcon
-              icon={faBell}
-              className={`text-[23px] ${
-                active === "bell" ? "text-white" : "text-[#595959]"
-              }`}
-            />
-          </button>
+          </div>
 
           <button
             type="button"
@@ -88,30 +155,27 @@ export const Navbar = () => {
             )}
             <FontAwesomeIcon
               icon={faCartShopping}
-              className={`text-[23px] ${
-                active === "cart" ? "text-white" : "text-[#595959]"
-              }`}
+              className={`text-[23px] ${active === "cart" ? "text-white" : "text-[#595959]"
+                }`}
             />
           </button>
 
-          <div className="flex gap-2.5 items-centerx border-l border-l-[#D9D9D9] py-2.5 pl-7.5 pr-1 ">
-            <img
-              src={getImageUrl(User.us_images)}
-              alt=""
-              className="w-9 h-9 rounded-full"
-            />
-            <div className=" text-left text-black pr-8">
-              <div className="text-[16px] font-semibold">
-                {User.us_firstname}
+          <div className="flex gap-5 items-centerx border-l border-l-[#D9D9D9] ml-[21px] pl-11  pr-1 ">
+            <div className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
+              <img
+                src={getImageUrl(User?.us_images)}
+                alt=""
+                className="w-9 h-9 rounded-full"
+              />
+              <div className=" text-left text-black pr-8">
+                <div className="text-[16px] font-semibold">
+                  {User?.us_firstname ?? "-"}
+                </div>
+                <div className="text-[13px] font-normal">
+                  {User?.us_role ? UserRoleTH[User.us_role as UserRole] : "-"}
+                </div>
               </div>
-              <div className="text-[13px] font-normal">{User.us_role}</div>
             </div>
-            <Icon
-              icon="weui:arrow-outlined"
-              width="38"
-              height="38"
-              className="text-black rotate-90 "
-            />
           </div>
         </div>
       </div>
@@ -121,9 +185,12 @@ export const Navbar = () => {
           <div className="flex flex-col justify-between h-[calc(100vh-110px)] px-2 py-4 text-lg whitespace-nowrap">
             <div className="text-left">
               <Link
-                to="/home"
-                onClick={closeDropdown}
-                className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px] py-[11px] flex items-center w-full gap-2 "
+                to={`${basePath}/home`}
+                onClick={() => {
+                  closeDropdown();
+                  handleMenuClick("home");
+                }}
+                className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "home" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
               >
                 <FontAwesomeIcon icon={faHome} />
                 <span>หน้าแรก</span>
@@ -131,36 +198,35 @@ export const Navbar = () => {
 
               <li>
                 <div
-                  onClick={toggleDropdown}
-                  className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
-                    isDropdownOpen
-                      ? "bg-[#40A9FF] text-white"
-                      : "hover:bg-[#F0F0F0]"
-                  }`}
+                  onClick={() => {
+                    toggleDropdown();
+                    handleMenuClick("managements");
+                  }}
+                  className={`px-7.5 flex items-center w-full cursor-pointer gap-2  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen
+                    ? "bg-[#40A9FF] text-white"
+                    : "hover:bg-[#F0F0F0]"
+                    }`}
                 >
                   <FontAwesomeIcon icon={faServer} />
                   <span>การจัดการ</span>
                   <FontAwesomeIcon
                     icon={faChevronUp}
-                    className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${
-                      isDropdownOpen ? "rotate-0" : "rotate-180"
-                    }`}
+                    className={`mt-1 ml-auto transform transition-all duration-800 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
+                      }`}
                   />
                 </div>
 
                 <ul
-                  className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${
-                    isDropdownOpen
-                      ? "max-h-[500px] opacity-100"
-                      : "max-h-0 opacity-0"
-                  }`}
+                  className={`overflow-hidden transition-all duration-800 ease-in-out flex flex-col gap-1 ${isDropdownOpen
+                    ? "max-h-[500px] opacity-100"
+                    : "max-h-0 opacity-0"
+                    }`}
                 >
                   <li>
                     <Link
-                      to="/requests"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      to={`${basePath}/request-borrow-ticket`}
+                      onClick={() => handleSubMenuClick("requests")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "requests" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       คำร้อง
                     </Link>
@@ -169,9 +235,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("storages")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "storages" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       คลังอุปกรณ์
                     </Link>
@@ -179,10 +244,9 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      to={`${basePath}/account-management`}
+                      onClick={() => handleSubMenuClick("users")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "users" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       บัญชีผู้ใช้
                     </Link>
@@ -191,9 +255,8 @@ export const Navbar = () => {
                   <li>
                     <Link
                       to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      onClick={() => handleSubMenuClick("chatbots")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "chatbots" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       แชทบอท
                     </Link>
@@ -201,10 +264,9 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/administrator/departments-management"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      to={`${basePath}/departments-management`}
+                      onClick={() => handleSubMenuClick("departments")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "departments" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       แผนกและฝ่ายย่อย
                     </Link>
@@ -212,10 +274,9 @@ export const Navbar = () => {
 
                   <li>
                     <Link
-                      to="/users"
-                      className="px-15 hover:bg-[#F0F0F0] rounded-[9px] py-[11px]
-                 flex items-center w-full whitespace-nowrap
-                 focus:bg-[#EBF3FE] focus:text-[#40A9FF]"
+                      to="/administrator/category"
+                      onClick={() => handleSubMenuClick("categories")}
+                      className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "categories" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
                       หมวดหมู่อุปกรณ์
                     </Link>
@@ -233,8 +294,11 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("reports");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "reports" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faWrench} />
                   <span>แจ้งซ่อม</span>
@@ -242,8 +306,11 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("dashboards");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "dashboards" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faChartLine} flip="horizontal" />
                   <span>แดชบอร์ด</span>
@@ -251,17 +318,23 @@ export const Navbar = () => {
 
                 <Link
                   to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("histories");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "histories" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faClockRotateLeft} />
                   <span>ดูประวัติ</span>
                 </Link>
 
                 <Link
-                  to="/users"
-                  onClick={closeDropdown}
-                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
+                  to={`${basePath}/setting`}
+                  onClick={() => {
+                    closeDropdown();
+                    handleMenuClick("setting");
+                  }}
+                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "setting" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
                 >
                   <FontAwesomeIcon icon={faGear} />
                   <span>การตั้งค่า</span>

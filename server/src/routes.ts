@@ -9,8 +9,11 @@ import { UserRole } from "./core/roles.enum.js";
 import { requireRole } from "./middlewares/role.middleware.js";
 import { notificationsRouter } from "./modules/notifications/index.js";
 import { borrowReturnRouter } from "./modules/tickets/borrow-return/index.js";
+import { inventoryRouter } from "./modules/inventory/index.js";
+import { categoryRouter } from "./modules/category/index.js";
 import { cartsRouter } from "./modules/cart/index.js";
 import { borrowRouter } from "./modules/borrows/index.js";
+import { usersRouter } from "./modules/users/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1
@@ -41,7 +44,13 @@ export function routes(app: Express) {
   
   api.use("/tickets/borrow-return", authMiddleware, borrowReturnRouter);
 
+  api.use("/inventory", authMiddleware, inventoryRouter);
+
+  api.use("/category", authMiddleware, categoryRouter);
+  
   api.use("/borrow/cart", authMiddleware, cartsRouter);
+  
+  api.use("/user", authMiddleware, usersRouter);
 
   api.use("/inventory", authMiddleware, borrowRouter);
 

@@ -41,6 +41,9 @@ export const createNotificationSchema = z.object({
 
   // เวลาส่ง (เผื่อตั้งเวลาล่วงหน้า)
   send_at: z.string().datetime().optional(),
+
+  // อัปเดตการแจ้งเตือนเดิมที่มีอยู่แล้ว (Upsert)
+  upsert: z.boolean().optional(),
 });
 
 export const markAsReadSchema = z.object({

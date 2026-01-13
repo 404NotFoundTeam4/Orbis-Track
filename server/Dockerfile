@@ -46,7 +46,10 @@ ENV PRISMA_SCHEMA_PATH=$PRISMA_SCHEMA_PATH
 
 COPY package.json package-lock.json ./
 COPY server/package.json ./server/package.json
-RUN npm ci --workspaces --include-workspace-root
+
+# ใช้ BuildKit cache เพื่อเร่งความเร็ว npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --workspaces --include-workspace-root
 
 COPY server/src/infrastructure/database/prisma ./src/infrastructure/database/prisma
 RUN npx prisma generate --schema $PRISMA_SCHEMA_PATH

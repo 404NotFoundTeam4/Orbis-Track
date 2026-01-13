@@ -48,7 +48,7 @@ export const useLogin = () => {
           localStorage.setItem("User", JSON.stringify(User));
         }
 
-        navigate("/users");
+        navigate("/home");
         return res?.success;
       }
     } catch {

@@ -125,6 +125,7 @@ export interface TicketTimelineItem {
   sec_name: string | null;
   approved_by: string | null;
   updated_at: string | null;
+  approvers?: string[];
 }
 
 export interface TicketDetail {

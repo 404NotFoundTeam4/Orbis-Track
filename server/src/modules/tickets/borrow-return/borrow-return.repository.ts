@@ -225,7 +225,7 @@ export class BorrowReturnRepository {
    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
   async getById(id: number) {
-    return prisma.borrow_return_tickets.findUnique({
+    const ticket: any = await prisma.borrow_return_tickets.findUnique({
       where: { brt_id: id },
       include: {
         requester: {
@@ -276,6 +276,28 @@ export class BorrowReturnRepository {
         },
       },
     });
+
+    if (!ticket) return null;
+
+    // Fetch potential approvers for each stage
+    const stagesWithApprovers = await Promise.all(
+      ticket.stages.map(async (stage: any) => {
+        const users = await this.findPotentialApprovers(
+          stage.brts_role as US_ROLE,
+          stage.brts_dept_id,
+          stage.brts_sec_id,
+        );
+        return {
+          ...stage,
+          approvers: users.map((u) => `${u.us_firstname} ${u.us_lastname}`),
+        };
+      }),
+    );
+
+    return {
+      ...ticket,
+      stages: stagesWithApprovers,
+    };
   }
 
   /**
@@ -877,6 +899,32 @@ export class BorrowReturnRepository {
           },
         },
       },
+    });
+  }
+
+  /**
+   * Description: ค้นหาผู้ใช้งานที่มีสิทธิ์อนุมัติในขั้นตอนนั้นๆ
+   * Input     : role, deptId, secId
+   * Output    : Promise<User[]> - รายการผู้อนุมัติ
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  async findPotentialApprovers(
+    role: US_ROLE,
+    deptId: number | null,
+    secId: number | null,
+  ) {
+    return prisma.users.findMany({
+      where: {
+        us_role: role,
+        us_is_active: true,
+        ...(role === US_ROLE.HOD
+          ? { us_dept_id: deptId }
+          : {
+            us_dept_id: deptId,
+            us_sec_id: secId,
+          }),
+      },
+      select: { us_firstname: true, us_lastname: true },
     });
   }
 }

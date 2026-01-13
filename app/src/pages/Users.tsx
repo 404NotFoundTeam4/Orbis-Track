@@ -9,7 +9,6 @@ import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
 import getImageUrl from "../services/GetImage.js";
 import { getAccount } from "../hooks/useAccount.js";
-
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -130,7 +129,7 @@ export const Users = () => {
   //   })),
   // ];
   const baseRoleOptions = Array.from(
-    new Set(users.map((u) => u.us_role)) // ตัด role ที่ซ้ำ
+    new Set(users.map((u) => u.us_role)), // ตัด role ที่ซ้ำ
   ).map((r, index) => ({
     id: index + 1,
     label: roleTranslation[r] || r,
@@ -315,7 +314,6 @@ export const Users = () => {
       toast.push({
         message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
         tone: "confirm",
-
       });
 
       //  refreshTrigger จะทำให้ fetch ใหม่ → newUserIds ถูกคำนวณอัตโนมัติ
@@ -430,7 +428,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "us_id"
+    "us_id",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -567,7 +565,7 @@ export const Users = () => {
   const getSortIcon = (
     currentField: string,
     targetField: string,
-    direction: "asc" | "desc"
+    direction: "asc" | "desc",
   ) => {
     // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
     if (currentField !== targetField) {
@@ -584,14 +582,14 @@ export const Users = () => {
     <div className="w-full h-full flex flex-col p-4">
       <div className="flex-1">
         {/* แถบนำทาง */}
-        <div className="mb-[8px] space-x-[9px] shrink-0">
+        <div className="mb-[8px] space-x-[9px]">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">บัญชีผู้ใช้</span>
         </div>
 
         {/* ชื่อหน้า */}
-        <div className="flex items-center gap-[14px] mb-[21px] shrink-0">
+        <div className="flex items-center gap-[14px] mb-[21px]   ">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             ผู้ใช้งานทั้งหมด {users.filter((u) => u.us_is_active).length}
@@ -599,7 +597,7 @@ export const Users = () => {
         </div>
 
         {/* Filter */}
-        <div className="w-full mb-[23px] shrink-0">
+        <div className="w-full mb-[23px]">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <SearchFilter onChange={setSearchFilters} />
             <div className="flex space-x-[4px]">
@@ -755,8 +753,18 @@ export const Users = () => {
                 <div className="py-2 px-4">
                   {FormatPhone(u.us_phone) ?? "-"}
                 </div>
+                <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
+
                 <div className="py-2 px-4">
-                  {FormatThaiDate(u.created_at)}
+                  {u.us_is_active ? (
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
+                      ใช้งานได้ปกติ
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#FF4D4F] text-[#FF4D4F] rounded-full text-base">
+                      ถูกปิดการใช้งาน
+                    </span>
+                  )}
                 </div>
 
                 <div className="py-2 px-4 flex items-center gap-3 w-[150px]">
@@ -794,7 +802,6 @@ export const Users = () => {
                 </div>
               </div>
             ))}
-
 
             {/* ปุ่มหน้า */}
             <div className="mt-auto mb-[24px] pt-3 mr-[24px] flex items-center justify-end">

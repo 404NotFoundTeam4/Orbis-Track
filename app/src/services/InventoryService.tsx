@@ -105,7 +105,7 @@ export const DeviceService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
   getDeviceWithChilds: async (
-    id: number
+    id: number,
   ): Promise<GetDeviceWithChildsResponse> => {
     const { data } = await api.get(`/inventory/devices/${id}`);
     return data.data;
@@ -119,7 +119,7 @@ export const DeviceService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
   createDeviceChild: async (
-    payload: CreateDeviceChildPayload
+    payload: CreateDeviceChildPayload,
   ): Promise<{ message: string }> => {
     const { data } = await api.post(`/inventory/devices-childs`, payload);
     return data;
@@ -133,7 +133,7 @@ export const DeviceService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
   deleteDeviceChild: async (
-    payload: DeleteDeviceChlidsPayload
+    payload: DeleteDeviceChlidsPayload,
   ): Promise<{ message: string }> => {
     const { data } = await api.delete(`/inventory/devices-childs`, {
       data: payload,
@@ -150,7 +150,7 @@ export const DeviceService = {
    */
   uploadFileDeviceChild: async (
     id: number,
-    formData: FormData
+    formData: FormData,
   ): Promise<UploadFileDeviceChildResponse> => {
     return await api.post(`/inventory/devices/${id}/upload-childs`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -179,11 +179,11 @@ export const DeviceService = {
    */
 
   createDevices: async (
-    payload: CreateDevicePayload
+    payload: CreateDevicePayload,
   ): Promise<CreateDeviceResponse> => {
     const res = await api.post<CreateDeviceResponse>(
       "/inventory/devices",
-      payload
+      payload,
     );
     return res.data;
   },
@@ -197,7 +197,7 @@ export const DeviceService = {
    */
 
   createApprove: async (
-    payload: CreateApprovalFlowPayload
+    payload: CreateApprovalFlowPayload,
   ): Promise<CreateDeviceResponse> => {
     const res = api.post("inventory/approval", payload);
     return res;
@@ -225,7 +225,7 @@ export const DeviceService = {
    */
   updateDevices: async (
     id: number,
-    payload: CreateDevicePayload
+    payload: CreateDevicePayload,
   ): Promise<CreateDeviceResponse> => {
     const { data } = await api.patch(`/inventory/devices/${id}`, payload);
     return data.data;

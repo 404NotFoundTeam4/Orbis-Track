@@ -55,6 +55,7 @@ function App() {
       <Route path="list-devices/cart/edit/:id?" element={<EditCart />} />
       <Route path="list-devices" element={<ListDevices />} />
       <Route path="list-devices/borrow" element={<BorrowDevice />} />
+      <Route path="list-devices/borrow/:id?" element={<BorrowDevice />} />
     </>
   );
 
@@ -177,6 +178,10 @@ function App() {
                 <Route path="/list-devices" element={<RolePathRedirect />} />
                 <Route
                   path="/list-devices/borrow"
+                  element={<RolePathRedirect />}
+                />
+                <Route
+                  path="/list-devices/borrow/:id?"
                   element={<RolePathRedirect />}
                 />
                 <Route path="/category" element={<RolePathRedirect />} />

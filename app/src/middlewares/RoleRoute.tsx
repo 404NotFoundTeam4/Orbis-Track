@@ -9,7 +9,7 @@ interface RoleRouteProps {
 
 export default function RoleRoute({ allowedRoles }: RoleRouteProps) {
     const user = useUserStore((state) => state.user); // ดึงข้อมูล user จาก store
-
+    console.log(user)
     // ถ้า user ยังไม่โหลด แสดง loading (หรือรอ ProtectedRoute จัดการ)
     if (!user) {
         return (

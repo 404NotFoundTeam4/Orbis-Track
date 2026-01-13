@@ -711,7 +711,6 @@ const Departments = () => {
             </div>
           </div>
         </div>
-
       </div>
       {/* Modal */}
       <DepartmentModal

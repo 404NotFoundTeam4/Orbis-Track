@@ -91,7 +91,6 @@ export function CategoryModal({
         setConfirmOpen(true);
     };
 
-    
     const handleConfirmAdd = async () => {
         if (!pendingName) return;
 
@@ -131,7 +130,6 @@ export function CategoryModal({
                 return;
             }
 
-            
             toast.push({
                 tone: "danger",
                 message: err?.response?.data?.message || (mode === "add-category"

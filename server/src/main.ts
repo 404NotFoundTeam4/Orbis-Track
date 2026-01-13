@@ -6,6 +6,11 @@ import emailService from "./utils/email/email.service.js";
 const { closeRedis } = redisPkg; // ค่อย destructure เอา closeRedis
 import { createServer } from "http";
 import { initSocket } from "./infrastructure/websocket/socket.server.js";
+import { mainWorker } from "./infrastructure/queue/job.processor.js";
+import { jobDispatcher } from "./infrastructure/queue/job.dispatcher.js";
+import { initCronJobs } from "./utils/cron.js";
+
+initCronJobs();
 
 /**
  * Description: จุดเริ่มต้นของแอป สตาร์ต Express และจัดการปิดระบบอย่างปลอดภัย (graceful shutdown)
@@ -19,7 +24,7 @@ const httpServer = createServer(app);
 
 initSocket(httpServer);
 
-const server = app.listen(env.PORT, () => {
+const server = httpServer.listen(env.PORT, () => {
   const base = env.API_URL ?? `http://localhost:${env.PORT}`;
   logger.info(`API running on ${base}/api/v1`);
 });
@@ -36,6 +41,8 @@ const shutdown = (sig: NodeJS.Signals) => async () => {
     logger.info({ sig }, "Shutting down gracefully...");
     await closeHttpServer();
     await closeRedis();
+    await mainWorker.close();
+    await jobDispatcher.close();
     await emailService.close();
     logger.info("Shutdown complete. Bye Bye!");
     process.exit(0);

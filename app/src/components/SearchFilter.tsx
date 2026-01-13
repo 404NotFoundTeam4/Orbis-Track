@@ -10,23 +10,37 @@ interface SearchFilterProps {
    * Author: Nontapat Sinthum (Guitar) 66160104
    */
   onChange: (filters: { search: string }) => void;
+  /** Debounce delay in ms (default: 400) */
+  debounceMs?: number;
+  /** Additional CSS classes for the container */
+  className?: string;
+  /** Inline styles for the container */
+  style?: React.CSSProperties;
 }
 
 /**
  * Description: คอมโพเนนต์ SearchFilter สำหรับกรอกคำค้นหา
  * - ใช้ input type text
  * - แสดงไอคอนแว่นขยายด้านซ้าย
- * - ส่งค่า search ขึ้น parent ผ่าน onChange ทุกครั้งที่ input เปลี่ยน
+ * - ส่งค่า search ขึ้น parent ผ่าน onChange หลังจาก debounce
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-export const SearchFilter: React.FC<SearchFilterProps> = ({ onChange }) => {
+export const SearchFilter: React.FC<SearchFilterProps> = ({
+  onChange,
+  debounceMs = 400,
+  className = "",
+  style,
+}) => {
   const [search, setSearch] = useState("");
 
-  // useEffect จะทำงานทุกครั้งที่ search เปลี่ยนค่า
-  // เรียก onChange ส่งค่า search ขึ้น parent
+  // Debounce: รอให้หยุดพิมพ์ก่อนค่อยส่งค่าขึ้น parent
   useEffect(() => {
-    onChange({ search });
-  }, [search, onChange]);
+    const timer = setTimeout(() => {
+      onChange({ search });
+    }, debounceMs);
+
+    return () => clearTimeout(timer);
+  }, [search, onChange, debounceMs]);
 
   const inputClass =
     "h-10 border border-gray-300 text-sm outline-none " +
@@ -34,7 +48,8 @@ export const SearchFilter: React.FC<SearchFilterProps> = ({ onChange }) => {
 
   return (
     <div
-      className={`${inputClass} w-[438px] h-[46px] px-[24px] py-[10px] flex items-center gap-2 rounded-full`}
+      className={`${inputClass} w-[438px] h-[46px] px-[24px] py-[10px] flex items-center gap-2 rounded-full ${className}`}
+      style={style}
     >
       <FontAwesomeIcon
         icon={faMagnifyingGlass}

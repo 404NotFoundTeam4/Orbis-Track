@@ -17,23 +17,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Icon } from "@iconify/react";
 import { useUserStore } from "../../stores/userStore";
 import { UserRole, UserRoleTH } from "../../utils/RoleEnum";
-import { MENU_CONFIG, filterMenuByRole } from "./MenuConfig";
+import { MenuConfig, filterMenuByRole } from "./MenuConfig";
 import getImageUrl from "../../services/GetImage";
-import { type MenuItem, Images, Icons } from "./MenuConfig";
-
+import { type menuItem, Images, Icons } from "./MenuConfig";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { logout } = useUserStore();
 
   const user = JSON.parse(
-    localStorage.getItem("User") ||
-    sessionStorage.getItem("User") ||
-    "null"
+    localStorage.getItem("User") || sessionStorage.getItem("User") || "null"
   );
 
   const role = user?.us_role as UserRole;
-  const menus = filterMenuByRole(MENU_CONFIG, role);
+  const menus = filterMenuByRole(MenuConfig, role);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -91,40 +88,38 @@ const Navbar = () => {
     setActiveSubMenu(menu);
   };
 
-
-  const renderMenu = (menu: MenuItem) => {
+  const renderMenu = (menu: menuItem) => {
     if (menu.children?.length) {
       return (
-        <div key={menu.key}>
+        <div key={menu.label}>
           <div
             onClick={() => {
-              setOpenMenu(
-                openMenu === menu.key ? null : menu.key
-              )
+              setOpenMenu(openMenu === menu.label ? null : menu.label);
               toggleDropdown();
-              handleMenuClick(menu.key);
-            }
-            }
-            className={`px-7.5 flex items-center w-full cursor-pointer gap-[11px]  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen
-              ? "bg-[#40A9FF] text-white"
-              : "hover:bg-[#F0F0F0]"
-              }`}
+              handleMenuClick(menu.label);
+            }}
+            className={`px-7.5 flex items-center w-full cursor-pointer gap-[11px]  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
+              isDropdownOpen ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"
+            }`}
           >
-            {menu.icon && (
-              <FontAwesomeIcon icon={menu.icon} />
-            )}
+            {menu.icon && <FontAwesomeIcon icon={menu.icon} />}
             {menu.label}
             {menu.iconRight && (
-              <FontAwesomeIcon icon={menu.iconRight} className={`mt-1 transform transition-all duration-500 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
-                }`} />
+              <FontAwesomeIcon
+                icon={menu.iconRight}
+                className={`mt-1 transform transition-all duration-500 ease-in-out ${
+                  isDropdownOpen ? "rotate-0" : "rotate-180"
+                }`}
+              />
             )}
           </div>
           <div
             className={`overflow-hidden transition-all duration-500 ease-in-out flex flex-col  gap-1
-    ${openMenu === menu.key
-                ? "max-h-[500px] opacity-100 py-2.5"
-                : "max-h-0 opacity-0"
-              }`}
+    ${
+      openMenu === menu.label
+        ? "max-h-[500px] opacity-100 py-2.5"
+        : "max-h-0 opacity-0"
+    }`}
           >
             {menu.children?.map((child) => (
               <Link
@@ -132,16 +127,16 @@ const Navbar = () => {
                 to={child.path!}
                 onClick={() => handleSubMenuClick(child.label)}
                 className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap
-        ${activeSubMenu === child.label
-                    ? "bg-[#EBF3FE] text-[#40A9FF]"
-                    : "hover:bg-[#F0F0F0]"
-                  }`}
+        ${
+          activeSubMenu === child.label
+            ? "bg-[#EBF3FE] text-[#40A9FF]"
+            : "hover:bg-[#F0F0F0]"
+        }`}
               >
                 {child.label}
               </Link>
             ))}
           </div>
-
         </div>
       );
     }
@@ -156,23 +151,25 @@ const Navbar = () => {
         }}
         className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === menu.key ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
       >
-        {menu.icon && (
-          <FontAwesomeIcon icon={menu.icon} />
-        )}
+        {menu.icon && <FontAwesomeIcon icon={menu.icon} />}
         {menu.label}
       </Link>
     );
   };
 
   return (
-    <div className="flex flex-col background w-full min-h-screen">
+    <div className="background fixed inset-0 overflow-hidden">
       <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[100px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex gap-15 justify-center z-51">
           <div className="px-7.5">
             <img src={Images["LOGO"]} alt="" className=" w-[264px] h-[67px]" />
           </div>
           <div className="flex border gap-[15px] px-5 text-[#40A9FF] items-center rounded-[12px]">
-            <img src={Images["LOGO_GIGA"]} alt="" className="w-[26px] h-[30px]" />
+            <img
+              src={Images["LOGO_GIGA"]}
+              alt=""
+              className="w-[26px] h-[30px]"
+            />
             <span>คุยกับ GiGa</span>
           </div>
         </div>
@@ -181,32 +178,36 @@ const Navbar = () => {
           <button
             type="button"
             onClick={() => setActive(active === "bell" ? null : "bell")}
-            className={`h-full px-6.5 ${active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-              } flex justify-center items-center relative`}
+            className={`h-full px-6.5 ${
+              active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+            } flex justify-center items-center relative`}
           >
             {active !== "bell" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
             )}
             <FontAwesomeIcon
               icon={Icons["FABELL"]}
-              className={`text-[23px] ${active === "bell" ? "text-white" : "text-[#595959]"
-                }`}
+              className={`text-[23px] ${
+                active === "bell" ? "text-white" : "text-[#595959]"
+              }`}
             />
           </button>
 
           <button
             type="button"
             onClick={() => setActive(active === "cart" ? null : "cart")}
-            className={`h-full px-6.5 ${active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-              } flex justify-center items-center relative`}
+            className={`h-full px-6.5 ${
+              active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+            } flex justify-center items-center relative`}
           >
             {active !== "cart" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"></div>
             )}
             <FontAwesomeIcon
               icon={Icons["FASHOPPING"]}
-              className={`text-[23px] ${active === "cart" ? "text-white" : "text-[#595959]"
-                }`}
+              className={`text-[23px] ${
+                active === "cart" ? "text-white" : "text-[#595959]"
+              }`}
             />
           </button>
 
@@ -232,10 +233,7 @@ const Navbar = () => {
       <div className="flex">
         <aside className="fixed  mt-[100px] w-[213px] bg-white text-black shadow-xl z-40">
           <div className="flex flex-col justify-between h-[calc(100vh-100px)] px-2 py-4 text-lg whitespace-nowrap">
-            <nav className="text-left">
-              {menus.map(renderMenu)}
-            </nav>
-
+            <nav className="text-left">{menus.map(renderMenu)}</nav>
 
             <div className="text-left">
               <button
@@ -250,8 +248,10 @@ const Navbar = () => {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 bg-[#FAFAFA] ml-[213px] mt-[100px]">
-          <Outlet />
+        <main className="flex-1 min-w-0 bg-[#FAFAFA] pl-[213px] pt-[110px] h-full overflow-hidden">
+          <div className="w-full h-full min-h-0 overflow-hidden">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

@@ -56,25 +56,25 @@ export const Images: { [key: string]: string } = {
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export type MenuItem = {
+export type menuItem = {
   key: string;                 // key สำหรับอ้างอิงเมนู
   label: string;               // ชื่อเมนูที่แสดง
   path?: string;               // path สำหรับ routing
   icon?: IconDefinition;       // icon ด้านซ้าย
   iconRight?: IconDefinition;  // icon ด้านขวา (dropdown)
   roles: UserRole[];           // role ที่สามารถเห็นเมนู
-  children?: MenuItem[];       // submenu (ถ้ามี)
+  children?: menuItem[];       // submenu (ถ้ามี)
 };
 
 /**
- * Constant: MENU_CONFIG
+ * Constant: MenuConfig
  * Description:
  *  - กำหนดเมนูทั้งหมดของระบบ
  *  - ควบคุมการแสดงผลด้วย role
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export const MENU_CONFIG: MenuItem[] = [
+export const MenuConfig: menuItem[] = [
   {
     key: "home",
     label: "หน้าแรก",
@@ -93,14 +93,14 @@ export const MENU_CONFIG: MenuItem[] = [
     label: "จัดการคำร้อง",
     path: "/home",
     icon: faServer,
-    roles: [UserRole.HOD, UserRole.HOS],
+    roles: [UserRole.ADMIN,UserRole.HOD, UserRole.HOS],
   },
   {
     key: "management",
     label: "จัดการ",
     icon: faServer,
     iconRight: faChevronUp,
-    roles: [UserRole.ADMIN],
+    roles: [UserRole.ADMIN,UserRole.HOD, UserRole.HOS,UserRole.STAFF],
     children: [
       {
         key: "requests",
@@ -124,7 +124,7 @@ export const MENU_CONFIG: MenuItem[] = [
         key: "chatbot",
         label: "แชทบอท",
         path: "/administrator/departments-management",
-        roles: [UserRole.ADMIN],
+        roles: [UserRole.ADMIN,UserRole.STAFF],
       },
       {
         key: "departments",
@@ -135,7 +135,7 @@ export const MENU_CONFIG: MenuItem[] = [
       {
         key: "categories",
         label: "หมวดหมู่อุปกรณ์",
-        path: "/administrator/departments-management",
+        path: "/category",
         roles: [UserRole.ADMIN,UserRole.STAFF],
       },
     ],
@@ -194,9 +194,9 @@ export const MENU_CONFIG: MenuItem[] = [
  * Author: Panyapon Phollert (Ton) 66160086
  */
 export const filterMenuByRole = (
-  menus: MenuItem[],
+  menus: menuItem[],
   role: UserRole
-): MenuItem[] =>
+): menuItem[] =>
   menus
     .filter((menu) => menu.roles.includes(role))
     .map((menu) => ({

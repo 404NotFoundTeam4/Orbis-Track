@@ -407,6 +407,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   label="แผนก"
                   items={departmentItems}
                   value={selectedDepartment}
+                  required
                   onChange={(item) => setSelectedDepartment(item)}
                   placeholder="ประเภทแผนก"
                   searchPlaceholder="ค้นหาแผนก"

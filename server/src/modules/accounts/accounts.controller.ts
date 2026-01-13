@@ -115,7 +115,6 @@ export class AccountsController extends BaseController {
    * Output : user_id ที่ถูกลบ พร้อมระบุวันเวลา
    * Author: Chanwit Muangma (Boom) 66160224
    */
-
   async softDelete(
     req: Request,
     res: Response,

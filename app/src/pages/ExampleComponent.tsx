@@ -6,15 +6,358 @@ import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { AlertDialog } from "../components/AlertDialog";
 import { Icon } from "@iconify/react";
 import { useToast } from "../components/Toast";
+import {
+  NotificationList,
+  NotificationBell,
+  type NotificationItemProps,
+} from "../components/Notification";
+import { socketService } from "../services/SocketService";
+
+const mockNotifications: NotificationItemProps[] = [
+  {
+    type: "approved",
+    title: "คำขอยืมถูกอนุมัติแล้ว",
+    description: (
+      <>
+        สถานที่รับอุปกรณ์ : <span className="text-blue-500">XXXXXXX</span>
+        <br />
+        โปรดรับอุปกรณ์ภายในเวลาที่กำหนด
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "warning",
+    title: "มีอุปกรณ์ใกล้กำหนดคืน",
+    description: "กรุณาคืนรายการโปรเจคเตอร์ ภายในเวลา 17:00 น.",
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "overdue",
+    title: "มีอุปกรณ์ที่เลยกำหนดคืนแล้ว",
+    description: (
+      <span className="text-red-500">คำขอยืมโปรเจคเตอร์ เลยกำหนดคืนแล้ว</span>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "repair_success",
+    title: "ผลคำขอซ่อมอุปกรณ์",
+    description: (
+      <>
+        PJU-001 : <span className="text-green-500">ซ่อมสำเร็จ</span>
+        <br />
+        PJU-002 : <span className="text-red-500">ซ่อมไม่สำเร็จ</span>
+        <br />
+        โปรดติดต่อช่างเทคนิคเพื่อรับอุปกรณ์คืน
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "repair_new",
+    title: "แจ้งเตือนคำร้องซ่อมใหม่",
+    description: "มีคำร้องซ่อมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_new",
+    title: "แจ้งเตือนคำขอยืมใหม่",
+    description: "มีคำขอยืมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_pending",
+    title: "มีคำขอยืมที่กำลังรออนุมัติ",
+    description: (
+      <>
+        ลำดับการอนุมัติปัจจุบัน :{" "}
+        <span className="text-green-600 font-bold">2</span> / 4
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "rejected",
+    title: "คำขอยืมถูกปฏิเสธ",
+    description: "เหตุผลการปฏิเสธ : ไม่ให้ยืมงก",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "approved",
+    title: "คำขอยืมถูกอนุมัติแล้ว",
+    description: (
+      <>
+        สถานที่รับอุปกรณ์ : <span className="text-blue-500">XXXXXXX</span>
+        <br />
+        โปรดรับอุปกรณ์ภายในเวลาที่กำหนด
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "warning",
+    title: "มีอุปกรณ์ใกล้กำหนดคืน",
+    description: "กรุณาคืนรายการโปรเจคเตอร์ ภายในเวลา 17:00 น.",
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "overdue",
+    title: "มีอุปกรณ์ที่เลยกำหนดคืนแล้ว",
+    description: (
+      <span className="text-red-500">คำขอยืมโปรเจคเตอร์ เลยกำหนดคืนแล้ว</span>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "repair_success",
+    title: "ผลคำขอซ่อมอุปกรณ์",
+    description: (
+      <>
+        PJU-001 : <span className="text-green-500">ซ่อมสำเร็จ</span>
+        <br />
+        PJU-002 : <span className="text-red-500">ซ่อมไม่สำเร็จ</span>
+        <br />
+        โปรดติดต่อช่างเทคนิคเพื่อรับอุปกรณ์คืน
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "repair_new",
+    title: "แจ้งเตือนคำร้องซ่อมใหม่",
+    description: "มีคำร้องซ่อมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_new",
+    title: "แจ้งเตือนคำขอยืมใหม่",
+    description: "มีคำขอยืมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_pending",
+    title: "มีคำขอยืมที่กำลังรออนุมัติ",
+    description: (
+      <>
+        ลำดับการอนุมัติปัจจุบัน :{" "}
+        <span className="text-green-600 font-bold">2</span> / 4
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "rejected",
+    title: "คำขอยืมถูกปฏิเสธ",
+    description: "เหตุผลการปฏิเสธ : ไม่ให้ยืมงก",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "approved",
+    title: "คำขอยืมถูกอนุมัติแล้ว",
+    description: (
+      <>
+        สถานที่รับอุปกรณ์ : <span className="text-blue-500">XXXXXXX</span>
+        <br />
+        โปรดรับอุปกรณ์ภายในเวลาที่กำหนด
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "warning",
+    title: "มีอุปกรณ์ใกล้กำหนดคืน",
+    description: "กรุณาคืนรายการโปรเจคเตอร์ ภายในเวลา 17:00 น.",
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "overdue",
+    title: "มีอุปกรณ์ที่เลยกำหนดคืนแล้ว",
+    description: (
+      <span className="text-red-500">คำขอยืมโปรเจคเตอร์ เลยกำหนดคืนแล้ว</span>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "repair_success",
+    title: "ผลคำขอซ่อมอุปกรณ์",
+    description: (
+      <>
+        PJU-001 : <span className="text-green-500">ซ่อมสำเร็จ</span>
+        <br />
+        PJU-002 : <span className="text-red-500">ซ่อมไม่สำเร็จ</span>
+        <br />
+        โปรดติดต่อช่างเทคนิคเพื่อรับอุปกรณ์คืน
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "repair_new",
+    title: "แจ้งเตือนคำร้องซ่อมใหม่",
+    description: "มีคำร้องซ่อมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_new",
+    title: "แจ้งเตือนคำขอยืมใหม่",
+    description: "มีคำขอยืมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_pending",
+    title: "มีคำขอยืมที่กำลังรออนุมัติ",
+    description: (
+      <>
+        ลำดับการอนุมัติปัจจุบัน :{" "}
+        <span className="text-green-600 font-bold">2</span> / 4
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "rejected",
+    title: "คำขอยืมถูกปฏิเสธ",
+    description: "เหตุผลการปฏิเสธ : ไม่ให้ยืมงก",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "approved",
+    title: "คำขอยืมถูกอนุมัติแล้ว",
+    description: (
+      <>
+        สถานที่รับอุปกรณ์ : <span className="text-blue-500">XXXXXXX</span>
+        <br />
+        โปรดรับอุปกรณ์ภายในเวลาที่กำหนด
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "warning",
+    title: "มีอุปกรณ์ใกล้กำหนดคืน",
+    description: "กรุณาคืนรายการโปรเจคเตอร์ ภายในเวลา 17:00 น.",
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "overdue",
+    title: "มีอุปกรณ์ที่เลยกำหนดคืนแล้ว",
+    description: (
+      <span className="text-red-500">คำขอยืมโปรเจคเตอร์ เลยกำหนดคืนแล้ว</span>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: false,
+  },
+  {
+    type: "repair_success",
+    title: "ผลคำขอซ่อมอุปกรณ์",
+    description: (
+      <>
+        PJU-001 : <span className="text-green-500">ซ่อมสำเร็จ</span>
+        <br />
+        PJU-002 : <span className="text-red-500">ซ่อมไม่สำเร็จ</span>
+        <br />
+        โปรดติดต่อช่างเทคนิคเพื่อรับอุปกรณ์คืน
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "repair_new",
+    title: "แจ้งเตือนคำร้องซ่อมใหม่",
+    description: "มีคำร้องซ่อมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_new",
+    title: "แจ้งเตือนคำขอยืมใหม่",
+    description: "มีคำขอยืมกำลังรออนุมัติ",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "request_pending",
+    title: "มีคำขอยืมที่กำลังรออนุมัติ",
+    description: (
+      <>
+        ลำดับการอนุมัติปัจจุบัน :{" "}
+        <span className="text-green-600 font-bold">2</span> / 4
+      </>
+    ),
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+  {
+    type: "rejected",
+    title: "คำขอยืมถูกปฏิเสธ",
+    description: "เหตุผลการปฏิเสธ : ไม่ให้ยืมงก",
+    timestamp: "12 ม.ค. 2568",
+    isRead: true,
+  },
+];
+
+const NotificationExample = () => {
+  const [showNotif, setShowNotif] = useState(false);
+
+  return (
+    <div className="p-10 bg-gray-100 min-h-screen flex flex-col items-center gap-10">
+      <h1 className="text-3xl font-bold">Notification Component Example</h1>
+
+      <div className="relative">
+        <NotificationBell count={3} onClick={() => setShowNotif(!showNotif)} />
+
+        {showNotif && (
+          <div className="absolute top-12 left-0 z-50">
+            <NotificationList
+              notifications={mockNotifications}
+              onClose={() => setShowNotif(false)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export { NotificationExample };
 
 /**
  * Component: SimpleExample
  * Description: ตัวอย่างการใช้งาน Dropdown แบบง่ายที่สุด
  */
 function SimpleExample() {
-  const [selectedFruit, setSelectedFruit] = useState<any>(null);
+  type FruitItem = { id: number; label: string; value: string };
+  const [selectedFruit, setSelectedFruit] = useState<FruitItem | null>(null);
 
-  const fruits = [
+  const fruits: FruitItem[] = [
     { id: 1, label: "แอปเปิ้ล", value: "apple" },
     { id: 2, label: "กล้วย", value: "banana" },
     { id: 3, label: "ส้ม", value: "orange" },
@@ -365,6 +708,76 @@ function DemoButtons() {
       >
         บันทึกสำเร็จ (เขียว)
       </button>
+
+      <button
+        className="rounded-full bg-blue-500 px-4 py-2 text-white"
+        onClick={() =>
+          push({
+            tone: "notification",
+            message: "มีการแจ้งเตือนใหม่!",
+            description: "แตะเพื่อดูรายละเอียดในกล่องแจ้งเตือน",
+          })
+        }
+      >
+        Notification Toast (สีน้ำเงิน)
+      </button>
+    </div>
+  );
+}
+
+function SocketDemo() {
+  const sendTest = (type: string, hasRoute: boolean) => {
+    socketService.emit("TEST_NOTIFICATION", {
+      id: Date.now(),
+      type: type, // "approved", "warning", "rejected", etc.
+      title: `ทดสอบ ${type.toUpperCase()}`,
+      message: hasRoute
+        ? "คลิกเพื่อไปที่หน้ารายการ (มี Target Route)"
+        : "คลิกเพื่อเปิดกล่องกระดิ่ง (ไม่มี Target Route)",
+      target_route: hasRoute ? "/requests" : null,
+    });
+  };
+
+  return (
+    <div className="p-6 border rounded-xl bg-white space-y-4">
+      <h3 className="text-lg font-semibold">Real-Time Socket & Notification Click Demo</h3>
+      <p className="text-sm text-gray-500">
+        กดปุ่มด้านล่างเพื่อจำลองว่ามี Event ส่งมาจาก Server (ผ่าน Socket.io) <br />
+        ลองคลิกที่ Toast หรือ รายการในกระดิ่งเพื่อทดสอบ Navigation Logic
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2 p-4 bg-green-50 rounded-lg">
+          <h4 className="font-semibold text-green-700">Case 1: มี Target Route (ไปหน้างาน)</h4>
+          <Button onClick={() => sendTest('approved', true)} size="sm">
+            อนุมัติ (Approved)
+          </Button>
+          <Button onClick={() => sendTest('repair_success', true)} size="sm">
+            ซ่อมเสร็จ (Repair Success)
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-2 p-4 bg-orange-50 rounded-lg">
+          <h4 className="font-semibold text-orange-700">Case 2: ไม่มี Route (เปิดกระดิ่ง)</h4>
+          <Button onClick={() => sendTest('general', false)} variant="outline" size="sm">
+            แจ้งเตือน (Warning)
+          </Button>
+          <Button onClick={() => sendTest('rejected', false)} variant="danger" size="sm">
+            ปฏิเสธ (Rejected)
+          </Button>
+          <Button onClick={() => {
+            socketService.emit("TEST_NOTIFICATION", {
+              id: Date.now(),
+              type: "general",
+              title: "มีการแจ้งเตือนใหม่!",
+              message: "แตะเพื่อดูรายละเอียดในกล่องแจ้งเตือน",
+              target_route: null,
+            });
+          }} className="bg-indigo-500 hover:bg-indigo-600 text-white" size="sm">
+            เหมือนในรูป (Like Image)
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -375,9 +788,11 @@ function TestDropDownPage() {
       <h2 className="text-2xl font-bold">ตัวอย่างการใช้งาน Dropdown</h2>
       <SimpleExample />
       <TableFilterExample />
+      <NotificationExample />
       <ButtonExamples />
       <AlertDemoPage />
       <DemoButtons />
+      <SocketDemo />
     </div>
   );
 }

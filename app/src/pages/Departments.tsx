@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import Button from "../components/Button";
 import DropDown from "../components/DropDown";
 import SearchFilter from "../components/SearchFilter";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DropdownArrow from "../components/DropdownArrow";
 import { type GetDepartmentsWithSections } from "../services/DepartmentsService";
 import { DepartmentModal } from "../components/DepartmentModal";
@@ -24,20 +24,41 @@ type ModalType =
 const Departments = () => {
   // เก็บข้อมูลแผนกทั้งหมด
   const [departments, setDepartments] = useState<GetDepartmentsWithSections[]>(
-    [],
+    []
   );
   const { push } = useToast();
   const [loading, setLoading] = useState(true);
+
+  //เก็บ id ชุดก่อนหน้า เพื่อจับว่าอันไหน "เพิ่มใหม่" หลัง refresh
+  const prevDeptIdsRef = useRef<Set<number>>(new Set());
+
+  //เก็บ id ของรายการที่ "เพิ่มใหม่" (จะถูกดันไปท้ายสุด)
+  const [newDeptIds, setNewDeptIds] = useState<Set<number>>(new Set());
 
   const refreshData = async () => {
     setLoading(true); // เริ่มโหลด
     try {
       const departmentsData =
         await departmentService.getDepartmentsWithSections();
-      setDepartments(departmentsData);
-      setDepartmentFilter(
-        (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" },
+
+      //จับ new ids: id ที่อยู่ในรอบใหม่ แต่ไม่เคยมีในรอบก่อน
+      const nextIds = new Set<number>(
+        departmentsData.map((d) => Number(d.dept_id))
       );
+      const prevIds = prevDeptIdsRef.current;
+
+      const added = new Set<number>();
+      for (const id of nextIds) {
+        if (!prevIds.has(id)) added.add(id);
+      }
+
+      setNewDeptIds(added); //เก็บไว้ใช้ดันไปท้ายสุด
+      prevDeptIdsRef.current = nextIds;
+
+      setDepartments(departmentsData);
+      // setDepartmentFilter(
+      //   (prev) => prev ?? { id: "", label: "ทั้งหมด", value: "" },
+      // );
     } catch (error) {
       console.error("Failed to fetch data:", error);
       push({ tone: "danger", message: "ไม่สามารถโหลดข้อมูลได้" });
@@ -60,7 +81,8 @@ const Departments = () => {
     { id: "", label: "ทั้งหมด", value: "" },
     ...departments
       .slice()
-      .sort((a, b) => a.dept_name.localeCompare(b.dept_name, "th"))
+      // .sort((a, b) => a.dept_name.localeCompare(b.dept_name, "th"))
+      .sort((a, b) => a.dept_id - b.dept_id)
       .map((d) => ({
         id: d.dept_id,
         label: d.dept_name,
@@ -160,8 +182,10 @@ const Departments = () => {
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const HandleSort = (
-    field: keyof GetDepartmentsWithSections | "statusText",
+    field: keyof GetDepartmentsWithSections | "statusText"
   ) => {
+    setNewDeptIds(new Set());
+
     if (sortField === field) {
       // ถ้ากด field เดิม → สลับ asc/desc
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -178,7 +202,7 @@ const Departments = () => {
   // >();
   const [sortField, setSortField] = useState<
     keyof GetDepartmentsWithSections | "statusText"
-  >("dept_name");
+  >("dept_id");
 
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -241,10 +265,20 @@ const Departments = () => {
 
     //เริ่มทำการ sort
     result = [...result].sort((a, b) => {
+      // ✅ กติกาพิเศษ: ถ้า a เป็น "ของใหม่" แต่ b ไม่ใช่ -> a ไปท้ายสุด
+      const aIsNew = newDeptIds.has(Number(a.dept_id));
+      const bIsNew = newDeptIds.has(Number(b.dept_id));
+      if (aIsNew !== bIsNew) return aIsNew ? 1 : -1;
+
       let valA: any;
       let valB: any;
 
       switch (sortField) {
+        // sort idแผนก
+        case "dept_id":
+          valA = a.dept_id;
+          valB = b.dept_id;
+          break;
         // sort ชื่อแผนก
         case "dept_name":
           valA = a.dept_name;
@@ -273,7 +307,14 @@ const Departments = () => {
       return sortDirection === "asc" ? valA - valB : valB - valA;
     });
     return result;
-  }, [departments, searchFilter, departmentFilter, sortDirection, sortField]);
+  }, [
+    departments,
+    searchFilter,
+    departmentFilter,
+    sortDirection,
+    sortField,
+    newDeptIds,
+  ]);
 
   //จัดการแบ่งแต่ละหน้า
   const [page, setPage] = useState(1);
@@ -282,8 +323,9 @@ const Departments = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   useEffect(() => {
     setPage(1);
-  }, [searchFilter, 
-    departmentFilter, 
+  }, [
+    searchFilter,
+    departmentFilter,
     // sortDirection
   ]); // เปลี่ยนกรอง/เรียง → กลับหน้า 1
 
@@ -295,7 +337,7 @@ const Departments = () => {
   const getSortIcon = (
     currentField: string,
     targetField: string,
-    direction: "asc" | "desc",
+    direction: "asc" | "desc"
   ) => {
     // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
     if (currentField !== targetField) {
@@ -400,7 +442,7 @@ const Departments = () => {
                       icon={getSortIcon(
                         sortField,
                         "people_count",
-                        sortDirection,
+                        sortDirection
                       )}
                       width="28"
                       height="28"
@@ -669,6 +711,7 @@ const Departments = () => {
             </div>
           </div>
         </div>
+
       </div>
       {/* Modal */}
       <DepartmentModal
@@ -709,7 +752,7 @@ const Departments = () => {
                   deleteTarget.name
                     .replace(/^ฝ่ายย่อย/i, "")
                     .replace(/\s+/g, "") //ตัดช่องว่างทั้งหมด
-                    .trim(),
+                    .trim()
                 )
                   ? " "
                   : ""}

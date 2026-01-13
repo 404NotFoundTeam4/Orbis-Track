@@ -44,11 +44,9 @@ return (
 
       <BorrowModal
       defaultValues={data}
-        open={open}
          onConfirm={(data) => {
     console.log("รับค่าจาก modal", data);
   }}
-        onClose={() => setOpen(false)}
       />
     </div>
   );

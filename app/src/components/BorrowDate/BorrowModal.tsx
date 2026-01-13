@@ -25,8 +25,8 @@ type Device = {
   activeBorrow: ActiveBorrow[];
 };
 type BorrowModalProps = {
-  onClose: () => void;
   defaultValues: Device[];
+  fullWidth?: boolean;
   onConfirm: (data: { borrow_start: string; borrow_end: string }) => void;
 };
 
@@ -39,9 +39,9 @@ interface timeDropdownItem {
 type ViewType = "month" | "week" | "day";
 
 export default function BorrowModal({
-  onClose,
   defaultValues,
   onConfirm,
+  fullWidth = false
 }: BorrowModalProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -63,6 +63,7 @@ export default function BorrowModal({
   const [selectedActiveBorrow, setSelectedActiveBorrow] = useState<
     ActiveBorrow[] | null
   >(null);
+  const widthClass = fullWidth ? "w-full" : "w-[489px]";
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -332,7 +333,7 @@ export default function BorrowModal({
     };
 
     onConfirm(payload);
-    setOpen(false)
+    setOpen(false);
   };
   const isValid =
     start !== null &&
@@ -353,13 +354,14 @@ export default function BorrowModal({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="
-          flex w-full items-center justify-between
+        className={`
+        ${widthClass}
+          flex  items-center justify-between
           rounded-2xl border border-[#D8D8D8]
           px-4 py-3 text-left
-        "
+        `}
       >
-        <span className="text-white">เปิด Modal</span>
+        <span className="text-black">เปิด Modal</span>
         <FontAwesomeIcon
           icon={faChevronDown}
           className={`w-3 h-3 text-white transition-transform duration-200 ${

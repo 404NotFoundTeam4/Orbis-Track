@@ -31,6 +31,7 @@ const BorrowDevice = () => {
     const location = useLocation();
     // รับรหัสอุปกรณ์แม่ที่ส่งมาจาก state ของ navigate
     const deId = location.state?.deviceId;
+    console.log(deId)
     // เก็บข้อมูลอุปกรณ์แม่
     const [device, setDevice] = useState<GetDeviceForBorrow | null>(null);
 
@@ -69,6 +70,7 @@ const BorrowDevice = () => {
 
     // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
     const equipment = {
+        deviceId :deId,
         serialNumber: device.de_serial_number,
         name: device.de_name,
         category: device.category?.ca_name ?? "",

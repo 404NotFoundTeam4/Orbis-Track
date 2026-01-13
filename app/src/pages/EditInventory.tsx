@@ -98,11 +98,23 @@ const EditInventory = () => {
   };
   const handleSubmit = async(formData:FormData) =>{
       formData.delete("data");
- 
+    try {
+      const res =  useInventorys.updateDevicesdata(parentId,formData)
 
-
-
-   useInventorys.updateDevicesdata(parentId,formData)
+        push({
+          tone: "confirm",
+          message: "เพิ่มอุปกรณ์เรียบร้อยแล้ว",
+        });
+             setTimeout(() => {
+            window.location.reload();
+          }, 1500); // หน่วง 1.5 วินาที
+      } catch (e) {
+        console.log(e);
+        push({
+          tone: "danger",
+          message: "ไม่สามารถเพิ่มอุปกรณ์",
+        });
+      }
   }
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">

@@ -9,6 +9,7 @@ import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
 import getImageUrl from "../services/GetImage.js";
 import { getAccount } from "../hooks/useAccount.js";
+
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -314,7 +315,7 @@ export const Users = () => {
       toast.push({
         message: "เพิ่มบัญชีผู้ใช้สำเร็จ!",
         tone: "confirm",
-        
+
       });
 
       //  refreshTrigger จะทำให้ fetch ใหม่ → newUserIds ถูกคำนวณอัตโนมัติ
@@ -744,18 +745,19 @@ export const Users = () => {
                       <span>{u.us_emp_code}</span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="py-2 px-4">
-                    {roleTranslation[u.us_role] || u.us_role}
-                  </div>
-                  <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
-                  <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
-                  <div className="py-2 px-4">
-                    {FormatPhone(u.us_phone) ?? "-"}
-                  </div>
-                  <div className="py-2 px-4">
-                    {FormatThaiDate(u.created_at)}
-                  </div>
+                <div className="py-2 px-4">
+                  {roleTranslation[u.us_role] || u.us_role}
+                </div>
+                <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
+                <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
+                <div className="py-2 px-4">
+                  {FormatPhone(u.us_phone) ?? "-"}
+                </div>
+                <div className="py-2 px-4">
+                  {FormatThaiDate(u.created_at)}
+                </div>
 
                 <div className="py-2 px-4 flex items-center gap-3 w-[150px]">
                   {u.us_is_active && (
@@ -790,8 +792,9 @@ export const Users = () => {
                     </>
                   )}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+
 
             {/* ปุ่มหน้า */}
             <div className="mt-auto mb-[24px] pt-3 mr-[24px] flex items-center justify-end">

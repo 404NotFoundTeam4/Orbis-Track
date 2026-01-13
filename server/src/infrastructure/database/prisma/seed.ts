@@ -226,7 +226,7 @@ async function main() {
     },
   });
 
-   // ---- CATEGORIES & ACCESSORIES ----
+  // ---- CATEGORIES & ACCESSORIES ----
   console.log("📦 Creating categories & accessories...");
   const catCamera = await prisma.categories.upsert({
     where: { ca_id: 1 },
@@ -243,7 +243,7 @@ async function main() {
     update: { ca_name: "โปรเจคเตอร์" },
     create: { ca_name: "โปรเจคเตอร์" },
   });
-  
+
   // ---- APPROVAL FLOWS ----
   console.log("🔄 Creating approval flows...");
   const flowMedia = await prisma.approval_flows.upsert({
@@ -510,11 +510,11 @@ async function main() {
     where: { dec_asset_code: "ASSET-LAP-DELL-001" },
     update: {},
     create: {
-      dec_serial_number: "SN-SONY-A7III-003",
-      dec_asset_code: "ASSET-CAM-SONY-003",
+      dec_serial_number: "SN-DELL-XPS15-001",
+      dec_asset_code: "ASSET-LAP-DELL-001",
       dec_has_serial_number: true,
       dec_status: "READY",
-      dec_de_id: deviceCamera.de_id,
+      dec_de_id: deviceLaptop.de_id,
     },
   });
   const childLaptop2 = await prisma.device_childs.upsert({
@@ -542,33 +542,7 @@ async function main() {
     },
   });
 
-  // เพิ่มกล้องอีก 3 ตัวเพื่อทดสอบ ellipsis
-  const childCam4 = await prisma.device_childs.upsert({
-    where: { dec_asset_code: "ASSET-CAM-SONY-004" },
-    update: {},
-    create: {
-      dec_serial_number: "SN-SONY-A7III-004",
-      dec_asset_code: "ASSET-CAM-SONY-004",
-      dec_has_serial_number: true,
-      dec_status: "READY",
-      dec_de_id: deviceCamera.de_id,
-    },
-  });
-  const childCam5 = await prisma.device_childs.upsert({
-    where: { dec_asset_code: "ASSET-CAM-SONY-005" },
-    update: {},
-    create: {
-      cti_ct_id: cart.ct_id,
-      cti_de_id: deviceCamera.de_id,
-      cti_quantity: 1,
-      cti_us_name: "ชาติชาย มานะสิน",
-      cti_phone: "0999999999",
-      cti_note: "นำเสนองาน",
-      cti_usage_location: "สำนักงาน",
-      cti_start_date: daysFromNow(1),
-      cti_end_date: daysFromNow(3),
-    },
-  });
+
 
   // ---- BORROW TICKETS (BRT) ----
   console.log("🎫 Creating tickets & stages...");
@@ -590,6 +564,7 @@ async function main() {
       name: string;
       role: any;
       deptId: number | null;
+      secId?: number;
       status: any;
       usId?: number | null;
     }[];
@@ -900,20 +875,20 @@ async function main() {
   });
 
   // ---- CART DEVICE CHILDS ----
-  console.log("🛒 Creating cart device childs...");
-  const cartItem = await prisma.cart_items.findFirst({ where: { cti_ct_id: cart.ct_id } });
-  if (cartItem) {
-    await prisma.cart_device_childs.upsert({
-      where: { cdc_id: 1 },
-      update: {},
-      create: {
-        cdc_id: 1,
-        cdc_cti_id: cartItem.cti_id,
-        cdc_dec_id: childCam1.dec_id,
-        reserved_at: new Date(),
-      },
-    });
-  }
+  // console.log("🛒 Creating cart device childs...");
+  // // const cartItem = await prisma.cart_items.findFirst({ where: { cti_ct_id: cart.ct_id } });
+  // // if (cartItem) {
+  // //   await prisma.cart_device_childs.upsert({
+  // //     where: { cdc_id: 1 },
+  // //     update: {},
+  // //     create: {
+  // //       cdc_id: 1,
+  // //       cdc_cti_id: cartItem.cti_id,
+  // //       cdc_dec_id: childCam1.dec_id,
+  // //       reserved_at: new Date(),
+  // //     },
+  // //   });
+  // // }
 
   // ---- ADDITIONAL USERS (ครบทุก dept) ----
   console.log("👥 Creating additional users for other departments...");

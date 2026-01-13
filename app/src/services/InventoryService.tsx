@@ -231,3 +231,29 @@ export const DeviceService = {
     return data.data;
   },
 };
+
+export interface GetInventory {
+  de_id: number;
+  de_name: string;
+  de_serial_number: string;
+  de_images: string | null;
+  category: string;
+  department: string;
+  sub_section: string;
+  available: number;
+  total: number;
+}
+
+export const inventoryService = {
+  getInventory: async (): Promise<GetInventory[]> => {
+    const { data } = await api.get("/inventory");
+    return data.data.map((item: any) => ({
+      ...item,
+      category: item.category_name || "-",
+      department: item.department_name || "-",
+      sub_section: item.sub_section_name || "-",
+      available: item.quantity || 0,
+      total: item.total_quantity || 0,
+    }));
+  },
+};

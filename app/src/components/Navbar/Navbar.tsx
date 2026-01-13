@@ -158,7 +158,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className="flex flex-col background w-full min-h-screen">
+    <div className="background fixed inset-0 overflow-hidden">
       <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[100px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex gap-15 justify-center z-51">
           <div className="px-7.5">
@@ -248,8 +248,10 @@ const Navbar = () => {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 bg-[#FAFAFA] ml-[213px] mt-[100px]">
-          <Outlet />
+        <main className="flex-1 min-w-0 bg-[#FAFAFA] pl-[213px] pt-[110px] h-full overflow-hidden">
+          <div className="w-full h-full min-h-0 overflow-hidden">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

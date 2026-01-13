@@ -51,7 +51,7 @@ interface BorrowEquipmentModalProps {
   availableCount: number; // จำนวนอุปกรณ์ที่พร้อมใช้งาน
   selectedDeviceIds: number[]; // อุปกรณ์ที่เลือก
   onSelectDevice: (ids: number[]) => void; // เปลี่ยนอุปกรณ์ที่เลือก
-  onDateTimeChange: () => void; // เปลี่ยนวันเวลา
+  onDateTimeChange: (payload: { startISO: string; endISO: string }) => void; // เปลี่ยนวันเวลา
 }
 
 const BorrowEquipmentModal = ({
@@ -99,7 +99,7 @@ const BorrowEquipmentModal = ({
     // ส่งเข้า backend เป็น ISO (UTC)
     return d.toISOString();
   }
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
   /**
    * Description: ฟังก์ชันในการตรวจสอบข้อมูลและกำหนดข้อความ error
@@ -226,19 +226,17 @@ const navigate = useNavigate();
     }
 
     // ส่งข้อมูลไปยัง parent component
-    
+
     const submitData = {
-  ...form,
-  borrowTime: applyTimeToDate(form.dateRange[0]!, form.borrowTime),
-  returnTime: applyTimeToDate(
-    form.dateRange[1] ?? form.dateRange[0]!,
-    form.returnTime
-  ),
-};
+      ...form,
+      borrowTime: applyTimeToDate(form.dateRange[0]!, form.borrowTime),
+      returnTime: applyTimeToDate(
+        form.dateRange[1] ?? form.dateRange[0]!,
+        form.returnTime
+      ),
+    };
 
-
-onSubmit({ data: submitData });
-
+    onSubmit({ data: submitData });
 
     // ปิด alert
     setIsConfirmOpen(false);
@@ -259,20 +257,41 @@ onSubmit({ data: submitData });
     }
   };
 
+  // useEffect(() => {
+  //   // วันเวลาที่เริ่มยืม-คืน
+  //   const [startDate, endDateRaw] = form.dateRange;
+  //   // กรณียืมวันเดียว
+  //   const endDate = endDateRaw ?? startDate;
+
+  //   if (!startDate) return;
+
+  //   if (!form.borrowTime || !form.returnTime) return;
+
+  //   if (startDate && endDate && form.borrowTime && form.returnTime) {
+  //     // นับจำนวนอุปกรณ์ที่พร้อมใช้งาน
+  //     onDateTimeChange();
+  //   }
+  // }, [form.dateRange, form.borrowTime, form.returnTime]);
   useEffect(() => {
-    // วันเวลาที่เริ่มยืม-คืน
-    const [startDate, endDateRaw] = form.dateRange;
-    // กรณียืมวันเดียว
-    const endDate = endDateRaw ?? startDate;
+    const startDate = form.dateRange[0];
+    const endDate = form.dateRange[1] ?? form.dateRange[0];
 
-    if (!startDate) return;
-
+    if (!startDate || !endDate) return;
     if (!form.borrowTime || !form.returnTime) return;
 
-    if (startDate && endDate && form.borrowTime && form.returnTime) {
-      // นับจำนวนอุปกรณ์ที่พร้อมใช้งาน
-      onDateTimeChange();
-    }
+    const [sh, sm] = form.borrowTime.split(":").map(Number);
+    const [eh, em] = form.returnTime.split(":").map(Number);
+
+    const start = new Date(startDate);
+    start.setHours(sh, sm, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(eh, em, 0, 0);
+
+    onDateTimeChange({
+      startISO: start.toISOString(),
+      endISO: end.toISOString(),
+    });
   }, [form.dateRange, form.borrowTime, form.returnTime]);
 
   return (
@@ -367,10 +386,7 @@ onSubmit({ data: submitData });
                 width={489}
                 label=""
                 value={form.dateRange}
-                onChange={(range) =>
-                 setForm({ ...form, dateRange: range })
-                  
-                }
+                onChange={(range) => setForm({ ...form, dateRange: range })}
               />
               {errors.dateRange && (
                 <p className="text-sm mt-1 text-[#F5222D]">
@@ -525,8 +541,7 @@ onSubmit({ data: submitData });
               type="button"
               className="!bg-[#E5E7EB] text-black !w-[112px] !h-[46px] hover:!bg-[#D1D5DB] font-semibold"
               onClick={() => {
-               navigate("/list-devices/cart");
-
+                navigate("/list-devices/cart");
               }}
             >
               ยกเลิก

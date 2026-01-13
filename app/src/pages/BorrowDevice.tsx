@@ -4,6 +4,7 @@ import {
   borrowService,
   type GetAvailable,
   type GetDeviceForBorrow,
+  type DeviceAvailability,
 } from "../services/BorrowService";
 import { useEffect, useState } from "react";
 import { useToast } from "../components/Toast";
@@ -44,6 +45,29 @@ const BorrowDevice = () => {
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
   // เก็บจำนวนอุปกรณ์ที่สถานะ READY
   const [availableCount, setAvailableCount] = useState(0);
+
+  const [deviceAvailabilities, setDeviceAvailabilities] = useState<
+    DeviceAvailability[]
+  >([]);
+
+  useEffect(() => {
+    let isLive = true;
+
+    const fetchAvailabilities = async () => {
+      try {
+        const res = await borrowService.getDeviceAvailabilities();
+        if (isLive) setDeviceAvailabilities(res);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchAvailabilities();
+
+    return () => {
+      isLive = false;
+    };
+  }, []);
 
   // ใช้ำสำหรับแสดง toast
   const { push } = useToast();
@@ -102,22 +126,64 @@ const BorrowDevice = () => {
     return dateTime;
   };
 
+  //เวลายืมคืนใน DeviceAvailabilities
+  const isOverlap = (
+    aStart: string,
+    aEnd: string,
+    bStart: string,
+    bEnd: string
+  ) => {
+    const as = new Date(aStart).getTime();
+    const ae = new Date(aEnd).getTime();
+    const bs = new Date(bStart).getTime();
+    const be = new Date(bEnd).getTime();
+    return as <= be && ae >= bs;
+  };
+
   /**
    * Description: ฟังก์ชันสำหรับจัดการเมื่อมีการเปลี่ยนวันที่หรือเวลาที่เลือก
    * Input : -
    * Output : อัปเดตข้อมูลอุปกรณ์ที่ว่าง, จำนวนอุปกรณ์ที่ว่าง และรีเซ็ตการเลือกอุปกรณ์
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
-  const handleDateTimeChange = async () => {
-    // ดึงข้อมูล device childs ทั้งหมด พร้อมเวลาที่ถูกยืม
-    const res = await borrowService.getAvailable(deId);
-    setAvailableDevices(res);
+  // const handleDateTimeChange = async () => {
+  const handleDateTimeChange = async (payload: {
+    startISO: string;
+    endISO: string;
+  }) => {
+    // // ดึงข้อมูล device childs ทั้งหมด พร้อมเวลาที่ถูกยืม
+    // const res = await borrowService.getAvailable(deId);
+    // setAvailableDevices(res);
 
-    // นับจำนวนอุปกรณ์ที่ว่าง
-    const readyCount = res.filter((d) => d.dec_status === "READY").length;
+    // // นับจำนวนอุปกรณ์ที่ว่าง
+    // const readyCount = res.filter((d) => d.dec_status === "READY").length;
+    // setAvailableCount(readyCount);
+
+    // // reset การเลือก ถ้าเวลาเปลี่ยน
+    // setSelectedDeviceIds([]);
+
+    if (!deId) return;
+
+    const { startISO, endISO } = payload;
+
+    const res = await borrowService.getAvailable(deId);
+
+    const blockedDecIdSet = new Set(
+      deviceAvailabilities
+        .filter((da) => da.da_status === "ACTIVE")
+        .filter((da) => isOverlap(da.da_start, da.da_end, startISO, endISO))
+        .map((da) => da.da_dec_id)
+    );
+
+    const filtered = res.filter(
+      (device) => !blockedDecIdSet.has(device.dec_id)
+    );
+
+    setAvailableDevices(filtered);
+
+    const readyCount = filtered.filter((d) => d.dec_status === "READY").length;
     setAvailableCount(readyCount);
 
-    // reset การเลือก ถ้าเวลาเปลี่ยน
     setSelectedDeviceIds([]);
   };
 
@@ -130,7 +196,7 @@ const BorrowDevice = () => {
   const handleSubmit = async ({ data }: { data: BorrowForm }) => {
     try {
       // วันที่ยืมและวันที่คืน
-    
+
       const [borrowDate, returnDateRaw] = data.dateRange;
       // วันที่คืน (กรณียืมวันเดียว)
       const returnDate = returnDateRaw ?? borrowDate;

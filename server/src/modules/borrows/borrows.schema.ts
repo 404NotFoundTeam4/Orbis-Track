@@ -107,6 +107,24 @@ export const addToCartSchema = z.object({
     cartItemId: z.number()
 });
 
+/**
+ * Description: Schema โครงสร้างข้อมูล Device Availabilities (ช่วงเวลาที่อุปกรณ์ถูกจอง/ถูกยืม)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+export const deviceAvailabilitiesSchema = z.object({
+    da_id: z.coerce.number(),
+    da_dec_id: z.coerce.number(),
+    da_brt_id: z.coerce.number(),
+    da_start: z.date(),
+    da_end: z.date(),
+    da_status: z.enum([
+        "ACTIVE",
+        "COMPLETED",
+    ]),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable(),
+})
+
 export type GetInventorySchema = z.infer<typeof getInventorySchema>;
 
 export type IdParamDto = z.infer<typeof idParamSchema>;
@@ -122,3 +140,5 @@ export type CreateBorrowTicketSchema = z.infer<typeof createBorrowTicketSchema>;
 export type AddToCartPayload = z.infer<typeof addToCartPayload>;
 
 export type AddToCartSchema = z.infer<typeof addToCartSchema>;
+
+export type DeviceAvailabilitiesSchema = z.infer<typeof deviceAvailabilitiesSchema>;

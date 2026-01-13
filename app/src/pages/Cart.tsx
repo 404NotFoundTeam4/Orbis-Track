@@ -38,6 +38,7 @@ interface CartItem {
   section: string;
   borrowDate: string;
   returnDate: string;
+  isBorrow: boolean;
 }
 
 export const Cart = () => {
@@ -82,6 +83,7 @@ export const Cart = () => {
         returnDate: formatThaiDateTime(cti.cti_end_date) ?? "ยังไม่กำหนด",
         readyQuantity: cti.dec_ready_count ?? 0,
         maxQuantity: cti.dec_count ?? 0,
+        isBorrow: cti.isBorrow,
       }));
 
       setItems(mapped);
@@ -259,8 +261,10 @@ export const Cart = () => {
     const item = items.find((item) => item.id === id);
     if (!item) return;
 
-    // ถ้า availability = "ไม่พร้อมใช้งาน" → ห้ามเลือก
+    // ถ้า availability = "ไม่พร้อมใช้งาน" ห้ามเลือก
     if (item.availability === "ไม่พร้อมใช้งาน") return;
+    // ถ้าถูกยืม/จอง ห้ามเลือก
+    if (item.isBorrow) return;
 
     setSelectedItems((prev) =>
       prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
@@ -268,7 +272,7 @@ export const Cart = () => {
   };
 
   const selectableItems = items.filter(
-    (item) => item.availability === "พร้อมใช้งาน"
+    (item) => item.availability === "พร้อมใช้งาน" && !item.isBorrow
   );
   const selectableIds = selectableItems.map((item) => item.id);
 
@@ -387,107 +391,115 @@ export const Cart = () => {
             )}
           </div>
         </div>
-        
-        <div className="flex-1 min-h-0">
-        {/* <div className="h-full min-h-0 overflow-y-auto overflow-x-hidden space-y-4 pr-1"> */}
-        <div className="max-h-[calc(100vh-110px-220px)] overflow-y-auto overflow-x-hidden space-y-4 pr-1">
-          {items.length === 0 ? (
-            <div className="text-center text-lg text-[#858585] py-10 border rounded-xl bg-white">
-              ไม่มีรายการอุปกรณ์ในรถเข็น
-            </div>
-          ) : (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="h-[208px] bg-white rounded-xl shadow-sm flex overflow-hidden transition-all duration-200 hover:shadow-lg"
-              >
-                <div className="flex-1 p-4 flex gap-[25px] items-center">
-                  <label className="inline-flex items-center cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.includes(item.id)}
-                      onChange={() => toggleSelect(item.id)}
-                      className="peer sr-only"
-                    />
 
-                    {/* กล่อง checkbox */}
-                    <span
-                      className="w-[29px] h-[29px] rounded-[8px] border border-[#BFBFBF] bg-white flex items-center justify-center
-                        transition-colors peer-checked:bg-[#0072FF] peer-checked:border-[#0072FF] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
-                    >
-                      <Icon
-                        icon="rivet-icons:check"
-                        width="25"
-                        height="25"
-                        className="inline-block text-white peer-checked:opacity-100 transition-opacity"
+        <div className="flex-1 min-h-0">
+          {/* <div className="h-full min-h-0 overflow-y-auto overflow-x-hidden space-y-4 pr-1"> */}
+          <div className="max-h-[calc(100vh-110px-220px)] overflow-y-auto overflow-x-hidden space-y-4 pr-1">
+            {items.length === 0 ? (
+              <div className="text-center text-lg text-[#858585] py-10 border rounded-xl bg-white">
+                ไม่มีรายการอุปกรณ์ในรถเข็น
+              </div>
+            ) : (
+              items.map((item) => (
+                <div
+                  key={item.id}
+                  className="h-[208px] bg-white rounded-xl shadow-sm flex overflow-hidden transition-all duration-200 hover:shadow-lg"
+                >
+                  <div className="flex-1 p-4 flex gap-[25px] items-center">
+                    <label className="inline-flex items-center cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                        className="peer sr-only"
                       />
-                    </span>
-                  </label>
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-[143px] h-[153px] rounded-lg object-cover border border-gray-100"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+
+                      {/* กล่อง checkbox */}
                       <span
-                        className={`px-2 py-0.5 border rounded-full text-xs font-medium ${item.availability === "พร้อมใช้งาน" ? "border-[#73D13D] text-[#73D13D]" : "border-[#FF4D4F] text-[#FF4D4F]"}`}
+                        className="w-[29px] h-[29px] rounded-[8px] border border-[#BFBFBF] bg-white flex items-center justify-center
+                        transition-colors peer-checked:bg-[#0072FF] peer-checked:border-[#0072FF] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
                       >
-                        {item.availability}
+                        <Icon
+                          icon="rivet-icons:check"
+                          width="25"
+                          height="25"
+                          className="inline-block text-white peer-checked:opacity-100 transition-opacity"
+                        />
                       </span>
-                      <span className="px-2 py-0.5 border border-[#7492FF] text-[#7492FF] rounded-full text-xs font-medium">
-                        ฝ่ายย่อย : {item.section}
-                      </span>
+                    </label>
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-[143px] h-[153px] rounded-lg object-cover border border-gray-100"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className={`px-2 py-0.5 border rounded-full text-xs font-medium ${item.availability === "พร้อมใช้งาน" ? "border-[#73D13D] text-[#73D13D]" : "border-[#FF4D4F] text-[#FF4D4F]"}`}
+                        >
+                          {item.availability}
+                        </span>
+                        <span className="px-2 py-0.5 border border-[#7492FF] text-[#7492FF] rounded-full text-xs font-medium">
+                          ฝ่ายย่อย : {item.section}
+                        </span>
+                      </div>
+                      <div className="font-semibold text-[18px] text-[#40A9FF]">
+                        {item.name}
+                        {item.isBorrow && (
+                          <div className="mt-2 inline-flex items-center gap-2  px-3 py-1 text-sm text-[#FF4D4F]">
+                            <Icon icon="jam:alert" width="18" height="18" />
+                            <span className="font-medium">
+                              อุปกรณ์ที่คุณกำลังเลือกมีการเปลี่ยนแปลงสถานะ
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm text-[#B3B1B1] space-y-[2px]">
+                        <div>รหัสอุปกรณ์ : {item.code}</div>
+                        <div>หมวดหมู่ : {item.category}</div>
+                        <div>แผนก : {item.department}</div>
+                        <div>
+                          คงเหลือ : {item.readyQuantity}/{item.maxQuantity} ชิ้น
+                        </div>
+                      </div>
+                      <Link
+                        to="/list-devices/cart/edit"
+                        state={{ ctiId: item.id }}
+                        className="mt-1 text-[#096DD9] text-sm underline hover:text-[#0050B3] transition-colors"
+                      >
+                        แก้ไขรายละเอียด
+                      </Link>
                     </div>
-                    <div className="font-semibold text-[18px] text-[#40A9FF]">
-                      {item.name}
-                    </div>
-                    <div className="text-sm text-[#B3B1B1] space-y-[2px]">
-                      <div>รหัสอุปกรณ์ : {item.code}</div>
-                      <div>หมวดหมู่ : {item.category}</div>
-                      <div>แผนก : {item.department}</div>
-                      <div>
-                        คงเหลือ : {item.readyQuantity}/{item.maxQuantity} ชิ้น
+
+                    <div className="flex flex-col items-end h-full py-2 mr-5">
+                      <div className="w-full text-left text-sm space-y-[2px]">
+                        ช่วงเวลายืม - คืน
+                      </div>
+                      <div className="text-right text-sm text-[#B3B1B1] space-y-[2px]">
+                        <div>วันที่ยืม : {item.borrowDate}</div>
+                        <div>วันที่คืน : {item.returnDate}</div>
                       </div>
                     </div>
-                    <Link
-                    to="/list-devices/cart/edit"
-                      state={{ ctiId: item.id }}
-                      className="mt-1 text-[#096DD9] text-sm underline hover:text-[#0050B3] transition-colors"
-                    >
-                    แก้ไขรายละเอียด
-                  </Link>
-                </div>
+                  </div>
 
-                  <div className="flex flex-col items-end h-full py-2 mr-5">
-                    <div className="w-full text-left text-sm space-y-[2px]">
-                      ช่วงเวลายืม - คืน
-                    </div>
-                    <div className="text-right text-sm text-[#B3B1B1] space-y-[2px]">
-                      <div>วันที่ยืม : {item.borrowDate}</div>
-                      <div>วันที่คืน : {item.returnDate}</div>
-                    </div>
+                  {/* Delete button */}
+                  <div className="w-[40px] bg-[#FF4D4F] flex items-center justify-center cursor-pointer hover:bg-[#D9363E] transition-colors">
+                    <button
+                      onClick={() => openDeleteModal(item.id)}
+                      aria-label={`ลบ ${item.name} ออกจากรถเข็น`}
+                      className="w-full h-full flex items-center justify-center text-white hover:bg-[#D9363E] transition-colors"
+                    >
+                      <Icon
+                        icon="solar:trash-bin-trash-outline"
+                        width="20"
+                        height="20"
+                      />
+                    </button>
                   </div>
                 </div>
-
-                {/* Delete button */}
-                <div className="w-[40px] bg-[#FF4D4F] flex items-center justify-center cursor-pointer hover:bg-[#D9363E] transition-colors">
-                  <button
-                    onClick={() => openDeleteModal(item.id)}
-                    aria-label={`ลบ ${item.name} ออกจากรถเข็น`}
-                    className="w-full h-full flex items-center justify-center text-white hover:bg-[#D9363E] transition-colors"
-                  >
-                    <Icon
-                      icon="solar:trash-bin-trash-outline"
-                      width="20"
-                      height="20"
-                    />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

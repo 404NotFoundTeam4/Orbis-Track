@@ -12,7 +12,8 @@ import {
   UpdateCartDeviceDetailDataSchema,
   updateCartDeviceDetailBodySchema,
   updateCartDeviceDetailParamSchema,
-  deleteCartItemPayload
+  deleteCartItemPayload,
+  DeviceAvailabilitiesSchema
 } from "./cart.schema.js";
 
 
@@ -141,18 +142,18 @@ export class CartController extends BaseController {
    *   - คืนค่า response พร้อม message และ data
    * Author    : Rachata Jitjeankhan (Tang) 66160369
    */
- async updateCartDeviceDetail(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<BaseResponse<UpdateCartDeviceDetailDataSchema>> {
-  const { id } = updateCartDeviceDetailParamSchema.parse(req.params);
-  const payload = updateCartDeviceDetailBodySchema.parse(req.body);
-  const updatedDevice = await cartsService.updateCartDeviceDetail(id, payload);
+  async updateCartDeviceDetail(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<UpdateCartDeviceDetailDataSchema>> {
+    const { id } = updateCartDeviceDetailParamSchema.parse(req.params);
+    const payload = updateCartDeviceDetailBodySchema.parse(req.body);
+    const updatedDevice = await cartsService.updateCartDeviceDetail(id, payload);
 
-  return {  
-    message: "แก้ไขรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
-    data: updatedDevice,
-  };
-}
+    return {
+      message: "แก้ไขรายละเอียดอุปกรณ์ในรถเข็นสำเร็จ",
+      data: updatedDevice,
+    };
+  }
 }

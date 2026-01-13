@@ -10,7 +10,8 @@ import {
   GetAvailableSchema,
   GetDeviceForBorrowSchema,
   GetInventorySchema,
-  idParamSchema
+  idParamSchema,
+  DeviceAvailabilitiesSchema
 } from "./borrows.schema.js";
 import { AuthRequest } from "../auth/auth.schema.js";
 
@@ -112,6 +113,7 @@ export class BorrowController extends BaseController {
 
     const userId = req.user.sub;
 
+    const cart = await borrowService.checkCart(userId);
     const payload = addToCartPayload.parse(req.body);
 
     const result = await borrowService.addToCart({
@@ -120,5 +122,20 @@ export class BorrowController extends BaseController {
     });
 
     return { data: result }
+  }
+
+  /**
+   * Description: ดึงข้อมูล Device Availabilities ทั้งหมดในระบบ
+   * Input : -
+   * Output : { data: deviceAvailabilities[] }
+   * Author : Nontapat Sinthum (Guitar) 66160104
+   */
+  async getDeviceAvailabilities(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<DeviceAvailabilitiesSchema>> {
+    const availabilities = await borrowService.getDeviceAvailabilities();
+    return { data: availabilities };
   }
 }

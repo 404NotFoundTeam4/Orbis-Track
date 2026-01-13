@@ -13,12 +13,16 @@
  *
  * Author: Salsabeela Sa-e (San) 66160349
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BorrowDeviceModal from "../components/BorrowDeviceModal";
 import CartService from "../services/CartService";
-import { borrowService } from "../services/BorrowService";
+import {
+  borrowService,
+  type DeviceAvailability,
+} from "../services/BorrowService";
 import { useToast } from "../components/Toast";
+import { AlertDialog } from "../components/AlertDialog";
 
 export interface ActiveBorrow {
   start: string;
@@ -78,6 +82,11 @@ const EditCart = () => {
   const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
   // เก็บอุปกรณ์ที่ผู้ใช้เลือก
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
+  //เก็บ selected เดิมจาก cart เพื่อให้ auto-remove ตอนเข้า
+  const [initialSelectedIds, setInitialSelectedIds] = useState<number[] | null>(
+    null
+  );
+
   // อุปกรณ์เสริม (accessories) ของอุปกรณ์แม่
   const [accessories, setAccessories] = useState<
     {
@@ -88,6 +97,29 @@ const EditCart = () => {
   // สถานที่เก็บอุปกรณ์
   const [storageLocation, setStorageLocation] = useState<string>("");
 
+  const [deviceAvailabilities, setDeviceAvailabilities] = useState<
+    DeviceAvailability[]
+  >([]);
+  const [availLoaded, setAvailLoaded] = useState(false); //กัน race ตอนรอโหลด availabilities
+
+  const [enterRemovedSerials, setEnterRemovedSerials] = useState<string[]>([]); //id ที่โดนเอาออกตอนเข้ามา
+  const [enterAlertOpen, setEnterAlertOpen] = useState(false); // เปิด alert ตอนเข้ามา
+  const didAutoRemoveOnEnterRef = useRef(false); // ให้ทำแค่รอบแรกตอนเข้าหน้า
+
+  //helper เช็คช่วงเวลาซ้อนทับ
+  const isOverlap = (
+    aStart: string,
+    aEnd: string,
+    bStart: string,
+    bEnd: string
+  ) => {
+    const as = new Date(aStart).getTime();
+    const ae = new Date(aEnd).getTime();
+    const bs = new Date(bStart).getTime();
+    const be = new Date(bEnd).getTime();
+    return as <= be && ae >= bs;
+  };
+
   // ตัดคำว่า 'แผนก' หรือ 'ฝ่ายย่อย' นำหน้าให้เหลือแค่ชื่อจริง
   const cleanBaseName = (name?: string | null): string => {
     if (!name) return "";
@@ -97,6 +129,29 @@ const EditCart = () => {
       .replace(/\s+/g, " ")
       .trim();
   };
+
+  // ดึง deviceAvailabilities ครั้งเดียว เพื่อใช้ filter ช่วงเวลาซ้อนทับ
+  useEffect(() => {
+    let isLive = true;
+
+    const fetchAvailabilities = async () => {
+      try {
+        const res = await borrowService.getDeviceAvailabilities();
+        if (isLive) setDeviceAvailabilities(res ?? []);
+      } catch (err) {
+        console.error("fetch deviceAvailabilities error:", err);
+        if (isLive) setDeviceAvailabilities([]);
+      } finally {
+        if (isLive) setAvailLoaded(true);
+      }
+    };
+
+    fetchAvailabilities();
+
+    return () => {
+      isLive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!ctiId) {
@@ -177,6 +232,7 @@ const EditCart = () => {
           : [];
 
         setSelectedDeviceIds(decIds);
+        setInitialSelectedIds(decIds); //ใช้สำหรับ auto-remove ตอนเข้าหน้า
 
         // ดึงรายละเอียดอุปกรณ์จาก service เพื่อให้ได้ข้อมูล accessories เหมือนหน้า BorrowDevice
         try {
@@ -198,14 +254,14 @@ const EditCart = () => {
           setStorageLocation("");
         }
 
-        try {
-          const avail = await borrowService.getAvailable(
-            mapped.deviceId as any
-          );
-          setAvailableDevices(avail ?? []);
-        } catch (err) {
-          console.error("ไม่สามารถดึงรายการอุปกรณ์ย่อยได้:", err);
-        }
+        // try {
+        //   const avail = await borrowService.getAvailable(
+        //     mapped.deviceId as any
+        //   );
+        //   setAvailableDevices(avail ?? []);
+        // } catch (err) {
+        //   console.error("ไม่สามารถดึงรายการอุปกรณ์ย่อยได้:", err);
+        // }
       } catch (err) {
         console.error("โหลดข้อมูลแก้ไขไม่สำเร็จ:", err);
         navigate("/list-devices/cart", { replace: true });
@@ -216,6 +272,79 @@ const EditCart = () => {
 
     loadCartItem();
   }, [ctiId, navigate]);
+
+  //ฟังก์ชันเดียวสำหรับ auto-remove ที่ถูก filter ออก
+  const refreshAndFilter = async (
+    payload: { startISO: string; endISO: string },
+    opts?: { showEnterAlert?: boolean }
+  ) => {
+    if (!cartItem) return;
+
+    const { startISO, endISO } = payload;
+
+    const res = await borrowService.getAvailable(cartItem.deviceId as any);
+
+    const blockedDecIdSet = new Set<number>(
+      (deviceAvailabilities ?? [])
+        .filter((da) => da.da_status === "ACTIVE")
+        .filter((da) => isOverlap(da.da_start, da.da_end, startISO, endISO))
+        .map((da) => da.da_dec_id)
+    );
+
+    const filtered = (res ?? []).filter((d) => !blockedDecIdSet.has(d.dec_id));
+    setAvailableDevices(filtered);
+
+    //เอา device child ที่ถูก filter ออก “ออกจาก selected” ทันที
+    const allowedIdSet = new Set(filtered.map((d) => d.dec_id));
+
+    setSelectedDeviceIds((prev) => {
+      const removedIds = prev.filter((id) => !allowedIdSet.has(id));
+      const kept = prev.filter((id) => allowedIdSet.has(id));
+
+      if (opts?.showEnterAlert && removedIds.length > 0) {
+        const byId = new Map<number, GetAvailable>();
+        (res ?? []).forEach((d) => byId.set(d.dec_id, d)); // res มีข้อมูลครบสุด (รวม serial)
+
+        const removedSerials = removedIds.map((id) => {
+          const serial = byId.get(id)?.dec_serial_number;
+          return serial && serial.trim() ? serial : `DEC-${id}`;
+        });
+
+        setEnterRemovedSerials(removedSerials);
+        setEnterAlertOpen(true);
+      }
+
+      return kept;
+    });
+  };
+
+  useEffect(() => {
+    if (!cartItem) return;
+    if (!availLoaded) return;
+    if (!initialSelectedIds) return; // รอให้ decIds เดิมถูก set มาก่อน
+    if (didAutoRemoveOnEnterRef.current) return;
+
+    const startRaw = cartItem.borrowDate;
+    const endRaw = cartItem.returnDate ?? cartItem.borrowDate;
+
+    if (!startRaw || !endRaw) return;
+
+    didAutoRemoveOnEnterRef.current = true;
+
+    const startISO = new Date(startRaw).toISOString();
+    const endISO = new Date(endRaw).toISOString();
+
+    refreshAndFilter({ startISO, endISO }, { showEnterAlert: true }).catch(
+      (err) => {
+        console.error("init auto filter error:", err);
+      }
+    );
+  }, [cartItem, availLoaded, initialSelectedIds]);
+
+  const availableCount = useMemo(() => {
+    return (availableDevices ?? []).filter((d) => d.dec_status === "READY")
+      .length;
+  }, [availableDevices]);
 
   if (loading) {
     return <div className="p-6 text-center">กำลังโหลดข้อมูล...</div>;
@@ -309,11 +438,21 @@ const EditCart = () => {
    *
    * Author: Salsabeela Sa-e (San) 66160349
    **/
-  const handleDateTimeChange = async () => {
-    if (!cartItem) return;
+  // const handleDateTimeChange = async () => {
+  //   if (!cartItem) return;
+  //   try {
+  //     const avail = await borrowService.getAvailable(cartItem.deviceId as any);
+  //     setAvailableDevices(avail ?? []);
+  //   } catch (err) {
+  //     console.error("refresh available devices error:", err);
+  //   }
+  // };
+  const handleDateTimeChange = async (payload: {
+    startISO: string;
+    endISO: string;
+  }) => {
     try {
-      const avail = await borrowService.getAvailable(cartItem.deviceId as any);
-      setAvailableDevices(avail ?? []);
+      await refreshAndFilter(payload, { showEnterAlert: false });
     } catch (err) {
       console.error("refresh available devices error:", err);
     }
@@ -372,13 +511,30 @@ const EditCart = () => {
           }}
           /** props ที่ BorrowDeviceModal บังคับ แต่ edit ไม่ได้ใช้ */
           availableDevices={availableDevices}
-          availableCount={
-            availableDevices.filter((d) => d.dec_status === "READY").length
-          }
+          availableCount={availableCount}
           selectedDeviceIds={selectedDeviceIds}
           onSelectDevice={setSelectedDeviceIds} // เปลี่ยนอุปกรณ์ที่เลือก
           onDateTimeChange={handleDateTimeChange}
           onSubmit={handleSubmit}
+        />
+
+        {/* alert ตอนเข้าหน้า (เอาออกเลย + เตือนว่าเอา id อะไรออกบ้าง) */}
+        <AlertDialog
+          open={enterAlertOpen}
+          onOpenChange={setEnterAlertOpen}
+          tone="warning"
+          title="พบอุปกรณ์บางชิ้นไม่ว่างในช่วงเวลาที่เลือก"
+          description={
+            enterRemovedSerials.length > 0
+              ? `ระบบได้ยกเลิกการเลือกอุปกรณ์ย่อย Serial: ${enterRemovedSerials.join(
+                  ", "
+                )} เนื่องจากช่วงเวลาที่เลือกไม่พร้อมใช้งาน`
+              : undefined
+          }
+          confirmText="รับทราบ"
+          cancelText="ปิด"
+          actionsMode = "single"
+          onConfirm={() => setEnterAlertOpen(false)}
         />
       </div>
     </div>

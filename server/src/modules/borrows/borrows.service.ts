@@ -470,7 +470,7 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
             where: {
                 cti_ct_id_cti_de_id: {
                     cti_ct_id: cart.ct_id,
-                    cti_de_id: deviceId
+                    cti_de_id: deviceId,
                 }
             },
             update: {
@@ -480,7 +480,10 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
                 cti_usage_location: placeOfUse,
                 cti_quantity: quantity,
                 cti_start_date: borrowStart,
-                cti_end_date: borrowEnd
+                cti_end_date: borrowEnd,
+                created_at: new Date(),
+                updated_at: new Date(),
+                deleted_at: null,
             },
             create: {
                 cti_us_name: borrower,
@@ -497,7 +500,8 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
         })
 
         // ถ้ามีอุปกรณ์ลูก
-        if (deviceChilds.length) {
+        // if (deviceChilds.length) {
+        if (Array.isArray(deviceChilds) && deviceChilds.length > 0) {
             // ลบรายการเดิมออก ป้องกันอุปกรณ์ซ้ำ หรือจองเกินจำนวน
             await tx.cart_device_childs.deleteMany({
                 where: {
@@ -524,4 +528,63 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
     });
 }
 
-export const borrowService = { getInventory, getDeviceForBorrow, getAvailable, createBorrowTicket, addToCart };
+/**
+ * Description : ดึงข้อมูล Device Availabilities ทั้งหมดในระบบ
+ * Input : -
+ * Output : รายการ device_availabilities ทั้งหมด
+ * Author: Nontapat Sinthum (Guitar) 66160104
+ */
+async function getDeviceAvailabilities() {
+    const availabilities = await prisma.device_availabilities.findMany({
+        select: {
+            da_id: true,
+            da_dec_id: true,
+            da_brt_id: true,
+            da_start: true,
+            da_end: true,
+            da_status: true,
+            created_at: true,
+            updated_at: true,
+        },
+        orderBy: { da_start: "asc" },
+    });
+
+    return availabilities;
+}
+
+/**
+ * Description : ตรวจสอบและเตรียมรถเข็น (Cart) ของผู้ใช้
+ * - ค้นหารถเข็นที่ยังใช้งานอยู่ (deleted_at = null) ของผู้ใช้
+ * - หากพบรถเข็นเดิม จะใช้งานรถเข็นนั้นต่อ
+ * - หากไม่พบรถเข็น จะสร้างรถเข็นใหม่ให้ผู้ใช้
+ *
+ * Input  : userId - รหัสผู้ใช้ที่ต้องการตรวจสอบรถเข็น
+ * Output : { message: string } - สถานะการทำงานของฟังก์ชัน
+ * Author : Nontapat Sinthum (Guitar) 66160104
+ */
+async function checkCart(userId: number) {
+    const id = userId;
+
+    return prisma.$transaction(async (tx) => {
+        //หา cart ของ user
+        const existingCart = await tx.carts.findFirst({
+            where: { ct_us_id: id, deleted_at: null },
+            orderBy: { ct_id: "asc" },
+            select: { ct_id: true, ct_us_id: true },
+        });
+
+        //ถ้าไม่มี cart -> สร้าง cart ใหม่
+        const cart =
+            existingCart ??
+            (await tx.carts.create({
+                data: {
+                    ct_us_id: id,
+                    created_at: new Date(),
+                },
+                select: { ct_id: true, ct_us_id: true },
+            }));
+
+        return { massage: "success" };
+    });
+}
+export const borrowService = { getInventory, getDeviceForBorrow, getAvailable, createBorrowTicket, addToCart, getDeviceAvailabilities, checkCart };

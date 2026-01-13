@@ -94,6 +94,7 @@ async function getCartItem(params: IdParamDto) {
       departments,
       sections,
       cart_device_childs,
+      device_availabilities,
     ] = await Promise.all([
       tx.device_childs.findMany({
         where: { deleted_at: null },
@@ -153,7 +154,25 @@ async function getCartItem(params: IdParamDto) {
         where: { deleted_at: null },
         select: { cdc_id: true, cdc_cti_id: true, cdc_dec_id: true },
       }) as Promise<CartDeviceChildSchema[]>,
+
+      tx.device_availabilities.findMany({
+        where: {
+          da_status: "ACTIVE",
+        },
+        select: {
+          da_dec_id: true,
+          da_start: true,
+          da_end: true,
+        },
+      }),
     ]);
+
+    //ทำ index ของ device_availabilities ตาม da_dec_id เพื่อเช็คเร็วว่า dec_id นี้ถูก block ช่วงเวลาไหนบ้าง
+    const availabilitiesByDecId = new Map<number, Array<{ da_start: Date; da_end: Date }>>();
+    for (const da of device_availabilities) {
+      if (!availabilitiesByDecId.has(da.da_dec_id)) availabilitiesByDecId.set(da.da_dec_id, []);
+      availabilitiesByDecId.get(da.da_dec_id)!.push({ da_start: da.da_start, da_end: da.da_end });
+    }
 
     /**
      * Description: สร้าง Map สำหรับ lookup device_child ตาม dec_id เพื่อลดการวน find ซ้ำหลายรอบ
@@ -216,10 +235,10 @@ async function getCartItem(params: IdParamDto) {
      **/
     const accessoriesByDeviceId = accessories.reduce<
       Record<number, AccessoriesSchema[]>
-    >((acc, a) => {
-      const deId = a.acc_de_id;
+    >((acc, item) => {
+      const deId = item.acc_de_id;
       if (deId == null) return acc;
-      (acc[deId] ??= []).push(a);
+      (acc[deId] ??= []).push(item);
       return acc;
     }, {});
 
@@ -233,7 +252,7 @@ async function getCartItem(params: IdParamDto) {
      * Author : Nontapat Sinhum (Guitar) 66160104
      **/
     const itemData = cart_items.map((cartItem: CartItemSchema) => {
-      const device = devices.find((d) => d.de_id === cartItem.cti_de_id);
+      const device = devices.find((de) => de.de_id === cartItem.cti_de_id);
 
       const matchedCartDeviceChilds =
         cartDeviceChildsByCtiId.get(cartItem.cti_id) ?? [];
@@ -248,14 +267,33 @@ async function getCartItem(params: IdParamDto) {
         .map((cdc) => deviceChildById.get(cdc.cdc_dec_id))
         .filter((dc): dc is DeviceChildSchema => Boolean(dc));
 
-      const category = categories.find((c) => c.ca_id === device?.de_ca_id);
+      // เงื่อนไข: มี cart device child ที่ไปเจอใน device_availabilities
+      // และช่วงเวลา cartItem อยู่ "ภายใน" ช่วงเวลา availability
+      const cartStart = cartItem.cti_start_date;
+      const cartEnd = cartItem.cti_end_date ?? cartItem.cti_start_date; // กันกรณี end null
 
-      const accessory = accessories.find((a) => a.acc_de_id === device?.de_id);
+      let isBorrow = false;
 
-      const section = sections.find((s) => s.sec_id === device?.de_sec_id);
+      if (cartStart && cartEnd) {
+        // เอาเฉพาะ dec_id ที่เลือกใน cartItem นี้
+        const selectedDecIds = matchedCartDeviceChilds.map((cdc) => cdc.cdc_dec_id);
+
+        isBorrow = selectedDecIds.some((decId) => {
+          const avList = availabilitiesByDecId.get(decId);
+          if (!avList || avList.length === 0) return false;
+
+          // "อยู่ใน da_start ถึง da_end" = cartStart >= da_start && cartEnd <= da_end
+          return avList.some(({ da_start, da_end }) => cartStart >= da_start && cartEnd <= da_end);
+        });
+      }
+      const category = categories.find((ca) => ca.ca_id === device?.de_ca_id);
+
+      const accessory = accessories.find((acc) => acc.acc_de_id === device?.de_id);
+
+      const section = sections.find((sec) => sec.sec_id === device?.de_sec_id);
 
       const department = departments.find(
-        (d) => d.dept_id === section?.sec_dept_id,
+        (dept) => dept.dept_id === section?.sec_dept_id,
       );
 
       const deId = device?.de_id ?? null;
@@ -283,6 +321,7 @@ async function getCartItem(params: IdParamDto) {
         dec_availability,
         accessories: deviceAccessories,
         device_childs: matchedDeviceChilds,
+        isBorrow,
       };
     });
 

@@ -12,6 +12,7 @@ import {
   borrowReturnTicketsSchema,
   updateCartDeviceDetailDataSchema,
   deleteCartItemPayload,
+  deviceAvailabilitiesSchema,
 } from "./cart.schema.js";
 
 const cartsController = new CartController();

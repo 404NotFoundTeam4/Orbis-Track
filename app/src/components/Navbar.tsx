@@ -97,7 +97,7 @@ export const Navbar = () => {
   const basePath = getBasePath(User?.us_role) || "";
 
   return (
-    <div className="flex flex-col background w-full min-h-screen ">
+    <div className="background fixed inset-0 overflow-hidden">
       {/* Navbar */}
       <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[100px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex gap-15 justify-center z-51">
@@ -142,9 +142,13 @@ export const Navbar = () => {
 
           <button
             type="button"
-            onClick={() => setActive(active === "cart" ? null : "cart")}
-            className={`h-full px-6.5 ${active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-              } flex justify-center items-center relative`}
+            onClick={() => {
+              (setActive(active === "cart" ? null : "cart"),
+                navigate("/list-devices/cart"));
+            }}
+            className={`h-full px-6.5 ${
+              active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+            } flex justify-center items-center relative`}
           >
             {active !== "cart" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"></div>
@@ -176,9 +180,9 @@ export const Navbar = () => {
         </div>
       </div>
       {/* Sidebar */}
-      <div className="flex  ">
-        <div className="fixed  mt-[100px] w-[213px] bg-white text-black shadow-xl z-40">
-          <div className="flex flex-col justify-between h-[calc(100vh-100px)] px-2 py-4 text-lg whitespace-nowrap">
+      <div className="flex h-full">
+        <div className="fixed  mt-[110px] w-[213px] bg-white text-black shadow-xl z-40">
+          <div className="flex flex-col justify-between h-[calc(100vh-110px)] px-2 py-4 text-lg whitespace-nowrap">
             <div className="text-left">
               <Link
                 to={`${basePath}/home`}
@@ -280,12 +284,9 @@ export const Navbar = () => {
                 </ul>
 
                 <Link
-                  to="/users"
-                  onClick={() => {
-                    closeDropdown();
-                    handleMenuClick("device-lists");
-                  }}
-                  className={`px-7.5 rounded-[9px] py-[11px] flex items-center w-full gap-2 ${activeMenu === "device-lists" ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"}`}
+                  to="/list-devices"
+                  onClick={closeDropdown}
+                  className="px-7.5 hover:bg-[#F0F0F0] focus:bg-[#40A9FF] focus:text-white rounded-[9px]  py-[11px]  flex items-center w-full gap-2 transition-colors duration-200"
                 >
                   <FontAwesomeIcon icon={faBoxArchive} />
                   <span>รายการอุปกรณ์</span>
@@ -352,8 +353,8 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <main className="flex-1 bg-[#FAFAFA] pl-[213px] pt-[100px]">
-          <div className=" w-full min-h-[calc(100vh-150px)]  ">
+        <main className="flex-1 min-w-0 bg-[#FAFAFA] pl-[213px] pt-[110px] h-full overflow-hidden">
+          <div className="w-full h-full min-h-0 overflow-hidden">
             <Outlet />
           </div>
         </main>

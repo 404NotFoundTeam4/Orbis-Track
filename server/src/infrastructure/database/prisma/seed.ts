@@ -391,43 +391,45 @@ async function main() {
   // Camera accessories
   await prisma.accessories.upsert({
     where: { acc_id: 1 },
-    update: { acc_name: "เลนส์", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 1, acc_name: "เลนส์", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "แบตเตอรี่", acc_quantity: 2, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "แบตเตอรี่", acc_quantity: 2, device: { connect: { de_id: deviceCamera.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 2 },
-    update: { acc_name: "แบตเตอรี่สำรอง", acc_quantity: 10, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 2, acc_name: "แบตเตอรี่สำรอง", acc_quantity: 10, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "เมมโมรี่การ์ด 64GB", acc_quantity: 3, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "เมมโมรี่การ์ด 64GB", acc_quantity: 3, device: { connect: { de_id: deviceCamera.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 3 },
-    update: { acc_name: "ขาตั้งกล้อง", acc_quantity: 3, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 3, acc_name: "ขาตั้งกล้อง", acc_quantity: 3, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
   });
+  // Laptop accessories
   await prisma.accessories.upsert({
     where: { acc_id: 4 },
-    update: { acc_name: "กระเป๋ากล้อง", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 4, acc_name: "กระเป๋ากล้อง", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "อแด็ปเตอร์", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
+    create: { acc_name: "อแด็ปเตอร์", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 5 },
-    update: { acc_name: "เมาส์ไร้สาย", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
-    create: { acc_id: 5, acc_name: "เมาส์ไร้สาย", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
+    update: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
+    create: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
   });
+  // Projector accessories
   await prisma.accessories.upsert({
     where: { acc_id: 6 },
-    update: { acc_name: "Adapter", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
-    create: { acc_id: 6, acc_name: "Adapter", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
+    update: { acc_name: "สาย HDMI", acc_quantity: 2, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "สาย HDMI", acc_quantity: 2, device: { connect: { de_id: deviceProjector.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 7 },
-    update: { acc_name: "สาย HDMI", acc_quantity: 2, acc_de_id: deviceProjector.de_id },
-    create: { acc_id: 7, acc_name: "สาย HDMI", acc_quantity: 2, acc_de_id: deviceProjector.de_id },
+    update: { acc_name: "สายไฟ", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "สายไฟ", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 8 },
-    update: { acc_name: "รีโมท", acc_quantity: 1, acc_de_id: deviceProjector.de_id },
-    create: { acc_id: 8, acc_name: "รีโมท", acc_quantity: 1, acc_de_id: deviceProjector.de_id },
+    update: { acc_name: "รีโมท", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "รีโมท", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
   });
 
 
@@ -508,11 +510,11 @@ async function main() {
     where: { dec_asset_code: "ASSET-LAP-DELL-001" },
     update: {},
     create: {
-      dec_serial_number: "SN-DELL-XPS15-001",
-      dec_asset_code: "ASSET-LAP-DELL-001",
+      dec_serial_number: "SN-SONY-A7III-003",
+      dec_asset_code: "ASSET-CAM-SONY-003",
       dec_has_serial_number: true,
-      dec_status: "REPAIRING",
-      dec_de_id: deviceLaptop.de_id,
+      dec_status: "READY",
+      dec_de_id: deviceCamera.de_id,
     },
   });
   const childLaptop2 = await prisma.device_childs.upsert({
@@ -540,34 +542,29 @@ async function main() {
     },
   });
 
-
-
-
-
-  // ==========================================
-  // 2. TRANSACTIONAL DATA (ข้อมูลจำลองการใช้งาน)
-  // ==========================================
-
-  // ---- CARTS ----
-  console.log("🛒 Creating carts...");
-  const cart = await prisma.carts.upsert({
-    where: { ct_id: 1 },
+  // เพิ่มกล้องอีก 3 ตัวเพื่อทดสอบ ellipsis
+  const childCam4 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-CAM-SONY-004" },
     update: {},
     create: {
-      ct_id: 1,
-      ct_quantity: 1,
-      ct_us_id: empMedia.us_id,
+      dec_serial_number: "SN-SONY-A7III-004",
+      dec_asset_code: "ASSET-CAM-SONY-004",
+      dec_has_serial_number: true,
+      dec_status: "READY",
+      dec_de_id: deviceCamera.de_id,
     },
   });
-
-  await prisma.cart_items.upsert({
-    where: { cti_id: 1 },
+  const childCam5 = await prisma.device_childs.upsert({
+    where: { dec_asset_code: "ASSET-CAM-SONY-005" },
     update: {},
     create: {
       cti_ct_id: cart.ct_id,
       cti_de_id: deviceCamera.de_id,
       cti_quantity: 1,
       cti_us_name: "ชาติชาย มานะสิน",
+      cti_phone: "0999999999",
+      cti_note: "นำเสนองาน",
+      cti_usage_location: "สำนักงาน",
       cti_start_date: daysFromNow(1),
       cti_end_date: daysFromNow(3),
     },
@@ -593,7 +590,6 @@ async function main() {
       name: string;
       role: any;
       deptId: number | null;
-      secId?: number | null; // เพิ่ม secId สำหรับ HOS/STAFF
       status: any;
       usId?: number | null;
     }[];
@@ -638,9 +634,8 @@ async function main() {
           brts_name: s.name,
           brts_role: s.role,
           brts_dept_id: s.deptId,
-          brts_sec_id: s.secId || null, // เพิ่ม sec_id สำหรับ HOS/STAFF
           brts_dept_name: "Mock Dept",
-          brts_sec_name: s.secId ? "Section A" : null, // ถ้ามี secId ให้ใส่ชื่อ
+          brts_sec_name: "N/A",
           brts_status: s.status,
           brts_us_id: s.usId || null,
           created_at: daysAgo(5 - index),
@@ -984,6 +979,20 @@ async function main() {
     "  Username: admin, hod.media, hod.it, hos.media.a, tech.it, staff.media, emp.media, emp.it",
   );
   console.log("  Password: password123");
+
+  //ป้องกัน id ซ้ำกันหลังจาก seed
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('borrow_return_tickets', 'brt_id'),
+      (SELECT COALESCE(MAX(brt_id), 0) FROM borrow_return_tickets)
+    );
+  `);
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('borrow_return_ticket_stages', 'brts_id'),
+      (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
+    );
+  `);
 }
 
 main()

@@ -18,7 +18,7 @@ export type AlertDialogProps = {
   onCancel?: () => void;
   confirmText?: string;
   cancelText?: string;
-
+  actionsMode?: "single" | "double";
   /** Visual */
   tone?: AlertTone; // success=เขียว (default), warning=เหลือง, danger=แดง
   icon?: React.ReactNode; // รับ ReactNode เป็นไอคอน
@@ -80,6 +80,7 @@ export function AlertDialog({
   onCancel,
   confirmText = "ยืนยัน",
   cancelText = "ยกเลิก",
+  actionsMode = "double",
 
   tone = "success",
   icon,
@@ -200,17 +201,20 @@ export function AlertDialog({
             className="mt-10 flex items-center justify-center"
             style={{ gap: buttonsGap }}
           >
-            <Button
-              variant="secondary"
-              className={cx("rounded-full cursor-pointer", `!text-[${buttonTextPx}px]`)}
-              onClick={() => {
-                onCancel?.();
-                onOpenChange?.(false);
-              }}
-              style={{ width: buttonW, height: buttonH, padding: "5px 15px" }}
-            >
-              {cancelText}
-            </Button>
+            {/* ปุ่มยกเลิก (แสดงเฉพาะโหมด double) */}
+            {actionsMode === "double" && (
+              <Button
+                variant="secondary"
+                className={cx("rounded-full", `!text-[${buttonTextPx}px]`)}
+                onClick={() => {
+                  onCancel?.();
+                  onOpenChange?.(false);
+                }}
+                style={{ width: buttonW, height: buttonH, padding: "5px 15px" }}
+              >
+                {cancelText}
+              </Button>
+            )}
 
             {/* ใช้ปุ่มของผู้ใช้ + override สีตาม tone */}
             <Button

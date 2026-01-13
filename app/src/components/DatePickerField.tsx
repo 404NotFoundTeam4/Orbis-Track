@@ -7,9 +7,9 @@ import { Icon } from "@iconify/react";
 // โครงสร้าง props ที่ต้องส่งมาเมื่อเรียกใช้งาน
 interface DatePickerFieldProps {
   label?: string; // หัวข้อ
-  value: Date | null; // วันที่
+  value: [Date | null, Date | null]; // วันที่
   width?: number;
-  onChange: (date: Date | null) => void; // เปลี่ยนวัน
+  onChange: (dates: [Date | null, Date | null]) => void; // เปลี่ยนวัน
 }
 
 const DatePickerField = ({
@@ -20,20 +20,31 @@ const DatePickerField = ({
   onChange
 }: DatePickerFieldProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);   // ควบคุมการเปิด / ปิด popup
-  const [tempDate, setTempDate] = useState<Date | null>(value); // เก็บวันที่เลือก
+  const [tempDate, setTempDate] = useState<[Date | null, Date | null]>(value); // เก็บวันที่เลือก
 
   // ให้ popup เปิดมาพร้อมค่าล่าสุด
   useEffect(() => {
     setTempDate(value);
   }, [value]);
 
-  // แปลงวันที่เป็น พ.ศ. สำหรับแสดงในช่อง Input
-  const formatThaiInput = (date: Date | null) => {
-    if (!date) return "";
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const year = date.getFullYear() + 543;
-    return `${day}/${month}/${year}`;
+  /**
+  * Description: ฟังก์ชันแปลงช่วงวันที่ ให้เป็นข้อความวันที่รูปแบบไทย (พ.ศ.)
+  * Input : range [Date | null, Date | null] - วันที่เริ่มต้นและวันที่สิ้นสุด
+  * Output : ข้อความวันที่ในรูปแบบไทย
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
+  const formatThaiInput = (range: [Date | null, Date | null]) => {
+    // แยกวันที่เริ่มต้นและวันที่สิ้นสุด
+    const [start, end] = range;
+
+    // ถ้าไม่มีวันที่เริ่มต้น ให้คืนค่าว่าง
+    if (!start) return "";
+
+    // แปลง Date เป็นรูปแบบ วัน/เดือน/ปี (พ.ศ.)
+    const format = (d: Date) =>
+      `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")
+      }/${d.getFullYear() + 543}`;
+    return end ? `${format(start)} - ${format(end)}` : format(start);
   };
 
   // ตกแต่ง Header ปฏิทิน
@@ -156,8 +167,11 @@ const DatePickerField = ({
       <div className="relative">
         <style>{datepickerStyle}</style>
         <DatePicker
+          selectsRange
+          startDate={tempDate[0]}
+          endDate={tempDate[1]}
           placeholderText="วัน/เดือน/ปี"
-          selected={value} // วันที่เลือก
+          // selected={value} // วันที่เลือก
           open={isOpen}
           locale={th} // ภาษาไทย
           onChange={(selectDate) => {

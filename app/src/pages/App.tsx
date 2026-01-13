@@ -13,6 +13,11 @@ import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
+import ForgotPassword from "./ForgotPassword"
+import { Cart } from "./Cart";
+import EditCart from "./EditCart";
+import ListDevices from "./ListDevices";
+import BorrowDevice from "./BorrowDevice";
 import ForgotPassword from "./ForgotPassword";
 import Requests from "./Requests";
 import Inventory from "./Inventory";
@@ -155,6 +160,9 @@ function App() {
               <Route path="/example-component" element={<TestDropDown />} />
               <Route path="/home" element={<Home />} />
               <Route path="/requests" element={<Requests />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/list-devices" element={<ListDevices />} />
+              <Route path="/list-devices/borrow" element={<BorrowDevice />} />
                 
                 <Route path="/home" element={<RolePathRedirect />} />
 

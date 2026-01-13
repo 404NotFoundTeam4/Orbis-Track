@@ -12,6 +12,7 @@ import { borrowReturnRouter } from "./modules/tickets/borrow-return/index.js";
 import { inventoryRouter } from "./modules/inventory/index.js";
 import { categoryRouter } from "./modules/category/index.js";
 import { cartsRouter } from "./modules/cart/index.js";
+import { borrowRouter } from "./modules/borrows/index.js";
 import { usersRouter } from "./modules/users/index.js";
 
 /**
@@ -50,6 +51,10 @@ export function routes(app: Express) {
   api.use("/borrow/cart", authMiddleware, cartsRouter);
   
   api.use("/user", authMiddleware, usersRouter);
+
+  api.use("/inventory", authMiddleware, borrowRouter);
+
+  api.use("/borrow", authMiddleware, borrowRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

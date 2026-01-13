@@ -583,14 +583,14 @@ export const Users = () => {
     <div className="w-full h-full flex flex-col p-4">
       <div className="flex-1">
         {/* แถบนำทาง */}
-        <div className="mb-[8px] space-x-[9px]">
+        <div className="mb-[8px] space-x-[9px] shrink-0">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">บัญชีผู้ใช้</span>
         </div>
 
         {/* ชื่อหน้า */}
-        <div className="flex items-center gap-[14px] mb-[21px]   ">
+        <div className="flex items-center gap-[14px] mb-[21px] shrink-0">
           <h1 className="text-2xl font-semibold">จัดการบัญชีผู้ใช้</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             ผู้ใช้งานทั้งหมด {users.filter((u) => u.us_is_active).length}
@@ -598,7 +598,7 @@ export const Users = () => {
         </div>
 
         {/* Filter */}
-        <div className="w-full mb-[23px]">
+        <div className="w-full mb-[23px] shrink-0">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <SearchFilter onChange={setSearchFilters} />
             <div className="flex space-x-[4px]">
@@ -744,29 +744,18 @@ export const Users = () => {
                       <span>{u.us_emp_code}</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="py-2 px-4">
-                  {roleTranslation[u.us_role] || u.us_role}
-                </div>
-                <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
-                <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
-                <div className="py-2 px-4">
-                  {FormatPhone(u.us_phone) ?? "-"}
-                </div>
-                <div className="py-2 px-4">{FormatThaiDate(u.created_at)}</div>
-
-                <div className="py-2 px-4">
-                  {u.us_is_active ? (
-                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
-                      ใช้งานได้ปกติ
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#FF4D4F] text-[#FF4D4F] rounded-full text-base">
-                      ถูกปิดการใช้งาน
-                    </span>
-                  )}
-                </div>
+                  <div className="py-2 px-4">
+                    {roleTranslation[u.us_role] || u.us_role}
+                  </div>
+                  <div className="py-2 px-4">{u.us_dept_name ?? "-"}</div>
+                  <div className="py-2 px-4">{u.us_sec_name ?? "-"}</div>
+                  <div className="py-2 px-4">
+                    {FormatPhone(u.us_phone) ?? "-"}
+                  </div>
+                  <div className="py-2 px-4">
+                    {FormatThaiDate(u.created_at)}
+                  </div>
 
                 <div className="py-2 px-4 flex items-center gap-3 w-[150px]">
                   {u.us_is_active && (
@@ -801,8 +790,8 @@ export const Users = () => {
                     </>
                   )}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
 
             {/* ปุ่มหน้า */}
             <div className="mt-auto mb-[24px] pt-3 mr-[24px] flex items-center justify-end">

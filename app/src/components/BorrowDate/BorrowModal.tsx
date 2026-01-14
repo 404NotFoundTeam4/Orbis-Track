@@ -258,9 +258,9 @@ export default function BorrowModal({
       const isStartDay = current.toDateString() === start.toDateString();
       const isEndDay = current.toDateString() === end.toDateString();
 
-      const timeStart = isStartDay ? formatAMPM(start) : "12:00 AM";
+      const timeStart = isStartDay ? formatAMPM(start) : "8:00 AM";
 
-      const timeEnd = isEndDay ? formatAMPM(end) : "11:59 PM";
+      const timeEnd = isEndDay ? formatAMPM(end) : "05:00 PM";
 
       result.push({
         day: current.getDate(),
@@ -309,19 +309,19 @@ export default function BorrowModal({
   const startHour = 8;
 
   const calcBlockStyle = (
-  timeStart: string,
-  timeEnd: string,
-  hourHeight: number
-) => {
-  const start = timeToMinute(timeStart);
-  const end = timeToMinute(timeEnd);
-  console.log(start,end)
-  return {
-    top: ((start - startHour * 60) / 60) * hourHeight ,
-    height: ((end - start) / 60) * hourHeight,
-  };
-};
+    timeStart: string,
+    timeEnd: string,
+    hourHeight: number
+  ) => {
+    const start = timeToMinute(timeStart);
+    const end = timeToMinute(timeEnd);
 
+    return {
+      top: ((start - startHour * 60) / 60) * hourHeight + 5,
+      height: ((end - start) / 60) * hourHeight,
+    };
+  };
+  
   const dayBorrow = timeBorrow.find((b) => b.day === day);
   const handleConfirm = () => {
     if (!isValid) return;
@@ -331,8 +331,10 @@ export default function BorrowModal({
     const payload = {
       borrow_start: borrowStart.toISOString(),
       borrow_end: borrowEnd.toISOString(),
+      time_start:timeStart,
+      time_end:timeEnd
     };
-
+    console.log(payload)
     onConfirm(payload);
     setOpen(false);
   };
@@ -347,7 +349,7 @@ export default function BorrowModal({
       const startDateTime = mergeDateAndTime(start, timeStart);
       const endDateTime = mergeDateAndTime(end, timeEnd);
 
-      return startDateTime < endDateTime;
+      return startDateTime <= endDateTime;
     })();
   const formatThaiDate = (date: Date) => {
     const months = [
@@ -404,10 +406,7 @@ export default function BorrowModal({
             className="bg-white w-[500px] p-6 rounded-xl relative"
             onClick={(e) => e.stopPropagation()} // ป้องกันปิดเมื่อคลิกข้างใน
           >
-            <div
-              className="relative w-[1442px] h-[922px] bg-[#F9FAFB] rounded-2xl shadow-xl flex overflow-hidden border border-[#D9D9D9]"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="relative w-[1442px] h-[922px] bg-[#F9FAFB] rounded-2xl shadow-xl flex overflow-hidden border border-[#D9D9D9]">
               <div className="w-[392px] bg-white border-r border-r-[#D9D9D9]  overflow-y-auto">
                 {/* Device List */}
                 <div>
@@ -727,7 +726,7 @@ export default function BorrowModal({
                                     style={calcBlockStyle(
                                       borrow.timeStart,
                                       borrow.timeEnd,
-                                      hourHeight
+                                      hourHeight-0.5
                                     )}
                                   >
                                     <p className="text-[#FF4D4F] text-[10px] font-bold">
@@ -771,7 +770,7 @@ export default function BorrowModal({
                                 style={calcBlockStyle(
                                   dayBorrow.timeStart,
                                   dayBorrow.timeEnd,
-                                  hourHeight
+                                  hourHeight-0.5
                                 )}
                               >
                                 <p className="text-red-500 text-[10px] font-bold">

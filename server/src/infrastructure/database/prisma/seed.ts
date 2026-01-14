@@ -807,8 +807,8 @@ async function main() {
       da_id: 1,
       da_dec_id: childCam2.dec_id,
       da_brt_id: 1,
-      da_start: daysAgo(2),
-      da_end: daysFromNow(5),
+      da_start: new Date("2026-01-15T08:10:00+07:00"),
+      da_end: new Date("2026-01-15T11:45:00+07:00"),
       da_status: "ACTIVE",
     },
   });
@@ -820,8 +820,8 @@ async function main() {
       da_id: 2,
       da_dec_id: childCam4.dec_id,
       da_brt_id: 5,
-      da_start: daysAgo(10),
-      da_end: daysAgo(7),
+      da_start: new Date("2026-01-16T09:30:00+07:00"),
+      da_end: new Date("2026-01-16T16:20:00+07:00"),
       da_status: "COMPLETED",
     },
   });
@@ -833,8 +833,8 @@ async function main() {
       da_id: 3,
       da_dec_id: childLaptop1.dec_id,
       da_brt_id: 6,
-      da_start: daysAgo(14),
-      da_end: daysAgo(1),
+      da_start: new Date("2026-01-17T10:15:00+07:00"),
+      da_end: new Date("2026-01-17T14:00:00+07:00"),
       da_status: "ACTIVE",
     },
   });

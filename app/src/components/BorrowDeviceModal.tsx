@@ -252,7 +252,7 @@ const BorrowEquipmentModal = ({
     // ปิด alert
     setIsConfirmOpen(false);
   };
-
+  console.log(form.returnTime)
   /**
    * Description: ฟังก์ชันควบคุมการทำงานหลัก ตามโหมดของหน้า
    * Input : -
@@ -413,7 +413,10 @@ const BorrowEquipmentModal = ({
                       data.borrow_start ? new Date(data.borrow_start) : null,
                       data.borrow_end ? new Date(data.borrow_end) : null,
                     ],
+                 borrowTime:data.time_start,
+                 returnTime:data.time_end
                   }));
+                  
                 }}
               />
               {errors.dateRange && (
@@ -434,7 +437,7 @@ const BorrowEquipmentModal = ({
                 label=""
                 value={form.borrowTime}
                 onChange={(time: string) =>
-                  setForm({ ...form, borrowTime: time })
+                  setForm({ ...form, borrowTime: time, })
                 }
               />
               {errors.borrowTime && (

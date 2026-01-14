@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import BorrowEquipmentModal from "../components/BorrowDeviceModal"
 import { borrowService, type GetAvailable, type GetDeviceForBorrow } from "../services/BorrowService";
 import { useEffect, useState } from "react";
@@ -26,11 +26,15 @@ interface AddToCart {
 }
 
 const BorrowDevice = () => {
+    const { deviceId } = useParams();
+
     const navigate = useNavigate();
 
     const location = useLocation();
     // รับรหัสอุปกรณ์แม่ที่ส่งมาจาก state ของ navigate
-    const deId = location.state?.deviceId;
+    console.log(location.state);
+    const deId = deviceId
+
     // เก็บข้อมูลอุปกรณ์แม่
     const [device, setDevice] = useState<GetDeviceForBorrow | null>(null);
 
@@ -69,6 +73,7 @@ const BorrowDevice = () => {
 
     // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
     const equipment = {
+        deviceId :deId,
         serialNumber: device.de_serial_number,
         name: device.de_name,
         category: device.category?.ca_name ?? "",

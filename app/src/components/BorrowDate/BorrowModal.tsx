@@ -41,7 +41,7 @@ type ViewType = "month" | "week" | "day";
 export default function BorrowModal({
   defaultValues,
   onConfirm,
-  fullWidth = false
+  fullWidth = false,
 }: BorrowModalProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -348,6 +348,32 @@ export default function BorrowModal({
 
       return startDateTime < endDateTime;
     })();
+  const formatThaiDate = (date: Date) => {
+    const months = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear() + 543;
+
+    return `${day} ${month} ${year}`;
+  };
+  const dateLabel =
+    start && end
+      ? `${formatThaiDate(start)} - ${formatThaiDate(end)}`
+      : "วัน/เดือน/ปี";
 
   return (
     <div className="">
@@ -355,18 +381,18 @@ export default function BorrowModal({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={`
-        ${widthClass}
-          flex  items-center justify-between
-          rounded-2xl border border-[#D8D8D8]
-          px-4 py-3 text-left
-        `}
+    ${widthClass}
+    flex items-center justify-between text-[#CDCDCD]
+    rounded-2xl border border-[#D8D8D8]
+    px-4 py-3 text-left
+  `}
       >
-        <span className="text-black">เปิด Modal</span>
-        <FontAwesomeIcon
-          icon={faChevronDown}
-          className={`w-3 h-3 text-white transition-transform duration-200 ${
-            open ? "transform rotate-180" : ""
-          }`}
+        <span className="text-[#CDCDCD]">{dateLabel}</span>
+        <Icon
+          className="text-[#CDCDCD]"
+          icon="uil:calendar"
+          width="20"
+          height="20"
         />
       </button>
 

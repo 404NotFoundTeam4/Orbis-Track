@@ -18,12 +18,8 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
   **/
   const handleBorrow = () => {
     // เปลี่ยน path และส่งค่า deviceId ไปผ่าน state
-    navigate("/list-devices/borrow", {
-      state: {
-        deviceId: device.de_id,
-        deviceName: device.de_name
-      }
-    });
+   navigate(`/list-devices/borrow/${device.de_id}`);
+
   }
 
   return (

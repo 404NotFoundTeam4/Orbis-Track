@@ -52,7 +52,7 @@ function App() {
               <Route path="/requests" element={<Requests />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/list-devices" element={<ListDevices />} />
-              <Route path="/list-devices/borrow" element={<BorrowDevice />} />
+              <Route path="/list-devices/borrow/:deviceId" element={<BorrowDevice />} />
             </Route>
           </Route>
         </Routes>

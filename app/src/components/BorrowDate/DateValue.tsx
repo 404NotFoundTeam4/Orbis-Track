@@ -5,13 +5,13 @@ import { Icon } from "@iconify/react";
 interface Props {
   onChange?: (start: Date | null, end: Date | null) => void;
   placeholder?: string;
-  width?:string;
+  width?: string;
 }
 
-
-export default function DateValue({  onChange,
+export default function DateValue({
+  onChange,
   placeholder = "เลือกช่วงเวลายืม",
-  width = "w-full"
+  width = "w-full",
 }: Props) {
   const today = new Date();
 
@@ -112,6 +112,7 @@ export default function DateValue({  onChange,
     <div ref={ref} className={`relative ${width}`}>
       {/* ===== Input ===== */}
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
         className="
           flex w-full items-center justify-between
@@ -125,31 +126,26 @@ export default function DateValue({  onChange,
         </span>
 
         {/* calendar icon */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
+        <Icon
+          className=" cursor-pointer"
+          icon="uil:calendar"
+          width="20"
+          height="20"
+        />
       </button>
 
       {/* ===== Calendar ===== */}
       {open && (
         <div className="absolute left-0 -top-113 z-50 w-full">
-          <div className={`${width} rounded-2xl bg-white  shadow-lg border  border-[#D9D9D9] `}>
+          <div
+            className={`${width} rounded-2xl bg-white  shadow-lg border  border-[#D9D9D9] `}
+          >
             {/* Header */}
             <div className="border-b border-b-[#D9D9D9] p-4">
               <div className="mb-3 flex items-center justify-between ">
                 <div className="space-x-2.5">
                   <button
+                    type="button"
                     onClick={() =>
                       setCurrentMonth(new Date(year - 1, month, 1))
                     }
@@ -157,6 +153,7 @@ export default function DateValue({  onChange,
                     ‹‹
                   </button>
                   <button
+                    type="button"
                     onClick={() =>
                       setCurrentMonth(new Date(year, month - 1, 1))
                     }
@@ -170,6 +167,7 @@ export default function DateValue({  onChange,
                 </div>
                 <div className="space-x-2.5">
                   <button
+                   type="button"
                     onClick={() =>
                       setCurrentMonth(new Date(year, month + 1, 1))
                     }
@@ -177,6 +175,7 @@ export default function DateValue({  onChange,
                     ›
                   </button>
                   <button
+                    type="button"
                     onClick={() =>
                       setCurrentMonth(new Date(year + 1, month, 1))
                     }
@@ -201,6 +200,7 @@ export default function DateValue({  onChange,
 
                   return (
                     <button
+                     type="button"
                       key={idx}
                       onClick={() => handleSelect(date)}
                       className={`

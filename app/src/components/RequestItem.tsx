@@ -635,6 +635,44 @@ const RequestItem = ({
                                       {stage.role_name}
                                       {stage.dept_name && ` ${stage.dept_name}`}
                                     </span>
+                                    {stage.approvers && stage.status === "PENDING" &&
+                                      stage.approvers.length > 0 && (
+                                        <div className="text-xs text-[#9E9E9E] mt-1 whitespace-nowrap">
+                                          ผู้ใช้งานในตำแหน่งนี้ :{" "}
+                                          {(() => {
+                                            const maxShow = 2;
+                                            const count =
+                                              stage.approvers.length;
+                                            const displayNames =
+                                              stage.approvers
+                                                .slice(0, maxShow)
+                                                .map((name) =>
+                                                  name.length > 20
+                                                    ? name.substring(
+                                                      0,
+                                                      17,
+                                                    ) + "..."
+                                                    : name,
+                                                );
+
+                                            if (count > maxShow) {
+                                              return (
+                                                <span>
+                                                  {displayNames.join(
+                                                    ", ",
+                                                  )}
+                                                  <span className="bg-gray-100 pt-0 text-[#9E9E9E] border border-[#9E9E9E] ml-1 px-1 rounded-sm text-[10px]">
+                                                    +{count - maxShow}
+                                                  </span>
+                                                </span>
+                                              );
+                                            }
+                                            return displayNames.join(
+                                              ", ",
+                                            );
+                                          })()}
+                                        </div>
+                                      )}
                                     {stage.status === "APPROVED" ||
                                       stage.status === "REJECTED" ? (
                                       <>

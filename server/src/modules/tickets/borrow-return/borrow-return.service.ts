@@ -190,6 +190,7 @@ export class BorrowReturnService {
           ? `${stage.approver.us_firstname} ${stage.approver.us_lastname}`
           : null,
         updated_at: stage.updated_at,
+        approvers: stage.approvers,
       })),
     };
   }

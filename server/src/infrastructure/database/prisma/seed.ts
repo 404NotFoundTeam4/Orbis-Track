@@ -244,8 +244,6 @@ async function main() {
     create: { ca_name: "โปรเจคเตอร์" },
   });
 
-  // Accessories will be created after devices (since they now reference devices)
-
   // ---- APPROVAL FLOWS ----
   console.log("🔄 Creating approval flows...");
   const flowMedia = await prisma.approval_flows.upsert({
@@ -392,43 +390,45 @@ async function main() {
   // Camera accessories
   await prisma.accessories.upsert({
     where: { acc_id: 1 },
-    update: { acc_name: "เลนส์", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 1, acc_name: "เลนส์", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "แบตเตอรี่", acc_quantity: 2, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "แบตเตอรี่", acc_quantity: 2, device: { connect: { de_id: deviceCamera.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 2 },
-    update: { acc_name: "แบตเตอรี่สำรอง", acc_quantity: 10, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 2, acc_name: "แบตเตอรี่สำรอง", acc_quantity: 10, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "เมมโมรี่การ์ด 64GB", acc_quantity: 3, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "เมมโมรี่การ์ด 64GB", acc_quantity: 3, device: { connect: { de_id: deviceCamera.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 3 },
-    update: { acc_name: "ขาตั้งกล้อง", acc_quantity: 3, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 3, acc_name: "ขาตั้งกล้อง", acc_quantity: 3, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
+    create: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
   });
+  // Laptop accessories
   await prisma.accessories.upsert({
     where: { acc_id: 4 },
-    update: { acc_name: "กระเป๋ากล้อง", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
-    create: { acc_id: 4, acc_name: "กระเป๋ากล้อง", acc_quantity: 5, acc_de_id: deviceCamera.de_id },
+    update: { acc_name: "อแด็ปเตอร์", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
+    create: { acc_name: "อแด็ปเตอร์", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 5 },
-    update: { acc_name: "เมาส์ไร้สาย", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
-    create: { acc_id: 5, acc_name: "เมาส์ไร้สาย", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
+    update: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
+    create: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
   });
+  // Projector accessories
   await prisma.accessories.upsert({
     where: { acc_id: 6 },
-    update: { acc_name: "Adapter", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
-    create: { acc_id: 6, acc_name: "Adapter", acc_quantity: 5, acc_de_id: deviceLaptop.de_id },
+    update: { acc_name: "สาย HDMI", acc_quantity: 2, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "สาย HDMI", acc_quantity: 2, device: { connect: { de_id: deviceProjector.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 7 },
-    update: { acc_name: "สาย HDMI", acc_quantity: 2, acc_de_id: deviceProjector.de_id },
-    create: { acc_id: 7, acc_name: "สาย HDMI", acc_quantity: 2, acc_de_id: deviceProjector.de_id },
+    update: { acc_name: "สายไฟ", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "สายไฟ", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
   });
   await prisma.accessories.upsert({
     where: { acc_id: 8 },
-    update: { acc_name: "รีโมท", acc_quantity: 1, acc_de_id: deviceProjector.de_id },
-    create: { acc_id: 8, acc_name: "รีโมท", acc_quantity: 1, acc_de_id: deviceProjector.de_id },
+    update: { acc_name: "รีโมท", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
+    create: { acc_name: "รีโมท", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
   });
 
 
@@ -512,7 +512,7 @@ async function main() {
       dec_serial_number: "SN-DELL-XPS15-001",
       dec_asset_code: "ASSET-LAP-DELL-001",
       dec_has_serial_number: true,
-      dec_status: "REPAIRING", // ตัวนี้จะเสีย
+      dec_status: "READY",
       dec_de_id: deviceLaptop.de_id,
     },
   });
@@ -541,34 +541,7 @@ async function main() {
     },
   });
 
-  // ==========================================
-  // 2. TRANSACTIONAL DATA (ข้อมูลจำลองการใช้งาน)
-  // ==========================================
 
-  // ---- CARTS ----
-  console.log("🛒 Creating carts...");
-  const cart = await prisma.carts.upsert({
-    where: { ct_id: 1 },
-    update: {},
-    create: {
-      ct_id: 1,
-      ct_quantity: 1,
-      ct_us_id: empMedia.us_id,
-    },
-  });
-
-  await prisma.cart_items.upsert({
-    where: { cti_id: 1 },
-    update: {},
-    create: {
-      cti_ct_id: cart.ct_id,
-      cti_de_id: deviceCamera.de_id,
-      cti_quantity: 1,
-      cti_us_name: "ชาติชาย มานะสิน",
-      cti_start_date: daysFromNow(1),
-      cti_end_date: daysFromNow(3),
-    },
-  });
 
   // ---- BORROW TICKETS (BRT) ----
   console.log("🎫 Creating tickets & stages...");
@@ -590,6 +563,7 @@ async function main() {
       name: string;
       role: any;
       deptId: number | null;
+      secId?: number;
       status: any;
       usId?: number | null;
     }[];
@@ -657,7 +631,7 @@ async function main() {
     endDate: daysFromNow(5),
     currentStage: 2,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
     ],
   });
@@ -688,9 +662,9 @@ async function main() {
     endDate: daysFromNow(2),
     currentStage: 3,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "PENDING" },
+      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "PENDING" },
     ],
   });
 
@@ -705,7 +679,7 @@ async function main() {
     endDate: daysFromNow(3),
     currentStage: 1,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "REJECTED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "REJECTED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
     ],
   });
@@ -721,7 +695,7 @@ async function main() {
     endDate: daysAgo(7),
     currentStage: 2,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
     ],
   });
@@ -737,9 +711,9 @@ async function main() {
     endDate: daysAgo(1), // เลยกำหนดคืนแล้ว
     currentStage: 3,
     stages: [
-      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "APPROVED", usId: hosMedia.us_id },
+      { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
       { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "APPROVED", usId: hodMedia.us_id },
-      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, status: "APPROVED", usId: staffMedia.us_id },
+      { name: "STAFF Distribution", role: "STAFF", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: staffMedia.us_id },
     ],
   });
 
@@ -756,7 +730,7 @@ async function main() {
       endDate: daysFromNow(15 + i),
       currentStage: 1,
       stages: [
-        { name: "HOS Approval", role: "HOS", deptId: media.dept_id, status: "PENDING" },
+        { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "PENDING" },
         { name: "HOD Approval", role: "HOD", deptId: media.dept_id, status: "PENDING" },
       ],
     });
@@ -822,12 +796,177 @@ async function main() {
     },
   });
 
+  // ---- DEVICE AVAILABILITIES ----
+  console.log("📅 Creating device availabilities...");
+  // สำหรับ ticket IN_USE (brt_id: 1)
+  await prisma.device_availabilities.upsert({
+    where: { da_id: 1 },
+    update: {},
+    create: {
+      da_id: 1,
+      da_dec_id: childCam2.dec_id,
+      da_brt_id: 1,
+      da_start: new Date("2026-01-15T08:10:00+07:00"),
+      da_end: new Date("2026-01-15T11:45:00+07:00"),
+      da_status: "ACTIVE",
+    },
+  });
+  // สำหรับ ticket COMPLETED (brt_id: 5)
+  await prisma.device_availabilities.upsert({
+    where: { da_id: 2 },
+    update: {},
+    create: {
+      da_id: 2,
+      da_dec_id: childCam4.dec_id,
+      da_brt_id: 5,
+      da_start: new Date("2026-01-16T09:30:00+07:00"),
+      da_end: new Date("2026-01-16T16:20:00+07:00"),
+      da_status: "COMPLETED",
+    },
+  });
+  // สำหรับ ticket OVERDUE (brt_id: 6)
+  await prisma.device_availabilities.upsert({
+    where: { da_id: 3 },
+    update: {},
+    create: {
+      da_id: 3,
+      da_dec_id: childLaptop1.dec_id,
+      da_brt_id: 6,
+      da_start: new Date("2026-01-17T10:15:00+07:00"),
+      da_end: new Date("2026-01-17T14:00:00+07:00"),
+      da_status: "ACTIVE",
+    },
+  });
+
+  // ---- LOG BORROW RETURNS ----
+  console.log("📋 Creating borrow return logs...");
+  await prisma.log_borrow_returns.createMany({
+    data: [
+      { lbr_action: "CREATED", lbr_old_status: null, lbr_new_status: "PENDING", lbr_brt_id: 1, lbr_actor_id: empMedia.us_id, lbr_note: "Employee created ticket" },
+      { lbr_action: "APPROVED", lbr_old_status: "PENDING", lbr_new_status: "IN_USE", lbr_brt_id: 1, lbr_actor_id: hodMedia.us_id, lbr_note: "HOD approved" },
+      { lbr_action: "CREATED", lbr_old_status: null, lbr_new_status: "PENDING", lbr_brt_id: 2, lbr_actor_id: empIT.us_id, lbr_note: "Employee created ticket" },
+      { lbr_action: "REJECTED", lbr_old_status: "PENDING", lbr_new_status: "REJECTED", lbr_brt_id: 4, lbr_actor_id: hosMedia.us_id, lbr_note: "ไม่ใช่เหตุผลส่วนตัว" },
+      { lbr_action: "RETURNED", lbr_old_status: "IN_USE", lbr_new_status: "COMPLETED", lbr_brt_id: 5, lbr_actor_id: staffMedia.us_id, lbr_note: "Returned successfully" },
+    ],
+    skipDuplicates: true,
+  });
+
+  // ---- LOG DEVICE CHILDS ----
+  console.log("📋 Creating device child logs...");
+  await prisma.log_device_childs.createMany({
+    data: [
+      { ldc_action: "BORROWED", ldc_old_status: "READY", ldc_new_status: "BORROWED", ldc_dec_id: childCam2.dec_id, ldc_brt_id: 1, ldc_actor_id: staffMedia.us_id, ldc_note: "Borrowed for video shoot" },
+      { ldc_action: "BORROWED", ldc_old_status: "READY", ldc_new_status: "BORROWED", ldc_dec_id: childCam4.dec_id, ldc_brt_id: 5, ldc_actor_id: staffMedia.us_id, ldc_note: "Borrowed for event" },
+      { ldc_action: "RETURNED", ldc_old_status: "BORROWED", ldc_new_status: "READY", ldc_dec_id: childCam4.dec_id, ldc_brt_id: 5, ldc_actor_id: staffMedia.us_id, ldc_note: "Returned in good condition" },
+      { ldc_action: "MARK_DAMAGED", ldc_old_status: "READY", ldc_new_status: "REPAIRING", ldc_dec_id: childLaptop1.dec_id, ldc_ti_id: issue.ti_id, ldc_actor_id: techIT.us_id, ldc_note: "Blue screen issue" },
+    ],
+    skipDuplicates: true,
+  });
+
+  // ---- LOG ISSUES ----
+  console.log("📋 Creating issue logs...");
+  await prisma.log_issues.createMany({
+    data: [
+      { li_action: "REPORTED", li_old_status: null, li_new_status: "PENDING", li_ti_id: issue.ti_id, li_actor_id: empIT.us_id, li_note: "Reported blue screen" },
+      { li_action: "ASSIGNED", li_old_status: "PENDING", li_new_status: "IN_PROGRESS", li_ti_id: issue.ti_id, li_actor_id: admin.us_id, li_note: "Assigned to tech" },
+    ],
+    skipDuplicates: true,
+  });
+
+  // ---- CART DEVICE CHILDS ----
+  // console.log("🛒 Creating cart device childs...");
+  // // const cartItem = await prisma.cart_items.findFirst({ where: { cti_ct_id: cart.ct_id } });
+  // // if (cartItem) {
+  // //   await prisma.cart_device_childs.upsert({
+  // //     where: { cdc_id: 1 },
+  // //     update: {},
+  // //     create: {
+  // //       cdc_id: 1,
+  // //       cdc_cti_id: cartItem.cti_id,
+  // //       cdc_dec_id: childCam1.dec_id,
+  // //       reserved_at: new Date(),
+  // //     },
+  // //   });
+  // // }
+
+  // ---- ADDITIONAL USERS (ครบทุก dept) ----
+  console.log("👥 Creating additional users for other departments...");
+  // HOD Marketing
+  await prisma.users.upsert({
+    where: { us_username: "hod.marketing" },
+    update: {},
+    create: {
+      us_emp_code: "HOD-0003", us_firstname: "ปรีชา", us_lastname: "รุ่งเรือง",
+      us_username: "hod.marketing", us_password: defaultPassword,
+      us_email: "hod.marketing@company.com", us_phone: "0891234509",
+      us_role: "HOD", us_dept_id: marketing.dept_id, us_sec_id: sections.marketing[0].sec_id,
+    },
+  });
+  // HOS Marketing
+  await prisma.users.upsert({
+    where: { us_username: "hos.marketing.a" },
+    update: {},
+    create: {
+      us_emp_code: "HOS-0002", us_firstname: "มณี", us_lastname: "แสงทอง",
+      us_username: "hos.marketing.a", us_password: defaultPassword,
+      us_email: "hos.marketing.a@company.com", us_phone: "0891234510",
+      us_role: "HOS", us_dept_id: marketing.dept_id, us_sec_id: sections.marketing[0].sec_id,
+    },
+  });
+  // STAFF IT
+  await prisma.users.upsert({
+    where: { us_username: "staff.it" },
+    update: {},
+    create: {
+      us_emp_code: "STF-0002", us_firstname: "สุรชัย", us_lastname: "ยิ้มแย้ม",
+      us_username: "staff.it", us_password: defaultPassword,
+      us_email: "staff.it@company.com", us_phone: "0891234511",
+      us_role: "STAFF", us_dept_id: it.dept_id, us_sec_id: sections.it[0].sec_id,
+    },
+  });
+  // HOD Finance
+  await prisma.users.upsert({
+    where: { us_username: "hod.finance" },
+    update: {},
+    create: {
+      us_emp_code: "HOD-0004", us_firstname: "ศิริพร", us_lastname: "บุญมา",
+      us_username: "hod.finance", us_password: defaultPassword,
+      us_email: "hod.finance@company.com", us_phone: "0891234512",
+      us_role: "HOD", us_dept_id: finance.dept_id, us_sec_id: sections.finance[0].sec_id,
+    },
+  });
+  // Employee Marketing
+  await prisma.users.upsert({
+    where: { us_username: "emp.marketing" },
+    update: {},
+    create: {
+      us_emp_code: "EMP-0003", us_firstname: "วรรณา", us_lastname: "พึ่งบุญ",
+      us_username: "emp.marketing", us_password: defaultPassword,
+      us_email: "emp.marketing@company.com", us_phone: "0891234513",
+      us_role: "EMPLOYEE", us_dept_id: marketing.dept_id, us_sec_id: sections.marketing[0].sec_id,
+    },
+  });
+
   console.log("✅ Seed completed successfully!");
   console.log("\n🔑 Login credentials (all users):");
   console.log(
     "  Username: admin, hod.media, hod.it, hos.media.a, tech.it, staff.media, emp.media, emp.it",
   );
   console.log("  Password: password123");
+
+  //ป้องกัน id ซ้ำกันหลังจาก seed
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('borrow_return_tickets', 'brt_id'),
+      (SELECT COALESCE(MAX(brt_id), 0) FROM borrow_return_tickets)
+    );
+  `);
+  await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('borrow_return_ticket_stages', 'brts_id'),
+      (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
+    );
+  `);
 }
 
 main()

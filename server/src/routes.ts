@@ -10,6 +10,7 @@ import { requireRole } from "./middlewares/role.middleware.js";
 import { notificationsRouter } from "./modules/notifications/index.js";
 import { borrowReturnRouter } from "./modules/tickets/borrow-return/index.js";
 import { cartsRouter } from "./modules/cart/index.js";
+import { historyBorrowRouter } from "./modules/history-borrow/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1
@@ -41,6 +42,8 @@ export function routes(app: Express) {
   api.use("/tickets/borrow-return", authMiddleware, borrowReturnRouter);
 
   api.use("/borrow/cart", authMiddleware, cartsRouter);
+
+  api.use("/history-borrow", authMiddleware, historyBorrowRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

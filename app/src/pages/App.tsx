@@ -22,6 +22,7 @@ import { ROLE_BASE_PATH, type Role } from "../constants/rolePath";
 import RolePathRedirect from "../components/RolePathRedirect";
 import NotFound from "./NotFound";
 import { Settings } from "./Setting";
+import History from "./History";
 
 function App() {
   const ADMIN_ONLY: Role[] = ["ADMIN"];
@@ -44,6 +45,7 @@ function App() {
       <Route path="list-devices/cart/edit" element={<EditCart />} />
       <Route path="list-devices/cart/edit/:id?" element={<EditCart />} />
       <Route path="setting" element={<Settings />} />
+      <Route path="history" element={<History />} />
     </>
   );
 
@@ -130,6 +132,8 @@ function App() {
                 <Route path="/home" element={<RolePathRedirect />} />
 
                 <Route path="/setting" element={<RolePathRedirect />} />
+
+                <Route path="/history" element={<RolePathRedirect />} />
 
                 <Route
                   path="/request-borrow-ticket"

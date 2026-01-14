@@ -316,7 +316,7 @@ export const Navbar = () => {
                 </Link>
 
                 <Link
-                  to="/users"
+                  to="/history"
                   onClick={() => {
                     closeDropdown();
                     handleMenuClick("histories");

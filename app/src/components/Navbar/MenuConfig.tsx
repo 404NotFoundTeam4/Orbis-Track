@@ -57,13 +57,13 @@ export const Images: { [key: string]: string } = {
  * Author: Panyapon Phollert (Ton) 66160086
  */
 export type menuItem = {
-  key: string;                 // key สำหรับอ้างอิงเมนู
-  label: string;               // ชื่อเมนูที่แสดง
-  path?: string;               // path สำหรับ routing
-  icon?: IconDefinition;       // icon ด้านซ้าย
-  iconRight?: IconDefinition;  // icon ด้านขวา (dropdown)
-  roles: UserRole[];           // role ที่สามารถเห็นเมนู
-  children?: menuItem[];       // submenu (ถ้ามี)
+  key: string; // key สำหรับอ้างอิงเมนู
+  label: string; // ชื่อเมนูที่แสดง
+  path?: string; // path สำหรับ routing
+  icon?: IconDefinition; // icon ด้านซ้าย
+  iconRight?: IconDefinition; // icon ด้านขวา (dropdown)
+  roles: UserRole[]; // role ที่สามารถเห็นเมนู
+  children?: menuItem[]; // submenu (ถ้ามี)
 };
 
 /**
@@ -94,20 +94,32 @@ export const MenuConfig: menuItem[] = [
     label: "จัดการคำร้อง",
     path: "/request-borrow-ticket",
     icon: faServer,
-    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS, UserRole.STAFF],
+    roles: [UserRole.HOD, UserRole.HOS, UserRole.STAFF],
   },
   {
     key: "management_admin",
     label: "จัดการ",
     icon: faServer,
     iconRight: faChevronUp,
-    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS, UserRole.STAFF, UserRole.TECHNICAL,],
+    roles: [
+      UserRole.ADMIN,
+      UserRole.HOD,
+      UserRole.HOS,
+      UserRole.STAFF,
+      UserRole.TECHNICAL,
+    ],
     children: [
       {
         key: "requests",
         label: "คำร้อง",
         path: "/request-borrow-ticket",
         roles: [UserRole.ADMIN, UserRole.STAFF],
+      },
+      {
+        key: "management_requests",
+        label: "จัดการคำร้อง",
+        path: "/request-borrow-ticket",
+        roles: [UserRole.ADMIN,UserRole.HOD, UserRole.HOS, UserRole.STAFF],
       },
       {
         key: "users",
@@ -174,7 +186,13 @@ export const MenuConfig: menuItem[] = [
     label: "แดชบอร์ด",
     path: "/dashboard",
     icon: faChartLine,
-    roles: [UserRole.ADMIN, UserRole.HOD, UserRole.HOS, UserRole.STAFF, UserRole.TECHNICAL,],
+    roles: [
+      UserRole.ADMIN,
+      UserRole.HOD,
+      UserRole.HOS,
+      UserRole.STAFF,
+      UserRole.TECHNICAL,
+    ],
   },
   {
     key: "history",

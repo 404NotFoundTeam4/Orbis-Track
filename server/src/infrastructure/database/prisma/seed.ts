@@ -268,7 +268,6 @@ async function main() {
       afs_af_id: flowMedia.af_id,
       afs_role: "HOS",
       afs_dept_id: media.dept_id,
-      afs_sec_id: sections.media[0].sec_id, // HOS ต้องมี sec_id
     },
   });
   await prisma.approval_flow_steps.upsert({

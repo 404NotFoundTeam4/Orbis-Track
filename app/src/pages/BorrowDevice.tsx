@@ -86,8 +86,7 @@ const BorrowDevice = () => {
 
   if (!device) {
     return null;
-  }
-
+  } 
   // อุปกรณ์เสริม
   const accessory = device.accessories
     ? device.accessories?.map((acc) => ({
@@ -95,9 +94,10 @@ const BorrowDevice = () => {
       qty: acc.acc_quantity,
     }))
     : [];
-
+    
   // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
   const equipment = {
+    deviceId :deId,
     serialNumber: device.de_serial_number,
     name: device.de_name,
     category: device.category?.ca_name ?? "",

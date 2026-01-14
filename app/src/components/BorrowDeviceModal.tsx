@@ -9,7 +9,8 @@ import { AlertDialog } from "./AlertDialog";
 import type { GetAvailable } from "../services/BorrowService";
 import { useNavigate } from "react-router-dom";
 import getImageUrl from "../services/GetImage";
-
+import BorrowModal from "./BorrowDate/BorrowModal";
+ import { borrowService} from "../services/BorrowService"
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
   serialNumber: string;
@@ -53,7 +54,17 @@ interface BorrowEquipmentModalProps {
   onSelectDevice: (ids: number[]) => void; // เปลี่ยนอุปกรณ์ที่เลือก
   onDateTimeChange: (payload: { startISO: string; endISO: string }) => void; // เปลี่ยนวันเวลา
 }
-
+export interface ActiveBorrow {
+  da_start: string;
+  da_end: string;
+}
+type Device = {
+  dec_id: number;
+  dec_serial_number: string;
+  dec_asset_code: string;
+  dec_status: string;
+  activeBorrow: ActiveBorrow[];
+};
 const BorrowEquipmentModal = ({
   mode,
   defaultValue,
@@ -78,7 +89,7 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
-
+  const [data, setData] = useState<Device | null>(null);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
@@ -241,7 +252,7 @@ const BorrowEquipmentModal = ({
     // ปิด alert
     setIsConfirmOpen(false);
   };
-
+  console.log(form.returnTime)
   /**
    * Description: ฟังก์ชันควบคุมการทำงานหลัก ตามโหมดของหน้า
    * Input : -
@@ -293,7 +304,18 @@ const BorrowEquipmentModal = ({
       endISO: end.toISOString(),
     });
   }, [form.dateRange, form.borrowTime, form.returnTime]);
-
+  const fetchData = async () => {
+    try {
+      const res = await borrowService.getAvailable(equipment.deviceId);
+      setData(res);
+    } catch (error) {
+      console.error("API error:", error);
+    }
+  };
+  console.log(data);
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px]">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
@@ -382,11 +404,20 @@ const BorrowEquipmentModal = ({
               <label className="text-[16px] font-medium">
                 ช่วงวันที่ยืม <span className="text-[#F5222D]">*</span>
               </label>
-              <DatePickerField
-                width={489}
-                label=""
-                value={form.dateRange}
-                onChange={(range) => setForm({ ...form, dateRange: range })}
+              <BorrowModal
+                defaultValues={data}
+                onConfirm={(data) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    dateRange: [
+                      data.borrow_start ? new Date(data.borrow_start) : null,
+                      data.borrow_end ? new Date(data.borrow_end) : null,
+                    ],
+                 borrowTime:data.time_start,
+                 returnTime:data.time_end
+                  }));
+                  
+                }}
               />
               {errors.dateRange && (
                 <p className="text-sm mt-1 text-[#F5222D]">
@@ -406,7 +437,7 @@ const BorrowEquipmentModal = ({
                 label=""
                 value={form.borrowTime}
                 onChange={(time: string) =>
-                  setForm({ ...form, borrowTime: time })
+                  setForm({ ...form, borrowTime: time, })
                 }
               />
               {errors.borrowTime && (

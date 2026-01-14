@@ -304,7 +304,7 @@ export const Home = () => {
         </div>
 
         {/* List */}
-        <div className="w-full bg-white border border-[#D8D8D8] rounded-[16px] overflow-hidden relative z-0">
+        <div className="w-full bg-white border border-[#D8D8D8] rounded-[16px] overflow-hidden relative z-50">
           {isLoading ? (
             <div className="text-center text-[#858585] py-10 flex flex-col items-center">
                <Icon icon="eos-icons:loading" width="40" className="mb-2 text-[#40A9FF]" />

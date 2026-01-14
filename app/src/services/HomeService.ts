@@ -50,21 +50,24 @@ export interface TicketHomeItem {
 // --- Interfaces สำหรับ Detail ---
 // Interface สำหรับ Timeline ในหน้ารายละเอียดคำร้อง
 export interface TicketTimeline {
+  step: number;
   status: string;
   role_name: string;
   dept_name: string | null;
   approved_by: string | null;
   updated_at: string | null;
-  step: number;
+  approvers?: string[];
 }
 // Interface สำหรับอุปกรณ์ในหน้ารายละเอียดคำร้อง
 export interface TicketDeviceChild {
   child_id: number;
   serial_number: string;
   asset_code: string;
-  has_serial_number: boolean;
   status: string;
-  current_status: string;
+  name: string;
+  image: string | null;
+  current_status: string;      // สถานะของเครื่อง (เช่น READY, IN_USE)
+  has_serial_number: boolean;
 }
 // Interface สำหรับรายละเอียดคำร้อง
 export interface TicketDetailData {
@@ -137,7 +140,8 @@ export const homeService = {
    * Author    : Worrawat Namwat (Wave) 66160372
    */
   getTicketDetail: async (id: number) => {
-    const response = await api.get(`/tickets/borrow-return/${id}`);
+    const response = await api.get(`/home/tickets/borrow-return/${id}`);
+    console.log(response.data)
     return response.data;
   }
 };

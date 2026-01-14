@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { homeService } from "./home.service.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { BaseController } from "../../core/base.controller.js";
-import { HomeStats,TicketHomeItem } from "./home.schema.js";
+import { HomeStats,TicketHomeItem,TicketDetailResponse } from "./home.schema.js";
 
 export class HomeController extends BaseController {
   constructor() {
@@ -36,5 +36,21 @@ export class HomeController extends BaseController {
   ): Promise<BaseResponse<TicketHomeItem[]>> {
     const tickets = await homeService.getRecentTickets();
     return { data: tickets };
+  }
+
+  /**
+   * Description: ดึงรายละเอียดคำร้อง
+   * Input     : id (number) - รหัสคำร้อง
+   * Output    : { data: TicketDetailResponse }
+   * Author    : Worrawat Namwat (Wave) 66160372
+   */
+  async getTicketDetail(
+    req: Request, 
+    res: Response, 
+    next: NextFunction
+  ): Promise<BaseResponse<TicketDetailResponse>> {
+    const { id } = req.params;
+    const detail = await homeService.getTicketDetailById(Number(id));
+    return { data: detail };
   }
 }

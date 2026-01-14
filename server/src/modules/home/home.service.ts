@@ -34,6 +34,44 @@ type TicketWithRelations = Prisma.borrow_return_ticketsGetPayload<{
   };
 }>;
 
+// Type สำหรับดึงข้อมูล Stage พร้อมความสัมพันธ์ที่จำเป็น
+type TicketStageWithRelations = Prisma.borrow_return_ticket_stagesGetPayload<{
+  include: {
+    approver: true;
+    department: true;
+    section: true;
+  };
+}>;
+
+// Type สำหรับดึงรายละเอียดคำร้องพร้อมความสัมพันธ์ที่จำเป็น
+type HomeTicketDetailWithRelations = Prisma.borrow_return_ticketsGetPayload<{
+  include: {
+    requester: {
+      include: { department: true };
+    };
+    stages: {
+      include: {
+        approver: true;
+        department: true;
+        section: true;
+      };
+    };
+    ticket_devices: {
+      include: {
+        child: {
+          include: {
+            device: {
+              include: {
+                accessories: true;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}>;
+
 /**
  * Description: คำนวณสถิติ Dashboard 4 ช่อง (ยืมอยู่, ใกล้คืน, รออนุมัติ, แจ้งซ่อม)
  * Input     : -
@@ -118,9 +156,7 @@ async function getRecentTickets() {
     const cleanDept = deptName.replace(/^แผนก\s*/, "");
 
     // ตัด "แผนก มีเดีย ฝ่ายย่อย " ให้เหลือแค่ตัวอักษรท้าย
-    const cleanSection = sectionName
-      .replace(/^.*ฝ่ายย่อย\s*/i, "")
-      .trim();
+    const cleanSection = sectionName.replace(/^.*ฝ่ายย่อย\s*/i, "").trim();
 
     return {
       id: ticket.brt_id,
@@ -158,7 +194,136 @@ async function getRecentTickets() {
   return formattedTickets;
 }
 
+// ดึงรายละเอียดคำร้องโดย ID
+async function getTicketDetailById(id: number) {
+  const ticket = await prisma.borrow_return_tickets.findUnique({
+    where: { brt_id: id },
+    include: {
+      requester: { include: { department: true } },
+      stages: {
+        include: {
+          approver: true,
+          department: true,
+          section: true,
+        },
+        orderBy: { brts_step_approve: "asc" },
+      },
+      ticket_devices: {
+        include: {
+          child: {
+            include: {
+              device: {
+                include: {
+                  accessories: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!ticket) throw new Error("Ticket not found");
+  // Logic หาคนอนุมัติ (Approvers)
+  const timeline = await Promise.all(
+    ticket.stages.map(async (stage) => {
+      let approvers: string[] = [];
+
+      // ถ้ายังไม่อนุมัติ (PENDING) -> หาชื่อคนที่มีสิทธิ์
+      if (stage.brts_status === "PENDING") {
+        const potentialApprovers = await prisma.users.findMany({
+          where: {
+            us_role: stage.brts_role,
+            us_is_active: true,
+            ...(stage.brts_dept_id ? { us_dept_id: stage.brts_dept_id } : {}),
+            ...(stage.brts_sec_id ? { us_sec_id: stage.brts_sec_id } : {}),
+          },
+          select: { us_firstname: true, us_lastname: true },
+          take: 5,
+        });
+        approvers = potentialApprovers.map(
+          (u) => `${u.us_firstname} ${u.us_lastname}`
+        );
+      }
+
+      return {
+        step: stage.brts_step_approve,
+        status: stage.brts_status,
+        role_name: stage.brts_role,
+        dept_name: stage.brts_dept_name || stage.department?.dept_name || null,
+        approved_by: stage.approver
+          ? `${stage.approver.us_firstname} ${stage.approver.us_lastname}`
+          : null,
+        updated_at: stage.updated_at ? stage.updated_at.toISOString() : null,
+        approvers: approvers, // ส่งรายชื่อกลับไปหน้าบ้าน
+      };
+    })
+  );
+
+  // หาอุปกรณ์ชิ้นแรกเพื่อดึงข้อมูลอุปกรณ์เสริม (ถ้ามี)
+  const firstDevice = ticket.ticket_devices[0]?.child?.device;
+
+  return {
+    id: ticket.brt_id,
+    status: ticket.brt_status,
+    timeline: timeline,
+    details: {
+      id: ticket.brt_id,
+      current_stage: ticket.brt_current_stage || 0,
+
+      // Key สำคัญ: ต้องใช้ชื่อ 'purpose' ให้ตรงกับหน้าบ้าน
+      purpose: ticket.brt_borrow_purpose,
+      location_use: ticket.brt_usage_location,
+      reject_reason: ticket.brt_reject_reason,
+      reject_date: ticket.updated_at ? ticket.updated_at.toISOString() : null,
+
+      dates: {
+        start: ticket.brt_start_date.toISOString(),
+        end: ticket.brt_end_date.toISOString(),
+        pickup: ticket.brt_pickup_datetime?.toISOString() || null,
+        return: ticket.brt_return_datetime?.toISOString() || null,
+      },
+      locations: {
+        pickup: ticket.brt_pickup_location,
+        return: ticket.brt_return_location,
+      },
+    },
+    devices: ticket.ticket_devices.map((td) => ({
+      child_id: td.child.dec_id,
+      asset_code: td.child.dec_asset_code,
+      serial_number: td.child.dec_serial_number,
+      status: td.child.dec_status,
+      name: td.child.device.de_name,
+      image: td.child.device.de_images,
+      current_status: td.child.dec_status,
+      has_serial_number: Boolean(
+        td.child.dec_serial_number && td.child.dec_serial_number !== "-"
+      ),
+    })),
+    accessories:
+      firstDevice?.accessories && firstDevice.accessories.length > 0
+        ? [
+            {
+              acc_id: firstDevice.accessories[0].acc_id,
+              acc_name: firstDevice.accessories[0].acc_name,
+              acc_quantity: firstDevice.accessories[0].acc_quantity,
+            },
+          ]
+        : [],
+    requester: {
+      id: ticket.requester.us_id,
+      fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+      empcode: ticket.requester.us_emp_code,
+      image: ticket.requester.us_images,
+      department: ticket.requester.department?.dept_name || "-",
+      us_phone: ticket.requester.us_phone,
+    },
+  };
+}
+
 export const homeService = {
   getHomeStats,
   getRecentTickets,
+  getTicketDetailById,
 };

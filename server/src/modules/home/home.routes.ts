@@ -1,6 +1,6 @@
 import { Router } from "../../core/router.js";
 import { HomeController } from "./home.controller.js";
-import { getStatsResponseSchema, getRecentTicketsResponseSchema } from "./home.schema.js";
+import { getStatsResponseSchema, getRecentTicketsResponseSchema,getTicketDetailResponseSchema } from "./home.schema.js";
 
 const homeController = new HomeController(); 
 const router = new Router(undefined, '/home'); 
@@ -30,5 +30,20 @@ router.getDoc("/tickets", {
   res: getRecentTicketsResponseSchema, 
   auth: true 
 }, homeController.getRecentTickets);
+
+/**
+ * Route: GET /home/tickets/borrow-return/:id
+ * Description: API ดึงรายละเอียดคำร้อง
+ * Input     : id (number) - รหัสคำร้อง
+ * Output    : { data: TicketDetailResponse }
+ * Author    : Worrawat Namwat (Wave) 66160372
+ */
+router.getDoc(
+  "/tickets/borrow-return/:id",
+  {
+    tag: "Home",
+    res: getTicketDetailResponseSchema,
+    auth: true,
+  },homeController.getTicketDetail);
 
 export default router.instance;

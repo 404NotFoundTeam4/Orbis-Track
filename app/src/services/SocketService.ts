@@ -54,7 +54,7 @@ class SocketService {
       auth: {
         token: token,
       },
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
     });
 
     this.socket.on("connect", () => {

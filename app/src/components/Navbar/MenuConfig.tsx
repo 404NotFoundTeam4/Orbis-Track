@@ -116,12 +116,6 @@ export const MenuConfig: menuItem[] = [
         roles: [UserRole.ADMIN, UserRole.STAFF],
       },
       {
-        key: "management_requests",
-        label: "จัดการคำร้อง",
-        path: "/request-borrow-ticket",
-        roles: [UserRole.ADMIN,UserRole.HOD, UserRole.HOS, UserRole.STAFF],
-      },
-      {
         key: "users",
         label: "บัญชีผู้ใช้",
         path: "/account-management",
@@ -236,7 +230,7 @@ export const MenuConfig: menuItem[] = [
  */
 export const filterMenuByRole = (
   menus: menuItem[],
-  role: UserRole
+  role: UserRole,
 ): menuItem[] =>
   menus
     .filter((menu) => menu.roles.includes(role))

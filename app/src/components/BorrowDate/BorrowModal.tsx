@@ -1,10 +1,7 @@
 import { Icon } from "@iconify/react";
 import React, { useEffect, useRef, useState } from "react";
 import DateValue from "./DateValue";
-import DropDown from "../DropDown";
 import DropdownTime from "./DropdownTime";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 
 export interface ActiveBorrow {
   da_start: string;
@@ -27,7 +24,7 @@ type Device = {
 type BorrowModalProps = {
   defaultValues: Device[];
   fullWidth?: boolean;
-  onConfirm: (data: { borrow_start: string; borrow_end: string }) => void;
+  onConfirm: (data: { borrow_start: string; borrow_end: string; time_start?: string; time_end?: string }) => void;
 };
 
 interface timeDropdownItem {
@@ -52,8 +49,6 @@ export default function BorrowModal({
   const inactiveClass = "hover:bg-gray-50";
   const today = new Date();
   const day = today.getDate(); // วันที่ (1–31)
-  const month = today.getMonth() + 1; // เดือน (0–11 ต้อง +1)
-  const year = today.getFullYear(); // ปี (ค.ศ.)
   const [defaultBorrow, setdefaultBorrow] = useState<Device[]>([]);
   /* ================= เก็บข้อมูล ================= */
   const [start, setStart] = useState<Date | null>(null); // วันที่ยืม
@@ -157,7 +152,7 @@ export default function BorrowModal({
       endDay: endOfWeek,
     };
   };
-  const { startDay, endDay } = getWeekRange(new Date());
+  const { startDay } = getWeekRange(new Date());
   const dayValue = Array.from({ length: 7 }, (_, i) => i);
 
   const formatThaiMonth = (date: Date) =>
@@ -321,7 +316,7 @@ export default function BorrowModal({
       height: ((end - start) / 60) * hourHeight,
     };
   };
-  
+
   const dayBorrow = timeBorrow.find((b) => b.day === day);
   const handleConfirm = () => {
     if (!isValid) return;
@@ -331,8 +326,8 @@ export default function BorrowModal({
     const payload = {
       borrow_start: borrowStart.toISOString(),
       borrow_end: borrowEnd.toISOString(),
-      time_start:timeStart,
-      time_end:timeEnd
+      time_start: timeStart,
+      time_end: timeEnd
     };
     console.log(payload)
     onConfirm(payload);
@@ -430,11 +425,10 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
         shadow-md transition-all duration-200 cursor-pointer
-        ${
-          selectedDeviceId === device.dec_id
-            ? "border-[#40A9FF] shadow-lg"
-            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-        }`}
+        ${selectedDeviceId === device.dec_id
+                                  ? "border-[#40A9FF] shadow-lg"
+                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-[#00AA1A] flex items-center justify-center">
@@ -473,11 +467,10 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
                         shadow-md transition-all duration-200 cursor-pointer
-                        ${
-                          selectedDeviceId === device.dec_id
-                            ? "border-[#40A9FF] shadow-lg"
-                            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-                        }`}
+                        ${selectedDeviceId === device.dec_id
+                                  ? "border-[#40A9FF] shadow-lg"
+                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-5 h-5 rounded-full bg-[#ED1A1A] flex items-center justify-center">
@@ -565,11 +558,10 @@ export default function BorrowModal({
                             disabled={!isValid}
                             className={`
     flex-1 rounded-xl py-2 text-white transition
-    ${
-      isValid
-        ? "bg-blue-500 hover:bg-blue-600"
-        : "bg-gray-300 cursor-not-allowed"
-    }
+    ${isValid
+                                ? "bg-blue-500 hover:bg-blue-600"
+                                : "bg-gray-300 cursor-not-allowed"
+                              }
   `}
                           >
                             ยืนยัน
@@ -610,9 +602,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("month")}
-                      className={`${baseClass}  rounded-l-xl ${
-                        active === "month" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass}  rounded-l-xl ${active === "month" ? activeClass : inactiveClass
+                        }`}
                     >
                       Month
                     </button>
@@ -620,9 +611,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("week")}
-                      className={`${baseClass} ${
-                        active === "week" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass} ${active === "week" ? activeClass : inactiveClass
+                        }`}
                     >
                       Week
                     </button>
@@ -630,9 +620,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("day")}
-                      className={`${baseClass} rounded-r-xl ${
-                        active === "day" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass} rounded-r-xl ${active === "day" ? activeClass : inactiveClass
+                        }`}
                     >
                       Day
                     </button>
@@ -726,7 +715,7 @@ export default function BorrowModal({
                                     style={calcBlockStyle(
                                       borrow.timeStart,
                                       borrow.timeEnd,
-                                      hourHeight-0.5
+                                      hourHeight - 0.5
                                     )}
                                   >
                                     <p className="text-[#FF4D4F] text-[10px] font-bold">
@@ -770,7 +759,7 @@ export default function BorrowModal({
                                 style={calcBlockStyle(
                                   dayBorrow.timeStart,
                                   dayBorrow.timeEnd,
-                                  hourHeight-0.5
+                                  hourHeight - 0.5
                                 )}
                               >
                                 <p className="text-red-500 text-[10px] font-bold">

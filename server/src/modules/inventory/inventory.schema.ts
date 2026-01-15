@@ -100,31 +100,66 @@ export const getApprovalFlowOnlySchema = z.object({
   af_is_active: z.boolean(),
 });
 
+// Schema สำหรับ getAllApproves - staff users (ใช้ us_name แทน fullname)
+export const staffUserSchema = z.object({
+  us_id: z.number(),
+  us_name: z.string(),
+});
+
 export const getStaffSchema = z.object({
   st_sec_id: z.number(),
   st_name: z.string(),
   st_dept_id: z.number(),
-  users: z.array(approvalStepUserSchema),
+  users: z.array(staffUserSchema),
 });
 
-// สำหรับตรวจสอบข้อมูลแผนก
-export const departmentSchema = z.object({
+// สำหรับตรวจสอบข้อมูลแผนก (with users for approval flows)
+export const departmentWithUsersSchema = z.object({
   dept_id: z.coerce.number(),
   dept_name: z.string(),
   users: z.array(approvalStepUserSchema),
 });
 
-// สำหรับตรวจสอบข้อมูลฝ่ายย่อย
-export const sectionSchema = z.object({
+// สำหรับตรวจสอบข้อมูลแผนก (without users for device listing)
+export const departmentSchema = z.object({
+  dept_id: z.coerce.number(),
+  dept_name: z.string(),
+});
+
+// สำหรับตรวจสอบข้อมูลฝ่ายย่อย (with users for approval flows)
+export const sectionWithUsersSchema = z.object({
   sec_id: z.coerce.number(),
   sec_name: z.string(),
   sec_dept_id: z.coerce.number(),
   users: z.array(approvalStepUserSchema),
 });
 
+// สำหรับตรวจสอบข้อมูลฝ่ายย่อย (without users for device listing)
+export const sectionSchema = z.object({
+  sec_id: z.coerce.number(),
+  sec_name: z.string(),
+  sec_dept_id: z.coerce.number(),
+});
+
+// สำหรับ getAllApproves response - departments with us_name
+export const departmentWithStaffUsersSchema = z.object({
+  dept_id: z.coerce.number(),
+  dept_name: z.string(),
+  users: z.array(staffUserSchema),
+});
+
+// สำหรับ getAllApproves response - sections with us_name  
+export const sectionWithStaffUsersSchema = z.object({
+  sec_id: z.coerce.number(),
+  sec_name: z.string(),
+  sec_dept_id: z.coerce.number(),
+  users: z.array(staffUserSchema),
+});
+
+// Schema สำหรับ getAllApproves response
 export const getApprovalFlowSchema = z.object({
-  sections: z.array(sectionSchema),
-  departments: z.array(departmentSchema),
+  sections: z.array(sectionWithStaffUsersSchema),
+  departments: z.array(departmentWithStaffUsersSchema),
   staff: z.array(getStaffSchema),
 });
 
@@ -137,12 +172,20 @@ export const createapprovalFlowStepResponseSchema = z.object({
   afs_af_id: z.number(),
 });
 
-export const createApprovalFlowResponseSchema = z.object({
-  af_id: z.number(),
-  af_name: z.string(),
-  af_is_active: z.boolean(),
-  af_us_id: z.number(),
-  flowstep: z.array(createapprovalFlowStepResponseSchema),
+// Schema สำหรับ createApprovalFlows response
+export const createApprovalFlowsResponseSchema = z.object({
+  approvalflow: z.object({
+    af_id: z.number(),
+    af_name: z.string(),
+    af_is_active: z.boolean(),
+    af_us_id: z.number(),
+    deleted_at: z.date().nullable(),
+    created_at: z.date().nullable(),
+    updated_at: z.date().nullable(),
+  }),
+  steps: z.object({
+    count: z.number(),
+  }),
 });
 
 export const serialNumbersSchma = z.object({
@@ -154,6 +197,7 @@ export const serialNumbersSchma = z.object({
   dec_de_id: z.number(),
 });
 
+// Schema สำหรับ createDevice response
 export const createDeviceResponseSchema = z.object({
   de_id: z.number(),
   de_serial_number: z.string(),
@@ -165,10 +209,11 @@ export const createDeviceResponseSchema = z.object({
   de_af_id: z.number(),
   de_ca_id: z.number(),
   de_us_id: z.number(),
-  de_sec_id: z.number().nullable(),
-  de_acc_id: z.number().nullable(),
-  accessories: z.array(createAccessoriesSchema),
-  serial_number: z.array(serialNumbersSchma),
+  de_sec_id: z.number(),
+  deleted_at: z.date().nullable(),
+  created_at: z.date().nullable(),
+  updated_at: z.date().nullable(),
+  accessories: z.array(createAccessoriesPayload).optional(),
 });
 
 export const categoriesSchema = z.object({
@@ -189,32 +234,78 @@ export const getDeviceWithSchema = z.object({
   approval_flow_step: z.array(approvalFlowWithStepsSchema),
 });
 
-// ข้อมูลอุปกรณ์ลูก
-export const devicesChildSchema = z.object({
+// Schema สำหรับอุปกรณ์ลูก (device child) ใน getDeviceWithChilds
+export const deviceChildResponseSchema = z.object({
   dec_id: z.number(),
   dec_serial_number: z.string().nullable(),
-  dec_asset_code: z.string().nullable(),
+  dec_asset_code: z.string(),
   dec_status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS),
   dec_has_serial_number: z.boolean(),
   dec_de_id: z.number(),
 });
 
-// ข้อมูลอุปกรณ์แม่
-export const deviceWithChildsSchema = z.object({
+// Schema สำหรับ category ใน getDeviceWithChilds
+export const categoryResponseSchema = z.object({
+  ca_id: z.number(),
+  ca_name: z.string(),
+});
+
+// Schema สำหรับ department ใน section
+export const departmentResponseSchema = z.object({
+  dept_id: z.number(),
+  dept_name: z.string(),
+});
+
+// Schema สำหรับ section ใน getDeviceWithChilds
+export const sectionResponseSchema = z.object({
+  sec_id: z.number(),
+  sec_name: z.string(),
+  department: departmentResponseSchema.optional(),
+});
+
+// Schema สำหรับ accessory ใน getDeviceWithChilds
+export const accessoryResponseSchema = z.object({
+  acc_id: z.number(),
+  acc_name: z.string(),
+  acc_quantity: z.number(),
+});
+
+// Schema สำหรับ approval flow step
+export const approvalFlowStepResponseSchema = z.object({
+  afs_id: z.number(),
+  afs_step_approve: z.number(),
+  afs_role: z.nativeEnum($Enums.US_ROLE),
+  afs_dept_id: z.number().nullable(),
+  afs_sec_id: z.number().nullable(),
+});
+
+// Schema สำหรับ approval flow ใน getDeviceWithChilds
+export const approvalFlowResponseSchema = z.object({
+  af_id: z.number(),
+  af_name: z.string(),
+  steps: z.array(approvalFlowStepResponseSchema),
+});
+
+// Schema หลักสำหรับ getDeviceWithChilds response
+export const getDeviceWithChildsSchema = z.object({
   de_id: z.number(),
-  de_name: z.string(),
   de_serial_number: z.string(),
+  de_name: z.string(),
   de_description: z.string().nullable(),
   de_location: z.string(),
   de_max_borrow_days: z.number(),
   de_images: z.string().nullable(),
-  device_childs: z.array(devicesChildSchema),
-});
-
-// ข้อมูลหลังจากทำการดึงข้อมูล
-export const getDeviceWithChildsSchema = z.object({
-  device: deviceWithChildsSchema.nullable(),
-});
+  de_af_id: z.number(),
+  de_ca_id: z.number(),
+  de_us_id: z.number(),
+  de_sec_id: z.number(),
+  device_childs: z.array(deviceChildResponseSchema),
+  category: categoryResponseSchema.optional(),
+  section: sectionResponseSchema.optional(),
+  accessories: z.array(accessoryResponseSchema),
+  approval_flow: approvalFlowResponseSchema.optional(),
+  total_quantity: z.number().optional(),
+}).nullable();
 
 // ข้อมูลที่ส่งเข้ามาตอนเพิ่มอุปกรณ์ลูก
 export const createDeviceChildPayload = z.object({
@@ -279,7 +370,6 @@ export const inventorySchema = z.object({
   de_ca_id: z.number().nullable(),
   de_us_id: z.number().nullable(),
   de_sec_id: z.number().nullable(),
-  de_acc_id: z.number().nullable(),
 
   //Virtual Fields (ข้อมูลที่ได้จากการ Join หรือคำนวณ Logic)
   category_name: z.string().optional().default("-"),
@@ -287,6 +377,10 @@ export const inventorySchema = z.object({
   department_name: z.string().optional().default("-"),
   quantity: z.number().optional().default(0), // จำนวนคงเหลือ
   total_quantity: z.number().optional(), // จำนวนทั้งหมด
+  dept_id: z.number().nullable().optional(),
+  ca_id: z.number().optional(),
+  sec_id: z.number().optional(),
+  af_id: z.number().optional(),
 
   //Relations & Computed Status
   device_childs: z.array(deviceChildSchema).optional(), // รายการอุปกรณ์ย่อย
@@ -373,8 +467,11 @@ export type CreateApprovalFlowsPayload = z.infer<
 >;
 
 export type CreateApprovalFlowResponseSchema = z.infer<
-  typeof createApprovalFlowResponseSchema
+  typeof createApprovalFlowsResponseSchema
 >;
+
+// Alias for backward compatibility
+export const createApprovalFlowResponseSchema = createApprovalFlowsResponseSchema;
 
 export type CreateDevicePayload = z.infer<typeof createDevicePayload>;
 

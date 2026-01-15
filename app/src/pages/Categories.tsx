@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";

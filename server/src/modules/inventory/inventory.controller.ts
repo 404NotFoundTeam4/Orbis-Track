@@ -4,7 +4,7 @@ import { inventoryService } from "./inventory.service.js";
 import { BaseResponse } from "../../core/base.response.js";
 import {
   createDeviceChildPayload,
-  CreateDevicePayload,
+  CreateDeviceResponseSchema,
   createDevicePayload,
   createApprovalFlowsPayload,
   CreateDeviceChildSchema,
@@ -12,7 +12,7 @@ import {
   GetDeviceWithChildsSchema,
   idParamSchema,
   GetDeviceWithSchema,
-  CreateApprovalFlowsPayload,
+  CreateApprovalFlowResponseSchema,
   GetApprovalFlowSchema,
   InventorySchema,
   UploadFileDeviceChildSchema,
@@ -31,10 +31,10 @@ export class InventoryController extends BaseController {
   * Output    : { data } - ข้อมูลอุปกรณ์แม่พร้อมอุปกรณ์ลูก
   * Author    : Thakdanai Makmi (Ryu) 66160355
   */
-  async getDeviceWithChilds(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetDeviceWithChildsSchema>> {
+  async getDeviceWithChilds(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
     const params = idParamSchema.parse(req.params);
     const result = await inventoryService.getDeviceWithChilds(params);
-    return { data: result}
+    return { data: result }
   }
 
   /**
@@ -89,7 +89,7 @@ export class InventoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<GetDeviceWithSchema>> {
+  ): Promise<BaseResponse> {
     const result = await inventoryService.getAllDevices();
     return { data: result };
   }
@@ -104,7 +104,7 @@ export class InventoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<CreateDevicePayload>> {
+  ): Promise<BaseResponse> {
     const payload = createDevicePayload.parse(req.body);
     const imagePath = req.file?.path;
 
@@ -123,7 +123,7 @@ export class InventoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<CreateApprovalFlowsPayload>> {
+  ): Promise<BaseResponse> {
     const payload = createApprovalFlowsPayload.parse(req.body);
 
     const result = await inventoryService.createApprovesFlows(payload);
@@ -141,12 +141,12 @@ export class InventoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<GetApprovalFlowSchema>> {
+  ): Promise<BaseResponse> {
     const result = await inventoryService.getAllApproves();
 
     return { data: result };
   }
-  
+
   /**
    * Description: ดึงข้อมูลอุปกรณ์ตาม ID
    * Input: req (Request) - params.id
@@ -173,7 +173,7 @@ export class InventoryController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<InventorySchema[]>> {
+  ): Promise<BaseResponse> {
     const devices = await inventoryService.getAllWithDevices();
     return { data: devices };
   }
@@ -192,9 +192,9 @@ export class InventoryController extends BaseController {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0)
       throw new ValidationError("Invalid id");
-    
+
     const result = await inventoryService.softDeleteDevice(id);
-    
+
     return {
       data: { de_id: result.de_id, deletedAt: result.deletedAt },
       message: "Device soft-deleted successfully",
@@ -210,7 +210,7 @@ export class InventoryController extends BaseController {
 
   // ดึงข้อมูลลำดับการอนุมัติ
   async getApprovalFlows(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const data = await inventoryService.getApprovalFlows(); 
+    const data = await inventoryService.getApprovalFlows();
     return { data };
   }
 
@@ -220,10 +220,10 @@ export class InventoryController extends BaseController {
    * author: Worrawat Namwat (Wave) 66160372
    */
   async update(req: Request, res: Response, next: NextFunction): Promise<BaseResponse> {
-    const { id } = idParamSchema.parse(req.params); 
+    const { id } = idParamSchema.parse(req.params);
     const body = updateDevicePayload.parse(req.body);
     const imagePath = req.file?.path;
-    const result = await inventoryService.updateDevice(id, body,imagePath);
+    const result = await inventoryService.updateDevice(id, body, imagePath);
     return { data: result };
   }
 }

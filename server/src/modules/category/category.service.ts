@@ -3,7 +3,6 @@ import type { z } from "zod";
 import {
     EditCategoryPayload,
     GetCategoriesQuerySchema,
-    GetCategoriesQuerySchema,
     AddCategoryPayload,
     idParamSchema,
 } from "./category.schema.js";
@@ -190,36 +189,36 @@ export async function editCategory(payload: EditCategoryPayload) {
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export async function addCategory(payload: AddCategoryPayload) {
-  const { ca_name } = payload;
+    const { ca_name } = payload;
 
-  // ตรวจสอบว่าหมวดหมู่ชื่อเดียวกันมีอยู่แล้วหรือไม่
-  const existingCategory = await prisma.categories.findFirst({
-    where: {
-      ca_name: { equals: ca_name, mode: "insensitive" },
-      deleted_at: null,
-    },
-  });
+    // ตรวจสอบว่าหมวดหมู่ชื่อเดียวกันมีอยู่แล้วหรือไม่
+    const existingCategory = await prisma.categories.findFirst({
+        where: {
+            ca_name: { equals: ca_name, mode: "insensitive" },
+            deleted_at: null,
+        },
+    });
 
-  if (existingCategory) {
-    throw new Error("Category name already exists");
-  }
+    if (existingCategory) {
+        throw new Error("Category name already exists");
+    }
 
-  // เพิ่มหมวดหมู่ใหม่
-  const createdCategory = await prisma.categories.create({
-    data: {
-      ca_name,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  });
+    // เพิ่มหมวดหมู่ใหม่
+    const createdCategory = await prisma.categories.create({
+        data: {
+            ca_name,
+            created_at: new Date(),
+            updated_at: new Date(),
+        },
+    });
 
-  return createdCategory;
+    return createdCategory;
 }
 
 export const categoryService = {
-getCategories,
-getCategoryById,
-softDeleteCategory,
-  editCategory,
-addCategory,
+    getCategories,
+    getCategoryById,
+    softDeleteCategory,
+    editCategory,
+    addCategory,
 }

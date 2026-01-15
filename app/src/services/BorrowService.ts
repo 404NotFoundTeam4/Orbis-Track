@@ -72,7 +72,7 @@ export interface CreateBorrowTicketPayload {
 
 export interface CreateBorrowTicket {
     brt_id: number;
-    brt_status: "PENDING" | "APPROVED" | "IN_USE" | "COMPLETED" | "REJECTED";
+    brt_status: "PENDING" | "APPROVED" | "IN_USE" | "OVERDUE" | "COMPLETED" | "REJECTED";
     brt_start_date: Date;
     brt_end_date: Date;
     brt_quantity: number;

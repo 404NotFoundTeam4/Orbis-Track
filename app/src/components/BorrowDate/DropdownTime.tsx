@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Icon } from "@iconify/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 
@@ -55,9 +54,8 @@ export default function Dropdown({
 
         <FontAwesomeIcon
           icon={faChevronDown}
-          className={`w-3 h-3 text-[#000000] transition-transform duration-200 ${
-            open ? "transform rotate-180" : ""
-          }`}
+          className={`w-3 h-3 text-[#000000] transition-transform duration-200 ${open ? "transform rotate-180" : ""
+            }`}
         />
       </button>
 
@@ -75,7 +73,7 @@ export default function Dropdown({
                 key={opt.id}
                 onClick={() => {
                   setSelectedTime(opt);
-                  onChange(opt.value); 
+                  onChange(opt.value);
                   setOpen(false);
                 }}
                 className={`

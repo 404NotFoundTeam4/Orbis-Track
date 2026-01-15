@@ -1,4 +1,4 @@
-import { $Enums } from "@prisma/client";
+import { $Enums, US_ROLE } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
 import { ValidationError } from "../../errors/errors.js";
 import xlsx from "xlsx";
@@ -360,7 +360,15 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
   return await prisma.$transaction(async (tx) => {
     const device = await tx.devices.create({
       data: {
-        ...deviceData,
+        de_serial_number: deviceData.de_serial_number,
+        de_name: deviceData.de_name,
+        de_description: deviceData.de_description ?? null,
+        de_location: deviceData.de_location,
+        de_max_borrow_days: deviceData.de_max_borrow_days,
+        de_af_id: deviceData.de_af_id,
+        de_ca_id: deviceData.de_ca_id,
+        de_us_id: deviceData.de_us_id,
+        de_sec_id: deviceData.de_sec_id ?? 1, // Default to 1 if not provided
         de_images: finalImages,
         created_at: new Date(),
       },
@@ -622,7 +630,7 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
         afs_step_approve: step.afs_step_approve,
         afs_dept_id: step.afs_dept_id ?? null,
         afs_sec_id: step.afs_sec_id ?? null,
-        afs_role: step.afs_role,
+        afs_role: step.afs_role as US_ROLE,
         afs_af_id: approvalFlow.af_id,
         created_at: new Date(),
       })),
@@ -946,7 +954,15 @@ export async function updateDevice(
   const updated = await prisma.devices.update({
     where: { de_id: id },
     data: {
-      ...deviceData,
+      de_serial_number: deviceData.de_serial_number,
+      de_name: deviceData.de_name,
+      de_description: deviceData.de_description,
+      de_location: deviceData.de_location,
+      de_max_borrow_days: deviceData.de_max_borrow_days,
+      de_af_id: deviceData.de_af_id,
+      de_ca_id: deviceData.de_ca_id,
+      de_us_id: deviceData.de_us_id,
+      ...(typeof deviceData.de_sec_id === 'number' && { de_sec_id: deviceData.de_sec_id }),
       de_images: finalImages,
       updated_at: new Date(),
     },
@@ -1013,6 +1029,11 @@ async function getApprovalFlows() {
   });
 }
 
+// ดึงข้อมูลพื้นฐานสำหรับหน้าสร้างอุปกรณ์
+async function getDefaultsdata() {
+  return await getAllDevices();
+}
+
 export const inventoryService = {
   getDeviceWithChilds,
   createDeviceChild,
@@ -1027,4 +1048,5 @@ export const inventoryService = {
   createApprovesFlows,
   getAllApproves,
   createDevice,
+  getDefaultsdata,
 };

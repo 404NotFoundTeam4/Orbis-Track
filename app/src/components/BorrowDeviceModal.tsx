@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import Button from "./Button";
-import DatePickerField from "./DatePickerField";
 import Input from "./Input";
-import QuantityInput from "./QuantityInput";
 import { Icon } from "@iconify/react";
 import TimePickerField from "./TimePickerField";
 import { AlertDialog } from "./AlertDialog";
@@ -10,7 +8,7 @@ import type { GetAvailable } from "../services/BorrowService";
 import { useNavigate } from "react-router-dom";
 import getImageUrl from "../services/GetImage";
 import BorrowModal from "./BorrowDate/BorrowModal";
- import { borrowService} from "../services/BorrowService"
+import { borrowService } from "../services/BorrowService";
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
   serialNumber: string;
@@ -23,6 +21,7 @@ interface EquipmentDetail {
   storageLocation: string;
   remain: number;
   maxBorrowDays: number;
+  deviceId: number;
   accessories: {
     name: string;
     qty: number;
@@ -60,10 +59,10 @@ export interface ActiveBorrow {
 }
 type Device = {
   dec_id: number;
-  dec_serial_number: string;
+  dec_serial_number?: string;
   dec_asset_code: string;
   dec_status: string;
-  activeBorrow: ActiveBorrow[];
+  activeBorrow?: ActiveBorrow[];
 };
 const BorrowEquipmentModal = ({
   mode,
@@ -89,7 +88,7 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
-  const [data, setData] = useState<Device | null>(null);
+  const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
@@ -413,10 +412,10 @@ const BorrowEquipmentModal = ({
                       data.borrow_start ? new Date(data.borrow_start) : null,
                       data.borrow_end ? new Date(data.borrow_end) : null,
                     ],
-                 borrowTime:data.time_start,
-                 returnTime:data.time_end
+                    borrowTime: data.time_start,
+                    returnTime: data.time_end
                   }));
-                  
+
                 }}
               />
               {errors.dateRange && (

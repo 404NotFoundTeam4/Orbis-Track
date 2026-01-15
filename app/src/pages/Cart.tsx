@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertDialog, type AlertTone } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { Link } from "react-router-dom";
-import api from "../api/axios.js";
 import CartService from "../services/CartService";
 
 /**

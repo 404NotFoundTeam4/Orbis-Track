@@ -56,18 +56,18 @@ export const getDeviceForBorrowSchema = z.object({
 
 // โครงสร้างข้อมูลที่ตอบกลับหลังจากดึงข้อมูลอุปกรณ์ที่ถูกยืมอยู่
 export const getAvailableSchema = z.array(
-  z.object({
-    dec_id: z.number(),
-    dec_serial_number: z.string().nullable(),
-    dec_asset_code: z.string(),
-    dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]),
-    activeBorrow: z.array(
-      z.object({
-        da_start: z.coerce.date(),
-        da_end: z.coerce.date(),
-      })
-    ),
-  })
+    z.object({
+        dec_id: z.number(),
+        dec_serial_number: z.string().nullable(),
+        dec_asset_code: z.string(),
+        dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]),
+        activeBorrow: z.array(
+            z.object({
+                da_start: z.coerce.date(),
+                da_end: z.coerce.date(),
+            })
+        ),
+    })
 );
 
 // โครงสร้างข้อมูลที่ส่งมาตอนส่งคำร้อง
@@ -82,7 +82,7 @@ export const createBorrowTicketPayload = z.object({
 // โครงสร้างข้อมูลที่ตอบกลับหลังจากสร้างคำร้อง
 export const createBorrowTicketSchema = z.object({
     brt_id: z.number(),
-    brt_status: z.enum(["PENDING", "APPROVED", "IN_USE", "COMPLETED", "REJECTED"]),
+    brt_status: z.enum(["PENDING", "APPROVED", "IN_USE", "COMPLETED", "REJECTED", "OVERDUE"]),
     brt_start_date: z.date(),
     brt_end_date: z.date(),
     brt_quantity: z.number(),
@@ -111,7 +111,7 @@ export const addToCartSchema = z.object({
  * Description: Schema โครงสร้างข้อมูล Device Availabilities (ช่วงเวลาที่อุปกรณ์ถูกจอง/ถูกยืม)
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
-export const deviceAvailabilitiesSchema = z.object({
+export const deviceAvailabilityItemSchema = z.object({
     da_id: z.coerce.number(),
     da_dec_id: z.coerce.number(),
     da_brt_id: z.coerce.number(),
@@ -121,9 +121,11 @@ export const deviceAvailabilitiesSchema = z.object({
         "ACTIVE",
         "COMPLETED",
     ]),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
+    created_at: z.date(),
+    updated_at: z.date(),
 })
+
+export const deviceAvailabilitiesSchema = z.array(deviceAvailabilityItemSchema);
 
 export type GetInventorySchema = z.infer<typeof getInventorySchema>;
 

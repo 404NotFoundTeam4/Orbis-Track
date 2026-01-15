@@ -1,11 +1,10 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { getBasePath } from "../constants/rolePath";
-import { useUserStore } from "../stores/userStore";
 
 // ใช้สำหรับ gateway route
 export default function RolePathRedirect() {
     const userRaw =
-    sessionStorage.getItem("User") || localStorage.getItem("User");
+        sessionStorage.getItem("User") || localStorage.getItem("User");
 
     const user = userRaw ? JSON.parse(userRaw) : null;
     const role = user?.us_role; // ดึง role ของ user

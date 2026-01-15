@@ -298,7 +298,8 @@ async function createBorrowTicket(payload: CreateBorrowTicketPayload & { userId:
             },
             select: {
                 sec_id: true,
-                sec_name: true
+                sec_name: true,
+                sec_dept_id: true
             },
         });
 

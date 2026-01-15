@@ -380,7 +380,7 @@ export default function UserModal({
       setErrors((prev) => ({ ...prev, us_sec_id: undefined }));
   };
 
-  const roleOptions: IDropDownItemType[] = [
+  const _roleOptions: IDropDownItemType[] = [
     { id: "ADMIN", label: "ADMIN", value: "ADMIN" },
     { id: "HOD", label: "HOD", value: "HOD" },
     { id: "HOS", label: "HOS", value: "HOS" },
@@ -747,11 +747,10 @@ export default function UserModal({
               type="button"
               onClick={handle}
               disabled={deleting}
-              className={`px-8 py-3 rounded-full shadow text-white cursor-pointer ${
-                typeform === "delete"
+              className={`px-8 py-3 rounded-full shadow text-white cursor-pointer ${typeform === "delete"
                   ? "bg-red-500 hover:bg-red-600"
                   : "bg-blue-400 hover:bg-blue-500"
-              }`}
+                }`}
             >
               {typeform === "delete"
                 ? "ปิดการใช้งาน"

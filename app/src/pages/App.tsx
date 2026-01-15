@@ -40,7 +40,7 @@ function App() {
 
   const TECHNICAL_ROLES: Role[] = ["TECHNICAL", "ADMIN"];
 
-  const HOD_HOS_ROLES: Role[] = ["HOD", "HOS", "ADMIN"];
+  const _HOD_HOS_ROLES: Role[] = ["HOD", "HOS", "ADMIN"];
 
   const STAFF_ROLES: Role[] = ["STAFF", "ADMIN"];
 

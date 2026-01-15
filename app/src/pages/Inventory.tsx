@@ -128,8 +128,11 @@ import { Icon } from "@iconify/react";
 import { useToast } from "../components/Toast.js";
 import { AlertDialog } from "../components/AlertDialog.js";
 import api from "../api/axios.js";
+import getImageUrl from "../services/GetImage";
 
-const API_BASE_URL = "http://localhost:4041/api/v1";
+
+
+
 // type อุปกรณ์ย่อย
 type DeviceChild = {
   dec_id: number;
@@ -236,7 +239,7 @@ export const Inventory = () => {
         device: item,
       },
     });
-    
+
   };
 
   //Handlers: Delete Logic
@@ -251,7 +254,7 @@ export const Inventory = () => {
     const idsToDelete = deleteId ? [deleteId] : selectedItems;
     try {
       await Promise.all(
-        idsToDelete.map((id) => api.delete(`${API_BASE_URL}/inventory/${id}`))
+        idsToDelete.map((id) => api.delete(`/inventory/${id}`))
       );
       toast.push({ message: "ลบข้อมูลสำเร็จ", tone: "success" });
       setSelectedItems([]);
@@ -270,7 +273,7 @@ export const Inventory = () => {
     const fetchEquipment = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get(`${API_BASE_URL}/inventory`);
+        const response = await api.get(`/inventory`);
         const rawData = response.data.data || response.data || [];
 
         const formattedData: Equipment[] = rawData.map((item: any) => {
@@ -285,9 +288,7 @@ export const Inventory = () => {
             name: item.de_name || "ไม่มีชื่อ",
             description: item.de_description || "",
             location: item.de_location || "-",
-            image: item.de_images
-              ? `${API_BASE_URL}/${item.de_images.replace(/\\/g, "/")}`
-              : null,
+            image: getImageUrl(item.de_images?.replace(/\\/g, "/")),
             department: item.department_name || "-",
             category: item.category_name || "-",
             sub_section: item.sub_section_name || "-",
@@ -329,10 +330,10 @@ export const Inventory = () => {
     return isNaN(d.getTime())
       ? "-"
       : d.toLocaleDateString("th-TH", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        });
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
   };
 
   //จัดการ Sort
@@ -751,11 +752,10 @@ export const Inventory = () => {
                 <button
                   type="button"
                   onClick={() => setPage(1)}
-                  className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                    page === 1
-                      ? "border-[#000000] text-[#000000]"
-                      : "border-[#D9D9D9]"
-                  }`}
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1
+                    ? "border-[#000000] text-[#000000]"
+                    : "border-[#D9D9D9]"
+                    }`}
                 >
                   1
                 </button>
@@ -777,11 +777,10 @@ export const Inventory = () => {
                   <button
                     type="button"
                     onClick={() => setPage(totalPages)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      page === totalPages
-                        ? "border-[#000000] text-[#000000]"
-                        : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages
+                      ? "border-[#000000] text-[#000000]"
+                      : "border-[#D9D9D9]"
+                      }`}
                   >
                     {totalPages}
                   </button>

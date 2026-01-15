@@ -1,3 +1,11 @@
+/**
+ * Description: Zod Schema สำหรับ Borrow-Return Tickets API
+ * - Query params: page, limit, status, search, sortField, sortDirection
+ * - Response schemas: TicketItem, TicketDetail
+ * Input : -
+ * Output : Zod types สำหรับ validation
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
 import { z } from "zod";
 import {
   BRT_STATUS,
@@ -15,17 +23,18 @@ export const getBorrowTicketQuery = z.object({
   limit: z.coerce.number().optional().nullable(),
   status: z.nativeEnum(BRT_STATUS).optional().nullable(),
   search: z.string().optional().nullable(),
-  type: z
+  sortField: z
     .enum([
-      "ALL",
-      "MY_ACTIVE",
-      "MY_REQUEST",
-      "MY_APPROVAL",
-      "MY_HISTORY",
-      "MY_APPROVAL_HISTORY",
+      "device_name",
+      "quantity",
+      "category",
+      "requester",
+      "request_date",
+      "status",
     ])
     .optional()
-    .default("ALL"),
+    .nullable(),
+  sortDirection: z.enum(["asc", "desc"]).optional().nullable(),
 });
 
 const requesterSchema = z.object({
@@ -37,30 +46,20 @@ const requesterSchema = z.object({
 });
 
 const deviceSummarySchema = z.object({
+  deviceId: z.coerce.number(),
   name: z.string(),
   serial_number: z.string(),
+  description: z.string().nullable(),
   location: z.string(),
+  max_borrow_days: z.union([z.coerce.number(), z.string()]).nullable(),
   image: z.string().nullable(),
   category: z.string(),
-  section: z.union([z.object({ sec_name: z.string() }), z.string(), z.null()]),
+  section: z.string(),
+  department: z.string(),
   total_quantity: z.coerce.number(),
-  more_count: z.coerce.number(),
 });
 
-const deviceChildSchema = z.object({
-  serial_number: z.string(),
-  asset_code: z.string(),
-  has_serial_number: z.union([z.boolean(), z.string()]),
-  status: z.union([z.nativeEnum(DEVICE_CHILD_STATUS), z.string()]),
-});
-
-const currentStageSchema = z
-  .object({
-    name: z.string(),
-    step: z.coerce.number(),
-    status: z.string(),
-  })
-  .nullable();
+// device_child และ current_stage ถูกลบออกจาก list response แล้ว
 
 export const ticketItemSchema = z.object({
   id: z.coerce.number(),
@@ -69,8 +68,6 @@ export const ticketItemSchema = z.object({
   request_date: z.date().nullable(),
   requester: requesterSchema,
   device_summary: deviceSummarySchema,
-  device_child: deviceChildSchema,
-  current_stage: currentStageSchema,
 });
 
 const ticketDetailsSchema = z.object({
@@ -89,6 +86,7 @@ const ticketDetailsSchema = z.object({
     return: z.string().nullable(),
   }),
   reject_reason: z.string().nullable(),
+  reject_date: z.date().nullable(),
 });
 
 const ticketRequesterSchema = z.object({
@@ -106,14 +104,18 @@ const ticketRequesterSchema = z.object({
   section: z.string().nullable().optional(),
 });
 
+const accessorySchema = z.object({
+  acc_id: z.coerce.number(),
+  acc_name: z.string(),
+  acc_quantity: z.coerce.number(),
+});
+
 const ticketDeviceSchema = z.object({
   child_id: z.coerce.number(),
-  name: z.string(),
   asset_code: z.string(),
   serial: z.string(),
-  image: z.string().nullable(),
-  category: z.string(),
   current_status: z.nativeEnum(DEVICE_CHILD_STATUS),
+  has_serial_number: z.boolean(),
 });
 
 const ticketTimelineSchema = z.object({
@@ -127,6 +129,7 @@ const ticketTimelineSchema = z.object({
   sec_name: z.string().nullable(),
   approved_by: z.string().nullable(),
   updated_at: z.date().nullable(),
+  approvers: z.array(z.string()).optional(),
 });
 
 export const borrowReturnTicketDetailSchema = z.object({
@@ -135,8 +138,95 @@ export const borrowReturnTicketDetailSchema = z.object({
   details: ticketDetailsSchema,
   requester: ticketRequesterSchema,
   devices: z.array(ticketDeviceSchema),
+  accessories: z.array(accessorySchema),
   timeline: z.array(ticketTimelineSchema),
 });
+
+export const approveTicket = z.object({
+  // ticketId: z.coerce.number(),
+  currentStage: z.coerce.number(),
+  pickupLocation: z.string().nullable().optional(),
+});
+
+export const rejectTicket = z.object({
+  currentStage: z.coerce.number(),
+  rejectReason: z.string(),
+});
+
+export const getDeviceAvailableQuery = z.object({
+  deviceId: z.coerce.number(),
+  deviceChildIds: z.preprocess(
+    (val) => {
+      if (val === undefined || val === null) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === "string") return [val];
+      return [];
+    },
+    z.array(z.coerce.number()).optional()
+  ),
+  startDate: z.string(),
+  endDate: z.string(),
+});
+
+export const deviceChildSchema = z.object({
+  dec_id: z.number(),
+  dec_serial_number: z.string().nullable(),
+  dec_asset_code: z.string(),
+  dec_has_serial_number: z.boolean(),
+  dec_status: z.nativeEnum(DEVICE_CHILD_STATUS),
+  dec_de_id: z.number(),
+  deleted_at: z.date().nullable(),
+  created_at: z.date().nullable(),
+  updated_at: z.date().nullable(),
+});
+
+export const devicesToAdd = z.object({
+  id: z.coerce.number(),
+});
+
+export const devicesToRemove = z.object({
+  id: z.coerce.number(),
+  status: z.nativeEnum(DEVICE_CHILD_STATUS),
+});
+
+export const devicesToUpdate = z.object({
+  id: z.coerce.number(),
+  oldStatus: z.nativeEnum(DEVICE_CHILD_STATUS),
+  status: z.nativeEnum(DEVICE_CHILD_STATUS),
+  note: z.string().nullable().optional(),
+});
+
+export const updateDeviceChildInTicket = z.object({
+  devicesToAdd: z.array(devicesToAdd).optional(),
+  devicesToRemove: z.array(devicesToRemove).optional(),
+  devicesToUpdate: z.array(devicesToUpdate).optional(),
+});
+
+export const availableDeviceChildsSchema = z.array(deviceChildSchema);
+
+// Return Ticket Schema
+export const returnDeviceSchema = z.object({
+  id: z.coerce.number(),
+  status: z.nativeEnum(DEVICE_CHILD_STATUS),
+});
+
+export const returnTicketBody = z.object({
+  devices: z.array(returnDeviceSchema),
+});
+
+export type UpdateDeviceChildInTicket = z.infer<
+  typeof updateDeviceChildInTicket
+>;
+
+export type DeviceChildDto = z.infer<typeof deviceChildSchema>;
+
+export type TicketDeviceSchema = z.infer<typeof ticketDeviceSchema>;
+
+export type GetDeviceAvailableQuery = z.infer<typeof getDeviceAvailableQuery>;
+
+export type ApproveTicket = z.infer<typeof approveTicket>;
+
+export type RejectTicket = z.infer<typeof rejectTicket>;
 
 export type BorrowReturnTicketDetailDto = z.infer<
   typeof borrowReturnTicketDetailSchema
@@ -145,3 +235,7 @@ export type BorrowReturnTicketDetailDto = z.infer<
 export type GetBorrowTicketQuery = z.infer<typeof getBorrowTicketQuery>;
 
 export type TicketItemDto = z.infer<typeof ticketItemSchema>;
+
+export type ReturnDeviceSchema = z.infer<typeof returnDeviceSchema>;
+
+export type ReturnTicketBody = z.infer<typeof returnTicketBody>;

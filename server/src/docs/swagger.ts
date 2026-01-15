@@ -35,12 +35,19 @@ export function swagger(app: Express, baseUrl: string) {
 
   app.get("/docs.json", (_req, res) => res.json(doc));
 
-  // หน้า Swagger UI พร้อมจำ token ไว้หลังรีเฟรช
+  // หน้า Swagger UI พร้อม options ที่ปรับแต่งแล้ว
   app.use(
     "/api/v1/swagger",
     swaggerUi.serve,
     swaggerUi.setup(doc, {
-      swaggerOptions: { persistAuthorization: true },
+      swaggerOptions: {
+        persistAuthorization: true,
+        tryItOutEnabled: true,  // เปิด input fields เป็น default
+        // defaultModelRendering: "model",
+        // defaultModelsExpandDepth: 1,
+        displayRequestDuration: true,
+        // requestSnippetsEnabled: true,
+      },
     }),
   );
 }

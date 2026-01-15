@@ -7,7 +7,7 @@
 import React, { useEffect, useId } from "react";
 import Button from "./Button";
 
-export type AlertTone = "success" | "warning" | "danger";
+export type AlertTone = "success" | "warning" | "danger" | "reject" | "confirm" | "devicewarning" | "editDevice";
 
 export type AlertDialogProps = {
   open: boolean;
@@ -18,7 +18,7 @@ export type AlertDialogProps = {
   onCancel?: () => void;
   confirmText?: string;
   cancelText?: string;
-
+  actionsMode?: "single" | "double";
   /** Visual */
   tone?: AlertTone; // success=เขียว (default), warning=เหลือง, danger=แดง
   icon?: React.ReactNode; // รับ ReactNode เป็นไอคอน
@@ -48,15 +48,23 @@ export type AlertDialogProps = {
 };
 
 const TONE_HEX: Record<AlertTone, string> = {
-  success: "#FFC53D",
+  success: "#52C41A",
   warning: "#FFC53D",
   danger: "#FF4D4F",
+  devicewarning: "#FFC53D",
+  editDevice: "#52C41A",
+  reject: "#FFC53D",
+  confirm: "#52C41A",
 };
 
 const CONFIRM_OVERRIDE: Record<AlertTone, string> = {
   success: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white",
   warning: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ยืนยันปกติให้เขียว
   danger: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
+  devicewarning: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white",
+  editDevice: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white",
+  reject: "!bg-[#FF4D4F] hover:!bg-[#c71c34] !text-white", // ปุ่มแดง ไอค่อนเหลือง
+  confirm: "!bg-[#52C41A] hover:!bg-[#22b33a] !text-white", // ปุ่มเขียว วงเขียว
 };
 // bg-[#52C41A] text-[#FFFFFF] hover:bg-green-700 active:bg-green-600
 function cx(...p: Array<string | false | null | undefined>) {
@@ -72,6 +80,7 @@ export function AlertDialog({
   onCancel,
   confirmText = "ยืนยัน",
   cancelText = "ยกเลิก",
+  actionsMode = "double",
 
   tone = "success",
   icon,
@@ -135,7 +144,7 @@ export function AlertDialog({
         className={cx(
           "relative mx-auto select-none bg-white shadow-2xl",
           "animate-in fade-in zoom-in-95 ",
-          className
+          className,
         )}
         style={{
           width,
@@ -192,25 +201,30 @@ export function AlertDialog({
             className="mt-10 flex items-center justify-center"
             style={{ gap: buttonsGap }}
           >
-            <Button
-              variant="secondary"
-              className={cx("rounded-full", `!text-[${buttonTextPx}px]`)}
-              onClick={() => {
-                onCancel?.();
-                onOpenChange?.(false);
-              }}
-              style={{ width: buttonW, height: buttonH, padding: "5px 15px" }}
-            >
-              {cancelText}
-            </Button>
+            {/* ปุ่มยกเลิก (แสดงเฉพาะโหมด double) */}
+            {actionsMode === "double" && (
+              <Button
+                variant="secondary"
+                className={cx("rounded-full", `!text-[${buttonTextPx}px]`)}
+                onClick={() => {
+                  onCancel?.();
+                  onOpenChange?.(false);
+                }}
+                style={{ width: buttonW, height: buttonH, padding: "5px 15px" }}
+              >
+                {cancelText}
+              </Button>
+            )}
 
             {/* ใช้ปุ่มของผู้ใช้ + override สีตาม tone */}
             <Button
-              variant={tone === "danger" ? "danger" : "primary"}
+              variant={
+                tone === "danger" || tone === "reject" ? "danger" : "primary"
+              }
               className={cx(
-                "rounded-full",
+                "rounded-full cursor-pointer",
                 confirmCls,
-                `!text-[${buttonTextPx}px]`
+                `!text-[${buttonTextPx}px]`,
               )}
               onClick={async () => {
                 await onConfirm?.();

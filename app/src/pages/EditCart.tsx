@@ -14,7 +14,7 @@
  * Author: Salsabeela Sa-e (San) 66160349
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate,useParams  } from "react-router-dom";
 import BorrowDeviceModal from "../components/BorrowDeviceModal";
 import CartService from "../services/CartService";
 import {
@@ -71,12 +71,11 @@ export interface BorrowFormData {
 }
 
 const EditCart = () => {
-  const location = useLocation();
+  
   const navigate = useNavigate();
   const { push } = useToast();
-
-  const { ctiId } = (location.state as { ctiId?: number }) ?? {};
-
+  const { id } = useParams()
+  const ctiId = id
   const [cartItem, setCartItem] = useState<CartItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
@@ -155,7 +154,7 @@ const EditCart = () => {
 
   useEffect(() => {
     if (!ctiId) {
-      navigate("/list-devices/cart", { replace: true });
+      // navigate("/list-devices/cart", { replace: true });
       return;
     }
 
@@ -179,7 +178,7 @@ const EditCart = () => {
      *
      * Author: Salsabeela Sa-e (San) 66160349
      */
-
+    
     const loadCartItem = async () => {
       try {
         const res = await CartService.getCartItems();
@@ -269,10 +268,10 @@ const EditCart = () => {
         setLoading(false);
       }
     };
-
+   
     loadCartItem();
   }, [ctiId, navigate]);
-
+  
   //ฟังก์ชันเดียวสำหรับ auto-remove ที่ถูก filter ออก
   const refreshAndFilter = async (
     payload: { startISO: string; endISO: string },

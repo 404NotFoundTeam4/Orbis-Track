@@ -27,8 +27,8 @@ type TabKey = "borrow" | "repair" | "approve";
  * Output : string (className)
  * Author: Chanwit Muangma (Boom) 66160224
  */
-function classNames(...xs: Array<string | false | undefined | null>) {
-  return xs.filter(Boolean).join(" ");
+function classNames(...classNameParts: Array<string | false | undefined | null>) {
+  return classNameParts.filter(Boolean).join(" ");
 }
 
 /**
@@ -380,7 +380,7 @@ export default function History() {
                       item={ticketItem}
                       isOpen={expandedTicketIds.has(ticketItem.ticketId)}
                       detail={ticketDetailByIdMap[ticketItem.ticketId]}
-                      loadingDetail={loadingDetailTicketId === ticketItem.ticketId}
+                      isLoadingDetail={loadingDetailTicketId === ticketItem.ticketId}
                       onToggle={() => toggleOpen(ticketItem.ticketId)}
                     />
                   ))}
@@ -390,7 +390,7 @@ export default function History() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                     disabled={currentPage === 1}
                     className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
                   >

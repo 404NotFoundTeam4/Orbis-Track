@@ -39,15 +39,15 @@ type StepTone = "done" | "current" | "todo" | "rejected";
  */
 function getTimelineTone(params: {
   stepStatus: string;
-  hasAnyRejected: boolean;
+  isAnyRejected: boolean;
   isCurrentQueue: boolean;
 }): StepTone {
-  const { stepStatus, hasAnyRejected, isCurrentQueue } = params;
+  const { stepStatus, isAnyRejected, isCurrentQueue } = params;
 
   if (stepStatus === "REJECTED") return "rejected";
   if (stepStatus === "APPROVED") return "done";
 
-  if (hasAnyRejected) return "todo";
+  if (isAnyRejected) return "todo";
   if (isCurrentQueue) return "current";
   return "todo";
 }
@@ -199,9 +199,9 @@ function getApproverScopeLabel(stage: HistoryBorrowTimelineStep): string {
  * Author: Chanwit Muangma (Boom) 66160224
  */
 function shouldShowTimelineTime(stage: HistoryBorrowTimelineStep): boolean {
-  const hasApprover = Boolean(stage?.approver);
-  const hasUpdatedAt = Boolean(stage?.updatedAt);
-  return hasApprover && hasUpdatedAt;
+  const isApprover = Boolean(stage?.approver);
+  const isUpdatedAt = Boolean(stage?.updatedAt);
+  return isApprover && isUpdatedAt;
 }
 
 /**
@@ -219,18 +219,88 @@ function shouldShowMainStepTime(params: {
 }): boolean {
   const { stepKey, effectiveTicketStatus } = params;
 
-  const st = effectiveTicketStatus.toUpperCase();
+  const stage = effectiveTicketStatus.toUpperCase();
 
   if (stepKey === "REQUEST") return true; // มี ticket ก็ถือว่ามีเวลาส่งคำร้องได้
   if (stepKey === "APPROVAL")
-    return ["APPROVED", "IN_USE", "COMPLETED", "OVERDUE", "REJECTED"].includes(st);
+    return ["APPROVED", "IN_USE", "COMPLETED", "OVERDUE", "REJECTED"].includes(stage);
   if (stepKey === "IN_USE")
-    return ["IN_USE", "COMPLETED", "OVERDUE"].includes(st);
+    return ["IN_USE", "COMPLETED", "OVERDUE"].includes(stage);
   if (stepKey === "RETURN")
-    return ["COMPLETED", "OVERDUE"].includes(st);
+    return ["COMPLETED", "OVERDUE"].includes(stage);
 
   return false;
 }
+
+/**
+ * Description: แปลงชื่อแผนกให้เป็นรูปแบบสำหรับแสดงผลใน UI
+ * - ถ้าค่า departmentName เป็น null/undefined/ว่าง ให้คืนค่า "-" แทน
+ * - ถ้าข้อความขึ้นต้นด้วย "แผนก" ให้ตัดคำนำหน้าออก และคืนเฉพาะชื่อแผนกจริง
+ *   (เช่น "แผนก Media" -> "Media")
+ * - ถ้าไม่ขึ้นต้นด้วย "แผนก" ให้คืนค่าเดิมหลัง trim
+ *
+ * Input : departmentName (string | null | undefined) ชื่อแผนกที่อาจมีคำนำหน้า "แผนก"
+ * Output : string ชื่อแผนกสำหรับแสดงผล (เช่น "Media" หรือ "-" เมื่อไม่มีค่า)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+function extractDepartmentDisplayName(
+  departmentName: string | null | undefined
+): string {
+  if (!departmentName) return "-";
+
+  const trimmedDepartmentName = departmentName.trim();
+
+  const departmentMatch = trimmedDepartmentName.match(/^แผนก\s*(.+)$/u);
+  if (departmentMatch?.[1]) return departmentMatch[1].trim();
+
+  return trimmedDepartmentName;
+}
+
+/**
+ * Description: แปลงชื่อฝ่ายย่อยให้เหลือเฉพาะชื่อฝ่ายย่อยจริงสำหรับแสดงผลใน UI
+ * - ถ้าค่า sectionName เป็น null/undefined/ว่าง ให้คืนค่า "-" แทน
+ * - ถ้าพบคำว่า "ฝ่ายย่อย" ให้ดึงข้อความหลัง "ฝ่ายย่อย" เท่านั้น
+ *   (เช่น "แผนก Media ฝ่ายย่อย A" -> "A")
+ * - ถ้าไม่พบคำว่า "ฝ่ายย่อย" ให้คืนค่าเดิมหลัง trim
+ *
+ * Input : sectionName (string | null | undefined) ชื่อฝ่ายย่อยที่อาจมีคำนำหน้า และมีคำว่า "ฝ่ายย่อย"
+ * Output : string ชื่อฝ่ายย่อยสำหรับแสดงผล (เช่น "A" หรือ "-" เมื่อไม่มีค่า)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+function extractSectionDisplayNameOnly(
+  sectionName: string | null | undefined
+): string {
+  if (!sectionName) return "-";
+
+  const trimmedSectionName = sectionName.trim();
+
+  const sectionMatch = trimmedSectionName.match(/ฝ่ายย่อย\s*(.+)$/u);
+  if (sectionMatch?.[1]) return sectionMatch[1].trim();
+
+  return trimmedSectionName;
+}
+
+/**
+ * Description: สร้างข้อความแสดงผล "แผนก / ฝ่ายย่อย" ให้เป็นรูปแบบสั้นสำหรับ UI
+ * - แปลงชื่อแผนกด้วยการตัดคำนำหน้า "แผนก" (เช่น "แผนก Media" -> "Media")
+ * - แปลงชื่อฝ่ายย่อยให้เหลือเฉพาะชื่อจริงหลังคำว่า "ฝ่ายย่อย" (เช่น "แผนก Media ฝ่ายย่อย A" -> "A")
+ * - รวมเป็นข้อความรูปแบบ "<department> / <section>" เพื่อใช้กับ FieldRow
+ *
+ * Input : departmentName (string | null | undefined) ชื่อแผนกจาก backend
+ *         sectionName (string | null | undefined) ชื่อฝ่ายย่อยจาก backend
+ * Output : string ข้อความสำหรับแสดงผล (เช่น "Media / A")
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+function formatDepartmentAndSectionDisplay(
+  departmentName: string | null | undefined,
+  sectionName: string | null | undefined
+): string {
+  const departmentDisplayName = extractDepartmentDisplayName(departmentName);
+  const sectionDisplayName = extractSectionDisplayNameOnly(sectionName);
+
+  return `${departmentDisplayName} / ${sectionDisplayName}`;
+}
+
 
 /**
  * Description: แสดง Approver Candidates แบบสั้น (2 ชื่อ + badge "+N")
@@ -298,7 +368,7 @@ type Props = {
   item: HistoryBorrowTicketItem;
   isOpen: boolean;
   detail?: HistoryBorrowTicketDetail;
-  loadingDetail?: boolean;
+  isLoadingDetail?: boolean;
   onToggle: () => void;
 };
 
@@ -306,7 +376,7 @@ export default function HistoryBorrowTicket({
   item,
   isOpen,
   detail,
-  loadingDetail,
+  isLoadingDetail,
   onToggle,
 }: Props) {
   /**
@@ -560,7 +630,7 @@ export default function HistoryBorrowTicket({
           isOpen ? "max-h-[700px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        {loadingDetail ? (
+        {isLoadingDetail ? (
           <div className="p-6 flex items-center justify-center">
             <span className="text-gray-500">กำลังโหลด...</span>
           </div>
@@ -665,7 +735,7 @@ export default function HistoryBorrowTicket({
                           {detail.timeline.map((stage, index) => {
                             const timeline = detail.timeline;
 
-                            const hasAnyRejected = timeline.some(
+                            const isAnyRejected = timeline.some(
                               (timelineStage) =>
                                 String(timelineStage.status).toUpperCase() === "REJECTED"
                             );
@@ -675,11 +745,11 @@ export default function HistoryBorrowTicket({
                               return st !== "APPROVED" && st !== "REJECTED";
                             });
 
-                            const isCurrentQueue = !hasAnyRejected && currentIndex === index;
+                            const isCurrentQueue = !isAnyRejected && currentIndex === index;
 
                             const tone = getTimelineTone({
                               stepStatus: String(stage.status).toUpperCase(),
-                              hasAnyRejected,
+                              isAnyRejected,
                               isCurrentQueue,
                             });
 
@@ -854,7 +924,7 @@ export default function HistoryBorrowTicket({
                     label="หมวดหมู่"
                     value={detail?.device?.categoryName || item.deviceSummary.categoryName}
                   />
-                  <FieldRow label="แผนก/ฝ่ายย่อย" value={`${departmentName} / ${sectionName}`} />
+                  <FieldRow label="แผนก/ฝ่ายย่อย" value={formatDepartmentAndSectionDisplay(departmentName, sectionName)} />
 
                   <div className="grid grid-cols-[140px_1fr] items-start">
                     <span className="text-[#000000] text-sm">รหัสอุปกรณ์</span>

@@ -3,6 +3,8 @@ import { HttpError } from "../../errors/errors.js";
 import {
   getHistoryBorrowTicketQuerySchema,
   idParamSchema,
+  HistoryBorrowTicketListResponse,
+  HistoryBorrowTicketDetailResponse,
 } from "./history-borrow.schema.js";
 import type { US_ROLE } from "@prisma/client";
 
@@ -26,7 +28,6 @@ type CurrentUserContext = {
  * Author: Chanwit Muangma (Boom) 66160224
  */
 function buildCurrentUserContext(request: any): CurrentUserContext {
-  // rawUserContainer: แหล่งข้อมูล user ที่อาจถูกเก็บใน field ต่างกันตาม middleware
   const rawUserContainer =
     request?.user ??
     request?.currentUser ??
@@ -34,14 +35,12 @@ function buildCurrentUserContext(request: any): CurrentUserContext {
     request?.locals?.user ??
     null;
 
-  // userRecord: ถ้าโครงสร้างเป็น { user: {...} } ให้ดึงชั้นในออกมา
   const userRecord = rawUserContainer?.user ?? rawUserContainer;
 
   if (!userRecord) {
     throw new HttpError(HttpStatus.UNAUTHORIZED, "Unauthorized");
   }
 
-  // resolvedUserId: รองรับหลาย key ที่อาจถูกใช้เก็บ user id
   const resolvedUserId =
     userRecord.us_id ??
     userRecord.usId ??
@@ -50,7 +49,6 @@ function buildCurrentUserContext(request: any): CurrentUserContext {
     userRecord.id ??
     userRecord.sub;
 
-  // resolvedUserRole: รองรับหลาย key ที่อาจถูกใช้เก็บ role
   const resolvedUserRole =
     userRecord.us_role ??
     userRecord.usRole ??
@@ -62,11 +60,9 @@ function buildCurrentUserContext(request: any): CurrentUserContext {
     throw new HttpError(HttpStatus.UNAUTHORIZED, "Unauthorized");
   }
 
-  // resolvedDepartmentId: รองรับหลาย key ที่อาจถูกใช้เก็บ department id
   const resolvedDepartmentId =
     userRecord.us_dept_id ?? userRecord.dept_id ?? userRecord.dept ?? null;
 
-  // resolvedSectionId: รองรับหลาย key ที่อาจถูกใช้เก็บ section id
   const resolvedSectionId =
     userRecord.us_sec_id ?? userRecord.sec_id ?? userRecord.sec ?? null;
 
@@ -105,17 +101,11 @@ export class HistoryBorrowController {
    * Output : Promise ของข้อมูลที่ตรงกับ historyBorrowTicketListResponseSchema
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  getHistoryBorrowTickets = async (req: any) => {
-    // requestMethod และ requestUrl ใช้สำหรับ debug ว่ามีการเรียก endpoint นี้หรือไม่
-    const requestMethod = req?.method;
-    const requestUrl = req?.originalUrl;
-
-    console.log("[HistoryBorrow] list hit", requestMethod, requestUrl);
-
-    // currentUserContext: ใช้กำหนดสิทธิ์การมองเห็นข้อมูลตาม role
+  getHistoryBorrowTickets = async (
+    req: any
+  ): Promise<HistoryBorrowTicketListResponse> => {
     const currentUserContext = buildCurrentUserContext(req);
 
-    // validatedQuery: validate และ coerce query ให้เป็นชนิดข้อมูลที่ถูกต้องตาม schema
     const validatedQuery = getHistoryBorrowTicketQuerySchema.parse(
       req.query ?? {}
     );
@@ -132,15 +122,11 @@ export class HistoryBorrowController {
    * Output : Promise ของข้อมูลที่ตรงกับ historyBorrowTicketDetailSchema
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  getHistoryBorrowTicketDetail = async (req: any) => {
-    const requestMethod = req?.method;
-    const requestUrl = req?.originalUrl;
-
-    console.log("[HistoryBorrow] detail hit", requestMethod, requestUrl);
-
+  getHistoryBorrowTicketDetail = async (
+    req: any
+  ): Promise<HistoryBorrowTicketDetailResponse> => {
     const currentUserContext = buildCurrentUserContext(req);
 
-    // validatedParams: validate และ coerce path params (id) ให้ถูกต้องตาม schema
     const validatedParams = idParamSchema.parse(req.params ?? {});
 
     return this.historyBorrowService.getHistoryBorrowTicketDetail(

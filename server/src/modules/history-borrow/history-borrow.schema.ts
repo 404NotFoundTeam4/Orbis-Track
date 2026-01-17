@@ -335,3 +335,84 @@ export type HistoryBorrowTicketItem = z.infer<typeof historyBorrowTicketItemSche
 export type HistoryBorrowTicketDetail = z.infer<
   typeof historyBorrowTicketDetailSchema
 >;
+
+/**
+ * Description: Type สำหรับข้อมูลผู้อนุมัติ (Approver)
+ * Input : approverUserSchema
+ * Output : TypeScript type สำหรับใช้ฝั่ง service / controller / frontend
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type ApproverUser = z.infer<typeof approverUserSchema>;
+
+/**
+ * Description: Type สำหรับรายชื่อผู้มีสิทธิ์อนุมัติ (Approver Candidate)
+ * Input : approverCandidateSchema
+ * Output : TypeScript type สำหรับใช้ฝั่ง service / frontend
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type ApproverCandidate = z.infer<typeof approverCandidateSchema>;
+
+
+
+/**
+ * Description: Type สำหรับข้อมูล Timeline ของแต่ละ step ในการอนุมัติ (Approval Flow)
+ * - ใช้สำหรับแสดงผล Timeline/Stages ในหน้า Detail ของประวัติการยืม-คืน
+ * - Source of truth คือ ticketTimelineSchema (Zod schema) เพื่อให้โครงสร้างข้อมูลตรงกับ backend contract
+ *
+ * Input : ticketTimelineSchema (Zod schema)
+ * Output : TypeScript type ของข้อมูล Timeline 1 step (เช่น stepNumber, roleDisplayName, status, approver, approverCandidates, updatedAt)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type HistoryBorrowTimelineStep = z.infer<typeof ticketTimelineSchema>;
+
+/**
+ * Description: Type สำหรับข้อมูล Pagination ของ response หน้า List ประวัติการยืม-คืน
+ * - ใช้สำหรับควบคุมการแสดงผลหน้า (page) และจำนวนรายการต่อหน้า (limit) ใน UI
+ * - รองรับข้อมูลสรุปจำนวนรายการทั้งหมด และจำนวนหน้าทั้งหมด เพื่อคำนวณการเปลี่ยนหน้าได้ถูกต้อง
+ *
+ * Input : response.pagination จาก backend (page, limit, totalItems, totalPages)
+ * Output : TypeScript type ของข้อมูล pagination สำหรับ UI
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type HistoryBorrowPagination = {
+  page: number; // เลขหน้าปัจจุบัน (เริ่มที่ 1)
+  limit: number; // จำนวนรายการต่อหน้า
+  totalItems: number; // จำนวนรายการทั้งหมดที่ค้นเจอ
+  totalPages: number; // จำนวนหน้าทั้งหมด (คำนวณจาก totalItems / limit)
+};
+
+/**
+ * Description: Type สำหรับ response ของหน้า List ประวัติการยืม-คืน (List Response)
+ * - ใช้สำหรับข้อมูลที่คืนจาก endpoint รายการประวัติการยืม-คืน
+ * - ประกอบด้วยรายการ items และข้อมูล pagination
+ * - Source of truth คือ historyBorrowTicketListResponseSchema (Zod schema) เพื่อให้ตรงกับ backend contract
+ *
+ * Input : historyBorrowTicketListResponseSchema (Zod schema)
+ * Output : TypeScript type ของ response หน้า List (items + pagination)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type HistoryBorrowListResponse = z.infer<
+  typeof historyBorrowTicketListResponseSchema
+>;
+
+
+
+/**
+ * Description: Type สำหรับ response ของ List ประวัติการยืม-คืน
+ * Source of truth: historyBorrowTicketListResponseSchema
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type HistoryBorrowTicketListResponse = z.infer<
+  typeof historyBorrowTicketListResponseSchema
+>;
+
+/**
+ * Description: Type สำหรับ response ของ Detail ประวัติการยืม-คืน
+ * Source of truth: historyBorrowTicketDetailSchema
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type HistoryBorrowTicketDetailResponse = z.infer<
+  typeof historyBorrowTicketDetailSchema
+>;
+
+

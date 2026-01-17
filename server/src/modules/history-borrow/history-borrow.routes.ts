@@ -38,7 +38,9 @@ router.getDoc(
     res: historyBorrowTicketListResponseSchema,
     auth: true,
   },
-  historyBorrowController.getHistoryBorrowTickets
+  (async (req) => {
+    return historyBorrowController.getHistoryBorrowTickets(req);
+  }) as (req: any) => Promise<any>
 );
 
 /**
@@ -55,7 +57,9 @@ router.getDoc(
     res: historyBorrowTicketDetailSchema,
     auth: true,
   },
-  historyBorrowController.getHistoryBorrowTicketDetail
+  historyBorrowController.getHistoryBorrowTicketDetail as (
+    req: any
+  ) => Promise<any>
 );
 
 export default router.instance;

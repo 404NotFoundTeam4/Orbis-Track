@@ -7,6 +7,7 @@ import type {
   GetHistoryBorrowTicketQuery,
   HistoryBorrowTicketDetail,
   HistoryBorrowTicketItem,
+  ApproverCandidate,
 } from "./history-borrow.schema.js";
 
 /**
@@ -167,20 +168,6 @@ function mapTicketToListItem(ticketRecord: any): HistoryBorrowTicketItem {
   };
 }
 
-/**
- * Description: โครงสร้างข้อมูลผู้มีสิทธิ์อนุมัติ (candidate) ที่จะส่งกลับไปใน timeline
- * Input : users record + relations (department/section)
- * Output : Object สำหรับ UI ใช้แสดงรายชื่อผู้มีสิทธิ์อนุมัติ
- * Author: Chanwit Muangma (Boom) 66160224
- */
-type ApproverCandidate = {
-  userId: number;
-  fullName: string;
-  employeeCode: string | null;
-  role: US_ROLE;
-  departmentName: string | null;
-  sectionName: string | null;
-};
 
 /**
  * Description: สร้าง key สำหรับ cache ผู้มีสิทธิ์อนุมัติ ตาม role + scope (dept/sec)

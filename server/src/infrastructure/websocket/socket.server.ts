@@ -22,13 +22,7 @@ let io: SocketIOServer | null = null;
 export const initSocket = (httpServer: HttpServer) => {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: [
-        "http://localhost:4040",
-        "http://localhost:4140",
-        "http://seteam.bsospace.com:4140",
-        "https://404notfound-front.bsospace.com",
-        "https://orbistrack.bsospace.com",
-      ],
+      origin: "*",
       credentials: true,
     },
     path: "/socket.io",
@@ -46,7 +40,10 @@ export const initSocket = (httpServer: HttpServer) => {
     if (user?.role) {
       if (user.role === "HOD") socket.join(`role_${user?.role}_${user?.dept}`);
       socket.join(`role_${user?.role}_${user?.dept}_${user?.sec}`);
-      logger.debug({ userId: user.sub, role: user.role, dept: user.dept, sec: user.sec }, "User joined rooms");
+      logger.debug(
+        { userId: user.sub, role: user.role, dept: user.dept, sec: user.sec },
+        "User joined rooms",
+      );
     }
 
     // For Testing: Echo notification back to sender

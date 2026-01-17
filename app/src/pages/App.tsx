@@ -30,6 +30,7 @@ import RolePathRedirect from "../components/RolePathRedirect";
 import Profile from "./Profile";
 import NotFound from "./NotFound";
 import { Settings } from "./Setting";
+import History from "./History";
 
 function App() {
   const ADMIN_ONLY: Role[] = ["ADMIN"];
@@ -53,6 +54,8 @@ function App() {
       <Route path="list-devices/cart" element={<Cart />} />
       <Route path="list-devices/cart/edit" element={<EditCart />} />
       <Route path="list-devices/cart/edit/:id?" element={<EditCart />} />
+      <Route path="setting" element={<Settings />} />
+      <Route path="history" element={<History />} />
       <Route path="list-devices" element={<ListDevices />} />
       <Route path="list-devices/borrow" element={<BorrowDevice />} />
       <Route path="list-devices/borrow/:id?" element={<BorrowDevice />} />
@@ -154,6 +157,8 @@ function App() {
                 <Route path="/dashboard" element={<RolePathRedirect />} />
                 <Route path="/setting" element={<RolePathRedirect />} />
                 <Route path="/profile" element={<RolePathRedirect />} />
+
+                <Route path="/history" element={<RolePathRedirect />} />
 
                 <Route
                   path="/request-borrow-ticket"

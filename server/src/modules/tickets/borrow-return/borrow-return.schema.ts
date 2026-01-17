@@ -129,6 +129,7 @@ const ticketTimelineSchema = z.object({
   sec_name: z.string().nullable(),
   approved_by: z.string().nullable(),
   updated_at: z.date().nullable(),
+  approvers: z.array(z.string()).optional(),
 });
 
 export const borrowReturnTicketDetailSchema = z.object({

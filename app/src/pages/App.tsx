@@ -8,18 +8,26 @@ import Dashboard from "./Dashboard";
 import "../styles/css/index.css";
 import ResetPassword from "./ResetPassword";
 import { Otppassword } from "./Otppassword";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Navbar/Navbar";
 import ProtectedRoute from "../middlewares/ProtectedRoute";
 import TestDropDown from "./ExampleComponent";
 import Departments from "./Departments";
 import { ToastProvider } from "../components/Toast";
 import ForgotPassword from "./ForgotPassword";
-import Requests from "./Requests";
 import { Cart } from "./Cart";
 import EditCart from "./EditCart";
+import ListDevices from "./ListDevices";
+import BorrowDevice from "./BorrowDevice";
+import Requests from "./Requests";
+import Inventory from "./Inventory";
+import AddInventory from "./AddInventory";
+import ModalToggleExample from "./ModalToggleExample";
+import EditInventory from "./EditInventory";
+import { Categories } from "./Categories";
 import RoleRoute from "../middlewares/RoleRoute";
 import { ROLE_BASE_PATH, type Role } from "../constants/rolePath";
 import RolePathRedirect from "../components/RolePathRedirect";
+import Profile from "./Profile";
 import NotFound from "./NotFound";
 import { Settings } from "./Setting";
 import History from "./History";
@@ -41,11 +49,16 @@ function App() {
   const commonRoutes = (
     <>
       <Route path="home" element={<Home />} />
+      <Route path="profile" element={<Profile />} />
+      <Route path="setting" element={<Settings />} />
       <Route path="list-devices/cart" element={<Cart />} />
       <Route path="list-devices/cart/edit" element={<EditCart />} />
       <Route path="list-devices/cart/edit/:id?" element={<EditCart />} />
       <Route path="setting" element={<Settings />} />
       <Route path="history" element={<History />} />
+      <Route path="list-devices" element={<ListDevices />} />
+      <Route path="list-devices/borrow" element={<BorrowDevice />} />
+      <Route path="list-devices/borrow/:id?" element={<BorrowDevice />} />
     </>
   );
 
@@ -54,6 +67,10 @@ function App() {
     <>
       <Route path="account-management" element={<Users />} />
       <Route path="departments-management" element={<Departments />} />
+      <Route path="category" element={<Categories />} />
+      <Route path="inventory" element={<Inventory />} />
+      <Route path="inventory/add" element={<AddInventory />} />
+      <Route path="inventory/edit/:id" element={<EditInventory />} />
     </>
   );
 
@@ -67,13 +84,15 @@ function App() {
   const staffRoutes = (
     <>
       <Route path="departments-management" element={<Departments />} />
+      <Route path="category" element={<Categories />} />
+      <Route path="inventory" element={<Inventory />} />
+      <Route path="inventory/add" element={<AddInventory />} />
+      <Route path="inventory/edit/:id" element={<EditInventory />} />
     </>
   );
 
   const technicalRoutes = (
-    <>
-      <Route path="departments-management" element={<Departments />} />
-    </>
+    <>{/*<Route path="departments-management" element={<Departments />} />*/}</>
   );
 
   // route หน้า dashboard
@@ -90,6 +109,7 @@ function App() {
         <Routes>
           {/* Public Route */}
           <Route path="/login" element={<Login />} />
+          <Route path="/date" element={<ModalToggleExample />} />
           <Route path="/otp" element={<Otppassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -129,9 +149,14 @@ function App() {
                   />
                 }
               >
+                <Route
+                  path="/example-component"
+                  element={<RolePathRedirect />}
+                />
                 <Route path="/home" element={<RolePathRedirect />} />
-
+                <Route path="/dashboard" element={<RolePathRedirect />} />
                 <Route path="/setting" element={<RolePathRedirect />} />
+                <Route path="/profile" element={<RolePathRedirect />} />
 
                 <Route path="/history" element={<RolePathRedirect />} />
 
@@ -155,11 +180,23 @@ function App() {
                   path="/list-devices/cart/edit/:id?"
                   element={<RolePathRedirect />}
                 />
+                <Route path="/list-devices" element={<RolePathRedirect />} />
+                <Route
+                  path="/list-devices/borrow"
+                  element={<RolePathRedirect />}
+                />
+                <Route
+                  path="/list-devices/borrow/:id?"
+                  element={<RolePathRedirect />}
+                />
+                <Route path="/category" element={<RolePathRedirect />} />
+                <Route path="/inventory" element={<RolePathRedirect />} />
+                <Route path="/inventory/add" element={<RolePathRedirect />} />
+                <Route
+                  path="/inventory/edit/:id"
+                  element={<RolePathRedirect />}
+                />
               </Route>
-
-              <Route path="/example-component" element={<RolePathRedirect />} />
-
-              <Route path="/dashboard" element={<Dashboard />} />
             </Route>
             {/* 404 Not Found - สำหรับ routes ที่ไม่ match ใน protected area */}
             <Route path="*" element={<NotFound />} />

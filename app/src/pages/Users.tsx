@@ -129,7 +129,7 @@ export const Users = () => {
   //   })),
   // ];
   const baseRoleOptions = Array.from(
-    new Set(users.map((u) => u.us_role)) // ตัด role ที่ซ้ำ
+    new Set(users.map((u) => u.us_role)), // ตัด role ที่ซ้ำ
   ).map((r, index) => ({
     id: index + 1,
     label: roleTranslation[r] || r,
@@ -428,7 +428,7 @@ export const Users = () => {
 
   // state เก็บฟิลด์ที่ใช้เรียง เช่น name
   const [sortField, setSortField] = useState<keyof User | "statusText">(
-    "us_id"
+    "us_id",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -565,7 +565,7 @@ export const Users = () => {
   const getSortIcon = (
     currentField: string,
     targetField: string,
-    direction: "asc" | "desc"
+    direction: "asc" | "desc",
   ) => {
     // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort → ใช้ default icon
     if (currentField !== targetField) {

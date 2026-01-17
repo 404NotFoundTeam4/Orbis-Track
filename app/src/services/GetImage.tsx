@@ -17,7 +17,7 @@ const getImageUrl = (filename: string | null | undefined) => {
     filename.startsWith("http")
   )
     return filename;
-
+  
   return `${BASE_URL}/${filename}`;
 };
 

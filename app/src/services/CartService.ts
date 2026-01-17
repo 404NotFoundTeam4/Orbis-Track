@@ -1,22 +1,65 @@
 /**
- * Description: Service เรียก API ตะกร้าจาก Backend
- * Author: Nontapat Sinthum (Guitar) 66160104
+ * Description: Service สำหรับเรียก API ตะกร้าจาก Backend (Cart / Borrow)
+ * Output : CartService (object) สำหรับเรียกใช้งาน API
+ * Author : Nontapat Sinthum (Guitar) 66160104
  */
 
 import api from "../api/axios.js";
 
-// Envelope ตาม Backend
+/**
+ * Description: โครงสร้าง Envelope มาตรฐานที่ Backend ส่งกลับมา (ใช้ครอบข้อมูล response จริง)
+ * Input : T (Generic type ของข้อมูลใน field data)
+ * Output : ApiEnvelope<T>
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 type ApiEnvelope<T> = {
     success?: boolean;
     message?: string;
     data: T;
 };
 
-// -------------------------
-// TYPE RESULT FROM BACKEND
-// -------------------------
+/**
+ * Description: Payload สำหรับสร้าง Borrow Ticket จากรายการในตะกร้า
+ * Input : cartItemId (number) = id ของ cart item ที่ต้องการสร้างคำร้อง
+ * Output : CreateBorrowTicketPayload
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
+export type CreateBorrowTicketPayload = {
+    cartItemId: number;
+};
 
-// 1) Type ของ Cart Item แต่ละชิ้น
+export type DeleteCartItemPayload = {
+    cartItemId: number;
+};
+
+/**
+ * Description: Payload สำหรับการแก้ไขรายละเอียดในตะกร้า 
+ * Input :  - borrower        : ชื่อผู้ยืม
+ * - phone           : เบอร์โทรศัพท์ผู้ยืม
+ * - reason          : เหตุผลในการยืม
+ * - placeOfUse      : สถานที่ใช้งานอุปกรณ์
+ * - quantity        : จำนวนอุปกรณ์ที่ต้องการยืม
+ * - borrowDate      : วันที่เริ่มยืม (Date | ISO string | null)
+ * - returnDate      : วันที่คืนอุปกรณ์ (Date | ISO string | null)
+ * Output : UpdateCartItemPayload
+ * Author : Salsabeela (San) 66160349
+ **/
+export type UpdateCartItemPayload = {
+  borrower: string;
+  phone: string;
+  reason: string;
+  placeOfUse: string;
+  quantity: number;
+  borrowDate: Date | string | null;
+  returnDate: Date | string | null;
+  deviceChilds: number[];
+};
+
+/**
+ * Description: โครงสร้างข้อมูล Cart Item ที่ frontend ใช้หลังดึงจาก backend
+ * Output : CartItem (type)
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 export type CartItem = {
     cti_id: number;
     cti_us_name: string;
@@ -38,42 +81,120 @@ export type CartItem = {
     dec_count: number;
     dec_ready_count: number;
     dec_availability: string; // "พร้อมใช้งาน" / "ไม่พร้อมใช้งาน"
+    de_max_borrow_days: number;
+    isBorrow: boolean; 
 };
 
-// 2) Type ของผลลัพธ์จาก GET /borrow/cart/:id
+/**
+ * Description: โครงสร้างผลลัพธ์จาก API GET /borrow/cart/:id
+ * Output : CartItemListResponse
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 export type CartItemListResponse = {
     itemData: CartItem[];
 };
 
-// 3) Type ของ DELETE response
+/**
+ * Description: โครงสร้างผลลัพธ์จาก API DELETE /borrow/cart/:cti_id
+ * Output : DeleteCartItemResponse
+ * Author : Nontapat Sinhum (Guitar) 66160104
+ **/
 export type DeleteCartItemResponse = {
     message: string;
 };
 
-// -------------------------
-// SERVICE
-// -------------------------
-
 export const CartService = {
     /**
-     * GET: ดึงรายการ cart ทั้งหมดของ ct_id
-     */
-    async getCartItems(ct_id: number): Promise<CartItemListResponse> {
+    * Description: ดึงรายการอุปกรณ์ในตะกร้าของผู้ใช้ (backend จะ resolve ผู้ใช้จาก token/session)
+    * Output : Promise<CartItemListResponse> = { itemData: CartItem[] }
+    * Author : Nontapat Sinhum (Guitar) 66160104
+    **/
+    async getCartItems(): Promise<CartItemListResponse> {
         const res = await api.get<ApiEnvelope<CartItemListResponse>>(
-            `/borrow/cart/${ct_id}`
+            `/borrow/cart`
         );
-        return res.data.data; // คืน { itemData: [...] }
+        return res.data.data;
     },
 
     /**
-     * DELETE: ลบ cart item ตาม cti_id
-     */
-    async deleteCartItem(cti_id: number): Promise<string> {
+    * Description: ลบรายการในตะกร้าตาม cartItemId
+    * Input : payload: { cartItemId: number }
+    * Output : Promise<string> = message ผลการลบ (ถ้าไม่มี message จะคืนค่า default)
+    * Author : Nontapat Sinhum (Guitar) 66160104
+    **/
+    async deleteCartItem(payload: DeleteCartItemPayload): Promise<string> {
         const res = await api.delete<ApiEnvelope<DeleteCartItemResponse>>(
-            `/borrow/cart/${cti_id}`
+            `/borrow/cart/`,
+            { data: payload }
         );
         return res.data.message ?? "Delete successfully";
     },
-};
 
+    /**
+    * Description: สร้าง Borrow Ticket จากรายการในตะกร้า
+    * Input : payload: { cartItemId: number }
+    * Output : Promise<any> = ข้อมูลผลลัพธ์ที่ backend ส่งกลับ (ตามที่ backend กำหนด)
+    * Author : Nontapat Sinhum (Guitar) 66160104
+    **/
+    async createBorrowTicket(
+        payload: CreateBorrowTicketPayload
+    ): Promise<any> {
+        const res = await api.post<ApiEnvelope<any>>(
+            `/borrow/cart/`,
+            payload
+        );
+        return res.data.data;
+    },
+
+    /**
+   * UPDATE: แก้ไข cart item ตาม ctiId
+   */
+  /**
+   * Description: แก้ไขรายละเอียดอุปกรณ์ในรถเข็น (Edit Cart)
+   *
+   * Note:
+   * - ใช้ในหน้า Edit Cart
+   * - รองรับการแก้ไขจำนวน, วันที่ยืม–คืน, ผู้ยืม, เหตุผล และสถานที่ใช้งาน
+   *
+   * Flow การทำงาน:
+   * 1. รับ ctiId และข้อมูลที่แก้ไขจากฟอร์ม
+   * 2. แปลง Date → ISO string ก่อนส่งไป Backend
+   * 3. เรียก API PUT /borrow/cart/:ctiId
+   * 4. Backend อัปเดตข้อมูลในระบบ
+   *
+   * Result:
+   * - สำเร็จ → return message
+   * - ไม่สำเร็จ → throw error ให้หน้า Edit Cart จัดการ
+   *
+   * Author: Salsabeela Sa-e (San) 66160349
+   */
+  async updateCartItem( 
+    ctiId: number,
+    payload: UpdateCartItemPayload
+  ): Promise<string> {
+    try {
+const datapayload = {
+  cti_us_name: payload.borrower,
+        cti_phone: payload.phone,
+        cti_note: payload.reason,
+        cti_usage_location: payload.placeOfUse,
+        cti_quantity: payload.quantity,
+        cti_start_date: payload.borrowDate
+          ? new Date(payload.borrowDate).toISOString()
+          : null,
+        cti_end_date: payload.returnDate
+          ? new Date(payload.returnDate).toISOString()
+          : null,
+        device_childs: payload.deviceChilds,
+      };
+
+      const res = await api.patch<ApiEnvelope<null>>(`/borrow/cart/device/${ctiId}`, datapayload);
+
+      return res.data.message ?? "Update successfully";
+    } catch (error) {
+      console.error("API UPDATE /borrow/cart error:", error);
+      throw error;
+    }
+  },
+};
 export default CartService;

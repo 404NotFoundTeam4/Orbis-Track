@@ -898,6 +898,7 @@ async function getAllWithDevices() {
       af_id: item.de_af_id,
 
       quantity: totalQuantity,
+      available: availableQuantity,
       status_type: statusType,
       device_childs: item.device_childs,
     };

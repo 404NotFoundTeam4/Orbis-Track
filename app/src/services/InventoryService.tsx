@@ -334,8 +334,8 @@ export const inventoryService = {
       category: item.category_name || "-",
       department: item.department_name || "-",
       sub_section: item.sub_section_name || "-",
-      available: item.quantity || 0,
-      total: item.total_quantity || 0,
+      available: item.available || 0,
+      total: item.quantity || 0,
     }));
   },
 };

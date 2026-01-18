@@ -75,7 +75,8 @@ const EditCart = () => {
   const navigate = useNavigate();
   const { push } = useToast();
   const { id } = useParams()
-  const ctiId = id
+  // const ctiId = id
+  const ctiId = id ? Number(id) : null;
   const [cartItem, setCartItem] = useState<CartItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);

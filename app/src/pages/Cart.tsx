@@ -184,8 +184,8 @@ export const Cart = () => {
       // ส่งคำร้องตามรายการที่เลือก
       await Promise.all(
         selectedItems.map((cartItemId) =>
-          CartService.createBorrowTicket({ cartItemId })
-        )
+          CartService.createBorrowTicket({ cartItemId }),
+        ),
       );
 
       await loadCart();
@@ -195,7 +195,19 @@ export const Cart = () => {
       setSelectedItems([]);
       closeModal();
     } catch (err) {
-      console.error("ส่งคำร้องไม่สำเร็จ:", err);
+      // console.error("ส่งคำร้องไม่สำเร็จ:", err);
+      // push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง" });
+      if (axios.isAxiosError(err)) {
+        console.error("ส่งคำร้องไม่สำเร็จ (backend):", {
+          status: err.response?.status,
+          data: err.response?.data,
+          url: err.config?.url,
+          method: err.config?.method,
+          requestBody: err.config?.data,
+        });
+      } else {
+        console.error("ส่งคำร้องไม่สำเร็จ:", err);
+      }
       push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง" });
     }
   };
@@ -211,12 +223,12 @@ export const Cart = () => {
       if (selectDeleteMode) {
         await Promise.all(
           selectedItems.map((id) =>
-            CartService.deleteCartItem({ cartItemId: id })
-          )
+            CartService.deleteCartItem({ cartItemId: id }),
+          ),
         );
 
         setItems((prev) =>
-          prev.filter((item) => !selectedItems.includes(item.id))
+          prev.filter((item) => !selectedItems.includes(item.id)),
         );
 
         push({
@@ -266,12 +278,14 @@ export const Cart = () => {
     if (item.isBorrow) return;
 
     setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
+      prev.includes(id)
+        ? prev.filter((itemId) => itemId !== id)
+        : [...prev, id],
     );
   };
 
   const selectableItems = items.filter(
-    (item) => item.availability === "พร้อมใช้งาน" && !item.isBorrow
+    (item) => item.availability === "พร้อมใช้งาน" && !item.isBorrow,
   );
   const selectableIds = selectableItems.map((item) => item.id);
 

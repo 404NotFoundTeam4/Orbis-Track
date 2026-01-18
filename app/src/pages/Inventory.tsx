@@ -236,6 +236,7 @@ export const Inventory = () => {
         device: item,
       },
     });
+    
   };
 
   //Handlers: Delete Logic

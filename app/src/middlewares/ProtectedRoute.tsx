@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import type { ReactElement } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useUserStore } from "../stores/userStore";
 import { useLogin } from "../hooks/useLogin";
 export default function ProtectedRoute(): ReactElement {
   const { ReloadUser } = useLogin();

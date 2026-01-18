@@ -4,7 +4,11 @@ import { useUserStore } from "../stores/userStore";
 
 // ใช้สำหรับ gateway route
 export default function RolePathRedirect() {
-    const role = useUserStore((state) => state.user?.us_role); // ดึง role ของ user
+    const userRaw =
+    sessionStorage.getItem("User") || localStorage.getItem("User");
+
+    const user = userRaw ? JSON.parse(userRaw) : null;
+    const role = user?.us_role; // ดึง role ของ user
     const location = useLocation(); // ดึง path ปัจจบุัน
 
     const roleBase = getBasePath(role); // แปลง role เป็น path นำหน้า (prefix)

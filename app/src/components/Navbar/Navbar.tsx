@@ -12,7 +12,7 @@
  */
 
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Icon } from "@iconify/react";
 import { useUserStore } from "../../stores/userStore";
@@ -20,6 +20,9 @@ import { UserRole, UserRoleTH } from "../../utils/RoleEnum";
 import { MenuConfig, filterMenuByRole } from "./MenuConfig";
 import getImageUrl from "../../services/GetImage";
 import { type menuItem, Images, Icons } from "./MenuConfig";
+import { getBasePath } from "../../constants/rolePath";
+import { useNotifications } from "../../hooks/useNotifications";
+import { NotificationList } from "../Notification";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -40,6 +43,15 @@ const Navbar = () => {
     const data = localStorage.getItem("User") || sessionStorage.getItem("User");
     return data ? JSON.parse(data) : null;
   });
+
+  const handleOpenNotifications = useCallback(() => setActive("bell"), []);
+
+  const { notifications, unreadCount, loadMore, hasMore } = useNotifications({
+    onOpenNotifications: handleOpenNotifications,
+  });
+
+  const basePath = getBasePath(User?.us_role) || "";
+
   useEffect(() => {
     let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -98,40 +110,36 @@ const Navbar = () => {
               toggleDropdown();
               handleMenuClick(menu.label);
             }}
-            className={`px-7.5 flex items-center w-full cursor-pointer gap-[11px]  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
-              isDropdownOpen ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"
-            }`}
+            className={`px-7.5 flex items-center w-full cursor-pointer gap-[11px]  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"
+              }`}
           >
             {menu.icon && <FontAwesomeIcon icon={menu.icon} />}
             {menu.label}
             {menu.iconRight && (
               <FontAwesomeIcon
                 icon={menu.iconRight}
-                className={`mt-1 transform transition-all duration-500 ease-in-out ${
-                  isDropdownOpen ? "rotate-0" : "rotate-180"
-                }`}
+                className={`mt-1 transform transition-all duration-500 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
+                  }`}
               />
             )}
           </div>
           <div
             className={`overflow-hidden transition-all duration-500 ease-in-out flex flex-col  gap-1
-    ${
-      openMenu === menu.label
-        ? "max-h-[500px] opacity-100 py-2.5"
-        : "max-h-0 opacity-0"
-    }`}
+    ${openMenu === menu.label
+                ? "max-h-[500px] opacity-100 py-2.5"
+                : "max-h-0 opacity-0"
+              }`}
           >
             {menu.children?.map((child) => (
               <Link
                 key={child.key}
-                to={child.path!}
+                to={`${basePath}${child.path!}`}
                 onClick={() => handleSubMenuClick(child.label)}
                 className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap
-        ${
-          activeSubMenu === child.label
-            ? "bg-[#EBF3FE] text-[#40A9FF]"
-            : "hover:bg-[#F0F0F0]"
-        }`}
+        ${activeSubMenu === child.label
+                    ? "bg-[#EBF3FE] text-[#40A9FF]"
+                    : "hover:bg-[#F0F0F0]"
+                  }`}
               >
                 {child.label}
               </Link>
@@ -144,7 +152,7 @@ const Navbar = () => {
     return (
       <Link
         key={menu.key}
-        to={menu.path!}
+        to={`${basePath}${menu.path!}`}
         onClick={() => {
           closeDropdown();
           handleMenuClick(menu.key);
@@ -175,39 +183,51 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center  h-full">
-          <button
-            type="button"
-            onClick={() => setActive(active === "bell" ? null : "bell")}
-            className={`h-full px-6.5 ${
-              active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
-          >
-            {active !== "bell" && (
-              <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
+          <div className="relative h-full flex items-center">
+            <button
+              type="button"
+              onClick={() => setActive(active === "bell" ? null : "bell")}
+              className={`h-full px-6.5 ${active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+                } flex justify-center items-center relative`}
+            >
+              {unreadCount > 0 && (
+                <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
+              )}
+              <FontAwesomeIcon
+                icon={Icons["FABELL"]}
+                className={`text-[23px] ${active === "bell" ? "text-white" : "text-[#595959]"
+                  }`}
+              />
+            </button>
+
+            {active === "bell" && (
+              <div className="absolute top-[100%] right-0 mt-2 z-50 shadow-xl">
+                <NotificationList
+                  notifications={notifications}
+                  onClose={() => setActive(null)}
+                  onLoadMore={loadMore}
+                  hasMore={hasMore}
+                />
+              </div>
             )}
-            <FontAwesomeIcon
-              icon={Icons["FABELL"]}
-              className={`text-[23px] ${
-                active === "bell" ? "text-white" : "text-[#595959]"
-              }`}
-            />
-          </button>
+          </div>
 
           <button
             type="button"
-            onClick={() => setActive(active === "cart" ? null : "cart")}
-            className={`h-full px-6.5 ${
-              active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
+            onClick={() => {
+              setActive(active === "cart" ? null : "cart");
+              navigate("/list-devices/cart");
+            }}
+            className={`h-full px-6.5 ${active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+              } flex justify-center items-center relative`}
           >
             {active !== "cart" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"></div>
             )}
             <FontAwesomeIcon
               icon={Icons["FASHOPPING"]}
-              className={`text-[23px] ${
-                active === "cart" ? "text-white" : "text-[#595959]"
-              }`}
+              className={`text-[23px] ${active === "cart" ? "text-white" : "text-[#595959]"
+                }`}
             />
           </button>
 

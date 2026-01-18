@@ -75,6 +75,7 @@ const BorrowDevice = () => {
   // ดึงข้อมูลอุปกรณ์แม่เมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
     const fetchDevice = async () => {
+      if (!deId) return; // ป้องกันการเรียก API ถ้าไม่มี deId
       const res = await borrowService.getDeviceForBorrow(deId);
       // เก็บข้อมูลลงใน state
       setDevice(res);
@@ -85,18 +86,18 @@ const BorrowDevice = () => {
 
   if (!device) {
     return null;
-  }
-
+  } 
   // อุปกรณ์เสริม
   const accessory = device.accessories
     ? device.accessories?.map((acc) => ({
-        name: acc.acc_name,
-        qty: acc.acc_quantity,
-      }))
+      name: acc.acc_name,
+      qty: acc.acc_quantity,
+    }))
     : [];
-
+    
   // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
   const equipment = {
+    deviceId :deId,
     serialNumber: device.de_serial_number,
     name: device.de_name,
     category: device.category?.ca_name ?? "",

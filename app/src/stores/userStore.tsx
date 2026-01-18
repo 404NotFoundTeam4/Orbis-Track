@@ -48,7 +48,8 @@ export const useUserStore = create<UserStore>()(
        * โหลดข้อมูลผู้ใช้จาก backend โดยใช้ token
        */
       fetchUserFromServer: async () => {
-        const token = localStorage.getItem("token");
+        const token =
+          localStorage.getItem("token") || sessionStorage.getItem("token");
         if (!token) return;
 
         try {

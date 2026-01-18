@@ -2,24 +2,36 @@ import { useEffect, useState } from "react";
 import MainDeviceModal from "../components/DeviceModal";
 import DevicesChilds from "../components/DevicesChilds";
 import { useToast } from "../components/Toast";
+
 import {
   DeviceService,
   type DeviceChild,
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
-import { useLocation } from "react-router-dom";
+import { useLocation,useParams } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
 const EditInventory = () => {
-  // ดึง url ปัจจุบัน
+   const { id } = useParams();
   const location = useLocation();
-  // ข้อมูลอุปกรณ์แม่ที่ส่งมา
-  const deviceFromState = location.state?.device;
-  // รหัสอุปกรณ์แม่
-  const parentId = deviceFromState?.id;
 
-  // เก็บข้อมูลอุปกรณ์แม่
-  const [parentDevice, setParentDevice] = useState<GetDeviceWithChildsResponse | null>(null);
+  // รับจาก navigate
+
+
+
+
  
+  // ดึง url ปัจจุบัน
+  
+  // ข้อมูลอุปกรณ์แม่ที่ส่งมา
+  
+  
+  // รหัสอุปกรณ์แม่
+  const parentId = id
+  console.log(id)
+  // เก็บข้อมูลอุปกรณ์แม่
+  const [parentDevice, setParentDevice] =
+    useState<GetDeviceWithChildsResponse | null>(null);
+
   // เก็บข้อมูลอุปกรณ์ลูก
   const [deviceChilds, setDeviceChilds] = useState<DeviceChild[]>([]);
 
@@ -30,7 +42,7 @@ const EditInventory = () => {
     setDeviceChilds(device?.device_childs ?? []); // เก็บข้อมูลอุปกรณ์ลูกเข้า state
   };
 
-    const userString =
+  const userString =
     sessionStorage.getItem("User") || localStorage.getItem("User");
 
   const user = userString ? JSON.parse(userString) : null;
@@ -63,7 +75,7 @@ const EditInventory = () => {
     await DeviceService.deleteDeviceChild({ dec_id: ids });
     push({ tone: "danger", message: "ลบอุปกรณ์สำเร็จ!" });
     setDeviceChilds((prev) =>
-      prev.filter((device) => !ids.includes(device.dec_id)),
+      prev.filter((device) => !ids.includes(device.dec_id))
     );
     await fetchDevice(); // โหลดข้อมูลใหม่
   };
@@ -71,12 +83,12 @@ const EditInventory = () => {
   // เปลี่ยนสถานะอุปกรณ์
   const handleChangeStatus = (
     id: number,
-    status: DeviceChild["dec_status"],
+    status: DeviceChild["dec_status"]
   ) => {
     setDeviceChilds((prev) =>
       prev.map((device) =>
-        device.dec_id === id ? { ...device, dec_status: status } : device,
-      ),
+        device.dec_id === id ? { ...device, dec_status: status } : device
+      )
     );
   };
 
@@ -96,18 +108,24 @@ const EditInventory = () => {
       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
     }
   };
-  const handleSubmit = async(formData:FormData) =>{
+  const handleSubmit = async (formData: FormData) => {
+    const data = formData.get("data") as string | null;
+    if (data === "devices") {
+      // ใช้ก่อน
+
+      // ลบทิ้งก่อนส่ง backend
       formData.delete("data");
-    try {
-      const res =  useInventorys.updateDevicesdata(parentId,formData)
+
+      try {
+        const res = useInventorys.updateDevicesdata(parentId, formData);
 
         push({
           tone: "confirm",
           message: "เพิ่มอุปกรณ์เรียบร้อยแล้ว",
         });
-             setTimeout(() => {
-            window.location.reload();
-          }, 1500); // หน่วง 1.5 วินาที
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500); // หน่วง 1.5 วินาที
       } catch (e) {
         console.log(e);
         push({
@@ -115,7 +133,33 @@ const EditInventory = () => {
           message: "ไม่สามารถเพิ่มอุปกรณ์",
         });
       }
-  }
+    } else if (data === "approve") {
+      // ลบทิ้งก่อนส่ง backend
+      formData.delete("data");
+      console.log("app")
+      const payload = {
+        af_name: formData.get("af_name"),
+        af_us_id: 1,
+        approvalflowsstep: formData.get("approvalflowsstep"),
+      };
+      try {
+        const res = await useInventorys.createApprovedata(payload);
+        push({
+          tone: "confirm",
+          message: "เพิ่มการอนุมัติเรียบร้อยแล้ว",
+        });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500); // หน่วง 1.5 วินาที
+      } catch (e) {
+        console.log(e);
+        push({
+          tone: "danger",
+          message: "ไม่สามารถเพิ่มการอนุมัติ",
+        });
+      }
+    }
+  };
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}

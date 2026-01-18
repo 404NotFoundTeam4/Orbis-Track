@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { GetInventory } from "../services/InventoryService"
 import Button from "./Button"
+import getImageUrl from "../services/GetImage";
 
 interface DevicesCardProps {
   device: GetInventory;
@@ -17,8 +18,8 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
   * Author : Thakdanai Makmi (Ryu) 66160355
   **/
   const handleBorrow = () => {
-    // เปลี่ยน path และส่งค่า deviceId ไปผ่าน state
-    navigate("/list-devices/borrow", {
+    // เปลี่ยน path และส่งค่า deviceId ไปผ่าน state (ใช้ relative path)
+    navigate("borrow", {
       state: {
         deviceId: device.de_id,
         deviceName: device.de_name
@@ -31,10 +32,13 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
 
       {/* รูปภาพ */}
       <div className="w-full h-[115px] bg-[#FFFFFF] flex items-center justify-center">
-        <img
-          src={device.de_images || ""}
-          className="object-cover h-full"
-        />
+        {device.de_images && (
+          <img
+            src={getImageUrl(device.de_images)}
+            className="object-cover h-full"
+            alt={device.de_name}
+          />
+        )}
       </div>
 
       {/* เนื้อหา */}
@@ -65,13 +69,13 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
               คงเหลือ : {device.available} / {device.total} ชิ้น
             </p>
 
-              <Button
-                className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm cursor-pointer"
-                onClick={handleBorrow}
-                disabled={device.available === 0}
-              >
-                ยืม
-              </Button>
+            <Button
+              className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm cursor-pointer"
+              onClick={handleBorrow}
+              disabled={device.available === 0}
+            >
+              ยืม
+            </Button>
           </div>
         </div>
       </div>

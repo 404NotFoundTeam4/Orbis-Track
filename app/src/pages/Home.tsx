@@ -1,96 +1,344 @@
-import { useState } from "react";
-import DeleteUser from "../components/DeleteUser.js";
+import { useState, useMemo, useEffect } from "react";
+import CardHome from "../components/CardHome";
+import RequestItemHome from "../components/RequestItemHome";
+import { Icon } from "@iconify/react";
+import { Link, useNavigate } from "react-router-dom";
+import { 
+  homeService, 
+  type TicketHomeItem, 
+  type HomeStats, 
+  type TicketDetail 
+} from "../services/HomeService";
 
+// Types สำหรับ Sorting
+type SortField =
+  | "device_name"
+  | "quantity"
+  | "category"
+  | "requester"
+  | "request_date"
+  | "return_date"
+  | "status";
+
+type SortDirection = "asc" | "desc";
+
+/**
+ * Description: หน้า Dashboard หลัก แสดงภาพรวมระบบ (Stats) และรายการคำร้องล่าสุด
+ * รองรับการเรียงลำดับ (Sorting) และดูรายละเอียดแบบ Expand 
+ * Input     : -
+ * Output    : JSX Element (Dashboard Page)
+ * Author    : Worrawat Namwat (Wave) 66160372
+ */
 export const Home = () => {
-  // ✅ ตัวอย่างข้อมูลจำลองของผู้ใช้
-  const [users, setUsers] = useState([
-    {
-      us_id: 1,
-      us_emp_code: "EMP001",
-      us_firstname: "ทศพล",
-      us_lastname: "อนุชัย",
-      us_username: "tosapon",
-      us_email: "tosapon@example.com",
-      us_phone: "0812345678",
-      us_images: null,
-      us_role: "Admin",
-      us_dept_name: "ฝ่ายไอที",
-      us_sec_name: "Support",
-    },
-    {
-      us_id: 2,
-      us_emp_code: "EMP002",
-      us_firstname: "สุภาวดี",
-      us_lastname: "เพชรรัตน์",
-      us_username: "supawadee",
-      us_email: "supawadee@example.com",
-      us_phone: "0899999999",
-      us_images: null,
-      us_role: "User",
-      us_dept_name: "ฝ่ายบัญชี",
-      us_sec_name: "Finance",
-    },
-  ]);
+  const navigate = useNavigate();
+  // --- Data States (ข้อมูลจริงจาก Backend) ---
+  const [stats, setStats] = useState<HomeStats>({
+    borrowed: 0,
+    returned: 0,
+    waiting: 0,
+    report: 0,
+  });
+  const [tickets, setTickets] = useState<TicketHomeItem[]>([]);
+  
+  // --- UI States ---
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  
+  // เก็บรายละเอียด Ticket ที่เคยโหลดแล้ว (Cache) เพื่อไม่ต้องดึงซ้ำ
+  const [ticketDetails, setTicketDetails] = useState<Record<number, TicketDetail>>({});
+  const [isLoadingDetail, setIsLoadingDetail] = useState<boolean>(false);
 
-  // ✅ state สำหรับ modal
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [openModal, setOpenModal] = useState(false);
+  // --- Sorting States ---
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  // ✅ ฟังก์ชันเปิด modal
-  const handleOpenModal = (user) => {
-    setSelectedUser(user);
-    setOpenModal(true);
+  /**
+   * Description: ดึงข้อมูลเริ่มต้น (Stats และ Recent Tickets) เมื่อโหลดหน้าเว็บ
+   * Author    : Worrawat Namwat (Wave) 66160372
+   */
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // ดึงข้อมูล Stats และ Recent Tickets พร้อมกัน
+        const [statsRes, ticketsRes] = await Promise.all([
+          homeService.getHomeStats(),
+          homeService.getRecentTickets()
+        ]);
+
+        // ตรวจสอบโครงสร้างข้อมูล (เผื่อมี wrapper { data: ... })
+        const statsData = (statsRes as any).data || statsRes;
+        const ticketsData = (ticketsRes as any).data || ticketsRes;
+
+        setStats(statsData);
+        setTickets(Array.isArray(ticketsData) ? ticketsData : []);
+      } catch (error) {
+        console.error("Failed to fetch home data:", error);
+        // toast.push({ message: "ไม่สามารถโหลดข้อมูลหน้าแรกได้", tone: "danger" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  /**
+   * Description: จัดการการขยาย/ย่อ รายการคำร้อง (Expand/Collapse)
+   * - ถ้ากดขยาย และยังไม่มีข้อมูลใน Cache ให้ดึงจาก API
+   * Input     : id (รหัสคำร้องที่ต้องการขยาย/ย่อ)
+   * Author    : Worrawat Namwat (Wave) 66160372
+   */
+  const handleExpand = async (id: number) => {
+    const newExpandedId = expandedId === id ? null : id;
+  
+  setExpandedId(newExpandedId);
+
+    // ถ้ากดขยาย และยังไม่มีข้อมูลใน Cache ให้ดึงจาก API
+    if (newExpandedId && !ticketDetails[id]) {
+      setIsLoadingDetail(true);
+      try {
+        const detailRes = await homeService.getTicketDetail(id);
+        const detailData = (detailRes as any).data || detailRes;
+        
+        setTicketDetails((prev) => ({
+          ...prev,
+          [id]: detailData,
+        }));
+      } catch (error) {
+        console.error(`Failed to fetch detail for ticket ${id}:`, error);
+        // toast.push({ message: "ไม่สามารถโหลดรายละเอียดได้", tone: "danger" });
+      } finally {
+        setIsLoadingDetail(false);
+      }
+    }
   };
 
-  // ✅ ฟังก์ชันหลังลบผู้ใช้สำเร็จ
-  const handleDeleted = (id) => {
-    console.log("ผู้ใช้ที่ถูกลบ:", id);
-    setUsers((prev) => prev.filter((u) => u.us_id !== id));
+  /**
+   * Description: จัดการการเปลี่ยนเงื่อนไขการเรียงลำดับ (Sort)
+   * - ถ้ากด field เดิม: สลับ asc <-> desc
+   * - ถ้ากด field ใหม่: เริ่มต้นที่ asc
+   * Input     : field (ชื่อคอลัมน์ที่ต้องการเรียง)
+   * Author    : Worrawat Namwat (Wave) 66160372
+   */
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
   };
+
+ // ปุ่ม sort icon
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return "bx:sort-down";
+    }
+    return sortDirection === "asc" ? "bx:sort-up" : "bx:sort-down";
+  };
+
+  /**
+   * Description: คำนวณรายการ Tickets ที่เรียงลำดับแล้ว (Memoized)
+   * จะคำนวณใหม่เมื่อ tickets, sortField หรือ sortDirection เปลี่ยนแปลง
+   * Output    : Array ของ TicketHomeItem ที่เรียงลำดับแล้ว
+   * Author    : Worrawat Namwat (Wave) 66160372
+   */
+  const sortedTickets = useMemo(() => {
+    if (!sortField) return tickets;
+
+    return [...tickets].sort((a, b) => {
+      let valA: any = "";
+      let valB: any = "";
+
+      // Helper function to safely get dates
+      const getStartDate = (item: TicketHomeItem) => item.dates?.start || item.request_date || "";
+      const getEndDate = (item: TicketHomeItem) => item.dates?.end || item.dates?.return || item.return_date || "";
+
+      switch (sortField) {
+        case "device_name":
+          valA = a.device_summary.name;
+          valB = b.device_summary.name;
+          break;
+        case "quantity":
+          valA = a.device_summary.total_quantity;
+          valB = b.device_summary.total_quantity;
+          break;
+        case "category":
+          valA = a.device_summary.category;
+          valB = b.device_summary.category;
+          break;
+        case "requester":
+          valA = a.requester.fullname;
+          valB = b.requester.fullname;
+          break;
+        case "request_date":
+          valA = new Date(getStartDate(a)).getTime();
+          valB = new Date(getStartDate(b)).getTime();
+          break;
+        case "return_date":
+          valA = new Date(getEndDate(a)).getTime();
+          valB = new Date(getEndDate(b)).getTime();
+          break;
+        case "status":
+          valA = a.status;
+          valB = b.status;
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof valA === "string") {
+        return sortDirection === "asc"
+          ? valA.localeCompare(valB, "th")
+          : valB.localeCompare(valA, "th");
+      }
+
+      return sortDirection === "asc" ? valA - valB : valB - valA;
+    });
+  }, [tickets, sortField, sortDirection]);
 
   return (
-    <div className="p-10">
-      <h1 className="text-2xl font-bold mb-6">รายชื่อผู้ใช้</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-semibold my-4">หน้าแรก</h1>
+      <div className="mt-6 w-full">
+        <div className="flex flex-nowrap gap-[49px] overflow-x-auto pb-4 w-full">
+          <CardHome
+            cardType="Borrowed"
+            title="กำลังยืม"
+            count={stats.borrowed}
+            className="flex-1"
+          />
+          <CardHome
+            cardType="Returned"
+            title="ใกล้เวลาคืน"
+            count={stats.returned}
+            className="flex-1"
+          />
+          <CardHome
+            cardType="Waiting"
+            title="รออนุมัติ"
+            count={stats.waiting}
+            className="flex-1"
+          />
+          <CardHome
+            cardType="Report"
+            title="แจ้งปัญหา"
+            count={stats.report}
+            className="flex-1"
+          />
+        </div>
+      </div>
+      <div>
+        <div className="flex items-baseline gap-3 mb-4 mt-5">
+          <h1 className="text-2xl font-semibold leading-none">
+            รายการคำร้องยืม
+          </h1>
+          <span className="text-sm text-[#858585] leading-none">
+            แสดง 5 รายการล่าสุด
+          </span>
+        </div>
+        {/* Table Header */}
+        <div className="w-full bg-white border border-[#D8D8D8] font-medium text-[#000000] rounded-[16px] mb-[16px] h-[61px] grid [grid-template-columns:2fr_0.8fr_1.2fr_1.5fr_1.2fr_1.2fr_1fr_50px] gap-4 items-center px-6 whitespace-nowrap">
+          <div
+            className="flex items-center px-2 cursor-pointer select-none"
+            onClick={() => handleSort("device_name")}
+          >
+            อุปกรณ์
+            <Icon
+              icon={getSortIcon("device_name")}
+              width="24"
+              className="ml-1"
+            />
+          </div>
+          <div
+            className="flex items-center cursor-pointer select-none"
+            onClick={() => handleSort("quantity")}
+          >
+            จำนวน
+            <Icon icon={getSortIcon("quantity")} width="24" className="ml-1" />
+          </div>
+          <div
+            className="flex items-center cursor-pointer select-none"
+            onClick={() => handleSort("category")}
+          >
+            หมวดหมู่
+            <Icon icon={getSortIcon("category")} width="24" className="ml-1" />
+          </div>
+          <div
+            className="flex items-center cursor-pointer select-none"
+            onClick={() => handleSort("requester")}
+          >
+            ชื่อผู้ร้องขอ
+            <Icon icon={getSortIcon("requester")} width="24" className="ml-1" />
+          </div>
+          <div
+            className="flex items-center cursor-pointer select-none "
+            onClick={() => handleSort("request_date")}
+          >
+            วันที่ร้องขอ
+            <Icon
+              icon={getSortIcon("request_date")}
+              width="24"
+              className="ml-1"
+            />
+          </div>
+          <div
+            className="flex items-center cursor-pointer select-none"
+            onClick={() => handleSort("return_date")}
+          >
+            วันที่คืน
+            <Icon
+              icon={getSortIcon("return_date")}
+              width="24"
+              className="ml-1"
+            />
+          </div>
+          <div
+            className="flex items-center cursor-pointer select-none "
+            onClick={() => handleSort("status")}
+          >
+            สถานะ
+            <Icon icon={getSortIcon("status")} width="24" className="ml-1" />
+          </div>
+        </div>
 
-      {/* ตารางแสดงผู้ใช้ */}
-      <table className="min-w-full border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-3 border">ชื่อ</th>
-            <th className="p-3 border">อีเมล</th>
-            <th className="p-3 border">ตำแหน่ง</th>
-            <th className="p-3 border">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.us_id}>
-              <td className="p-3 border">{u.us_firstname} {u.us_lastname}</td>
-              <td className="p-3 border">{u.us_email}</td>
-              <td className="p-3 border">{u.us_role}</td>
-              <td className="p-3 border text-center">
-                <button
-                  onClick={() => handleOpenModal(u)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full"
-                >
-                  ลบ
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* ✅ เรียกใช้ DeleteUser modal */}
-      {openModal && (
-        <DeleteUser
-          open={openModal}
-          user={selectedUser}
-          onClose={() => setOpenModal(false)}
-          onDeleted={handleDeleted}
-        />
-      )}
+        {/* List */}
+        <div className="w-full bg-white border border-[#D8D8D8] rounded-[16px] overflow-hidden relative z-50">
+          {isLoading ? (
+            <div className="text-center text-[#858585] py-10 flex flex-col items-center">
+               <Icon icon="eos-icons:loading" width="40" className="mb-2 text-[#40A9FF]" />
+               กำลังโหลดข้อมูล...
+            </div>
+          ) : sortedTickets.length === 0 ? (
+            <div className="text-center text-[#858585] py-10 flex flex-col items-center">
+              <Icon icon="tabler:database-off" width="48" className="mb-2 opacity-50" />
+              ยังไม่มีรายการคำร้อง
+            </div>
+          ) : (
+            sortedTickets.slice(0, 5).map((ticket) => (
+              <RequestItemHome
+                key={ticket.id}
+                ticket={ticket}
+                ticketDetail={ticketDetails[ticket.id]} 
+                isLoadingDetail={expandedId === ticket.id && isLoadingDetail} 
+                onExpand={() => handleExpand(ticket.id)} 
+                forceExpand={expandedId === ticket.id}
+              />
+            ))
+          )}
+          <div className="flex justify-end px-6 py-4  border-gray-100 bg-white relative z-50">
+            <Link
+              to="/requests"
+              className="text-[#7BACFF] text-sm font-medium hover:text-[#40A9FF] hover:underline cursor-pointer flex items-center gap-1"
+            >
+              ดูเพิ่มเติม
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
-export default Home
+
+export default Home;

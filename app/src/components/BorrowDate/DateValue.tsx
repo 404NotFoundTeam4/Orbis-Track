@@ -144,7 +144,7 @@ useEffect(() => {
     startDate && endDate
       ? `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`
       : "วัน/เดือน/ปี";
-      console.log(dateLabel)
+      
   return (
     <div ref={ref} className={`relative ${width}`}>
       {/* ===== Input ===== */}

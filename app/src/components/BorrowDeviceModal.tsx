@@ -11,7 +11,6 @@ import BorrowModal from "./BorrowDate/BorrowModal";
 import { borrowService } from "../services/BorrowService";
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
-  
   serialNumber: string;
   name: string;
   total: number;
@@ -89,7 +88,7 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
-  
+
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
@@ -253,7 +252,7 @@ const BorrowEquipmentModal = ({
     // ปิด alert
     setIsConfirmOpen(false);
   };
-  console.log(form.returnTime);
+
   /**
    * Description: ฟังก์ชันควบคุมการทำงานหลัก ตามโหมดของหน้า
    * Input : -
@@ -313,7 +312,7 @@ const BorrowEquipmentModal = ({
       console.error("API error:", error);
     }
   };
-  console.log(data);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -407,9 +406,17 @@ const BorrowEquipmentModal = ({
               </label>
               <BorrowModal
                 defaultValues={data}
+                timeDefault={{
+                  time_start: form.borrowTime,
+                  time_end: form.returnTime,
+                }}
                 dateDefault={{
-                  start: initialForm.dateRange[0] ? new Date(initialForm.dateRange[0]) : null,
-                  end: initialForm.dateRange[1] ? new Date(initialForm.dateRange[1]) : null,
+                  start: initialForm.dateRange[0]
+                    ? new Date(initialForm.dateRange[0])
+                    : null,
+                  end: initialForm.dateRange[1]
+                    ? new Date(initialForm.dateRange[1])
+                    : null,
                 }}
                 onConfirm={(data) => {
                   setForm((prev) => ({
@@ -421,6 +428,7 @@ const BorrowEquipmentModal = ({
                     borrowTime: data.time_start,
                     returnTime: data.time_end,
                   }));
+                 
                 }}
               />
               {errors.dateRange && (

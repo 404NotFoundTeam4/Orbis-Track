@@ -18,6 +18,10 @@ interface DateRange {
   end: Date | null;
 }
 
+interface TimeDefault {
+  time_start?: string | null;
+  time_end?: string | null;
+}
 type Device = {
   dec_id: number;
   dec_serial_number: string;
@@ -35,6 +39,7 @@ type BorrowModalProps = {
     time_end?: string;
   }) => void;
   dateDefault?: DateRange;
+  timeDefault?: TimeDefault;
 };
 
 interface timeDropdownItem {
@@ -49,6 +54,7 @@ export default function BorrowModal({
   defaultValues,
   onConfirm,
   dateDefault,
+  timeDefault,
   fullWidth = false,
 }: BorrowModalProps) {
   const [open, setOpen] = useState(false);
@@ -66,6 +72,7 @@ export default function BorrowModal({
   const [end, setEnd] = useState<Date | null>(null); // วันที่คืน
   const [timeStart, setTimeStart] = useState<string>(); // "08:00"
   const [timeEnd, setTimeEnd] = useState<string>(); // "17:30"
+ 
   const [selectedActiveBorrow, setSelectedActiveBorrow] = useState<
     ActiveBorrow[] | null
   >(null);
@@ -80,6 +87,7 @@ export default function BorrowModal({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
   const isBorrowAvailable = (
     start: Date | null,
     end: Date | null,
@@ -127,7 +135,14 @@ export default function BorrowModal({
   useEffect(() => {
     setdefaultBorrow(defaultValues);
   }, [defaultValues]);
+  useEffect(() => {
+    setTimeStart(timeDefault?.time_start)
+    setTimeEnd(timeDefault?.time_end)
+     
+  },[timeDefault]);
 
+
+ 
   let yearValue = 2025;
   useEffect(() => {
     if (!dateDefault) return null;
@@ -305,7 +320,7 @@ export default function BorrowModal({
     return activeBorrow.flatMap((b) => splitBorrowToDays(b.da_start, b.da_end));
   };
   const timeBorrow = buildAllBorrowDays(selectedActiveBorrow);
-  console.log(timeBorrow);
+
   const timeToMinute = (times: string) => {
     const [time, period] = times.split(" ");
     let [hours, minutes] = time.split(":").map(Number);
@@ -383,6 +398,7 @@ export default function BorrowModal({
 
     return `${day} ${month} ${year}`;
   };
+
   const dateLabel =
     start && end
       ? `${formatThaiDate(start)} - ${formatThaiDate(end)}`

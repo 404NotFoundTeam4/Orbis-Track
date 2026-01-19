@@ -15,7 +15,6 @@ interface Props {
   options: Option[];
 }
 
-
 export default function Dropdown({
   value,
   onChange,
@@ -25,6 +24,7 @@ export default function Dropdown({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [selectedTime, setSelectedTime] = useState<Option>();
+
   // ปิด dropdown เมื่อคลิกนอก
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -35,7 +35,11 @@ export default function Dropdown({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+  useEffect(() => {
+    const found = options.find((time) => time.value === value);
+    setSelectedTime(found);
+  }, [value, options]);
+
   return (
     <div ref={ref} className="relative w-full">
       {/* ===== Input ===== */}
@@ -49,13 +53,14 @@ export default function Dropdown({
         "
       >
         <span className={selectedTime ? "text-gray-900" : "text-gray-400"}>
-          {value? value: selectedTime? selectedTime.value : placeholder}
+          {selectedTime ? selectedTime.label : placeholder}
         </span>
 
         <FontAwesomeIcon
           icon={faChevronDown}
-          className={`w-3 h-3 text-[#000000] transition-transform duration-200 ${open ? "transform rotate-180" : ""
-            }`}
+          className={`w-3 h-3 text-[#000000] transition-transform duration-200 ${
+            open ? "transform rotate-180" : ""
+          }`}
         />
       </button>
 
@@ -82,7 +87,7 @@ export default function Dropdown({
                   ${opt.value === value ? "bg-gray-100 font-medium" : ""}
                 `}
               >
-                {value? value : opt.value}
+                {opt.label}
               </button>
             ))}
           </div>

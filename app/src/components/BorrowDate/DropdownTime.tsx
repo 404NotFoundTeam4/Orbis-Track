@@ -35,7 +35,7 @@ export default function Dropdown({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
+  
   return (
     <div ref={ref} className="relative w-full">
       {/* ===== Input ===== */}
@@ -49,7 +49,7 @@ export default function Dropdown({
         "
       >
         <span className={selectedTime ? "text-gray-900" : "text-gray-400"}>
-          {selectedTime?.label || placeholder}
+          {value? value: selectedTime? selectedTime.value : placeholder}
         </span>
 
         <FontAwesomeIcon
@@ -82,7 +82,7 @@ export default function Dropdown({
                   ${opt.value === value ? "bg-gray-100 font-medium" : ""}
                 `}
               >
-                {opt.label}
+                {value? value : opt.value}
               </button>
             ))}
           </div>

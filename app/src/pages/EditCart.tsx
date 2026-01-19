@@ -457,7 +457,7 @@ const EditCart = () => {
       console.error("refresh available devices error:", err);
     }
   };
-
+  console.log(cartItem)
   return (
     <div className="w-full min-h-screen flex flex-row p-4 gap-6">
       <div className="flex-1">
@@ -480,10 +480,11 @@ const EditCart = () => {
           <span className="text-[#000000] font-medium">แก้ไขรายละเอียด</span>
         </div>
         <h1 className="text-2xl font-semibold mb-[24px]">แก้ไขรายละเอียด</h1>
-
+        
         <BorrowDeviceModal
           mode="edit-detail"
           equipment={{
+            deviceId :ctiId,
             name: cartItem.name,
             serialNumber: cartItem.code,
             category: cartItem.category,

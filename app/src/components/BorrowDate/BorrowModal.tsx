@@ -13,6 +13,10 @@ type DayTimeRange = {
   timeStart: string;
   timeEnd: string;
 };
+interface DateRange {
+  start: Date | null;
+  end: Date | null;
+}
 
 type Device = {
   dec_id: number;
@@ -24,7 +28,13 @@ type Device = {
 type BorrowModalProps = {
   defaultValues: Device[];
   fullWidth?: boolean;
-  onConfirm: (data: { borrow_start: string; borrow_end: string; time_start?: string; time_end?: string }) => void;
+  onConfirm: (data: {
+    borrow_start: string;
+    borrow_end: string;
+    time_start?: string;
+    time_end?: string;
+  }) => void;
+  dateDefault?: DateRange;
 };
 
 interface timeDropdownItem {
@@ -38,6 +48,7 @@ type ViewType = "month" | "week" | "day";
 export default function BorrowModal({
   defaultValues,
   onConfirm,
+  dateDefault,
   fullWidth = false,
 }: BorrowModalProps) {
   const [open, setOpen] = useState(false);
@@ -118,7 +129,11 @@ export default function BorrowModal({
   }, [defaultValues]);
 
   let yearValue = 2025;
-
+  useEffect(() => {
+    if (!dateDefault) return null;
+    setStart(dateDefault.start);
+    setEnd(dateDefault.end);
+  }, [dateDefault]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const resultYear = new Date(
@@ -327,9 +342,9 @@ export default function BorrowModal({
       borrow_start: borrowStart.toISOString(),
       borrow_end: borrowEnd.toISOString(),
       time_start: timeStart,
-      time_end: timeEnd
+      time_end: timeEnd,
     };
-    console.log(payload)
+    console.log(payload);
     onConfirm(payload);
     setOpen(false);
   };
@@ -398,14 +413,14 @@ export default function BorrowModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             ref={ref}
-            className="bg-white w-[500px] p-6 rounded-xl relative"
+            className="bg-white  p-6 rounded-xl relative  "
             onClick={(e) => e.stopPropagation()} // ป้องกันปิดเมื่อคลิกข้างใน
           >
             <div className="relative w-[1442px] h-[922px] bg-[#F9FAFB] rounded-2xl shadow-xl flex overflow-hidden border border-[#D9D9D9]">
               <div className="w-[392px] bg-white border-r border-r-[#D9D9D9]  overflow-y-auto">
                 {/* Device List */}
                 <div>
-                  <div className="flex items-center text-[16px] gap-2 h-[81px] border-b border-b-[#D9D9D9] p-4">
+                  <div className="flex items-center text-[16px] gap-2 h-[81px] border-b border-b-[#D9D9D9] p-4 ">
                     <h2 className="font-semibold">รายการอุปกรณ์</h2>
                     <span className="bg-green-100 text-green-600 text-sm px-6 py-2.5 rounded-[10px]">
                       ว่าง {readyDevices.length} / {defaultBorrow?.length ?? 0}
@@ -425,10 +440,11 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
         shadow-md transition-all duration-200 cursor-pointer
-        ${selectedDeviceId === device.dec_id
-                                  ? "border-[#40A9FF] shadow-lg"
-                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-                                }`}
+        ${
+          selectedDeviceId === device.dec_id
+            ? "border-[#40A9FF] shadow-lg"
+            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+        }`}
                             >
                               <div className="flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-[#00AA1A] flex items-center justify-center">
@@ -467,10 +483,11 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
                         shadow-md transition-all duration-200 cursor-pointer
-                        ${selectedDeviceId === device.dec_id
-                                  ? "border-[#40A9FF] shadow-lg"
-                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-                                }`}
+                        ${
+                          selectedDeviceId === device.dec_id
+                            ? "border-[#40A9FF] shadow-lg"
+                            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+                        }`}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-5 h-5 rounded-full bg-[#ED1A1A] flex items-center justify-center">
@@ -480,7 +497,7 @@ export default function BorrowModal({
                               </div>
 
                               <span className="px-3 py-1 rounded-lg text-sm bg-[#ED1A1A]/10 text-[#ED1A1A]">
-                                พร้อมยืม
+                                ถูกยืม
                               </span>
                             </div>
                           ))
@@ -503,6 +520,7 @@ export default function BorrowModal({
                         <div className="flex gap-2 items-center justify-center">
                           <label className="w-20">วันที่ยืม</label>
                           <DateValue
+                            value={{ start, end }}
                             onChange={(startDate, endDate) => {
                               setStart(startDate);
                               setEnd(endDate);
@@ -558,10 +576,11 @@ export default function BorrowModal({
                             disabled={!isValid}
                             className={`
     flex-1 rounded-xl py-2 text-white transition
-    ${isValid
-                                ? "bg-blue-500 hover:bg-blue-600"
-                                : "bg-gray-300 cursor-not-allowed"
-                              }
+    ${
+      isValid
+        ? "bg-blue-500 hover:bg-blue-600"
+        : "bg-gray-300 cursor-not-allowed"
+    }
   `}
                           >
                             ยืนยัน
@@ -602,8 +621,9 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("month")}
-                      className={`${baseClass}  rounded-l-xl ${active === "month" ? activeClass : inactiveClass
-                        }`}
+                      className={`${baseClass}  rounded-l-xl ${
+                        active === "month" ? activeClass : inactiveClass
+                      }`}
                     >
                       Month
                     </button>
@@ -611,8 +631,9 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("week")}
-                      className={`${baseClass} ${active === "week" ? activeClass : inactiveClass
-                        }`}
+                      className={`${baseClass} ${
+                        active === "week" ? activeClass : inactiveClass
+                      }`}
                     >
                       Week
                     </button>
@@ -620,8 +641,9 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("day")}
-                      className={`${baseClass} rounded-r-xl ${active === "day" ? activeClass : inactiveClass
-                        }`}
+                      className={`${baseClass} rounded-r-xl ${
+                        active === "day" ? activeClass : inactiveClass
+                      }`}
                     >
                       Day
                     </button>

@@ -6,12 +6,17 @@ interface Props {
   onChange?: (start: Date | null, end: Date | null) => void;
   placeholder?: string;
   width?: string;
+   value?: {
+    start: Date | null;
+    end: Date | null;
+  };
 }
 
 export default function DateValue({
   onChange,
   placeholder = "เลือกช่วงเวลายืม",
   width = "w-full",
+  value,
 }: Props) {
   const today = new Date();
 
@@ -24,7 +29,18 @@ export default function DateValue({
 
   const ref = useRef<HTMLDivElement>(null);
 
-  // 🔹 ปิด popup เมื่อคลิกนอก
+useEffect(() => {
+  if (!value) return;
+
+  if (
+    value.start !== startDate ||
+    value.end !== endDate
+  ) {
+    setStartDate(value.start)
+    setEndDate(value.end)
+  }
+}, [value])
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -94,12 +110,7 @@ export default function DateValue({
     }
   };
 
-  const displayValue =
-    startDate && endDate
-      ? `${startDate.toLocaleDateString("th-TH")} - ${endDate.toLocaleDateString(
-          "th-TH"
-        )}`
-      : "";
+
 
   function formatThaiMonth(date: Date) {
     return new Intl.DateTimeFormat("th-TH", {
@@ -107,7 +118,33 @@ export default function DateValue({
       year: "numeric",
     }).format(date);
   }
+    const formatThaiDate = (date: Date) => {
+    const months = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
 
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear() + 543;
+
+    return `${day} ${month} ${year}`;
+  };
+  const dateLabel =
+    startDate && endDate
+      ? `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`
+      : "วัน/เดือน/ปี";
+      console.log(dateLabel)
   return (
     <div ref={ref} className={`relative ${width}`}>
       {/* ===== Input ===== */}
@@ -121,8 +158,8 @@ export default function DateValue({
           text-gray-400
         "
       >
-        <span className={displayValue ? "text-gray-900" : ""}>
-          {displayValue || placeholder}
+        <span className={dateLabel ? "text-gray-900" : ""}>
+          {dateLabel || placeholder}
         </span>
 
         {/* calendar icon */}

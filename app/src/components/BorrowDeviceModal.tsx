@@ -11,6 +11,7 @@ import BorrowModal from "./BorrowDate/BorrowModal";
 import { borrowService } from "../services/BorrowService";
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
+  
   serialNumber: string;
   name: string;
   total: number;
@@ -88,6 +89,7 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
+  
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
@@ -251,7 +253,7 @@ const BorrowEquipmentModal = ({
     // ปิด alert
     setIsConfirmOpen(false);
   };
-  console.log(form.returnTime)
+  console.log(form.returnTime);
   /**
    * Description: ฟังก์ชันควบคุมการทำงานหลัก ตามโหมดของหน้า
    * Input : -
@@ -405,6 +407,10 @@ const BorrowEquipmentModal = ({
               </label>
               <BorrowModal
                 defaultValues={data}
+                dateDefault={{
+                  start: initialForm.dateRange[0] ? new Date(initialForm.dateRange[0]) : null,
+                  end: initialForm.dateRange[1] ? new Date(initialForm.dateRange[1]) : null,
+                }}
                 onConfirm={(data) => {
                   setForm((prev) => ({
                     ...prev,
@@ -413,9 +419,8 @@ const BorrowEquipmentModal = ({
                       data.borrow_end ? new Date(data.borrow_end) : null,
                     ],
                     borrowTime: data.time_start,
-                    returnTime: data.time_end
+                    returnTime: data.time_end,
                   }));
-
                 }}
               />
               {errors.dateRange && (
@@ -436,7 +441,7 @@ const BorrowEquipmentModal = ({
                 label=""
                 value={form.borrowTime}
                 onChange={(time: string) =>
-                  setForm({ ...form, borrowTime: time, })
+                  setForm({ ...form, borrowTime: time })
                 }
               />
               {errors.borrowTime && (

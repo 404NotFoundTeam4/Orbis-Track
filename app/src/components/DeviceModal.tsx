@@ -447,10 +447,15 @@ const MainDeviceModal = ({
         value: sn.value.trim(),
       }))
     : [];
+
+  // ตัดคำว่าหัวหน้าออกจากข้อมูลใน Dropdown
+  const cleanDropdown = (name: string) =>
+    name.replace(/^หัวหน้า\s*/g, "");
+
   /*========================== พื้นที่แปลงข้อมูลเข้า Dropdown ========================== */
   const departmentItems: DropdownItem[] = departments.map((dept: any) => ({
     id: dept.dept_id,
-    label: dept.dept_name,
+    label: cleanDropdown(dept.dept_name),
     value: dept.dept_id,
   }));
 
@@ -462,7 +467,7 @@ const MainDeviceModal = ({
 
   const sectionItems: DropdownItem[] = sections.map((sec: any) => ({
     id: sec.sec_id,
-    label: sec.sec_name,
+    label: cleanDropdown(sec.sec_name),
     value: sec.sec_id,
   }));
 
@@ -549,6 +554,14 @@ const MainDeviceModal = ({
   /*========================== ยืนยันข้อมูล ========================== */
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openConfirmApprove, setOpenConfirmApprove] = useState(false);
+
+  // กรองฝ่ายย่อยตามแผนกที่เลือก
+  const filteredSections = selectedDepartment
+    ? sections.filter(
+      (sec) => sec.sec_dept_id === selectedDepartment.value
+    )
+    : [];
+
   return (
     <div className="flex flex-col gap-[60px] bg-[#FFFFFF] border border-[#BFBFBF] w-[1660px] rounded-[16px] px-[60px] py-[60px]">
       {/* ข้อมูลอุปกรณ์ / แบบฟอร์ม */}
@@ -593,7 +606,10 @@ const MainDeviceModal = ({
               className="!w-[264px]"
               label="แผนกอุปกรณ์"
               items={departmentItems}
-              onChange={(item) => setSelectedDepartment(item)}
+              onChange={(item) => {
+                setSelectedDepartment(item)
+                setSelectedSection(null)
+              }}
               placeholder="แผนก"
             />
             <DropDown
@@ -608,7 +624,11 @@ const MainDeviceModal = ({
               value={selectedSection}
               className="!w-[264px]"
               label="ฝ่ายย่อย"
-              items={sectionItems}
+              items={filteredSections.map((sec) => ({
+                id: sec.sec_id,
+                label: cleanDropdown(sec.sec_name),
+                value: sec.sec_id,
+              }))}
               onChange={(item) => setSelectedSection(item)}
               placeholder="ฝ่ายย่อย"
             />
@@ -1078,8 +1098,15 @@ const MainDeviceModal = ({
         open={openConfirm}
         onOpenChange={setOpenConfirm}
         tone="success"
-        title="ยืนยันการบันทึก"
-        description="คุณต้องการบันทึกข้อมูลอุปกรณ์นี้ใช่หรือไม่"
+        title={mode === "create" ? "ต้องการเพิ่มอุปกรณ์นี้ลงในคลัง?" : "ยืนยันการแก้ไขอุปกรณ์นี้หรือไม่?"}
+        description={mode === "create" ? "อุปกรณ์นี้จะถูกเพิ่มลงในรายการคลังของคุณ" : "ข้อมูลอุปกรณ์จะถูกแก้ไขในรายการคลังของคุณ"}
+        icon={
+          <Icon
+            icon={mode === "create" ? "material-symbols-light:box-add-sharp" : "material-symbols-light:box-edit-outline-sharp"}
+            width="72"
+            height="72"
+          />
+        }
         confirmText="บันทึก"
         cancelText="ยกเลิก"
         onConfirm={async () => {

@@ -256,7 +256,7 @@ export const Inventory = () => {
       await Promise.all(
         idsToDelete.map((id) => api.delete(`/inventory/${id}`))
       );
-      toast.push({ message: "ลบข้อมูลสำเร็จ", tone: "success" });
+      toast.push({ message: "ลบอุปกรณ์เสร็จสิ้น!", tone: "danger" });
       setSelectedItems([]);
       setDeleteId(null);
       setIsAlertOpen(false);

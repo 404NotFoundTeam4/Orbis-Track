@@ -166,7 +166,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className="flex flex-col background w-full min-h-screen">
+    <div className="flex flex-col bg-[#FAFAFA] w-full min-h-screen">
       <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[100px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex gap-15 justify-center z-51">
           <div className="px-7.5">

@@ -92,6 +92,7 @@ const BorrowEquipmentModal = ({
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
+ 
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   // เก็บข้อความ error ของแต่ละ field ในฟอร์ม BorrowFormData
@@ -410,16 +411,18 @@ const BorrowEquipmentModal = ({
                   time_start: form.borrowTime,
                   time_end: form.returnTime,
                 }}
+                
                 dateDefault={{
-                  start: initialForm.dateRange[0]
-                    ? new Date(initialForm.dateRange[0])
+                  start: form.dateRange[0]
+                    ? new Date(form.dateRange[0])
                     : null,
-                  end: initialForm.dateRange[1]
-                    ? new Date(initialForm.dateRange[1])
+                  end: form.dateRange[1]
+                    ? new Date(form.dateRange[1])
                     : null,
                 }}
+                
                 onConfirm={(data) => {
-                  setForm((prev) => ({
+                  setForm((prev :any) => ({
                     ...prev,
                     dateRange: [
                       data.borrow_start ? new Date(data.borrow_start) : null,
@@ -428,7 +431,7 @@ const BorrowEquipmentModal = ({
                     borrowTime: data.time_start,
                     returnTime: data.time_end,
                   }));
-                 
+                
                 }}
               />
               {errors.dateRange && (

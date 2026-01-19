@@ -87,7 +87,7 @@ export default function BorrowModal({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
+  // console.log(dateDefault)
   const isBorrowAvailable = (
     start: Date | null,
     end: Date | null,
@@ -359,8 +359,9 @@ export default function BorrowModal({
       time_start: timeStart,
       time_end: timeEnd,
     };
-    console.log(payload);
+   
     onConfirm(payload);
+   
     setOpen(false);
   };
   const isValid =
@@ -403,7 +404,7 @@ export default function BorrowModal({
     start && end
       ? `${formatThaiDate(start)} - ${formatThaiDate(end)}`
       : "วัน/เดือน/ปี";
-
+ 
   return (
     <div className="">
       <button

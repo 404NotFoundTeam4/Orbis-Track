@@ -78,18 +78,24 @@ type HomeTicketDetailWithRelations = Prisma.borrow_return_ticketsGetPayload<{
  * Output    : Object { borrowed, returned, waiting, report }
  * Author    : Worrawat Namwat (Wave) 66160372
  */
-async function getHomeStats() {
+async function getHomeStats(userId: number) {
   const now = new Date();
   const next3Days = addDays(now, 3);
 
+  const myFilter = {
+      brt_user_id: userId, 
+      deleted_at: null,
+    };
+
   // นับจำนวนคำร้องในแต่ละสถานะ
   const borrowedCount = await prisma.borrow_return_tickets.count({
-    where: { brt_status: "IN_USE", deleted_at: null },
+    where: {...myFilter, brt_status: "IN_USE", deleted_at: null },
   });
 
   // คำร้องที่ใกล้ถึงวันคืน (ภายใน 3 วันข้างหน้า)
   const nearReturnCount = await prisma.borrow_return_tickets.count({
     where: {
+      ...myFilter,
       brt_status: "IN_USE",
       brt_end_date: { lte: next3Days, gte: now },
       deleted_at: null,
@@ -98,12 +104,17 @@ async function getHomeStats() {
 
   // คำร้องที่รอการอนุมัติ
   const waitingCount = await prisma.borrow_return_tickets.count({
-    where: { brt_status: "PENDING", deleted_at: null },
+    where: {...myFilter, brt_status: "PENDING", deleted_at: null },
   });
 
   // คำร้องแจ้งซ่อมที่ยังไม่เสร็จสิ้น
   const reportCount = await prisma.ticket_issues.count({
-    where: { ti_status: { not: "COMPLETED" }, deleted_at: null },
+    where: { ti_status: { not: "COMPLETED" }, 
+    deleted_at: null,
+    ticket: {
+          brt_user_id: userId, // เช็คว่าเป็น Ticket ของเรา
+        }, 
+  },
   });
 
   return {
@@ -120,12 +131,14 @@ async function getHomeStats() {
  * Output    : Array ของคำร้องพร้อมรายละเอียด
  * Author    : Worrawat Namwat (Wave) 66160372
  */
-async function getRecentTickets() {
+async function getRecentTickets(userId: number) {
   const tickets: TicketWithRelations[] =
     await prisma.borrow_return_tickets.findMany({
       take: 5,
       orderBy: { created_at: "desc" },
-      where: { deleted_at: null },
+      where: { deleted_at: null
+        , brt_user_id: userId,
+       },
       include: {
         requester: true,
         ticket_devices: {

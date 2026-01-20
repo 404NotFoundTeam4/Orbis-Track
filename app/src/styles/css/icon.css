@@ -13,7 +13,7 @@
   width: 29px;
   height: 29px;
   border-radius: 8px;
-  border: 2px solid #d9d9d9;
+  border: 1px solid #d9d9d9;
   background-color: white;
   
   cursor: pointer;
@@ -37,7 +37,7 @@
 }
 .custom-checkbox-inventory:disabled {
   background-color: #BFBFBF;
-  border-color: BFBFBF;    
+  border-color: #BFBFBF;    
   cursor: not-allowed;        
   opacity: 1;                 
 }

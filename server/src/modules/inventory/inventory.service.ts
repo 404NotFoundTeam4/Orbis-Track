@@ -963,7 +963,7 @@ export async function updateDevice(
       de_af_id: deviceData.de_af_id,
       de_ca_id: deviceData.de_ca_id,
       de_us_id: deviceData.de_us_id,
-      ...(typeof deviceData.de_sec_id === 'number' && { de_sec_id: deviceData.de_sec_id }),
+      ...(deviceData.de_sec_id !== undefined && { de_sec_id: deviceData.de_sec_id }),
       de_images: finalImages,
       updated_at: new Date(),
     },

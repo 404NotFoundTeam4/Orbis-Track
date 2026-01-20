@@ -108,9 +108,11 @@ const EditInventory = () => {
       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
     }
   };
+
   const handleSubmit = async (formData: FormData) => {
     const data = formData.get("data") as string | null;
     if (data === "devices") {
+      const isEdit = Boolean(parentId);
       // ใช้ก่อน
 
       // ลบทิ้งก่อนส่ง backend
@@ -121,7 +123,7 @@ const EditInventory = () => {
 
         push({
           tone: "confirm",
-          message: "เพิ่มอุปกรณ์เรียบร้อยแล้ว",
+          message: isEdit ? "แก้ไขข้อมูลอุปกรณ์ในคลังแล้ว!" : "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!",
         });
         setTimeout(() => {
           window.location.reload();
@@ -130,7 +132,7 @@ const EditInventory = () => {
         console.log(e);
         push({
           tone: "danger",
-          message: "ไม่สามารถเพิ่มอุปกรณ์",
+          message: isEdit ? "เกิดข้อผิดพลาดในการแก้ไขอุปกรณ์" : "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์",
         });
       }
     } else if (data === "approve") {

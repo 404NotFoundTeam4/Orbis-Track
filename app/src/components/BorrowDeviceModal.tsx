@@ -88,9 +88,11 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
+
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
+ 
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   // เก็บข้อความ error ของแต่ละ field ในฟอร์ม BorrowFormData
@@ -251,7 +253,7 @@ const BorrowEquipmentModal = ({
     // ปิด alert
     setIsConfirmOpen(false);
   };
-  console.log(form.returnTime)
+
   /**
    * Description: ฟังก์ชันควบคุมการทำงานหลัก ตามโหมดของหน้า
    * Input : -
@@ -311,7 +313,7 @@ const BorrowEquipmentModal = ({
       console.error("API error:", error);
     }
   };
-  console.log(data);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -405,17 +407,31 @@ const BorrowEquipmentModal = ({
               </label>
               <BorrowModal
                 defaultValues={data}
+                timeDefault={{
+                  time_start: form.borrowTime,
+                  time_end: form.returnTime,
+                }}
+                
+                dateDefault={{
+                  start: form.dateRange[0]
+                    ? new Date(form.dateRange[0])
+                    : null,
+                  end: form.dateRange[1]
+                    ? new Date(form.dateRange[1])
+                    : null,
+                }}
+                
                 onConfirm={(data) => {
-                  setForm((prev) => ({
+                  setForm((prev :any) => ({
                     ...prev,
                     dateRange: [
                       data.borrow_start ? new Date(data.borrow_start) : null,
                       data.borrow_end ? new Date(data.borrow_end) : null,
                     ],
                     borrowTime: data.time_start,
-                    returnTime: data.time_end
+                    returnTime: data.time_end,
                   }));
-
+                
                 }}
               />
               {errors.dateRange && (
@@ -436,7 +452,7 @@ const BorrowEquipmentModal = ({
                 label=""
                 value={form.borrowTime}
                 onChange={(time: string) =>
-                  setForm({ ...form, borrowTime: time, })
+                  setForm({ ...form, borrowTime: time })
                 }
               />
               {errors.borrowTime && (

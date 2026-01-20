@@ -1,4 +1,4 @@
-import { $Enums, US_ROLE } from "@prisma/client";
+import { $Enums, US_ROLE, Prisma } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
 import { ValidationError } from "../../errors/errors.js";
 import xlsx from "xlsx";
@@ -960,13 +960,13 @@ export async function updateDevice(
       de_description: deviceData.de_description,
       de_location: deviceData.de_location,
       de_max_borrow_days: deviceData.de_max_borrow_days,
-      de_af_id: deviceData.de_af_id,
-      de_ca_id: deviceData.de_ca_id,
-      de_us_id: deviceData.de_us_id,
+      ...(deviceData.de_af_id !== undefined && { de_af_id: deviceData.de_af_id }),
+      ...(deviceData.de_ca_id !== undefined && { de_ca_id: deviceData.de_ca_id }),
+      ...(deviceData.de_us_id !== undefined && { de_us_id: deviceData.de_us_id }),
       ...(deviceData.de_sec_id !== undefined && { de_sec_id: deviceData.de_sec_id }),
       de_images: finalImages,
       updated_at: new Date(),
-    },
+    } as Prisma.devicesUncheckedUpdateInput,
   });
   if (Array.isArray(accessories)) {
     const incomingAccIds = accessories

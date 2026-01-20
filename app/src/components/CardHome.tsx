@@ -21,10 +21,10 @@ export type CardHomeProps = {
 };
 // กำหนดสีและไอคอนตามประเภทของการ์ด
 const CARD_CONFIG: Record<CardHomeType, { color: string; icon: string }> = {
-  Borrowed: { color: "#40A9FF", icon: "lucide:box" },
+  Borrowed: { color: "#40A9FF", icon: "solar:box-outline" },
   Returned: { color: "#FF884D", icon: "lucide:clock" },
-  Waiting:  { color: "#FFC53D", icon: "lucide:user-check" },
-  Report:   { color: "#FF4D4F", icon: "lucide:wrench" },
+  Waiting:  { color: "#FFC53D", icon: "mi:user-check" },
+  Report:   { color: "#FF4D4F", icon: "mage:wrench" },
 };
 // CardHome Component
 const CardHome: React.FC<CardHomeProps> = ({
@@ -61,7 +61,7 @@ const CardHome: React.FC<CardHomeProps> = ({
     >
       {/* Corner Triangle */}
       <div
-        className="absolute top-0 right-0 w-[40px] h-[40px]"
+        className="absolute top-0 right-0 w-[30px] h-[30px]"
         style={{
           backgroundColor: config.color,
           clipPath: "polygon(0 0, 100% 0, 100% 100%)",
@@ -69,7 +69,7 @@ const CardHome: React.FC<CardHomeProps> = ({
       />
 
         {/* Content */}
-      <div className="flex items-center justify-center gap-4 w-full">
+      <div className="flex items-center justify-center gap-8 w-full">
         
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -84,15 +84,15 @@ const CardHome: React.FC<CardHomeProps> = ({
         {/* Info Text */}
         <div className="flex flex-col min-w-0"> 
           <div className="flex items-baseline gap-2">
-            <span className="text-[32px] font-semibold text-[#1F1F1F] leading-none">
+            <span className="text-[48px] font-medium text-[#221818] leading-none">  
               {count}
             </span>
-            <span className="text-[14px] text-[#595959] font-normal whitespace-nowrap">
+            <span className="text-[16px] text-[#595959] font-normal whitespace-nowrap">
               {unit}
             </span>
           </div>
           <span 
-            className="text-[16px] truncate"
+            className="text-[20px] truncate mt-4"
             style={{ color: config.color }}
             title={title}
           >

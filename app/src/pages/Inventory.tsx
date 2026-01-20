@@ -119,6 +119,7 @@
  * Author: Worrawat Namwat (Wave) 66160372
  */
 import "../styles/css/User.css";
+import "../styles/css/icon.css";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/Button.js";
@@ -225,7 +226,7 @@ export const Inventory = () => {
 
   //States: Pagination
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const pageSize = 8;
 
   // เปลี่ยนหน้า
   const navigate = useNavigate();
@@ -256,7 +257,7 @@ export const Inventory = () => {
       await Promise.all(
         idsToDelete.map((id) => api.delete(`/inventory/${id}`))
       );
-      toast.push({ message: "ลบอุปกรณ์เสร็จสิ้น!", tone: "danger" });
+      toast.push({ message: "ลบอุปกรณ์เสร็จสิ้น!", tone: "danger" });  
       setSelectedItems([]);
       setDeleteId(null);
       setIsAlertOpen(false);
@@ -495,7 +496,7 @@ export const Inventory = () => {
             <div className="flex items-center gap-[10px] pl-[35px] h-full">
               <input
                 type="checkbox"
-                className="custom-checkbox-inventory focus:ring-blue-500 cursor-pointer shrink-0"
+                className="custom-checkbox-inventory "
                 checked={isAllSelected}
                 onChange={handleSelectAll}
                 disabled={isLoading}
@@ -621,7 +622,8 @@ export const Inventory = () => {
           </div>
 
           {/* 2. Body (ตารางข้อมูล) */}
-          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px]">
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] h-[620px] flex flex-col">
+            <div className="flex-1 overflow-hidden">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                 <Icon
@@ -657,34 +659,34 @@ export const Inventory = () => {
                       disabled={item.status_type === "BORROWED"}
                     />
                     <div
-                      className="font-medium text-gray-900 truncate"
+                      className=" text-black truncate"
                       title={item.name}
                     >
                       {item.name}
                     </div>
                   </div>
                   <div
-                    className="py-2 px-4 truncate text-gray-600"
+                    className="py-2 px-4 truncate text-black"
                     title={item.department}
                   >
                     {item.department}
                   </div>
                   <div
-                    className="py-2 px-4 truncate text-gray-600"
+                    className="py-2 px-4 truncate text-black"
                     title={item.category}
                   >
                     {item.category}
                   </div>
                   <div
-                    className="py-2 px-4 truncate text-gray-600"
+                    className="py-2 px-4 truncate text-black"
                     title={item.sub_section}
                   >
                     {item.sub_section}
                   </div>
-                  <div className="py-2 px-4 text-gray-900 font-medium pl-8">
+                  <div className="py-2 px-4 text-black font-medium pl-8">
                     {item.quantity}
                   </div>
-                  <div className="py-2 px-4 text-gray-600 flex items-center justify-center">
+                  <div className="py-2 px-4 text-black flex items-center justify-center">
                     {FormatThaiDate(item.last_edited)}
                   </div>
 
@@ -719,6 +721,7 @@ export const Inventory = () => {
                 </div>
               ))
             )}
+            </div>
             <div className="flex flex-wrap items-center justify-between p-4 ">
               <div className="flex items-center gap-4">
                 <button

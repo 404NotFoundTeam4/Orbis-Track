@@ -13,6 +13,8 @@ interface DeviceListModalProps {
   isOpen: boolean;
   onClose: () => void;
   devices: TicketDeviceChild[];
+
+  
 }
 
 // Status display configuration (matching Figma)
@@ -36,6 +38,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   LOST: {
     label: "สูญหาย",
     className: "border-[#9CA3AF] text-[#111827]",
+  },
+  COMPLETED: {
+    label: "คืนแล้ว",
+    className: "border-[#C7D2FE] text-[#4F46E5]",
   },
 };
 
@@ -109,7 +115,7 @@ const DeviceListModalHome = ({
             {/* Table Body */}
             <div className="mt-2">
               {devices.map((device, index) => {
-                const statusStyle = getStatusStyle(device.current_status);
+                const statusStyle = getStatusStyle(device.status);
                 return (
                   <div
                     key={device.child_id || index}

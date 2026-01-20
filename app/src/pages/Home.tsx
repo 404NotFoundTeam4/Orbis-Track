@@ -199,7 +199,7 @@ export const Home = () => {
   }, [tickets, sortField, sortDirection]);
 
   return (
-    <div className="p-4">
+    <div className="p-4 ">
       <h1 className="text-2xl font-semibold my-4">หน้าแรก</h1>
       <div className="mt-6 w-full">
         <div className="flex flex-nowrap gap-[49px] overflow-x-auto pb-4 w-full">
@@ -232,7 +232,7 @@ export const Home = () => {
       <div>
         <div className="flex items-baseline gap-3 mb-4 mt-5">
           <h1 className="text-2xl font-semibold leading-none">
-            รายการคำร้องยืม
+            รายการคำร้องยืมของฉัน
           </h1>
           <span className="text-sm text-[#858585] leading-none">
             แสดง 5 รายการล่าสุด
@@ -304,7 +304,7 @@ export const Home = () => {
         </div>
 
         {/* List */}
-        <div className="w-full bg-white border border-[#D8D8D8] rounded-[16px] overflow-hidden relative z-50">
+        <div className="w-full bg-white border border-[#D8D8D8] rounded-[16px] overflow-hidden relative ">
           {isLoading ? (
             <div className="text-center text-[#858585] py-10 flex flex-col items-center">
                <Icon icon="eos-icons:loading" width="40" className="mb-2 text-[#40A9FF]" />
@@ -327,7 +327,7 @@ export const Home = () => {
               />
             ))
           )}
-          <div className="flex justify-end px-6 py-4  border-gray-100 bg-white relative z-50">
+          <div className="flex justify-end px-6 py-4  border-gray-100 bg-white relative ">
             <Link
               to="/requests"
               className="text-[#7BACFF] text-sm font-medium hover:text-[#40A9FF] hover:underline cursor-pointer flex items-center gap-1"

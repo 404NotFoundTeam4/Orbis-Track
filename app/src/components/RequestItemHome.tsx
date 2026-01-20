@@ -47,6 +47,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "เลยกำหนด",
     className: "border-[#FF4D4F] text-[#FF4D4F]",
   },
+  COMPLETED: {
+    label: "คืนแล้ว",
+    className: "border-[#C7D2FE] text-[#4F46E5]",
+  },
 };
 
 /**

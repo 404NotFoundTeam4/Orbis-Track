@@ -3,6 +3,8 @@ import { homeService } from "./home.service.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { BaseController } from "../../core/base.controller.js";
 import { HomeStats,TicketHomeItem,TicketDetailResponse } from "./home.schema.js";
+import { AuthRequest } from "../auth/auth.schema.js";
+
 
 export class HomeController extends BaseController {
   constructor() {
@@ -15,11 +17,16 @@ export class HomeController extends BaseController {
    * Author    : Worrawat Namwat (Wave) 66160372
    */
  async getStats(
-    req: Request, 
+    req: AuthRequest, 
     res: Response, 
     next: NextFunction
   ): Promise<BaseResponse<HomeStats>> {
-    const stats = await homeService.getHomeStats();
+    const userId = req.user?.sub; 
+    if (!userId) {
+      throw new Error("User ID not found in token");
+    }
+    // ส่ง userId ไปให้ Service กรองข้อมูล
+    const stats = await homeService.getHomeStats(userId);
     return { data: stats };
   }
 
@@ -30,11 +37,16 @@ export class HomeController extends BaseController {
    * Author    : Worrawat Namwat (Wave) 66160372
    */
   async getRecentTickets(
-    req: Request, 
+    req: AuthRequest, 
     res: Response, 
     next: NextFunction
   ): Promise<BaseResponse<TicketHomeItem[]>> {
-    const tickets = await homeService.getRecentTickets();
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new Error("User ID not found in token");
+    }
+    // ส่ง userId ไปให้ Service กรองข้อมูล
+    const tickets = await homeService.getRecentTickets(userId);
     return { data: tickets };
   }
 

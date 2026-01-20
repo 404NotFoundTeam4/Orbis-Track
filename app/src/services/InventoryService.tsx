@@ -19,10 +19,10 @@ export interface GetDeviceWithChildsResponse {
 }
 
 // โครงสร้างข้อมูลตอนเพิ่มอุปกรณ์ลูก
-export interface CreateDeviceChildPayload {
-  dec_de_id: number;
-  quantity: number;
-}
+// export interface CreateDeviceChildPayload {
+//   dec_de_id: number;
+//   quantity: number;
+// }
 
 // โครงสร้างข้อมูลหลังจากเพิ่มอุปกรณ์ลูก (อัปโหลดไฟล์)
 export interface UploadFileDeviceChildResponse {
@@ -96,6 +96,13 @@ export interface CreateDevicePayload {
   accessories: Accessory[];
 }
 
+export interface CreateDeviceChildPayload {
+  dec_de_id: number;
+  dec_serial_number: string;
+  dec_asset_code: string;
+  dec_status: DeviceChild["dec_status"];
+}
+
 export const DeviceService = {
   /**
    * Description: ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
@@ -119,7 +126,7 @@ export const DeviceService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
   createDeviceChild: async (
-    payload: CreateDeviceChildPayload
+    payload: CreateDeviceChildPayload[]
   ): Promise<{ message: string }> => {
     const { data } = await api.post(`/inventory/devices-childs`, payload);
     return data;

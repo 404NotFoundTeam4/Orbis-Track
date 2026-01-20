@@ -43,7 +43,7 @@ export class InventoryController extends BaseController {
   * Output    : { data } - ข้อมูลอุปกรณ์ลูกที่เพิ่มใหม่
   * Author    : Thakdanai Makmi (Ryu) 66160355
   */
-  async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<CreateDeviceChildSchema[]>> {
+  async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<CreateDeviceChildSchema>> {
     const payload = createDeviceChildPayload.parse(req.body);
     const data = await inventoryService.createDeviceChild(payload);
     return { data };

@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import MainDeviceModal from "../components/DeviceModal";
-import DevicesChilds from "../components/DevicesChilds";
+import DevicesChilds, { type DraftDevice } from "../components/DevicesChilds";
 import { useToast } from "../components/Toast";
 import {
   DeviceService,
+  type CreateDeviceChildPayload,
   type DeviceChild,
+  // type DraftDevice,
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
 import { useLocation } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
+
 const EditInventory = () => {
   // ดึง url ปัจจุบัน
   const location = useLocation();
@@ -44,18 +47,18 @@ const EditInventory = () => {
   const { push } = useToast();
 
   // เพิ่มอุปกรณ์ลูก
-  const handleAddDeviceChild = async (quantity: number) => {
-    if (!quantity) {
-      push({ tone: "warning", message: "กรุณาระบุจำนวนอุปกรณ์!" });
-      return;
-    }
+  // const handleAddDeviceChild = async (quantity: number) => {
+  //   if (!quantity) {
+  //     push({ tone: "warning", message: "กรุณาระบุจำนวนอุปกรณ์!" });
+  //     return;
+  //   }
 
-    const payload = { dec_de_id: parentId, quantity };
-    // เรียกใช้งาน service
-    await DeviceService.createDeviceChild(payload);
-    push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" });
-    await fetchDevice(); // โหลดข้อมูลใหม่
-  };
+  //   const payload = { dec_de_id: parentId, quantity };
+  //   // เรียกใช้งาน service
+  //   // await DeviceService.createDeviceChild(payload);
+  //   push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" });
+  //   await fetchDevice(); // โหลดข้อมูลใหม่
+  // };
 
   // ลบอุปกรณ์ลูก
   const handleDeleteDeviceChild = async (ids: number[]) => {
@@ -149,6 +152,34 @@ const EditInventory = () => {
       }
     }
   };
+
+  /**
+   * Description: ฟังก์ชันสำหรับบันทึกอุปกรณ์ลูกที่อยู่ในสถานะ draft
+   * Input     : drafts - รายการอุปกรณ์ลูกแบบ draft ที่ผู้ใช้เพิ่ม
+   * Output    : 
+   *             - สร้างอุปกรณ์ลูกในฐานข้อมูล
+   *             - แสดง toast ผลการทำงาน
+   *             - โหลดข้อมูลอุปกรณ์ใหม่
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  const handleSaveDraft = async (drafts: DraftDevice[]) => {
+    // แปลงข้อมูล draft ให้เป็นรูปแบบ payload
+    const payload: CreateDeviceChildPayload[] = drafts.map((draft) => ({
+      dec_de_id: parentId,
+      dec_serial_number: draft.dec_serial_number,
+      dec_asset_code: draft.dec_asset_code,
+      dec_status: draft.dec_status
+    }));
+
+    try {
+      await DeviceService.createDeviceChild(payload); // เรียกใช้งาน API
+      push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" }); // แสดง toast
+      await fetchDevice(); // โหลดข้อมูลใหม่
+    } catch (error) {
+      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" })
+    }
+  }
+
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}
@@ -171,8 +202,10 @@ const EditInventory = () => {
         }}
       />
       <DevicesChilds
+        parentCode={parentDevice?.de_serial_number}
         devicesChilds={deviceChilds}
-        onAdd={handleAddDeviceChild}
+        // onAdd={handleAddDeviceChild}
+        onSaveDraft={handleSaveDraft}
         onUpload={handleUploadFile}
         onDelete={handleDeleteDeviceChild}
         onChangeStatus={handleChangeStatus}

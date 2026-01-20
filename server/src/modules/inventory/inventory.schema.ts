@@ -217,21 +217,30 @@ export const getDeviceWithChildsSchema = z.object({
 });
 
 // ข้อมูลที่ส่งเข้ามาตอนเพิ่มอุปกรณ์ลูก
-export const createDeviceChildPayload = z.object({
-  dec_de_id: z.number(),
-  quantity: z.number().positive(),
-});
+export const createDeviceChildPayload = z.array(
+  // dec_de_id: z.number(),
+  // quantity: z.number().positive(),
+
+  z.object({
+    dec_de_id: z.number(),
+    dec_serial_number: z.string(),
+    dec_asset_code: z.string(),
+    dec_status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS),
+  })
+);
 
 // ข้อมูลหลังจากทำการเพิ่มอุปกรณ์ลูก
 export const createDeviceChildSchema = z.object({
-  dec_id: z.number(),
-  dec_serial_number: z.string().nullable(),
-  dec_asset_code: z.string(),
-  dec_status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS),
-  dec_has_serial_number: z.boolean(),
-  dec_de_id: z.number(),
-  created_at: z.date().nullable(),
-  updated_at: z.date().nullable(),
+  // dec_id: z.number(),
+  // dec_serial_number: z.string().nullable(),
+  // dec_asset_code: z.string(),
+  // dec_status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS),
+  // dec_has_serial_number: z.boolean(),
+  // dec_de_id: z.number(),
+  // created_at: z.date().nullable(),
+  // updated_at: z.date().nullable(),
+
+  count: z.number(),
 });
 
 // ข้อมูลที่ส่งเข้ามาตอนเพิ่มอุปกรณ์ลูกด้วยไฟล์

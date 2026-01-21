@@ -192,9 +192,11 @@ const RequestItemHome = ({
     <div className="w-full">
       {/* Summary Row */}
       <div
-        className="grid [grid-template-columns:2fr_0.8fr_1.2fr_1.5fr_1.2fr_1.2fr_1fr_50px]
-             items-center px-6 h-[72px]
-             hover:bg-gray-50 cursor-pointer"
+        className="grid
+    lg:[grid-template-columns:1.6fr_0.7fr_1fr_1.2fr_1fr_1fr_0.9fr_40px]
+    xl:[grid-template-columns:2fr_0.8fr_1.2fr_1.5fr_1.2fr_1.2fr_1fr_50px]
+    items-center px-6 h-[72px]
+    hover:bg-gray-50 cursor-pointer"
         onClick={toggleExpand}
       >
         {/* Device Name & ID */}

@@ -72,7 +72,7 @@ export default function BorrowModal({
   const [end, setEnd] = useState<Date | null>(null); // วันที่คืน
   const [timeStart, setTimeStart] = useState<string>(); // "08:00"
   const [timeEnd, setTimeEnd] = useState<string>(); // "17:30"
- 
+
   const [selectedActiveBorrow, setSelectedActiveBorrow] = useState<
     ActiveBorrow[] | null
   >(null);
@@ -93,7 +93,7 @@ export default function BorrowModal({
     end: Date | null,
     timeStart?: string,
     timeEnd?: string,
-    activeBorrow?: ActiveBorrow[] | null
+    activeBorrow?: ActiveBorrow[] | null,
   ): boolean => {
     if (!activeBorrow || activeBorrow.length === 0) return true;
 
@@ -136,14 +136,12 @@ export default function BorrowModal({
     setdefaultBorrow(defaultValues);
   }, [defaultValues]);
   useEffect(() => {
-    setTimeStart(timeDefault?.time_start)
-    setTimeEnd(timeDefault?.time_end)
-     
-  },[timeDefault]);
+    setTimeStart(timeDefault?.time_start);
+    setTimeEnd(timeDefault?.time_end);
+  }, [timeDefault]);
 
-
- 
   let yearValue = 2025;
+
   useEffect(() => {
     if (!dateDefault) return null;
     setStart(dateDefault.start);
@@ -154,11 +152,11 @@ export default function BorrowModal({
   const resultYear = new Date(
     yearValue,
     currentMonth.getMonth() + 1,
-    0
+    0,
   ).getDate();
   const changeMonth = (offset: number) => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1)
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1),
     );
   };
 
@@ -201,11 +199,11 @@ export default function BorrowModal({
     return `${hour} AM`;
   };
   const readyDevices = (defaultBorrow ?? []).filter((device) =>
-    isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow)
+    isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
   );
   const borrowDevices = (defaultBorrow ?? []).filter(
     (device) =>
-      !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow)
+      !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
   );
   /* ========================================== */
   const timeToMinutes = (time?: string): number | null => {
@@ -217,7 +215,7 @@ export default function BorrowModal({
     start: Date | null,
     end: Date | null,
     timeStart?: string,
-    timeEnd?: string
+    timeEnd?: string,
   ): boolean => {
     if (!start || !end) return true;
 
@@ -269,7 +267,7 @@ export default function BorrowModal({
 
   const splitBorrowToDays = (
     da_start: string,
-    da_end: string
+    da_end: string,
   ): DayTimeRange[] => {
     const start = new Date(da_start);
     const end = new Date(da_end);
@@ -313,7 +311,7 @@ export default function BorrowModal({
   };
 
   const buildAllBorrowDays = (
-    activeBorrow?: { da_start: string; da_end: string }[] | null
+    activeBorrow?: { da_start: string; da_end: string }[] | null,
   ): DayTimeRange[] => {
     if (!activeBorrow || activeBorrow.length === 0) return [];
 
@@ -336,7 +334,7 @@ export default function BorrowModal({
   const calcBlockStyle = (
     timeStart: string,
     timeEnd: string,
-    hourHeight: number
+    hourHeight: number,
   ) => {
     const start = timeToMinute(timeStart);
     const end = timeToMinute(timeEnd);
@@ -359,10 +357,22 @@ export default function BorrowModal({
       time_start: timeStart,
       time_end: timeEnd,
     };
-   
+
     onConfirm(payload);
-   
+
     setOpen(false);
+  };
+    const handleClear = () => {
+  
+    const payload = {
+      borrow_start:"" ,
+      borrow_end: "",
+      time_start: "",
+      time_end: "",
+    };
+
+    onConfirm(payload);
+
   };
   const isValid =
     start !== null &&
@@ -404,7 +414,7 @@ export default function BorrowModal({
     start && end
       ? `${formatThaiDate(start)} - ${formatThaiDate(end)}`
       : "วัน/เดือน/ปี";
- 
+
   return (
     <div className="">
       <button
@@ -520,7 +530,7 @@ export default function BorrowModal({
                           ))
                         ) : (
                           <div className="h-45 flex items-center justify-center text-gray-400">
-                            ไม่มีอุปกรณ์ที่พร้อมยืม
+                            ไม่มีอุปกรณ์ที่ถูกยืม
                           </div>
                         )}
                       </div>
@@ -583,6 +593,7 @@ export default function BorrowModal({
                               setEnd(null);
                               setTimeStart(undefined);
                               setTimeEnd(undefined);
+                              handleClear()
                             }}
                           >
                             ล้างค่า
@@ -701,7 +712,7 @@ export default function BorrowModal({
                                     {borrow.timeStart} - {borrow.timeEnd}
                                   </p>
                                 </div>
-                              ) : null
+                              ) : null,
                             )}
                           </div>
                         );
@@ -735,7 +746,7 @@ export default function BorrowModal({
                           {dayValue.map((offset) => {
                             const day = startDay.getDate() + offset;
                             const borrow = timeBorrow.find(
-                              (b) => b.day === day
+                              (b) => b.day === day,
                             );
 
                             return (
@@ -754,7 +765,7 @@ export default function BorrowModal({
                                     style={calcBlockStyle(
                                       borrow.timeStart,
                                       borrow.timeEnd,
-                                      hourHeight - 0.5
+                                      hourHeight - 0.5,
                                     )}
                                   >
                                     <p className="text-[#FF4D4F] text-[10px] font-bold">
@@ -798,7 +809,7 @@ export default function BorrowModal({
                                 style={calcBlockStyle(
                                   dayBorrow.timeStart,
                                   dayBorrow.timeEnd,
-                                  hourHeight - 0.5
+                                  hourHeight - 0.5,
                                 )}
                               >
                                 <p className="text-red-500 text-[10px] font-bold">

@@ -160,30 +160,30 @@ export default function History() {
   useEffect(() => {
     if (activeTabKey !== "borrow") return;
 
-    let cancelled = false;
+    let isCancelled = false;
 
     const loadHistoryBorrowList = async () => {
       try {
         setIsLoadingList(true);
         const response = await historyBorrowService.getHistoryBorrowTickets(queryParams);
-        if (cancelled) return;
+        if (isCancelled) return;
 
         setTicketItems(response.items);
         setTotalPages(response.pagination.totalPages || 1);
       } catch (error) {
-        if (cancelled) return;
+        if (isCancelled) return;
         console.error(error);
         setTicketItems([]);
         setTotalPages(1);
       } finally {
-        if (!cancelled) setIsLoadingList(false);
+        if (!isCancelled) setIsLoadingList(false);
       }
     };
 
     loadHistoryBorrowList();
 
     return () => {
-      cancelled = true;
+      isCancelled = true;
     };
   }, [activeTabKey, queryParams]);
 
@@ -521,7 +521,7 @@ export default function History() {
     if (activeTabKey !== "approve") return;
     if (!canViewApprovalHistoryTab) return;
 
-    let cancelled = false;
+    let isCancelled = false;
 
     const loadApprovalHistoryList = async () => {
       try {
@@ -530,26 +530,26 @@ export default function History() {
         console.log("[History][Approve] approvalQueryParams =", approvalQueryParams);
 
         const response = await approvalHistoryService.getHistoryApprovalList(approvalQueryParams);
-        if (cancelled) return;
+        if (isCancelled) return;
 
         console.log("[History][Approve] list response =", response);
 
         setApprovalItems(Array.isArray(response.items) ? response.items : []);
         setApprovalTotalPages(response.pagination?.totalPages ? Number(response.pagination.totalPages) : 1);
       } catch (error) {
-        if (cancelled) return;
+        if (isCancelled) return;
         console.error("[History][Approve] load list failed", error);
         setApprovalItems([]);
         setApprovalTotalPages(1);
       } finally {
-        if (!cancelled) setIsLoadingApprovalList(false);
+        if (!isCancelled) setIsLoadingApprovalList(false);
       }
     };
 
     loadApprovalHistoryList();
 
     return () => {
-      cancelled = true;
+      isCancelled = true;
     };
   }, [activeTabKey, canViewApprovalHistoryTab, approvalQueryParams]);
 

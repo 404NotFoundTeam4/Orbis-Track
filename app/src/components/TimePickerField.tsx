@@ -50,7 +50,7 @@ const TimePickerField = ({
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        className={`group flex items-center justify-between border border-[#A2A2A2] rounded-[16px] h-[46px] text-left px-5 text-[16px] ${value ? "text-black" : "text-[#CDCDCD]"}`}
+                        className={`group flex items-center justify-between border border-[#D8D8D8] rounded-[16px] h-[46px] text-left px-5 text-[16px] ${value ? "text-black" : "text-[#CDCDCD]"}`}
                         style={{ width: width }}
                     >
                         {value ? formatToAMPM(value) : placeholder}

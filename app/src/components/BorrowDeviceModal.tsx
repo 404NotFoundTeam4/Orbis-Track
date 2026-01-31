@@ -92,7 +92,7 @@ const BorrowEquipmentModal = ({
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
- 
+
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   // เก็บข้อความ error ของแต่ละ field ในฟอร์ม BorrowFormData
@@ -189,12 +189,6 @@ const BorrowEquipmentModal = ({
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
   const handleSubmitBorrow = () => {
-    // ตรวจสอบข้อมูลก่อน submit
-    if (!validate()) {
-      setIsConfirmOpen(false);
-      return;
-    }
-
     // ส่งข้อมูลไปยัง parent component
     onSubmit({
       data: form,
@@ -213,11 +207,6 @@ const BorrowEquipmentModal = ({
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
   const handleAddToCart = () => {
-    // ตรวจสอบข้อมูล
-    if (!validate()) {
-      return;
-    }
-
     // ส่งข้อมูลไปยัง parent component
     onAddToCart?.({
       data: form,
@@ -231,14 +220,7 @@ const BorrowEquipmentModal = ({
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
   const handleSubmitEdit = () => {
-    // ตรวจสอบข้อมูล
-    if (!validate()) {
-      setIsConfirmOpen(false);
-      return;
-    }
-
     // ส่งข้อมูลไปยัง parent component
-
     const submitData = {
       ...form,
       borrowTime: applyTimeToDate(form.dateRange[0]!, form.borrowTime),
@@ -252,6 +234,20 @@ const BorrowEquipmentModal = ({
 
     // ปิด alert
     setIsConfirmOpen(false);
+  };
+
+  /**
+  * Description: ฟังก์ชันตรวจสอบความถูกต้องของข้อมูลฟอร์ม
+  * Input : -
+  * Output : เปิด AlertDialog เมื่อข้อมูลผ่านการตรวจสอบ
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
+  const handleOpenConfirm = () => {
+    if (!validate()) {
+      return;
+    }
+
+    setIsConfirmOpen(true);
   };
 
   /**
@@ -318,9 +314,9 @@ const BorrowEquipmentModal = ({
     fetchData();
   }, []);
   return (
-    <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px]">
+    <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
-      <form className="flex flex-col justify-between gap-[30px] text-[16px] bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] w-[1048px] px-[40px] py-[40px] h-[698px] overflow-y-auto pr-2">
+      <form className="flex flex-col justify-between gap-[30px] text-[16px] bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] w-[1047px] px-[40px] py-[70px]">
         {/* หัวข้อ */}
         <div className="flex flex-col gap-[20px]">
           <div className="flex flex-col gap-[7px]">
@@ -339,10 +335,8 @@ const BorrowEquipmentModal = ({
               placeholder="กรอกข้อมูลชื่อผู้ยืม"
               value={form.borrower}
               onChange={(e) => setForm({ ...form, borrower: e.target.value })}
+              error={errors.borrower}
             />
-            {errors.borrower && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.borrower}</p>
-            )}
           </div>
           {/* เบอร์โทรศัพท์ผู้ยืม */}
           <div className="flex flex-col gap-[4px]">
@@ -355,10 +349,8 @@ const BorrowEquipmentModal = ({
               placeholder="กรอกข้อมูลเบอร์โทรศัพท์ผู้ยืม"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              error={errors.phone}
             />
-            {errors.phone && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.phone}</p>
-            )}
           </div>
           {/* เหตุผลในการยืม */}
           <div className="flex flex-col gap-[4px]">
@@ -366,13 +358,16 @@ const BorrowEquipmentModal = ({
               เหตุผลในการยืม <span className="text-[#F5222D]">*</span>
             </label>
             <textarea
-              className="border border-[#D8D8D8] rounded-[16px] w-[581px] h-[111px] px-[15px] py-[8px]"
+              className={
+                `border rounded-[16px] w-full h-[111px] px-[15px] py-[8px] placeholder:text-[#CDCDCD] focus:outline-none focus:ring-2 focus:border-transparent transition-all
+                ${errors.reason ? "border-red-500 focus:ring-red-500" : "border-[#D8D8D8] focus:ring-blue-500"}
+                `}
               placeholder="กรอกข้อมูลเหตุผลในการยืม"
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
             ></textarea>
             {errors.reason && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.reason}</p>
+              <span className="text-sm mt-1 text-red-500">{errors.reason}</span>
             )}
           </div>
           {/* สถานที่ใช้งาน */}
@@ -381,13 +376,16 @@ const BorrowEquipmentModal = ({
               สถานที่ใช้งาน <span className="text-[#F5222D]">*</span>
             </label>
             <textarea
-              className="border border-[#D8D8D8] rounded-[16px] w-[581px] h-[111px] px-[15px] py-[8px]"
+              className={
+                `border rounded-[16px] w-full h-[111px] px-[15px] py-[8px] placeholder:text-[#CDCDCD] focus:outline-none focus:ring-2 focus:border-transparent transition-all
+                ${errors.placeOfUse ? "border-red-500 focus:ring-red-500" : "border-[#D8D8D8] focus:ring-blue-500"}
+              `}
               placeholder="กรอกสถานที่ใช้งาน"
               value={form.placeOfUse}
               onChange={(e) => setForm({ ...form, placeOfUse: e.target.value })}
             ></textarea>
             {errors.placeOfUse && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.placeOfUse}</p>
+              <span className="text-sm mt-1 text-red-500">{errors.placeOfUse}</span>
             )}
           </div>
         </div>
@@ -411,7 +409,7 @@ const BorrowEquipmentModal = ({
                   time_start: form.borrowTime,
                   time_end: form.returnTime,
                 }}
-                
+
                 dateDefault={{
                   start: form.dateRange[0]
                     ? new Date(form.dateRange[0])
@@ -420,9 +418,9 @@ const BorrowEquipmentModal = ({
                     ? new Date(form.dateRange[1])
                     : null,
                 }}
-                
+
                 onConfirm={(data) => {
-                  setForm((prev :any) => ({
+                  setForm((prev: any) => ({
                     ...prev,
                     dateRange: [
                       data.borrow_start ? new Date(data.borrow_start) : null,
@@ -431,11 +429,11 @@ const BorrowEquipmentModal = ({
                     borrowTime: data.time_start,
                     returnTime: data.time_end,
                   }));
-                
+
                 }}
               />
               {errors.dateRange && (
-                <p className="text-sm mt-1 text-[#F5222D]">
+                <p className="text-sm mt-1 text-red-500">
                   {errors.dateRange}
                 </p>
               )}
@@ -454,11 +452,12 @@ const BorrowEquipmentModal = ({
                 onChange={(time: string) =>
                   setForm({ ...form, borrowTime: time })
                 }
+                placeholder="เวลายืม"
               />
               {errors.borrowTime && (
-                <p className="text-sm mt-1 text-[#F5222D]">
+                <span className="text-sm mt-1 text-red-500">
                   {errors.borrowTime}
-                </p>
+                </span>
               )}
             </div>
             <div className="flex flex-col gap-[4px]">
@@ -472,11 +471,12 @@ const BorrowEquipmentModal = ({
                 onChange={(time: string) =>
                   setForm({ ...form, returnTime: time })
                 }
+                placeholder="เวลาคืน"
               />
               {errors.returnTime && (
-                <p className="text-sm mt-1 text-[#F5222D]">
+                <span className="text-sm mt-1 text-red-500">
                   {errors.returnTime}
-                </p>
+                </span>
               )}
             </div>
           </div>
@@ -493,7 +493,7 @@ const BorrowEquipmentModal = ({
           }
 
           {/* แสดงรายการอุปกรณ์ที่ว่างคร่าวๆ (ลบได้) */}
-          <div className="grid grid-cols-2 gap-[10px]">
+          <div className="grid grid-cols-2 gap-[22px]">
             {
               // เทสแสดงรายการอุปกรณ์ที่พร้อมใช้งาน (ให้ผู้ใช้เลือกเอง)
               availableDevices
@@ -509,6 +509,7 @@ const BorrowEquipmentModal = ({
                     >
                       <input
                         type="checkbox"
+                        className="custom-checkbox-inventory"
                         checked={checked}
                         onChange={() => {
                           if (checked) {
@@ -596,7 +597,7 @@ const BorrowEquipmentModal = ({
           {/* ปุ่มหลัก */}
           <Button
             disabled={selectedDeviceIds.length === 0}
-            onClick={() => setIsConfirmOpen(true)}
+            onClick={handleOpenConfirm}
             type="button"
             className="!w-[155px] !h-[46px] font-semibold"
             variant="primary"
@@ -608,11 +609,15 @@ const BorrowEquipmentModal = ({
       {/* การ์ดรายละเอียดอุปกรณ์ */}
       <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[600px] min-h-[668px] px-[40px] py-[40px]">
         {/* รูปภาพอุปกรณ์ */}
-        <div className="border border-[#D9D9D9] rounded-[16px] w-[520px] h-[118px]">
-          <img
-            className="w-full h-full object-cover rounded-[16px]"
-            src={getImageUrl(equipment.imageUrl)}
-          />
+        <div className="rounded-[16px] w-[520px] h-[118px] overflow-hidden">
+          {
+            equipment.imageUrl && (
+              <img
+                className="w-full h-full object-cover"
+                src={getImageUrl(equipment.imageUrl)}
+              />
+            )
+          }
         </div>
         {/* รายละเอียดอุปกรณ์ */}
         <div className="flex flex-col gap-[20px] text-[14px] text-[#747474]">
@@ -671,10 +676,10 @@ const BorrowEquipmentModal = ({
       </div>
       {isConfirmOpen && (
         <AlertDialog
-          tone="success"
+          tone="warning"
           title={
             mode === "borrow-equipment"
-              ? "ยืนยันการส่งคำร้อง"
+              ? "ยืนยันการส่งคำร้อง?"
               : "ยืนยันการบันทึกการแก้ไข"
           }
           open={isConfirmOpen}

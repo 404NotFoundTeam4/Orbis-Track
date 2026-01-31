@@ -621,7 +621,7 @@ export default function History() {
     if (!isApprovalDetailModalOpen) return;
     if (!selectedApprovalTicketId) return;
 
-    let cancelled = false;
+    let isCancelled = false;
 
     const loadApprovalDetail = async () => {
       try {
@@ -630,21 +630,21 @@ export default function History() {
         const detailResponse =
           await approvalHistoryService.getHistoryApprovalDetail(selectedApprovalTicketId);
 
-        if (cancelled) return;
+        if (isCancelled) return;
         setApprovalDetail(detailResponse);
       } catch (error) {
-        if (cancelled) return;
+        if (isCancelled) return;
         console.error(error);
         setApprovalDetail(null);
       } finally {
-        if (!cancelled) setIsLoadingApprovalDetail(false);
+        if (!isCancelled) setIsLoadingApprovalDetail(false);
       }
     };
 
     loadApprovalDetail();
 
     return () => {
-      cancelled = true;
+      isCancelled = true;
     };
   }, [isApprovalDetailModalOpen, selectedApprovalTicketId]);
 

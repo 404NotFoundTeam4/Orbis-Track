@@ -34,6 +34,8 @@
   },
   "homepage": "https://github.com/404NotFoundTeam4/Orbis-Track#readme",
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.980.0",
+    "@aws-sdk/client-sso": "^3.980.0",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
@@ -50,5 +52,9 @@
     "axios": "^1.12.2",
     "ioredis": "^5.7.0",
     "multer": "^2.0.2"
+  },
+  "overrides": {
+    "fast-xml-parser": "5.3.4",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

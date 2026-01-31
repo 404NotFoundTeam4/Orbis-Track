@@ -530,7 +530,7 @@ export default function BorrowModal({
                           ))
                         ) : (
                           <div className="h-45 flex items-center justify-center text-gray-400">
-                            ไม่มีอุปกรณ์ที่พร้อมยืม
+                            ไม่มีอุปกรณ์ที่ถูกยืม
                           </div>
                         )}
                       </div>

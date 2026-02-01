@@ -609,6 +609,7 @@ async function main() {
           brts_role: s.role,
           brts_dept_id: s.deptId,
           brts_dept_name: "Mock Dept",
+          brts_sec_id: s.secId,
           brts_sec_name: "N/A",
           brts_status: s.status,
           brts_us_id: s.usId || null,

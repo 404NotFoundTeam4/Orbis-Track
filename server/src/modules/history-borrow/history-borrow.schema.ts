@@ -36,16 +36,16 @@ export const getHistoryBorrowTicketQuerySchema = z.object({
   page: z.preprocess(
     emptyToUndefined,
     z.coerce.number().int().min(1).optional()
-  ), // กัน page="" และ page=0
+  ).openapi({ description: "เลขหน้า" }), // กัน page="" และ page=0
 
   limit: z.preprocess(
     emptyToUndefined,
     z.coerce.number().int().min(1).max(100).optional()
-  ), // กัน limit="" และ limit=0
+  ).openapi({ description: "จำนวนต่อหน้า" }), // กัน limit="" และ limit=0
 
-  status: z.preprocess(emptyToUndefined, z.nativeEnum(BRT_STATUS).optional()),
+  status: z.preprocess(emptyToUndefined, z.nativeEnum(BRT_STATUS).optional()).openapi({ description: "สถานะ" }),
 
-  search: z.preprocess(emptyToUndefined, z.string().optional()),
+  search: z.preprocess(emptyToUndefined, z.string().optional()).openapi({ description: "คำค้นหา" }),
 
   sortField: z.preprocess(
     emptyToUndefined,
@@ -59,12 +59,12 @@ export const getHistoryBorrowTicketQuerySchema = z.object({
         "status",
       ])
       .optional()
-  ),
+  ).openapi({ description: "เรียงตามฟิลด์" }),
 
   sortDirection: z.preprocess(
     emptyToUndefined,
     z.enum(["asc", "desc"]).optional()
-  ),
+  ).openapi({ description: "ทิศทางการเรียง" }),
 });
 
 /**
@@ -74,7 +74,7 @@ export const getHistoryBorrowTicketQuerySchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const idParamSchema = z.object({
-  id: z.coerce.number().int().positive(),
+  id: z.coerce.number().int().positive().openapi({ description: "ID" }),
 });
 
 /**
@@ -84,13 +84,13 @@ export const idParamSchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const requesterSummarySchema = z.object({
-  userId: z.coerce.number(), // อ้างอิงจาก us_id
-  fullName: z.string(), // ชื่อ-นามสกุล
-  employeeCode: z.string().nullable(), // อ้างอิงจาก us_emp_code
-  phoneNumber: z.string().nullable(), // อ้างอิงจาก us_phone (ใช้ในหน้า detail)
+  userId: z.coerce.number().openapi({ description: "รหัสผู้ใช้" }), // อ้างอิงจาก us_id
+  fullName: z.string().openapi({ description: "ชื่อ-นามสกุล" }), // ชื่อ-นามสกุล
+  employeeCode: z.string().nullable().openapi({ description: "รหัสพนักงาน" }), // อ้างอิงจาก us_emp_code
+  phoneNumber: z.string().nullable().openapi({ description: "เบอร์โทรศัพท์" }), // อ้างอิงจาก us_phone (ใช้ในหน้า detail)
 
-  department_name: z.string().nullable(), // departments.dept_name
-  section_name: z.string().nullable(), // sections.sec_name
+  department_name: z.string().nullable().openapi({ description: "ชื่อแผนก" }), // departments.dept_name
+  section_name: z.string().nullable().openapi({ description: "ชื่อฝ่าย" }), // sections.sec_name
 });
 
 /**
@@ -100,15 +100,15 @@ export const requesterSummarySchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const deviceSummarySchema = z.object({
-  deviceId: z.coerce.number(), // อ้างอิงจาก de_id
-  deviceName: z.string(), // อ้างอิงจาก de_name
-  deviceSerialNumber: z.string(), // อ้างอิงจาก devices.de_serial_number
-  categoryName: z.string(), // อ้างอิงจาก categories.ca_name
-  imageUrl: z.string().nullable(), // อ้างอิงจาก devices.de_images
-  description: z.string().nullable(), // อ้างอิงจาก devices.de_description
-  maximumBorrowDays: z.coerce.number(), // อ้างอิงจาก devices.de_max_borrow_days
-  sectionName: z.string().nullable(), // อ้างอิงจาก sections.sec_name
-  departmentName: z.string().nullable(), // อ้างอิงจาก departments.dept_name
+  deviceId: z.coerce.number().openapi({ description: "รหัสอุปกรณ์" }), // อ้างอิงจาก de_id
+  deviceName: z.string().openapi({ description: "ชื่ออุปกรณ์" }), // อ้างอิงจาก de_name
+  deviceSerialNumber: z.string().openapi({ description: "Serial Number" }), // อ้างอิงจาก devices.de_serial_number
+  categoryName: z.string().openapi({ description: "ชื่อหมวดหมู่" }), // อ้างอิงจาก categories.ca_name
+  imageUrl: z.string().nullable().openapi({ description: "Url รูปภาพ" }), // อ้างอิงจาก devices.de_images
+  description: z.string().nullable().openapi({ description: "รายละเอียด" }), // อ้างอิงจาก devices.de_description
+  maximumBorrowDays: z.coerce.number().openapi({ description: "จำนวนวันยืมสูงสุด" }), // อ้างอิงจาก devices.de_max_borrow_days
+  sectionName: z.string().nullable().openapi({ description: "ชื่อฝ่าย" }), // อ้างอิงจาก sections.sec_name
+  departmentName: z.string().nullable().openapi({ description: "ชื่อแผนก" }), // อ้างอิงจาก departments.dept_name
 });
 
 /**
@@ -118,10 +118,10 @@ export const deviceSummarySchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const ticketDeviceChildSchema = z.object({
-  deviceChildId: z.coerce.number(), // อ้างอิงจาก dec_id
-  assetCode: z.string(), // อ้างอิงจาก dec_asset_code
-  serialNumber: z.string().nullable(), // อ้างอิงจาก dec_serial_number
-  status: z.nativeEnum(DEVICE_CHILD_STATUS), // อ้างอิงจาก dec_status
+  deviceChildId: z.coerce.number().openapi({ description: "รหัสอุปกรณ์ลูก" }), // อ้างอิงจาก dec_id
+  assetCode: z.string().openapi({ description: "Asset Code" }), // อ้างอิงจาก dec_asset_code
+  serialNumber: z.string().nullable().openapi({ description: "Serial Number" }), // อ้างอิงจาก dec_serial_number
+  status: z.nativeEnum(DEVICE_CHILD_STATUS).openapi({ description: "สถานะ" }), // อ้างอิงจาก dec_status
 });
 
 /**
@@ -131,9 +131,9 @@ export const ticketDeviceChildSchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const accessorySchema = z.object({
-  accessoryId: z.coerce.number(),
-  accessoryName: z.string(),
-  quantity: z.coerce.number(),
+  accessoryId: z.coerce.number().openapi({ description: "รหัสอุปกรณ์เสริม" }),
+  accessoryName: z.string().openapi({ description: "ชื่ออุปกรณ์เสริม" }),
+  quantity: z.coerce.number().openapi({ description: "จำนวน" }),
 });
 
 /**
@@ -144,12 +144,12 @@ export const accessorySchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const approverUserSchema = z.object({
-  userId: z.coerce.number(), // อ้างอิงจาก users.us_id
-  fullName: z.string(), // ชื่อ-นามสกุล (ประกอบจาก us_firstname + us_lastname)
-  employeeCode: z.string().nullable(), // อ้างอิงจาก users.us_emp_code
-  role: z.nativeEnum(US_ROLE), // อ้างอิงจาก users.us_role
-  departmentName: z.string().nullable(), // อ้างอิงจาก departments.dept_name
-  sectionName: z.string().nullable(), // อ้างอิงจาก sections.sec_name
+  userId: z.coerce.number().openapi({ description: "รหัสผู้ใช้" }), // อ้างอิงจาก users.us_id
+  fullName: z.string().openapi({ description: "ชื่อ-นามสกุล" }), // ชื่อ-นามสกุล (ประกอบจาก us_firstname + us_lastname)
+  employeeCode: z.string().nullable().openapi({ description: "รหัสพนักงาน" }), // อ้างอิงจาก users.us_emp_code
+  role: z.nativeEnum(US_ROLE).openapi({ description: "บทบาท" }), // อ้างอิงจาก users.us_role
+  departmentName: z.string().nullable().openapi({ description: "ชื่อแผนก" }), // อ้างอิงจาก departments.dept_name
+  sectionName: z.string().nullable().openapi({ description: "ชื่อฝ่าย" }), // อ้างอิงจาก sections.sec_name
 });
 
 /**
@@ -168,10 +168,10 @@ export const approverCandidateSchema = approverUserSchema;
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const ticketTimelineSchema = z.object({
-  stepNumber: z.coerce.number(), // ลำดับขั้นตอน
-  roleDisplayName: z.string(), // ชื่อที่แสดงของ step (เช่น หัวหน้าแผนก)
-  requiredRole: z.nativeEnum(US_ROLE),
-  status: z.nativeEnum(BRTS_STATUS),
+  stepNumber: z.coerce.number().openapi({ description: "ลำดับขั้นตอน" }), // ลำดับขั้นตอน
+  roleDisplayName: z.string().openapi({ description: "ชื่อบทบาท" }), // ชื่อที่แสดงของ step (เช่น หัวหน้าแผนก)
+  requiredRole: z.nativeEnum(US_ROLE).openapi({ description: "บทบาทที่ต้องการ" }),
+  status: z.nativeEnum(BRTS_STATUS).openapi({ description: "สถานะ" }),
 
   /**
    * Description: ขอบเขต flow ของ step (ใช้สำหรับระบุหน่วยงานที่ต้องอนุมัติจริง)
@@ -179,10 +179,10 @@ export const ticketTimelineSchema = z.object({
    * Output : number | null และชื่อหน่วยงาน
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  flowDepartmentId: z.coerce.number().nullable(),
-  flowDepartmentName: z.string().nullable(),
-  flowSectionId: z.coerce.number().nullable(),
-  flowSectionName: z.string().nullable(),
+  flowDepartmentId: z.coerce.number().nullable().openapi({ description: "รหัสแผนกของ Flow" }),
+  flowDepartmentName: z.string().nullable().openapi({ description: "ชื่อแผนกของ Flow" }),
+  flowSectionId: z.coerce.number().nullable().openapi({ description: "รหัสฝ่ายของ Flow" }),
+  flowSectionName: z.string().nullable().openapi({ description: "ชื่อฝ่ายของ Flow" }),
 
   /**
    * Description: ผู้อนุมัติจริงของ step (มีค่าเมื่อ status ผ่านแล้ว)
@@ -190,7 +190,7 @@ export const ticketTimelineSchema = z.object({
    * Output : approverUserSchema | null
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  approver: approverUserSchema.nullable(),
+  approver: approverUserSchema.nullable().openapi({ description: "ผู้อนุมัติ" }),
 
   /**
    * Description: รายชื่อผู้มีสิทธิ์อนุมัติทั้งหมดใน step นี้ (ใช้แสดง 2 ชื่อ + "+N")
@@ -198,14 +198,14 @@ export const ticketTimelineSchema = z.object({
    * Output : Array<approverCandidateSchema>
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  approverCandidates: z.array(approverCandidateSchema).default([]),
+  approverCandidates: z.array(approverCandidateSchema).default([]).openapi({ description: "รายชื่อผู้มีสิทธิ์อนุมัติ" }),
 
-  updatedAt: z.coerce.date().nullable(),
+  updatedAt: z.coerce.date().nullable().openapi({ description: "วันที่แก้ไขล่าสุด" }),
 
-  departmentId: z.coerce.number().nullable(),
-  departmentName: z.string().nullable(),
-  sectionId: z.coerce.number().nullable(),
-  sectionName: z.string().nullable(),
+  departmentId: z.coerce.number().nullable().openapi({ description: "รหัสแผนก" }),
+  departmentName: z.string().nullable().openapi({ description: "ชื่อแผนก" }),
+  sectionId: z.coerce.number().nullable().openapi({ description: "รหัสฝ่าย" }),
+  sectionName: z.string().nullable().openapi({ description: "ชื่อฝ่าย" }),
 });
 
 /**
@@ -215,26 +215,26 @@ export const ticketTimelineSchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyBorrowTicketItemSchema = z.object({
-  ticketId: z.coerce.number(), // อ้างอิงจาก brt_id
-  status: z.nativeEnum(BRT_STATUS), // อ้างอิงจาก brt_status
-  requestDateTime: z.coerce.date(), // วัน-เวลา ที่ร้องขอ
-  deviceChildCount: z.coerce.number(), // จำนวนอุปกรณ์ลูกที่ถูกผูกจริงใน ticket
+  ticketId: z.coerce.number().openapi({ description: "รหัส Ticket" }), // อ้างอิงจาก brt_id
+  status: z.nativeEnum(BRT_STATUS).openapi({ description: "สถานะ" }), // อ้างอิงจาก brt_status
+  requestDateTime: z.coerce.date().openapi({ description: "วันที่ร้องขอ" }), // วัน-เวลา ที่ร้องขอ
+  deviceChildCount: z.coerce.number().openapi({ description: "จำนวนอุปกรณ์" }), // จำนวนอุปกรณ์ลูกที่ถูกผูกจริงใน ticket
 
   requester: z.object({
-    userId: z.coerce.number(),
-    fullName: z.string(),
-    employeeCode: z.string().nullable(),
+    userId: z.coerce.number().openapi({ description: "รหัสผู้ใช้" }),
+    fullName: z.string().openapi({ description: "ชื่อ-นามสกุล" }),
+    employeeCode: z.string().nullable().openapi({ description: "รหัสพนักงาน" }),
 
-    department_name: z.string().nullable(),
-    section_name: z.string().nullable(),
-  }),
+    department_name: z.string().nullable().openapi({ description: "ชื่อแผนก" }),
+    section_name: z.string().nullable().openapi({ description: "ชื่อฝ่าย" }),
+  }).openapi({ description: "ข้อมูลผู้ร้องขอ" }),
 
   deviceSummary: z.object({
-    deviceId: z.coerce.number(),
-    deviceName: z.string(),
-    deviceSerialNumber: z.string(),
-    categoryName: z.string(),
-  }),
+    deviceId: z.coerce.number().openapi({ description: "รหัสอุปกรณ์" }),
+    deviceName: z.string().openapi({ description: "ชื่ออุปกรณ์" }),
+    deviceSerialNumber: z.string().openapi({ description: "Serial Number" }),
+    categoryName: z.string().openapi({ description: "หมวดหมู่" }),
+  }).openapi({ description: "ข้อมูลสรุปอุปกรณ์" }),
 });
 
 /**
@@ -244,13 +244,13 @@ export const historyBorrowTicketItemSchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyBorrowTicketListResponseSchema = z.object({
-  items: z.array(historyBorrowTicketItemSchema),
+  items: z.array(historyBorrowTicketItemSchema).openapi({ description: "รายการประวัติ" }),
   pagination: z.object({
-    page: z.coerce.number(),
-    limit: z.coerce.number(),
-    totalItems: z.coerce.number(),
-    totalPages: z.coerce.number(),
-  }),
+    page: z.coerce.number().openapi({ description: "เลขหน้า" }),
+    limit: z.coerce.number().openapi({ description: "จำนวนต่อหน้า" }),
+    totalItems: z.coerce.number().openapi({ description: "รายการทั้งหมด" }),
+    totalPages: z.coerce.number().openapi({ description: "หน้าทั้งหมด" }),
+  }).openapi({ description: "ข้อมูล Pagination" }),
 });
 
 /**
@@ -260,25 +260,25 @@ export const historyBorrowTicketListResponseSchema = z.object({
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyBorrowTicketDetailSchema = z.object({
-  ticketId: z.coerce.number(),
-  status: z.nativeEnum(BRT_STATUS),
+  ticketId: z.coerce.number().openapi({ description: "รหัส Ticket" }),
+  status: z.nativeEnum(BRT_STATUS).openapi({ description: "สถานะ" }),
 
-  requestDateTime: z.coerce.date(),
+  requestDateTime: z.coerce.date().openapi({ description: "วันที่ร้องขอ" }),
 
-  requester: requesterSummarySchema,
+  requester: requesterSummarySchema.openapi({ description: "ข้อมูลผู้ร้องขอ" }),
 
-  device: deviceSummarySchema,
+  device: deviceSummarySchema.openapi({ description: "ข้อมูลอุปกรณ์" }),
 
-  deviceChildCount: z.coerce.number(),
-  deviceChildren: z.array(ticketDeviceChildSchema),
+  deviceChildCount: z.coerce.number().openapi({ description: "จำนวนอุปกรณ์" }),
+  deviceChildren: z.array(ticketDeviceChildSchema).openapi({ description: "รายการอุปกรณ์ลูก" }),
 
-  borrowPurpose: z.string(),
-  usageLocation: z.string(),
+  borrowPurpose: z.string().openapi({ description: "วัตถุประสงค์การยืม" }),
+  usageLocation: z.string().openapi({ description: "สถานที่ใช้งาน" }),
 
   borrowDateRange: z.object({
-    startDateTime: z.coerce.date(), // อ้างอิงจาก brt_start_date
-    endDateTime: z.coerce.date(), // อ้างอิงจาก brt_end_date
-  }),
+    startDateTime: z.coerce.date().openapi({ description: "วันเริ่มยืม" }), // อ้างอิงจาก brt_start_date
+    endDateTime: z.coerce.date().openapi({ description: "วันคืน" }), // อ้างอิงจาก brt_end_date
+  }).openapi({ description: "ช่วงเวลาการยืม" }),
 
   /**
    * Description: เวลาที่ใช้งาน (นิยาม: ดึงจากวันที่เริ่มยืม)
@@ -286,12 +286,12 @@ export const historyBorrowTicketDetailSchema = z.object({
    * Output : Date สำหรับ UI ใช้แสดงเวลาที่เริ่มใช้งาน
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  inUseDateTime: z.coerce.date(),
+  inUseDateTime: z.coerce.date().openapi({ description: "เวลาที่เริ่มใช้งาน" }),
 
   fulfillmentDateTimes: z.object({
-    pickupDateTime: z.coerce.date().nullable(), // อ้างอิงจาก brt_pickup_datetime
-    returnDateTime: z.coerce.date().nullable(), // อ้างอิงจาก brt_return_datetime
-  }),
+    pickupDateTime: z.coerce.date().nullable().openapi({ description: "เวลารับของ" }), // อ้างอิงจาก brt_pickup_datetime
+    returnDateTime: z.coerce.date().nullable().openapi({ description: "เวลาคืนของ" }), // อ้างอิงจาก brt_return_datetime
+  }).openapi({ description: "เวลาการดำเนินการ" }),
 
   /**
    * Description: สถานที่รับ/คืน และเหตุผลปฏิเสธ (กรณีถูกปฏิเสธ)
@@ -299,13 +299,13 @@ export const historyBorrowTicketDetailSchema = z.object({
    * Output : ค่า string หรือ null เพื่อให้ UI แสดงผลตามสถานะ ticket
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  pickupLocation: z.string().nullable(),
-  returnLocation: z.string().nullable(),
-  rejectReason: z.string().nullable(),
+  pickupLocation: z.string().nullable().openapi({ description: "สถานที่รับของ" }),
+  returnLocation: z.string().nullable().openapi({ description: "สถานที่คืนของ" }),
+  rejectReason: z.string().nullable().openapi({ description: "เหตุผลที่ปฏิเสธ" }),
 
-  accessories: z.array(accessorySchema),
+  accessories: z.array(accessorySchema).openapi({ description: "อุปกรณ์เสริม" }),
 
-  timeline: z.array(ticketTimelineSchema),
+  timeline: z.array(ticketTimelineSchema).openapi({ description: "Timeline การอนุมัติ" }),
 });
 
 /**

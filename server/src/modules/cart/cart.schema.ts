@@ -5,7 +5,7 @@ import { z } from "zod";
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const idParamSchema = z.object({
-    id: z.coerce.number().int().positive(),
+    id: z.coerce.number().int().positive().openapi({ description: "ID" }),
 });
 
 /**
@@ -13,7 +13,7 @@ export const idParamSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const deleteCartItemPayload = z.object({
-    cartItemId: z.coerce.number().int().positive(),
+    cartItemId: z.coerce.number().int().positive().openapi({ description: "ID รายการในตะกร้า" }),
 })
 
 /**
@@ -21,12 +21,12 @@ export const deleteCartItemPayload = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const cartSchema = z.object({
-    ct_id: z.coerce.number(),
-    ct_quantity: z.coerce.number(),
-    ct_us_id: z.coerce.number(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    ct_id: z.coerce.number().openapi({ description: "ID ตะกร้า" }),
+    ct_quantity: z.coerce.number().openapi({ description: "จำนวนรายการ" }),
+    ct_us_id: z.coerce.number().openapi({ description: "รหัสผู้ใช้" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 })
 
 /**
@@ -34,19 +34,19 @@ export const cartSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const cartItemSchema = z.object({
-    cti_id: z.coerce.number(),
-    cti_us_name: z.string().max(120).nullable(),
-    cti_phone: z.string().max(20).nullable(),
-    cti_note: z.string().max(255).nullable(),
-    cti_usage_location: z.string().max(255).nullable(),
-    cti_quantity: z.coerce.number(),
-    cti_start_date: z.date().nullable(),
-    cti_end_date: z.date().nullable(),
-    cti_ct_id: z.coerce.number().int().positive().nullable().optional(),
-    cti_de_id: z.coerce.number().int().positive().nullable().optional(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    cti_id: z.coerce.number().openapi({ description: "ID รายการในตะกร้า" }),
+    cti_us_name: z.string().max(120).nullable().openapi({ description: "ชื่อผู้ขอใช้" }),
+    cti_phone: z.string().max(20).nullable().openapi({ description: "เบอร์โทรศัพท์" }),
+    cti_note: z.string().max(255).nullable().openapi({ description: "หมายเหตุ" }),
+    cti_usage_location: z.string().max(255).nullable().openapi({ description: "สถานที่ใช้งาน" }),
+    cti_quantity: z.coerce.number().openapi({ description: "จำนวน" }),
+    cti_start_date: z.date().nullable().openapi({ description: "วันเริ่มยืม" }),
+    cti_end_date: z.date().nullable().openapi({ description: "วันคืน" }),
+    cti_ct_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "ID ตะกร้า" }),
+    cti_de_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "ID อุปกรณ์" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 });
 
 /**
@@ -54,13 +54,13 @@ export const cartItemSchema = z.object({
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
 export const cartDeviceChildSchema = z.object({
-    cdc_id: z.coerce.number(),
-    cdc_cti_id: z.coerce.number(),
-    cdc_dec_id: z.coerce.number(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
-    reserved_at: z.date().nullable(),
+    cdc_id: z.coerce.number().openapi({ description: "ID ความสัมพันธ์" }),
+    cdc_cti_id: z.coerce.number().openapi({ description: "ID รายการในตะกร้า" }),
+    cdc_dec_id: z.coerce.number().openapi({ description: "ID อุปกรณ์ลูก" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
+    reserved_at: z.date().nullable().openapi({ description: "วันที่จอง" }),
 })
 
 /**
@@ -68,21 +68,21 @@ export const cartDeviceChildSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const deviceChildSchema = z.object({
-    dec_id: z.coerce.number(),
-    dec_serial_number: z.string().nullable(),
-    dec_asset_code: z.string().min(1).max(120),
-    dec_has_serial_number: z.boolean(),
+    dec_id: z.coerce.number().openapi({ description: "ID อุปกรณ์ลูก" }),
+    dec_serial_number: z.string().nullable().openapi({ description: "Serial Number" }),
+    dec_asset_code: z.string().min(1).max(120).openapi({ description: "Asset Code" }),
+    dec_has_serial_number: z.boolean().openapi({ description: "มี Serial Number" }),
     dec_status: z.enum([
         "READY",
         "BORROWED",
         "REPAIRING",
         "DAMAGED",
         "LOST",
-    ]),
-    dec_de_id: z.coerce.number().int().positive().nullable().optional(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    ]).openapi({ description: "สถานะ" }),
+    dec_de_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "ID อุปกรณ์แม่" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 });
 
 /**
@@ -90,20 +90,20 @@ export const deviceChildSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const deviceSchema = z.object({
-    de_id: z.coerce.number(),
-    de_serial_number: z.string().min(1).max(120),
-    de_name: z.string().min(1).max(120),
-    de_description: z.string().min(1).max(255),
-    de_location: z.string().min(1).max(255),
-    de_max_borrow_days: z.coerce.number().int().positive().nullable().optional(),
-    de_images: z.string().min(1).max(255),
-    de_af_id: z.coerce.number().int().positive().nullable().optional(),
-    de_ca_id: z.coerce.number().int().positive().nullable().optional(),
-    de_us_id: z.coerce.number().int().positive().nullable().optional(),
-    de_sec_id: z.coerce.number().int().positive().nullable().optional(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    de_id: z.coerce.number().openapi({ description: "ID อุปกรณ์" }),
+    de_serial_number: z.string().min(1).max(120).openapi({ description: "Serial Number" }),
+    de_name: z.string().min(1).max(120).openapi({ description: "ชื่ออุปกรณ์" }),
+    de_description: z.string().min(1).max(255).openapi({ description: "รายละเอียด" }),
+    de_location: z.string().min(1).max(255).openapi({ description: "สถานที่" }),
+    de_max_borrow_days: z.coerce.number().int().positive().nullable().optional().openapi({ description: "จำนวนวันยืมสูงสุด" }),
+    de_images: z.string().min(1).max(255).openapi({ description: "รูปภาพ" }),
+    de_af_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัส Flow" }),
+    de_ca_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัสหมวดหมู่" }),
+    de_us_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัสผู้เพิ่ม" }),
+    de_sec_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัสฝ่าย" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 });
 
 /**
@@ -111,11 +111,11 @@ export const deviceSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const categoriesSchema = z.object({
-    ca_id: z.coerce.number(),
-    ca_name: z.string().min(1).max(120),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    ca_id: z.coerce.number().openapi({ description: "รหัสหมวดหมู่" }),
+    ca_name: z.string().min(1).max(120).openapi({ description: "ชื่อหมวดหมู่" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 });
 
 /**
@@ -123,13 +123,13 @@ export const categoriesSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const accessoriesSchema = z.object({
-    acc_id: z.coerce.number(),
-    acc_name: z.string().min(1).max(120),
-    acc_quantity: z.coerce.number().int().positive().nullable().optional(),
-    acc_de_id: z.coerce.number(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    acc_id: z.coerce.number().openapi({ description: "รหัสอุปกรณ์เสริม" }),
+    acc_name: z.string().min(1).max(120).openapi({ description: "ชื่ออุปกรณ์เสริม" }),
+    acc_quantity: z.coerce.number().int().positive().nullable().optional().openapi({ description: "จำนวน" }),
+    acc_de_id: z.coerce.number().openapi({ description: "รหัสอุปกรณ์แม่" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 });
 
 /**
@@ -137,7 +137,7 @@ export const accessoriesSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const cartItemListResponseSchema = z.object({
-    itemData: z.array(cartItemSchema),
+    itemData: z.array(cartItemSchema).openapi({ description: "รายการในตะกร้า" }),
 });
 
 /**
@@ -145,31 +145,31 @@ export const cartItemListResponseSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const borrowReturnTicketsSchema = z.object({
-    brt_id: z.coerce.number().nullable(),
+    brt_id: z.coerce.number().nullable().openapi({ description: "ID ใบคำร้อง" }),
     brt_status: z.enum([
         "PENDING",
         "APPROVED",
         "IN_USE",
         "COMPLETED",
         "REJECTED",
-    ]),
-    brt_usage_location: z.string().min(1).max(255),
-    brt_borrow_purpose: z.string().min(1).max(255),
-    brt_start_date: z.date(),
-    brt_end_date: z.date(),
-    brt_quantity: z.coerce.number(),
-    brt_current_stage: z.coerce.number().nullable(),
-    brt_reject_reason: z.string().min(1).max(255).nullable(),
-    brt_pickup_location: z.string().min(1).max(255).nullable(),
-    brt_pickup_datetime: z.date().nullable(),
-    brt_return_location: z.string().min(1).max(255).nullable(),
-    brt_return_datetime: z.date().nullable(),
-    brt_af_id: z.coerce.number().nullable(),
-    brt_staff_id: z.coerce.number().nullable(),
-    brt_user_id: z.coerce.number(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    ]).openapi({ description: "สถานะคำร้อง" }),
+    brt_usage_location: z.string().min(1).max(255).openapi({ description: "สถานที่ใช้งาน" }),
+    brt_borrow_purpose: z.string().min(1).max(255).openapi({ description: "วัตถุประสงค์" }),
+    brt_start_date: z.date().openapi({ description: "วันเริ่มยืม" }),
+    brt_end_date: z.date().openapi({ description: "วันคืน" }),
+    brt_quantity: z.coerce.number().openapi({ description: "จำนวน" }),
+    brt_current_stage: z.coerce.number().nullable().openapi({ description: "ขั้นตอนปัจจุบัน" }),
+    brt_reject_reason: z.string().min(1).max(255).nullable().openapi({ description: "เหตุผลที่ปฏิเสธ" }),
+    brt_pickup_location: z.string().min(1).max(255).nullable().openapi({ description: "สถานที่รับของ" }),
+    brt_pickup_datetime: z.date().nullable().openapi({ description: "เวลารับของ" }),
+    brt_return_location: z.string().min(1).max(255).nullable().openapi({ description: "สถานที่คืนของ" }),
+    brt_return_datetime: z.date().nullable().openapi({ description: "เวลาคืนของ" }),
+    brt_af_id: z.coerce.number().nullable().openapi({ description: "รหัส Flow" }),
+    brt_staff_id: z.coerce.number().nullable().openapi({ description: "รหัสเจ้าหน้าที่" }),
+    brt_user_id: z.coerce.number().openapi({ description: "รหัสผู้ยืม" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 })
 
 /**
@@ -178,9 +178,9 @@ export const borrowReturnTicketsSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const borrowReturnTicketStagesSchema = z.object({
-    brts_id: z.coerce.number().nullable(),
-    brts_name: z.string().min(1).max(255),
-    brts_step_approve: z.coerce.number(),
+    brts_id: z.coerce.number().nullable().openapi({ description: "ID ขั้นตอนคำร้อง" }),
+    brts_name: z.string().min(1).max(255).openapi({ description: "ชื่อขั้นตอน" }),
+    brts_step_approve: z.coerce.number().openapi({ description: "ลำดับการอนุมัติ" }),
     brts_role: z.enum([
         "ADMIN",
         "HOD",
@@ -188,21 +188,21 @@ export const borrowReturnTicketStagesSchema = z.object({
         "TECHNICAL",
         "STAFF",
         "EMPLOYEE",
-    ]),
-    brts_dept_id: z.coerce.number().nullable(),
-    brts_sec_id: z.coerce.number().nullable(),
-    brts_dept_name: z.string().min(1).max(255),
-    brts_sec_name: z.string().min(1).max(255),
+    ]).openapi({ description: "บทบาท" }),
+    brts_dept_id: z.coerce.number().nullable().openapi({ description: "รหัสแผนก" }),
+    brts_sec_id: z.coerce.number().nullable().openapi({ description: "รหัสฝ่าย" }),
+    brts_dept_name: z.string().min(1).max(255).openapi({ description: "ชื่อแผนก" }),
+    brts_sec_name: z.string().min(1).max(255).openapi({ description: "ชื่อฝ่าย" }),
     brts_status: z.enum([
         "PENDING",
         "APPROVED",
         "REJECTED",
-    ]),
-    brts_brt_id: z.coerce.number(),
-    brts_us_id: z.coerce.number().nullable(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    ]).openapi({ description: "สถานะการอนุมัติ" }),
+    brts_brt_id: z.coerce.number().openapi({ description: "ID ใบคำร้อง" }),
+    brts_us_id: z.coerce.number().nullable().openapi({ description: "รหัสผู้อนุมัติ" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 })
 
 /**
@@ -211,13 +211,13 @@ export const borrowReturnTicketStagesSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const approvalFlowsSchema = z.object({
-    af_id: z.coerce.number().nullable(),
-    af_name: z.string().min(1).max(255),
-    af_is_active: z.boolean().nullable(),
-    af_us_id: z.coerce.number(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    af_id: z.coerce.number().nullable().openapi({ description: "รหัส Flow" }),
+    af_name: z.string().min(1).max(255).openapi({ description: "ชื่อ Flow" }),
+    af_is_active: z.boolean().nullable().openapi({ description: "สถานะ" }),
+    af_us_id: z.coerce.number().openapi({ description: "รหัสผู้สร้าง" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 })
 
 /**
@@ -226,11 +226,11 @@ export const approvalFlowsSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const approvalFlowStepsSchema = z.object({
-    afs_id: z.coerce.number().nullable(),
-    afs_step_approve: z.coerce.number(),
-    afs_af_id: z.coerce.number(),
-    afs_dept_id: z.coerce.number().nullable(),
-    afs_sec_id: z.coerce.number().nullable(),
+    afs_id: z.coerce.number().nullable().openapi({ description: "ID ขั้นตอน" }),
+    afs_step_approve: z.coerce.number().openapi({ description: "ลำดับ" }),
+    afs_af_id: z.coerce.number().openapi({ description: "รหัส Flow" }),
+    afs_dept_id: z.coerce.number().nullable().openapi({ description: "รหัสแผนก" }),
+    afs_sec_id: z.coerce.number().nullable().openapi({ description: "รหัสฝ่าย" }),
     afs_role: z.enum([
         "ADMIN",
         "HOD",
@@ -238,10 +238,10 @@ export const approvalFlowStepsSchema = z.object({
         "TECHNICAL",
         "STAFF",
         "EMPLOYEE",
-    ]),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    ]).openapi({ description: "บทบาท" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 })
 
 /**
@@ -249,7 +249,7 @@ export const approvalFlowStepsSchema = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const createBorrowTicketPayload = z.object({
-    cartItemId: z.coerce.number(),
+    cartItemId: z.coerce.number().openapi({ description: "ID รายการในตะกร้า" }),
 })
 
 /**
@@ -257,13 +257,13 @@ export const createBorrowTicketPayload = z.object({
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const ticketDevicesSchema = z.object({
-    td_id: z.coerce.number(),
-    td_brt_id: z.coerce.number(),
-    td_dec_id: z.coerce.number(),
-    td_origin_cti_id: z.coerce.number(),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
-    deleted_at: z.date().nullable(),
+    td_id: z.coerce.number().openapi({ description: "ID" }),
+    td_brt_id: z.coerce.number().openapi({ description: "ID ใบคำร้อง" }),
+    td_dec_id: z.coerce.number().openapi({ description: "ID อุปกรณ์ลูก" }),
+    td_origin_cti_id: z.coerce.number().openapi({ description: "ID รายการตะกร้าต้นทาง" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+    deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 })
 
 /**
@@ -271,8 +271,8 @@ export const ticketDevicesSchema = z.object({
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
 export const createTicketDevicePayload = z.object({
-    cartItemId: z.coerce.number(),
-    borrowTicketId: z.coerce.number(),
+    cartItemId: z.coerce.number().openapi({ description: "ID รายการในตะกร้า" }),
+    borrowTicketId: z.coerce.number().openapi({ description: "ID ใบคำร้อง" }),
 })
 
 /**
@@ -280,8 +280,8 @@ export const createTicketDevicePayload = z.object({
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
 export const createBorrowTicketStagePayload = z.object({
-    cartItemId: z.coerce.number(),
-    borrowTicketId: z.coerce.number(),
+    cartItemId: z.coerce.number().openapi({ description: "ID รายการในตะกร้า" }),
+    borrowTicketId: z.coerce.number().openapi({ description: "ID ใบคำร้อง" }),
 })
 
 /**
@@ -289,17 +289,17 @@ export const createBorrowTicketStagePayload = z.object({
  * Author : Nontapat Sinhum (Guitar) 66160104
  **/
 export const deviceAvailabilitiesSchema = z.object({
-    da_id: z.coerce.number(),
-    da_dec_id: z.coerce.number(),
-    da_brt_id: z.coerce.number(),
-    da_start: z.date(),
-    da_end: z.date(),
+    da_id: z.coerce.number().openapi({ description: "ID Availability" }),
+    da_dec_id: z.coerce.number().openapi({ description: "ID อุปกรณ์ลูก" }),
+    da_brt_id: z.coerce.number().openapi({ description: "ID ใบคำร้อง" }),
+    da_start: z.date().openapi({ description: "เวลาเริ่มต้น" }),
+    da_end: z.date().openapi({ description: "เวลาสิ้นสุด" }),
     da_status: z.enum([
         "ACTIVE",
         "COMPLETED",
-    ]),
-    created_at: z.date().nullable(),
-    updated_at: z.date().nullable(),
+    ]).openapi({ description: "สถานะ" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+    updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
 })
 /* ---------- Params ---------- */
 /**
@@ -328,7 +328,7 @@ export const cartDeviceDetailSchema = cartItemSchema.extend({
         z.object({
             device_child: deviceChildSchema,
         })
-    ).optional().default([]),
+    ).optional().default([]).openapi({ description: "รายการอุปกรณ์ลูกที่ถูกเลือก" }),
 });
 
 /* ---------- PATCH Body ---------- */
@@ -342,14 +342,14 @@ export const cartDeviceDetailSchema = cartItemSchema.extend({
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const updateCartDeviceDetailBodySchema = z.object({
-    cti_us_name: z.string().nullable().optional(),
-    cti_phone: z.string().nullable().optional(),
-    cti_quantity: z.number().int().positive().optional(),
-    cti_note: z.string().nullable().optional(),
-    cti_usage_location: z.string().nullable().optional(),
-    cti_start_date: z.coerce.date().nullable().optional(),
-    cti_end_date: z.coerce.date().nullable().optional(),
-    device_childs: z.array(z.coerce.number().int().positive()).optional(),
+    cti_us_name: z.string().nullable().optional().openapi({ description: "ชื่อผู้ขอใช้" }),
+    cti_phone: z.string().nullable().optional().openapi({ description: "เบอร์โทรศัพท์" }),
+    cti_quantity: z.number().int().positive().optional().openapi({ description: "จำนวน" }),
+    cti_note: z.string().nullable().optional().openapi({ description: "หมายเหตุ" }),
+    cti_usage_location: z.string().nullable().optional().openapi({ description: "สถานที่ใช้งาน" }),
+    cti_start_date: z.coerce.date().nullable().optional().openapi({ description: "วันเริ่มยืม" }),
+    cti_end_date: z.coerce.date().nullable().optional().openapi({ description: "วันคืน" }),
+    device_childs: z.array(z.coerce.number().int().positive()).optional().openapi({ description: "รายการ ID อุปกรณ์ลูกที่เลือก" }),
 });
 
 /* ---------- PATCH Response ---------- */
@@ -369,7 +369,7 @@ export const updateCartDeviceDetailDataSchema = cartDeviceDetailSchema;
 * Author : Nontapat Sinhum (Guitar) 66160104
 */
 export const logBorrowReturnSchema = z.object({
-    lbr_id: z.coerce.number(),
+    lbr_id: z.coerce.number().openapi({ description: "ID Log" }),
     lbr_action: z.enum([
         "CREATED",
         "UPDATED",
@@ -378,13 +378,13 @@ export const logBorrowReturnSchema = z.object({
         "RETURNED",
         "MARK_DAMAGED",
         "MARK_LOST",
-    ]),
-    lbr_old_status: z.string().min(1).max(50).nullable(),
-    lbr_new_status: z.string().min(1).max(50).nullable(),
-    lbr_note: z.string().min(1).max(255).nullable(),
-    lbr_actor_id: z.coerce.number(),
-    lbr_brt_id: z.coerce.number(),
-    created_at: z.date().nullable(),
+    ]).openapi({ description: "การกระทำ" }),
+    lbr_old_status: z.string().min(1).max(50).nullable().openapi({ description: "สถานะเดิม" }),
+    lbr_new_status: z.string().min(1).max(50).nullable().openapi({ description: "สถานะใหม่" }),
+    lbr_note: z.string().min(1).max(255).nullable().openapi({ description: "หมายเหตุ" }),
+    lbr_actor_id: z.coerce.number().openapi({ description: "รหัสผู้กระทำ" }),
+    lbr_brt_id: z.coerce.number().openapi({ description: "ID ใบคำร้อง" }),
+    created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
 })
 
 export type IdParamDto = z.infer<typeof idParamSchema>;
@@ -413,3 +413,4 @@ export type GetCartDeviceDetailParamDto = z.infer<typeof getCartDeviceDetailPara
 export type UpdateCartDeviceDetailParamDto = z.infer<typeof updateCartDeviceDetailParamSchema>;
 export type UpdateCartDeviceDetailBodyDto = z.infer<typeof updateCartDeviceDetailBodySchema>;
 export type LogBorrowReturnSchema = z.infer<typeof logBorrowReturnSchema>;
+

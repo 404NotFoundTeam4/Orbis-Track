@@ -968,7 +968,14 @@ async function main() {
       (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
     );
   `);
+   await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('approval_flow_steps', 'afs_id'),
+      (SELECT COALESCE(MAX(afs_id), 0) FROM approval_flow_steps)
+    );
+  `);
 }
+
 
 main()
   .catch((e) => {

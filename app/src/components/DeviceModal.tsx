@@ -661,7 +661,7 @@ const MainDeviceModal = ({
                 className="!w-[261px]"
               />
               {errors.serialNumber && (
-                <p className="text-sm mt-1 text-[#F5222D]">{errors.name}</p>
+                <p className="text-sm mt-1 text-[#F5222D]">{errors.serialNumber}</p>
               )}
             </div>
           </div>

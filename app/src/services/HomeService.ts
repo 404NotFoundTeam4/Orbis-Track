@@ -8,17 +8,17 @@ import api from "../api/axios";
 
 export interface TicketRequester {
   id: number;
-  fullname: string;
-  empcode: string | null;
+  fullName: string;
+  empCode: string | null;
   image: string | null;
   department: string | null;
-  us_phone?: string | null;
+  usPhone?: string | null;
 }
 // Interface สำหรับสรุปอุปกรณ์ในคำร้อง
 export interface TicketDeviceSummary {
   deviceId: number;
   name: string;
-  serial_number: string;
+  serialNumber: string;
   description: string | null;
   location: string;
   maxBorrowDays: number | string | null;
@@ -26,7 +26,7 @@ export interface TicketDeviceSummary {
   category: string;
   section: string;
   department: string;
-  total_quantity: number;
+  totalQuantity: number;
 }
 // Interface สำหรับวันที่ต่างๆ ในคำร้อง
 export interface TicketDates {
@@ -40,10 +40,10 @@ export interface TicketDates {
 export interface TicketHomeItem {
   id: number;
   status: string;
-  request_date?: string; 
-  return_date?: string; 
+  requestDate?: string; 
+  returnDate?: string; 
   dates: TicketDates;    
-  device_summary: TicketDeviceSummary;
+  deviceSummary: TicketDeviceSummary;
   requester: TicketRequester;
 }
 
@@ -52,32 +52,32 @@ export interface TicketHomeItem {
 export interface TicketTimeline {
   step: number;
   status: string;
-  role_name: string;
-  dept_name: string | null;
-  approved_by: string | null;
-  updated_at: string | null;
+  roleName: string;
+  deptName: string | null;
+  approvedBy: string | null;
+  updatedAt: string | null;
   approvers?: string[];
 }
 // Interface สำหรับอุปกรณ์ในหน้ารายละเอียดคำร้อง
 export interface TicketDeviceChild {
-  child_id: number;
-  serial_number: string;
-  asset_code: string;
+  childId: number;
+  serialNumber: string;
+  assetCode: string;
   status: string;
   name: string;
   image: string | null;
-  current_status: string;      // สถานะของเครื่อง (เช่น READY, IN_USE)
-  has_serial_number: boolean;
+  currentStatus: string;      // สถานะของเครื่อง (เช่น READY, IN_USE)
+  hasSerialNumber: boolean;
 }
 // Interface สำหรับรายละเอียดคำร้อง
 export interface TicketDetailData {
   id: number;
-  current_stage: number;
+  currentStage: number;
   purpose: string;
-  reject_reason: string | null;
-  reject_date: string | null;
+  rejectReason: string | null;
+  rejectDate: string | null;
   dates: TicketDates;
-  location_use: string;
+  locationUse: string;
   locations: {
     pickup: string | null;
     return: string | null;

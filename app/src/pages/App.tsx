@@ -65,7 +65,6 @@ function App() {
   // route เฉพาะแอดมิน
   const adminRoutes = (
     <>
-     <Route path="profile" element={<Profile />} />
       <Route path="account-management" element={<Users />} />
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />

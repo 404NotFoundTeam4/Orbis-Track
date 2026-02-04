@@ -88,19 +88,7 @@ export default function DateValue({
       isCurrentMonth: false,
     });
   }
-  const getDiffDays = (start: Date, end: Date) => {
-    const s = new Date(start);
-    const e = new Date(end);
-    s.setHours(0, 0, 0, 0);
-    e.setHours(0, 0, 0, 0);
-
-    return (
-      Math.abs(
-        Math.floor((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)),
-      ) + 1
-    );
-  };
-
+  
   const isSameDay = (a: Date | null, b: Date | null) =>
     a && b && a.toDateString() === b.toDateString();
 
@@ -156,6 +144,33 @@ export default function DateValue({
 
     return `${day} ${month} ${year}`;
   };
+  const diffFromStart = (start: Date, end: Date) => {
+  const s = new Date(start);
+  const e = new Date(end);
+  s.setHours(0, 0, 0, 0);
+  e.setHours(0, 0, 0, 0);
+
+  return Math.floor(
+    (e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)
+  ) + 1;
+};
+const isSelectable = (date: Date) => {
+  if (isPastDate(date)) return false;
+
+  // ยังไม่เลือกวันเริ่ม
+  if (!startDate) {
+    return date.getMonth() === currentMonth.getMonth();
+  }
+
+  // เลือก startDate แล้ว
+  if (!endDate) {
+    if (date < startDate) return false;
+    return diffFromStart(startDate, date) <= maxBorrow;
+  }
+
+  return true;
+};
+
   const dateLabel =
     startDate && endDate
       ? `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`
@@ -247,25 +262,19 @@ export default function DateValue({
 
               {/* Days */}
               <div className="mt-2 grid grid-cols-7 ">
-                {days.map(({ date, isCurrentMonth }, idx) => {
-                  const isStart = isSameDay(date, startDate);
-                  const isEnd = isSameDay(date, endDate);
-                  const past = isPastDate(date);
+              {days.map(({ date }, idx) => {
+  const isStart = isSameDay(date, startDate);
+  const isEnd = isSameDay(date, endDate);
 
-                  const overMax =
-                    startDate &&
-                    !endDate &&
-                    getDiffDays(startDate, date) > maxBorrow;
+  const disabled = !isSelectable(date);
 
-                  const disabled = past || overMax;
-
-                  return (
-                    <button
-                      type="button"
-                      key={idx}
-                      disabled={disabled}
-                      onClick={() => handleSelect(date)}
-                      className={`
+  return (
+    <button
+      type="button"
+      key={idx}
+      disabled={disabled}
+      onClick={() => handleSelect(date)}
+      className={`
         h-10 flex items-center justify-center text-sm
         ${
           isStart || isEnd
@@ -274,15 +283,15 @@ export default function DateValue({
               ? "bg-blue-200 text-blue-900"
               : disabled
                 ? "text-gray-300 cursor-not-allowed"
-                : "hover:bg-gray-100"
+                : "text-black hover:bg-gray-100"
         }
-        ${!isCurrentMonth ? "text-gray-400" : ""}
       `}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
+    >
+      {date.getDate()}
+    </button>
+  );
+})}
+
               </div>
             </div>
             <div className=" px-[15px] py-2.5">

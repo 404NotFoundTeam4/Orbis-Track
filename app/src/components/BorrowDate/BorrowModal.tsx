@@ -209,7 +209,7 @@ export default function BorrowModal({
     (device) =>
       !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
   );
-  console.log(borrowDevices)
+  
   /* ========================================== */
   const timeToMinutes = (time?: string): number | null => {
     if (!time) return null;

@@ -63,6 +63,7 @@ type Device = {
   dec_asset_code: string;
   dec_status: string;
   activeBorrow?: ActiveBorrow[];
+  maxBorrow:number
 };
 const BorrowEquipmentModal = ({
   mode,
@@ -88,7 +89,7 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
-
+  console.log(availableDevices)
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
@@ -304,6 +305,7 @@ const BorrowEquipmentModal = ({
   const fetchData = async () => {
     try {
       const res = await borrowService.getAvailable(equipment.deviceId);
+      
       setData(res);
     } catch (error) {
       console.error("API error:", error);
@@ -405,6 +407,7 @@ const BorrowEquipmentModal = ({
               </label>
               <BorrowModal
                 defaultValues={data}
+                maxBorrow={equipment.maxBorrowDays}
                 timeDefault={{
                   time_start: form.borrowTime,
                   time_end: form.returnTime,

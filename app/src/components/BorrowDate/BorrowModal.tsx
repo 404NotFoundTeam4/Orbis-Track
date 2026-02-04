@@ -31,6 +31,7 @@ type Device = {
 };
 type BorrowModalProps = {
   defaultValues: Device[];
+  maxBorrow: number;
   fullWidth?: boolean;
   onConfirm: (data: {
     borrow_start: string;
@@ -53,6 +54,7 @@ type ViewType = "month" | "week" | "day";
 export default function BorrowModal({
   defaultValues,
   onConfirm,
+  maxBorrow,
   dateDefault,
   timeDefault,
   fullWidth = false,
@@ -87,6 +89,7 @@ export default function BorrowModal({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
   // console.log(dateDefault)
   const isBorrowAvailable = (
     start: Date | null,
@@ -201,10 +204,12 @@ export default function BorrowModal({
   const readyDevices = (defaultBorrow ?? []).filter((device) =>
     isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
   );
+ 
   const borrowDevices = (defaultBorrow ?? []).filter(
     (device) =>
       !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
   );
+  console.log(borrowDevices)
   /* ========================================== */
   const timeToMinutes = (time?: string): number | null => {
     if (!time) return null;
@@ -362,17 +367,15 @@ export default function BorrowModal({
 
     setOpen(false);
   };
-    const handleClear = () => {
-  
+  const handleClear = () => {
     const payload = {
-      borrow_start:"" ,
+      borrow_start: "",
       borrow_end: "",
       time_start: "",
       time_end: "",
     };
 
     onConfirm(payload);
-
   };
   const isValid =
     start !== null &&
@@ -548,7 +551,8 @@ export default function BorrowModal({
                           <label className="w-20">วันที่ยืม</label>
                           <DateValue
                             value={{ start, end }}
-                            onChange={(startDate, endDate) => {
+                            maxBorrow={maxBorrow}
+                            onClick={(startDate, endDate) => {
                               setStart(startDate);
                               setEnd(endDate);
                             }}
@@ -593,7 +597,7 @@ export default function BorrowModal({
                               setEnd(null);
                               setTimeStart(undefined);
                               setTimeEnd(undefined);
-                              handleClear()
+                              handleClear();
                             }}
                           >
                             ล้างค่า

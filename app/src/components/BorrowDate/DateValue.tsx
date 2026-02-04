@@ -3,43 +3,42 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 
 interface Props {
-  onChange?: (start: Date | null, end: Date | null) => void;
+  onClick?: (start: Date | null, end: Date | null) => void;
   placeholder?: string;
   width?: string;
-   value?: {
+  value?: {
     start: Date | null;
     end: Date | null;
   };
+  maxBorrow: number;
 }
 
 export default function DateValue({
-  onChange,
+  onClick,
   placeholder = "เลือกช่วงเวลายืม",
   width = "w-full",
   value,
+  maxBorrow,
 }: Props) {
   const today = new Date();
 
   const [open, setOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(
-    new Date(today.getFullYear(), today.getMonth(), 1)
+    new Date(today.getFullYear(), today.getMonth(), 1),
   );
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   const ref = useRef<HTMLDivElement>(null);
 
-useEffect(() => {
-  if (!value) return;
+  useEffect(() => {
+    if (!value) return;
 
-  if (
-    value.start !== startDate ||
-    value.end !== endDate
-  ) {
-    setStartDate(value.start)
-    setEndDate(value.end)
-  }
-}, [value])
+    if (value.start !== startDate || value.end !== endDate) {
+      setStartDate(value.start);
+      setEndDate(value.end);
+    }
+  }, [value]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -62,7 +61,7 @@ useEffect(() => {
 
   const daysInMonth = endOfMonth.getDate();
   const prevMonthDays = new Date(year, month, 0).getDate();
-
+  
   const days: { date: Date; isCurrentMonth: boolean }[] = [];
 
   // เดือนก่อน
@@ -89,6 +88,18 @@ useEffect(() => {
       isCurrentMonth: false,
     });
   }
+  const getDiffDays = (start: Date, end: Date) => {
+    const s = new Date(start);
+    const e = new Date(end);
+    s.setHours(0, 0, 0, 0);
+    e.setHours(0, 0, 0, 0);
+
+    return (
+      Math.abs(
+        Math.floor((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)),
+      ) + 1
+    );
+  };
 
   const isSameDay = (a: Date | null, b: Date | null) =>
     a && b && a.toDateString() === b.toDateString();
@@ -96,21 +107,26 @@ useEffect(() => {
   const isInRange = (date: Date) =>
     startDate && endDate && date > startDate && date < endDate;
 
-  const handleSelect = (date: Date) => {
-    if (!startDate || endDate) {
-      setStartDate(date);
-      setEndDate(null);
-      onChange?.(date, null);
-    } else if (date < startDate) {
-      setStartDate(date);
-      onChange?.(date, endDate);
-    } else {
-      setEndDate(date);
-      onChange?.(startDate, date);
-    }
+ const handleSelect = (date: Date) => {
+  if (!startDate || endDate) {
+    setStartDate(date);
+    setEndDate(null);
+  } else if (date < startDate) {
+    setStartDate(date);
+  } else {
+    setEndDate(date);
+  }
+};
+  
+  const isPastDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+
+    return d < today;
   };
-
-
 
   function formatThaiMonth(date: Date) {
     return new Intl.DateTimeFormat("th-TH", {
@@ -118,7 +134,7 @@ useEffect(() => {
       year: "numeric",
     }).format(date);
   }
-    const formatThaiDate = (date: Date) => {
+  const formatThaiDate = (date: Date) => {
     const months = [
       "ม.ค.",
       "ก.พ.",
@@ -144,7 +160,7 @@ useEffect(() => {
     startDate && endDate
       ? `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`
       : "วัน/เดือน/ปี";
-      
+  console.log(maxBorrow)
   return (
     <div ref={ref} className={`relative ${width}`}>
       {/* ===== Input ===== */}
@@ -170,7 +186,7 @@ useEffect(() => {
           height="20"
         />
       </button>
-
+      
       {/* ===== Calendar ===== */}
       {open && (
         <div className="absolute left-0 -top-113 z-50 w-full">
@@ -204,7 +220,7 @@ useEffect(() => {
                 </div>
                 <div className="space-x-2.5">
                   <button
-                   type="button"
+                    type="button"
                     onClick={() =>
                       setCurrentMonth(new Date(year, month + 1, 1))
                     }
@@ -234,23 +250,34 @@ useEffect(() => {
                 {days.map(({ date, isCurrentMonth }, idx) => {
                   const isStart = isSameDay(date, startDate);
                   const isEnd = isSameDay(date, endDate);
+                  const past = isPastDate(date);
+
+                  const overMax =
+                    startDate &&
+                    !endDate &&
+                    getDiffDays(startDate, date) > maxBorrow;
+
+                  const disabled = past || overMax;
 
                   return (
                     <button
-                     type="button"
+                      type="button"
                       key={idx}
+                      disabled={disabled}
                       onClick={() => handleSelect(date)}
                       className={`
-                      h-10 flex items-center justify-center text-sm
-                      ${
-                        isStart || isEnd
-                          ? "bg-blue-500 text-white rounded-full"
-                          : isInRange(date)
-                            ? "bg-blue-200 text-blue-900"
-                            : "hover:bg-gray-100"
-                      }
-                      ${!isCurrentMonth ? "text-gray-400" : ""}
-                    `}
+        h-10 flex items-center justify-center text-sm
+        ${
+          isStart || isEnd
+            ? "bg-blue-500 text-white rounded-full"
+            : isInRange(date)
+              ? "bg-blue-200 text-blue-900"
+              : disabled
+                ? "text-gray-300 cursor-not-allowed"
+                : "hover:bg-gray-100"
+        }
+        ${!isCurrentMonth ? "text-gray-400" : ""}
+      `}
                     >
                       {date.getDate()}
                     </button>
@@ -292,7 +319,7 @@ useEffect(() => {
                   type="button"
                   onClick={() => {
                     setOpen(false);
-                    onChange?.(startDate, endDate);
+                    onClick?.(startDate, endDate);
                   }}
                   className="h-10 w-full bg-[#40A9FF] rounded-lg font-bold text-[16px] text-white"
                 >

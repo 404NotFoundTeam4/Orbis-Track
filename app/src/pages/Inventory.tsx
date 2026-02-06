@@ -232,12 +232,23 @@ export const Inventory = () => {
   const navigate = useNavigate();
 
   //Handler: Modal Actions
-  const handleOpenAddModal = () => navigate("/inventory/add");
+  const handleOpenAddModal = () => {
+    // ดึงชื่อรายการอุปกรณ์ทั้งหมด
+    const existingDeviceNames = items.map(item => item.name);
+
+    // เก็บชื่ออุปกรณ์ทั้งหมดไว้ใน sessionStorage
+    sessionStorage.setItem(
+      "existingDeviceNames",
+      JSON.stringify(existingDeviceNames)
+    )
+
+    navigate("/inventory/add");
+  }
 
   const handleOpenEditModal = (item: Equipment) => {
     navigate(`/inventory/edit/${item.id}`, {
       state: {
-        device: item,
+        device: item
       },
     });
 
@@ -257,7 +268,7 @@ export const Inventory = () => {
       await Promise.all(
         idsToDelete.map((id) => api.delete(`/inventory/${id}`))
       );
-      toast.push({ message: "ลบอุปกรณ์เสร็จสิ้น!", tone: "danger" });  
+      toast.push({ message: "ลบอุปกรณ์เสร็จสิ้น!", tone: "danger" });
       setSelectedItems([]);
       setDeleteId(null);
       setIsAlertOpen(false);
@@ -659,10 +670,28 @@ export const Inventory = () => {
                       disabled={item.status_type === "BORROWED"}
                     />
                     <div
-                      className=" text-black truncate"
-                      title={item.name}
+                      className="py-2 px-4 truncate text-black"
+                      title={item.department}
                     >
-                      {item.name}
+                      {item.department}
+                    </div>
+                    <div
+                      className="py-2 px-4 truncate text-black"
+                      title={item.category}
+                    >
+                      {item.category}
+                    </div>
+                    <div
+                      className="py-2 px-4 truncate text-black"
+                      title={item.sub_section}
+                    >
+                      {item.sub_section}
+                    </div>
+                    <div className="py-2 px-4 text-black font-medium pl-8">
+                      {item.quantity}
+                    </div>
+                    <div className="py-2 px-4 text-black flex items-center justify-center">
+                      {FormatThaiDate(item.last_edited)}
                     </div>
                   </div>
                   <div
@@ -690,37 +719,37 @@ export const Inventory = () => {
                     {FormatThaiDate(item.last_edited)}
                   </div>
 
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-[25px] py-2 px-4">
-                    {/* Status */}
-                    {item.status_type === "BORROWED" ? (
-                      <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
-                        มีการยืมอยู่
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#868686] text-[#868686] rounded-full text-base">
-                        ไม่มีการยืม
-                      </span>
-                    )}
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-[25px] py-2 px-4">
+                      {/* Status */}
+                      {item.status_type === "BORROWED" ? (
+                        <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
+                          มีการยืมอยู่
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#868686] text-[#868686] rounded-full text-base">
+                          ไม่มีการยืม
+                        </span>
+                      )}
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleOpenEditModal(item)}
-                        className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
-                        title="แก้ไข"
-                      >
-                        <Icon
-                          icon="prime:pen-to-square"
-                          width="30"
-                          height="30"
-                        />
-                      </button>
+                      {/* Actions */}
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
+                          title="แก้ไข"
+                        >
+                          <Icon
+                            icon="prime:pen-to-square"
+                            width="30"
+                            height="30"
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-between px-[35px] py-4 mt-auto ">
               <div className="flex items-center gap-4">

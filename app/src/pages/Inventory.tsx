@@ -226,7 +226,7 @@ export const Inventory = () => {
 
   //States: Pagination
   const [page, setPage] = useState(1);
-  const pageSize = 8;
+  const pageSize = 10;
 
   // เปลี่ยนหน้า
   const navigate = useNavigate();
@@ -623,7 +623,7 @@ export const Inventory = () => {
 
           {/* 2. Body (ตารางข้อมูล) */}
           <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] h-[620px] flex flex-col">
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-auto">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                 <Icon
@@ -666,24 +666,24 @@ export const Inventory = () => {
                     </div>
                   </div>
                   <div
-                    className="py-2 px-4 truncate text-black"
+                    className="py-2 px-4 truncate text-black -ml-2"
                     title={item.department}
                   >
                     {item.department}
                   </div>
                   <div
-                    className="py-2 px-4 truncate text-black"
+                    className="py-2 px-4 truncate text-black -ml-3"
                     title={item.category}
                   >
                     {item.category}
                   </div>
                   <div
-                    className="py-2 px-4 truncate text-black"
+                    className="py-2 px-4 truncate text-black -ml-4"
                     title={item.sub_section}
                   >
                     {item.sub_section}
                   </div>
-                  <div className="py-2 px-4 text-black font-medium pl-8">
+                  <div className="py-2 px-4 text-black font-medium -ml-4">
                     {item.quantity}
                   </div>
                   <div className="py-2 px-4 text-black flex items-center justify-center">
@@ -722,7 +722,7 @@ export const Inventory = () => {
               ))
             )}
             </div>
-            <div className="flex flex-wrap items-center justify-between p-4 ">
+            <div className="flex flex-wrap items-center justify-between px-[35px] py-4 mt-auto ">
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleDeleteSelected}

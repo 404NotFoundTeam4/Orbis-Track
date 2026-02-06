@@ -10,6 +10,8 @@ export interface ActiveBorrow {
 
 type DayTimeRange = {
   day: number;
+  month: string;
+  year: number;
   timeStart: string;
   timeEnd: string;
 };
@@ -138,6 +140,7 @@ export default function BorrowModal({
   useEffect(() => {
     setdefaultBorrow(defaultValues);
   }, [defaultValues]);
+  console.log(defaultValues);
   useEffect(() => {
     setTimeStart(timeDefault?.time_start);
     setTimeEnd(timeDefault?.time_end);
@@ -186,11 +189,16 @@ export default function BorrowModal({
   const { startDay } = getWeekRange(new Date());
   const dayValue = Array.from({ length: 7 }, (_, i) => i);
 
-  const formatThaiMonth = (date: Date) =>
-    new Intl.DateTimeFormat("th-TH", {
+  const getThaiMonthYear = (date: Date) => {
+    const monthShow = new Intl.DateTimeFormat("th-TH", {
       month: "long",
-      year: "numeric",
     }).format(date);
+
+    const yearShow = date.getFullYear() + 543;
+
+    return { monthShow, yearShow };
+  };
+  const { monthShow, yearShow } = getThaiMonthYear(currentMonth);
 
   const hourHeight = 120;
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -204,12 +212,12 @@ export default function BorrowModal({
   const readyDevices = (defaultBorrow ?? []).filter((device) =>
     isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
   );
- 
+
   const borrowDevices = (defaultBorrow ?? []).filter(
     (device) =>
       !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
   );
-  
+
   /* ========================================== */
   const timeToMinutes = (time?: string): number | null => {
     if (!time) return null;
@@ -289,16 +297,22 @@ export default function BorrowModal({
       const timeStart = isStartDay ? formatAMPM(start) : "8:00 AM";
 
       const timeEnd = isEndDay ? formatAMPM(end) : "05:00 PM";
+      const month = new Intl.DateTimeFormat("th-TH", {
+        month: "long",
+      }).format(start);
 
+      const year = start.getFullYear()+543; // ค.ศ.
       result.push({
         day: current.getDate(),
+        month:month,
+        year:year,
         timeStart,
         timeEnd,
       });
 
       current.setDate(current.getDate() + 1);
     }
-
+    console.log(result);
     return result;
   };
 
@@ -636,7 +650,7 @@ export default function BorrowModal({
                     </button>
 
                     <h2 className="font-semibold text-lg">
-                      {formatThaiMonth(currentMonth)}
+                      {monthShow + " " + yearShow}
                     </h2>
 
                     {/* Next */}
@@ -702,7 +716,7 @@ export default function BorrowModal({
                               {index + 1 <= 31 ? index + 1 : ""}
                             </span>
                             {timeBorrow.map((borrow, idx) =>
-                              borrow.day === index + 1 ? (
+                              (borrow.day === index + 1 && borrow.month === monthShow && borrow.year === yearShow )? (
                                 <div
                                   key={idx}
                                   className="absolute top-10 left-2 right-2 bottom-[10%] w-33.25 h-13

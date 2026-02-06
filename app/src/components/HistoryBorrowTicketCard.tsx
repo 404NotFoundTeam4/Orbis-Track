@@ -861,7 +861,7 @@ export default function HistoryBorrowTicket({
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${step4RingClass}`}
                     >
-                      <Icon icon="streamline:return-2" width="20" height="20" />
+                      <Icon icon="streamline:return-2" width="20" height="20" className="-scale-y-100" />
                     </div>
                   </div>
 

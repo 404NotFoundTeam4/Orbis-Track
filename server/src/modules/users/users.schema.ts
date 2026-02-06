@@ -1,9 +1,5 @@
 import { z } from "zod";
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { US_ROLE } from "@prisma/client";
-
-// 1. ต้องมีบรรทัดนี้เสมอ ถ้ามีการใช้ .openapi()
-extendZodWithOpenApi(z);
 
 /**
  * Description: Schema สำหรับตรวจสอบข้อมูลที่ใช้ในการแก้ไขโปรไฟล์ผู้ใช้งาน (My Profile)
@@ -12,28 +8,28 @@ extendZodWithOpenApi(z);
  * Author    : Niyada Butchan (Da) 66160361
  */
 export const updateMyProfilePayload = z.object({
-  us_phone: z.string().min(10).max(15).optional(),
-  us_images: z.any().openapi({ type: "string", format: "binary" }).optional(),
+  us_phone: z.string().min(10).max(15).optional().openapi({ description: "เบอร์โทรศัพท์" }),
+  us_images: z.any().openapi({ type: "string", format: "binary", description: "รูปโปรไฟล์" }).optional(),
 });
 
 // --- สร้าง Schema ข้อมูล User (ขาออก) ---
 const userProfileData = z.object({
-  us_id: z.coerce.number(),
-  us_firstname: z.string(),
-  us_lastname: z.string(),
-  us_email: z.string(),
-  us_phone: z.string().nullable().optional(),
-  us_images: z.string().nullable().optional(),
+  us_id: z.coerce.number().openapi({ description: "รหัสผู้ใช้" }),
+  us_firstname: z.string().openapi({ description: "ชื่อจริง" }),
+  us_lastname: z.string().openapi({ description: "นามสกุล" }),
+  us_email: z.string().openapi({ description: "อีเมล" }),
+  us_phone: z.string().nullable().optional().openapi({ description: "เบอร์โทรศัพท์" }),
+  us_images: z.string().nullable().optional().openapi({ description: "รูปโปรไฟล์" }),
 });
 
 // สำหรับตรวจสอบข้อมูลแผนก
 export const departmentSchema = z.object({
-  dept_name: z.string(),
+  dept_name: z.string().openapi({ description: "ชื่อแผนก" }),
 });
 
 // สำหรับตรวจสอบข้อมูลฝ่ายย่อย
 export const sectionSchema = z.object({
-  sec_name: z.string(),
+  sec_name: z.string().openapi({ description: "ชื่อฝ่าย" }),
 });
 
 /**
@@ -41,17 +37,17 @@ export const sectionSchema = z.object({
  * Author    : Niyada Butchan (Da) 66160361
  */
 export const getMyProfileResponseSchema = z.object({
-  us_id: z.coerce.number(),
-  us_firstname: z.string(),
-  us_lastname: z.string(),
-  us_username: z.string(),
-  us_emp_code: z.string(),
-  us_email: z.string(),
-  us_phone: z.string().nullable().optional(),
-  us_images: z.string().nullable().optional(),
-  us_role: z.nativeEnum(US_ROLE),
-  department: departmentSchema,
-  section: sectionSchema,
+  us_id: z.coerce.number().openapi({ description: "รหัสผู้ใช้" }),
+  us_firstname: z.string().openapi({ description: "ชื่อจริง" }),
+  us_lastname: z.string().openapi({ description: "นามสกุล" }),
+  us_username: z.string().openapi({ description: "ชื่อผู้ใช้งาน" }),
+  us_emp_code: z.string().openapi({ description: "รหัสพนักงาน" }),
+  us_email: z.string().openapi({ description: "อีเมล" }),
+  us_phone: z.string().nullable().optional().openapi({ description: "เบอร์โทรศัพท์" }),
+  us_images: z.string().nullable().optional().openapi({ description: "รูปโปรไฟล์" }),
+  us_role: z.nativeEnum(US_ROLE).openapi({ description: "บทบาท" }),
+  department: departmentSchema.openapi({ description: "ข้อมูลแผนก" }),
+  section: sectionSchema.openapi({ description: "ข้อมูลฝ่าย" }),
 });
 
 /**
@@ -60,8 +56,8 @@ export const getMyProfileResponseSchema = z.object({
  */
 export const changePasswordSchema = z
   .object({
-    oldPassword: z.string().min(1, "กรุณากรอกรหัสผ่านเดิม"),
-    confirmPassword: z.string().min(1, "กรุณากรอกยืนยันรหัสผ่านใหม่"),
+    oldPassword: z.string().min(1, "กรุณากรอกรหัสผ่านเดิม").openapi({ description: "รหัสผ่านเดิม" }),
+    confirmPassword: z.string().min(1, "กรุณากรอกยืนยันรหัสผ่านใหม่").openapi({ description: "ยืนยันรหัสผ่านใหม่" }),
     newPassword: z
       .string()
       .min(12, "รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษร")
@@ -73,7 +69,8 @@ export const changePasswordSchema = z
         /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
         "ต้องมีอักขระพิเศษอย่างน้อย 1 ตัว"
       )
-      .refine((val) => !/\s/.test(val), "ห้ามมีการเว้นวรรค"),
+      .refine((val) => !/\s/.test(val), "ห้ามมีการเว้นวรรค")
+      .openapi({ description: "รหัสผ่านใหม่" }),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน",

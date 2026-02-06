@@ -274,6 +274,7 @@ model device_childs {
   availabilities     device_availabilities[]
   cart_device_childs cart_device_childs[]
   logDeviceChilds    log_device_childs[]
+  issue_devices      issue_devices[]
 
   @@index([dec_de_id], map: "idx_child_device")
   @@index([dec_status], map: "idx_child_status")
@@ -538,6 +539,7 @@ model ticket_issues {
   notifications   notifications[]
   logs            log_issues[]
   logDeviceChilds log_device_childs[]
+  issue_devices   issue_devices[]
 
   @@index([ti_de_id, ti_status, created_at], map: "idx_issue_device_status")
   @@index([ti_assigned_to, ti_status], map: "idx_issue_assignee")
@@ -695,4 +697,19 @@ model chat_attachments {
   message chat_messages @relation(fields: [catt_cm_id], references: [cm_id], onDelete: Cascade)
 
   @@index([catt_cm_id])
+}
+
+model issue_devices {
+  id_id      Int       @id @default(autoincrement())
+  id_ti_id   Int
+  id_dec_id  Int
+  deleted_at DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt @db.Timestamptz(6)
+
+  ticket_issue ticket_issues @relation(fields: [id_ti_id], references: [ti_id])
+  device_child device_childs @relation(fields: [id_dec_id], references: [dec_id])
+
+  @@index([id_ti_id])
+  @@index([id_dec_id])
 }

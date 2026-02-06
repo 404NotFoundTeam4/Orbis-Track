@@ -63,6 +63,7 @@ type Device = {
   dec_asset_code: string;
   dec_status: string;
   activeBorrow?: ActiveBorrow[];
+  maxBorrow: number;
 };
 const BorrowEquipmentModal = ({
   mode,
@@ -88,11 +89,11 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
-
+ 
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
- 
+
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   // เก็บข้อความ error ของแต่ละ field ในฟอร์ม BorrowFormData
@@ -101,7 +102,7 @@ const BorrowEquipmentModal = ({
   >({});
   function applyTimeToDate(
     date: Date,
-    time: string // "09:30"
+    time: string, // "09:30"
   ): string {
     const [hour, minute] = time.split(":").map(Number);
 
@@ -189,12 +190,6 @@ const BorrowEquipmentModal = ({
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
   const handleSubmitBorrow = () => {
-    // ตรวจสอบข้อมูลก่อน submit
-    if (!validate()) {
-      setIsConfirmOpen(false);
-      return;
-    }
-
     // ส่งข้อมูลไปยัง parent component
     onSubmit({
       data: form,
@@ -213,11 +208,6 @@ const BorrowEquipmentModal = ({
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
   const handleAddToCart = () => {
-    // ตรวจสอบข้อมูล
-    if (!validate()) {
-      return;
-    }
-
     // ส่งข้อมูลไปยัง parent component
     onAddToCart?.({
       data: form,
@@ -231,20 +221,13 @@ const BorrowEquipmentModal = ({
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
   const handleSubmitEdit = () => {
-    // ตรวจสอบข้อมูล
-    if (!validate()) {
-      setIsConfirmOpen(false);
-      return;
-    }
-
     // ส่งข้อมูลไปยัง parent component
-
     const submitData = {
       ...form,
       borrowTime: applyTimeToDate(form.dateRange[0]!, form.borrowTime),
       returnTime: applyTimeToDate(
         form.dateRange[1] ?? form.dateRange[0]!,
-        form.returnTime
+        form.returnTime,
       ),
     };
 
@@ -252,6 +235,20 @@ const BorrowEquipmentModal = ({
 
     // ปิด alert
     setIsConfirmOpen(false);
+  };
+
+  /**
+   * Description: ฟังก์ชันตรวจสอบความถูกต้องของข้อมูลฟอร์ม
+   * Input : -
+   * Output : เปิด AlertDialog เมื่อข้อมูลผ่านการตรวจสอบ
+   * Author : Thakdanai Makmi (Ryu) 66160355
+   **/
+  const handleOpenConfirm = () => {
+    if (!validate()) {
+      return;
+    }
+
+    setIsConfirmOpen(true);
   };
 
   /**
@@ -308,6 +305,7 @@ const BorrowEquipmentModal = ({
   const fetchData = async () => {
     try {
       const res = await borrowService.getAvailable(equipment.deviceId);
+
       setData(res);
     } catch (error) {
       console.error("API error:", error);
@@ -317,10 +315,58 @@ const BorrowEquipmentModal = ({
   useEffect(() => {
     fetchData();
   }, []);
+  const isBorrowAvailable = (
+      start: Date | null,
+      end: Date | null,
+      timeStart?: string,
+      timeEnd?: string,
+      activeBorrow?: ActiveBorrow[] | null,
+    ): boolean => {
+      if (!activeBorrow || activeBorrow.length === 0) return true;
+  
+      const now = new Date();
+  
+      const parseTime = (time?: string) => {
+        if (!time) {
+          return {
+            hour: now.getHours(),
+            minute: now.getMinutes(),
+          };
+        }
+        const [hours, minutes] = time.split(":").map(Number);
+        return { hour: hours, minute: minutes };
+      };
+  
+      const combineDateTime = (date: Date, time?: string) => {
+        const day = new Date(date);
+        const { hour, minute } = parseTime(time);
+        day.setHours(hour, minute, 0, 0);
+        return day;
+      };
+  
+      const startDate = start ?? now;
+      const endDate = end ?? now;
+  
+      const userStart = combineDateTime(startDate, timeStart);
+      const userEnd = combineDateTime(endDate, timeEnd);
+  
+      if (userStart > userEnd) return false;
+  
+      return !activeBorrow.some((borrow) => {
+        const borrowStart = new Date(borrow.da_start);
+        const borrowEnd = new Date(borrow.da_end);
+        return userStart < borrowEnd && userEnd > borrowStart;
+      });
+    };
+    
+     const readyDevices = (availableDevices ?? []).filter((device) =>
+    isBorrowAvailable(form.dateRange[0], form.dateRange[1],  form.borrowTime,form.returnTime, device.activeBorrow),
+  );
+  
   return (
-    <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px]">
+    <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
-      <form className="flex flex-col justify-between gap-[30px] text-[16px] bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] w-[1048px] px-[40px] py-[40px] h-[698px] overflow-y-auto pr-2">
+      <form className="flex flex-col justify-between gap-[30px] text-[16px] bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] w-[1047px] px-[40px] py-[70px]">
         {/* หัวข้อ */}
         <div className="flex flex-col gap-[20px]">
           <div className="flex flex-col gap-[7px]">
@@ -339,10 +385,8 @@ const BorrowEquipmentModal = ({
               placeholder="กรอกข้อมูลชื่อผู้ยืม"
               value={form.borrower}
               onChange={(e) => setForm({ ...form, borrower: e.target.value })}
+              error={errors.borrower}
             />
-            {errors.borrower && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.borrower}</p>
-            )}
           </div>
           {/* เบอร์โทรศัพท์ผู้ยืม */}
           <div className="flex flex-col gap-[4px]">
@@ -355,10 +399,8 @@ const BorrowEquipmentModal = ({
               placeholder="กรอกข้อมูลเบอร์โทรศัพท์ผู้ยืม"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              error={errors.phone}
             />
-            {errors.phone && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.phone}</p>
-            )}
           </div>
           {/* เหตุผลในการยืม */}
           <div className="flex flex-col gap-[4px]">
@@ -366,13 +408,15 @@ const BorrowEquipmentModal = ({
               เหตุผลในการยืม <span className="text-[#F5222D]">*</span>
             </label>
             <textarea
-              className="border border-[#D8D8D8] rounded-[16px] w-[581px] h-[111px] px-[15px] py-[8px]"
+              className={`border rounded-[16px] w-full h-[111px] px-[15px] py-[8px] placeholder:text-[#CDCDCD] focus:outline-none focus:ring-2 focus:border-transparent transition-all
+                ${errors.reason ? "border-red-500 focus:ring-red-500" : "border-[#D8D8D8] focus:ring-blue-500"}
+                `}
               placeholder="กรอกข้อมูลเหตุผลในการยืม"
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
             ></textarea>
             {errors.reason && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.reason}</p>
+              <span className="text-sm mt-1 text-red-500">{errors.reason}</span>
             )}
           </div>
           {/* สถานที่ใช้งาน */}
@@ -381,13 +425,17 @@ const BorrowEquipmentModal = ({
               สถานที่ใช้งาน <span className="text-[#F5222D]">*</span>
             </label>
             <textarea
-              className="border border-[#D8D8D8] rounded-[16px] w-[581px] h-[111px] px-[15px] py-[8px]"
+              className={`border rounded-[16px] w-full h-[111px] px-[15px] py-[8px] placeholder:text-[#CDCDCD] focus:outline-none focus:ring-2 focus:border-transparent transition-all
+                ${errors.placeOfUse ? "border-red-500 focus:ring-red-500" : "border-[#D8D8D8] focus:ring-blue-500"}
+              `}
               placeholder="กรอกสถานที่ใช้งาน"
               value={form.placeOfUse}
               onChange={(e) => setForm({ ...form, placeOfUse: e.target.value })}
             ></textarea>
             {errors.placeOfUse && (
-              <p className="text-sm mt-1 text-[#F5222D]">{errors.placeOfUse}</p>
+              <span className="text-sm mt-1 text-red-500">
+                {errors.placeOfUse}
+              </span>
             )}
           </div>
         </div>
@@ -407,22 +455,17 @@ const BorrowEquipmentModal = ({
               </label>
               <BorrowModal
                 defaultValues={data}
+                maxBorrow={equipment.maxBorrowDays}
                 timeDefault={{
                   time_start: form.borrowTime,
                   time_end: form.returnTime,
                 }}
-                
                 dateDefault={{
-                  start: form.dateRange[0]
-                    ? new Date(form.dateRange[0])
-                    : null,
-                  end: form.dateRange[1]
-                    ? new Date(form.dateRange[1])
-                    : null,
+                  start: form.dateRange[0] ? new Date(form.dateRange[0]) : null,
+                  end: form.dateRange[1] ? new Date(form.dateRange[1]) : null,
                 }}
-                
                 onConfirm={(data) => {
-                  setForm((prev :any) => ({
+                  setForm((prev: any) => ({
                     ...prev,
                     dateRange: [
                       data.borrow_start ? new Date(data.borrow_start) : null,
@@ -431,13 +474,10 @@ const BorrowEquipmentModal = ({
                     borrowTime: data.time_start,
                     returnTime: data.time_end,
                   }));
-                
                 }}
               />
               {errors.dateRange && (
-                <p className="text-sm mt-1 text-[#F5222D]">
-                  {errors.dateRange}
-                </p>
+                <p className="text-sm mt-1 text-red-500">{errors.dateRange}</p>
               )}
             </div>
           </div>
@@ -454,11 +494,12 @@ const BorrowEquipmentModal = ({
                 onChange={(time: string) =>
                   setForm({ ...form, borrowTime: time })
                 }
+                placeholder="เวลายืม"
               />
               {errors.borrowTime && (
-                <p className="text-sm mt-1 text-[#F5222D]">
+                <span className="text-sm mt-1 text-red-500">
                   {errors.borrowTime}
-                </p>
+                </span>
               )}
             </div>
             <div className="flex flex-col gap-[4px]">
@@ -472,11 +513,12 @@ const BorrowEquipmentModal = ({
                 onChange={(time: string) =>
                   setForm({ ...form, returnTime: time })
                 }
+                placeholder="เวลาคืน"
               />
               {errors.returnTime && (
-                <p className="text-sm mt-1 text-[#F5222D]">
+                <span className="text-sm mt-1 text-red-500">
                   {errors.returnTime}
-                </p>
+                </span>
               )}
             </div>
           </div>
@@ -486,18 +528,17 @@ const BorrowEquipmentModal = ({
               <div className="flex items-center gap-[10px] text-[#00AA1A]">
                 <Icon icon="icon-park-solid:check-one" width={20} height={20} />
                 <p className="text-[16px]">
-                  ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด {availableCount} ชิ้น
+                  ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด {readyDevices.length} ชิ้น
                 </p>
               </div>
             )
           }
 
           {/* แสดงรายการอุปกรณ์ที่ว่างคร่าวๆ (ลบได้) */}
-          <div className="grid grid-cols-2 gap-[10px]">
+          <div className="grid grid-cols-2 gap-[22px]">
             {
               // เทสแสดงรายการอุปกรณ์ที่พร้อมใช้งาน (ให้ผู้ใช้เลือกเอง)
-              availableDevices
-                .filter((d) => d.dec_status === "READY")
+            readyDevices
                 .map((device) => {
                   // ตรวจสอบว่าอุปกรณ์ที่เลือกอยู่ในรายการที่เลือกอยู่แล้วหรือไม่
                   const checked = selectedDeviceIds.includes(device.dec_id);
@@ -509,14 +550,15 @@ const BorrowEquipmentModal = ({
                     >
                       <input
                         type="checkbox"
+                        className="custom-checkbox-inventory"
                         checked={checked}
                         onChange={() => {
                           if (checked) {
                             // ถ้าถูกเลือกอยู่ -> เอาติ๊กออก ถ้ายังไม่ถูกเลือก -> ติ๊ก
                             onSelectDevice(
                               selectedDeviceIds.filter(
-                                (id) => id !== device.dec_id
-                              )
+                                (id) => id !== device.dec_id,
+                              ),
                             );
                           } else {
                             // ยังไม่ถูกเลือก เพิ่มเข้ารายการที่เลือก
@@ -596,7 +638,7 @@ const BorrowEquipmentModal = ({
           {/* ปุ่มหลัก */}
           <Button
             disabled={selectedDeviceIds.length === 0}
-            onClick={() => setIsConfirmOpen(true)}
+            onClick={handleOpenConfirm}
             type="button"
             className="!w-[155px] !h-[46px] font-semibold"
             variant="primary"
@@ -608,11 +650,13 @@ const BorrowEquipmentModal = ({
       {/* การ์ดรายละเอียดอุปกรณ์ */}
       <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[600px] min-h-[668px] px-[40px] py-[40px]">
         {/* รูปภาพอุปกรณ์ */}
-        <div className="border border-[#D9D9D9] rounded-[16px] w-[520px] h-[118px]">
-          <img
-            className="w-full h-full object-cover rounded-[16px]"
-            src={getImageUrl(equipment.imageUrl)}
-          />
+        <div className="rounded-[16px] w-[520px] h-[118px] overflow-hidden">
+          {equipment.imageUrl && (
+            <img
+              className="w-full h-full object-cover"
+              src={getImageUrl(equipment.imageUrl)}
+            />
+          )}
         </div>
         {/* รายละเอียดอุปกรณ์ */}
         <div className="flex flex-col gap-[20px] text-[14px] text-[#747474]">
@@ -665,16 +709,16 @@ const BorrowEquipmentModal = ({
             *ยืมได้สูงสุดไม่เกิน {equipment.maxBorrowDays} วัน
           </p>
           <p className="flex justify-center items-center bg-[#00AA1A]/10 rounded-[10px] text-[#00AA1A] min-w-[191px] h-[39px] px-[20px]">
-            ขณะนี้ว่าง {equipment.remain} ชิ้น
+            ขณะนี้ว่าง {readyDevices.length} ชิ้น
           </p>
         </div>
       </div>
       {isConfirmOpen && (
         <AlertDialog
-          tone="success"
+          tone="warning"
           title={
             mode === "borrow-equipment"
-              ? "ยืนยันการส่งคำร้อง"
+              ? "ยืนยันการส่งคำร้อง?"
               : "ยืนยันการบันทึกการแก้ไข"
           }
           open={isConfirmOpen}

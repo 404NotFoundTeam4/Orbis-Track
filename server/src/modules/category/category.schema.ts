@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { softDeleteAccount } from "../accounts/accounts.service.js";
 
-
 export const idParamSchema = z.object({
-    id: z.coerce.number().int().positive()
+  id: z.coerce.number().int().positive().openapi({ description: "ID หมวดหมู่" })
 });
 
 /**
@@ -13,12 +12,12 @@ export const idParamSchema = z.object({
  */
 // รูปแบบข้อมูลของหมวดหมู่อุปกรณ์
 export const categorySchema = z.object({
-  ca_id: z.number().int(),
-  ca_name: z.string(),
+  ca_id: z.number().int().openapi({ description: "รหัสหมวดหมู่" }),
+  ca_name: z.string().openapi({ description: "ชื่อหมวดหมู่" }),
 
-  created_at: z.coerce.date().nullable(),
-  updated_at: z.coerce.date().nullable(),
-  deleted_at: z.coerce.date().nullable()
+  created_at: z.coerce.date().nullable().openapi({ description: "วันที่สร้าง" }),
+  updated_at: z.coerce.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+  deleted_at: z.coerce.date().nullable().openapi({ description: "วันที่ลบ" })
 })
 
 
@@ -30,36 +29,36 @@ const booleanFromQuery = z.preprocess((v) => {
 
 export const getCategoriesQuerySchema = z.object({
   // ค้นหา (ค้นจากชื่อหมวดหมู่)
-  q: z.string().trim().min(1).optional(),
+  q: z.string().trim().min(1).optional().openapi({ description: "คำค้นหา (ชื่อหมวดหมู่)" }),
 
 
   // แบ่งหน้า
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(10),
+  page: z.coerce.number().int().min(1).default(1).openapi({ description: "หน้าที่ต้องการ" }),
+  limit: z.coerce.number().int().min(1).max(100).default(10).openapi({ description: "จำนวนรายการต่อหน้า" }),
 
   // เรียงลำดับ (คุม whitelist ให้ตรง field ใน DB)
-  sortBy: z.enum(["ca_id" , "ca_name" , "created_at" , "updated_at"]).default("ca_id"),
-  sortOrder: z.enum(["asc" , "desc"]).default("asc"),
+  sortBy: z.enum(["ca_id", "ca_name", "created_at", "updated_at"]).default("ca_id").openapi({ description: "เรียงตามคอลัมน์" }),
+  sortOrder: z.enum(["asc", "desc"]).default("asc").openapi({ description: "ลำดับการเรียง (asc/desc)" }),
 
   // จะเอารายการที่ soft-delete มาด้วยไหม
-  includeDeleted: booleanFromQuery.default(false),
+  includeDeleted: booleanFromQuery.default(false).openapi({ description: "รวมรายการที่ถูกลบ" }),
 
 
 })
 
 export const getCategoriesResponseSchema = z.object({
-  data: z.array(categorySchema),
+  data: z.array(categorySchema).openapi({ description: "รายการหมวดหมู่" }),
   meta: z.object({
-    page: z.number().int(),
-    limit: z.number().int(),
-    total: z.number().int(),
-    totalPages: z.number().int(),
-  }),
+    page: z.number().int().openapi({ description: "หน้าที่ปัจจุบัน" }),
+    limit: z.number().int().openapi({ description: "จำนวนต่อหน้า" }),
+    total: z.number().int().openapi({ description: "จำนวนทั้งหมด" }),
+    totalPages: z.number().int().openapi({ description: "จำนวนหน้าทั้งหมด" }),
+  }).openapi({ description: "ข้อมูล Pagination" }),
 })
 
 export const softDeleteCategoryResponseSchema = z.object({
-    ca_id: z.number().int(),
-    deleted_at: z.coerce.date(),
+  ca_id: z.number().int().openapi({ description: "รหัสหมวดหมู่ที่ถูกลบ" }),
+  deleted_at: z.coerce.date().openapi({ description: "วันที่ลบ" }),
 });
 
 /**
@@ -67,8 +66,8 @@ export const softDeleteCategoryResponseSchema = z.object({
 * Author : Thakdanai Makmi (Ryu) 66160355
 */
 export const editCategoryPayload = z.object({
-  caId: z.coerce.number().int().positive(),
-  caName: z.string(),
+  caId: z.coerce.number().int().positive().openapi({ description: "รหัสหมวดหมู่" }),
+  caName: z.string().openapi({ description: "ชื่อหมวดหมู่ใหม่" }),
 });
 
 
@@ -82,7 +81,7 @@ export const editCategoryPayload = z.object({
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const addCategoryPayload = z.object({
-  ca_name: z.string().min(1, "Category name is required"),
+  ca_name: z.string().min(1, "Category name is required").openapi({ description: "ชื่อหมวดหมู่" }),
 });
 
 /**
@@ -97,11 +96,11 @@ export const addCategoryPayload = z.object({
  * Author    : Rachata Jitjeankhan (Tang) 66160369
  */
 export const addCategoryResponseSchema = z.object({
-  ca_id: z.coerce.number(),
-  ca_name: z.string(),
-  created_at: z.date().nullable(),
-  updated_at: z.date().nullable(),
-  deleted_at: z.date().nullable(),
+  ca_id: z.coerce.number().openapi({ description: "รหัสหมวดหมู่" }),
+  ca_name: z.string().openapi({ description: "ชื่อหมวดหมู่" }),
+  created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
+  updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+  deleted_at: z.date().nullable().openapi({ description: "วันที่ลบ" }),
 });
 
 export type CategorySchema = z.infer<typeof categorySchema>

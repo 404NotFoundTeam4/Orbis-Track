@@ -23,6 +23,7 @@ import { type menuItem, Images, Icons } from "./MenuConfig";
 import { getBasePath } from "../../constants/rolePath";
 import { useNotifications } from "../../hooks/useNotifications";
 import { NotificationList } from "../Notification";
+import { NavLink } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -228,11 +229,11 @@ const Navbar = () => {
               icon={Icons["FASHOPPING"]}
               className={`text-[23px] ${active === "cart" ? "text-white" : "text-[#595959]"
                 }`}
-            />
+            />  
           </button>
 
           <div className="flex gap-5 items-centerx border-l border-l-[#D9D9D9] ml-[21px] pl-11  pr-1 ">
-            <div className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
+            <NavLink  to ="profile" className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
               <img
                 src={getImageUrl(user.us_images)}
                 alt=""
@@ -246,7 +247,7 @@ const Navbar = () => {
                   {UserRoleTH[user.us_role as UserRole]}
                 </div>
               </div>
-            </div>
+            </NavLink>
           </div>
         </div>
       </div>

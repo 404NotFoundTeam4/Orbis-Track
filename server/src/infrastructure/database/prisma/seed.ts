@@ -609,6 +609,7 @@ async function main() {
           brts_role: s.role,
           brts_dept_id: s.deptId,
           brts_dept_name: "Mock Dept",
+          brts_sec_id: s.secId,
           brts_sec_name: "N/A",
           brts_status: s.status,
           brts_us_id: s.usId || null,
@@ -967,7 +968,14 @@ async function main() {
       (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
     );
   `);
+   await prisma.$executeRawUnsafe(`
+    SELECT setval(
+      pg_get_serial_sequence('approval_flow_steps', 'afs_id'),
+      (SELECT COALESCE(MAX(afs_id), 0) FROM approval_flow_steps)
+    );
+  `);
 }
+
 
 main()
   .catch((e) => {

@@ -181,7 +181,7 @@ const MainDeviceModal = ({
     fetchDataApprove();
     fetchDataDevices();
   }, []);
-
+  
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
     if (!file) return;
@@ -507,7 +507,7 @@ const MainDeviceModal = ({
     label: cleanDropdown(sec.sec_name),
     value: sec.sec_id,
   }));
-
+  
   const approveItems: DropdownItem[] = approvalflows.map((af: any) => ({
     id: af.af_id,
     label: af.af_name,
@@ -565,6 +565,7 @@ const MainDeviceModal = ({
       formData.append("de_images", imageFile);
     }
     onSubmit(formData);
+    
   };
   /*========================== func ส่งข้อมูลเพิ่มลำดับการอนุมัติ ========================== */
   const handleSumbitApprove = () => {
@@ -609,6 +610,12 @@ const MainDeviceModal = ({
     formData.append("af_us_id", userId);
     formData.append("approvalflowsstep", JSON.stringify(approver));
     onSubmit(formData);
+      setTimeout(() => {
+            setIsApproverModalOpen(false)
+            fetchDataDevices()
+            setApproverGroupFlow([])
+            setTitleApprove("")
+          }, 800); // หน่วง 1.5 วินาที
   };
 
   /*========================== ยืนยันข้อมูล ========================== */
@@ -783,6 +790,9 @@ const MainDeviceModal = ({
                 required
                 error={errors.serialNumber}
               />
+              {errors.serialNumber && (
+                <p className="text-sm mt-1 text-[#F5222D]">{errors.serialNumber}</p>
+              )}
             </div>
           </div>
           {/* แผนก / หมวดหมู่ / ฝ่ายย่อย */}

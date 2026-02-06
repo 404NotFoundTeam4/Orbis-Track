@@ -49,9 +49,7 @@ export default function AddInventory() {
           tone: "confirm",
           message: "เพิ่มการอนุมัติเรียบร้อยแล้ว",
         });
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500); // หน่วง 1.5 วินาที
+ // หน่วง 1.5 วินาที
       } catch (e) {
         console.log(e);
         push({

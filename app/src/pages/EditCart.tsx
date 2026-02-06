@@ -536,6 +536,7 @@ const EditCart = () => {
           cancelText="ปิด"
           actionsMode="single"
           onConfirm={() => setEnterAlertOpen(false)}
+          width={800}
         />
       </div>
     </div>

@@ -595,10 +595,13 @@ export default function HistoryBorrowTicket({
         <div className="text-[#000000]">{item.deviceSummary.categoryName}</div>
 
         <div className="flex flex-col">
-          <span className="text-[#000000]">{item.requester.fullName}</span>
+          <span className="text-[#000000]">{detail?.requester?.fullName || "-"}</span>
+          {/** 
           <span className="text-[#8C8C8C]">
             {item.requester.employeeCode || "-"}
           </span>
+          */}
+          
         </div>
 
         <div className="flex flex-col">
@@ -913,8 +916,8 @@ export default function HistoryBorrowTicket({
               <div className="flex-1 flex gap-10 pt-2">
                 <div className="flex flex-col gap-2 flex-1">
                   <FieldRow
-                    label="ผู้ส่งคำร้อง"
-                    value={detail?.requester?.fullName || item.requester.fullName}
+                    label="ชื่อผู้ร้องขอ"
+                    value={detail?.requester?.fullName || "-"}
                   />
                   <FieldRow
                     label="ชื่ออุปกรณ์"

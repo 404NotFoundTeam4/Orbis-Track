@@ -373,7 +373,7 @@ export default function History() {
                 )}
 
                 {!isLoadingList && ticketItems.length === 0 && (
-                  <div className="px-2 py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
+                  <div className="px-2 py-8 text-sm text-neutral-600"></div>
                 )}
 
                 {!isLoadingList &&
@@ -500,7 +500,7 @@ function TabButton({
       className={classNames(
         "h-10 rounded-full border px-5 text-sm font-semibold",
         active
-          ? "border-sky-300 bg-sky-500 text-white"
+          ? "border-sky-300 bg-[#1890FF] text-neutral-50"
           : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
       )}
     >

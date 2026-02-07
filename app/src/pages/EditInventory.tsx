@@ -8,10 +8,10 @@ import {
   type DeviceChild,
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
-import { useLocation,useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
 const EditInventory = () => {
-   const { id } = useParams();
+  const { id } = useParams();
   const location = useLocation();
 
   // รับจาก navigate
@@ -19,12 +19,12 @@ const EditInventory = () => {
 
 
 
- 
+
   // ดึง url ปัจจุบัน
-  
+
   // ข้อมูลอุปกรณ์แม่ที่ส่งมา
-  
-  
+
+
   // รหัสอุปกรณ์แม่
   const parentId = id
   console.log(id)
@@ -61,7 +61,7 @@ const EditInventory = () => {
       return;
     }
 
-    const payload = { dec_de_id: parentId, quantity };
+    const payload = { dec_de_id: Number(parentId), quantity };
     // เรียกใช้งาน service
     await DeviceService.createDeviceChild(payload);
     push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" });
@@ -162,6 +162,12 @@ const EditInventory = () => {
       }
     }
   };
+
+  // ดึงรายชื่ออุปกรณ์ที่มีอยู่แล้วจาก sessionStorage ออกมา
+  const existingDeviceNames = JSON.parse(
+    sessionStorage.getItem("existingDeviceNames") ?? "[]"
+  );
+
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}
@@ -182,6 +188,7 @@ const EditInventory = () => {
         onSubmit={(data) => {
           handleSubmit(data);
         }}
+        existingDeviceNames={existingDeviceNames}
       />
       <DevicesChilds
         devicesChilds={deviceChilds}

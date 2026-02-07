@@ -17,20 +17,28 @@ async function getProfile(userId: number) {
       us_id: true,
       us_firstname: true,
       us_lastname: true,
-      us_username: true,
       us_emp_code: true,
       us_email: true,
       us_phone: true,
-      us_images: true, 
       us_role: true,
-      department: { select: { dept_name: true } }, 
-      section: { select: { sec_name: true } }
+      // ดึงข้อมูลจากตารางที่ Join ผ่าน us_dept_id
+      department: { 
+        select: { dept_name: true } 
+      }, 
+      section: { 
+        select: { sec_name: true } 
+      }
     },
   });
 
   if (!user) throw new Error("Profile not found");
 
-  return user; // ส่ง raw data ไปเลย
+  // Flatten ข้อมูลเพื่อให้ Frontend เรียกใช้ data.us_dept_name ได้ทันที
+  return {
+    ...user,
+    us_dept_name: user.department?.dept_name || "ไม่มีข้อมูลแผนก",
+    us_sec_name: user.section?.sec_name || "ไม่มีข้อมูลฝ่ายย่อย"
+  };
 }
 
 /**

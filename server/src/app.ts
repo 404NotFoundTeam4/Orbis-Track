@@ -96,6 +96,16 @@ export function App(): Express {
   );
   routes(app);
   swagger(app, baseUrl);
+
+  // 404 Not Found Handler สำหรับ routes ที่ไม่พบ
+  app.use((_req, res) => {
+    res.status(404).json({
+      success: false,
+      message: "ไม่พบเส้นทางที่ร้องขอ (404 Not Found)",
+      data: null,
+    });
+  });
+
   app.use(globalErrorHandler);
   return app;
 }

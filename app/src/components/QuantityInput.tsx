@@ -6,6 +6,8 @@ interface QuantityInputProps {
   max?: number; // จำนวนสูงสุด
   value: number | null;
   width?: number;
+  required?: boolean; // ต้องระบุ (*)
+  error?: string;
   onChange?: (value: number) => void; // เปลี่ยนแปลงค่า
 }
 
@@ -16,6 +18,8 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
   max = 99,
   value,
   width = "260",
+  required,
+  error,
   onChange,
 }) => {
   // ค่าในช่อง input
@@ -65,10 +69,13 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
   return (
     <div className="flex flex-col gap-[4px]">
       {/* Label */}
-      <label className="text-[16px]">{label}</label>
+      <label className="text-[16px]">
+        {label}
+        {required && <span className="text-[#F5222D] ml-1">*</span>}
+      </label>
       {/* Input Box */}
       <div
-        className="flex items-center overflow-hidden border border-[#A2A2A2] rounded-[8px] h-[46px] py-[8px]"
+        className={`flex items-center overflow-hidden border rounded-[8px] h-[46px] py-[8px] ${error ? "border-red-500" : "border-[#A2A2A2]"}`}
         style={{ width: width }}
       >
         {/* ลดจำนวน */}
@@ -96,6 +103,8 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
           +
         </button>
       </div>
+      
+      {error && <span className="text-sm text-red-500 mt-1">{error}</span>}
     </div>
   );
 };

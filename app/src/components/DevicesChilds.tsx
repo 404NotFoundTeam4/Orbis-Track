@@ -64,8 +64,8 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
 
     // เพิ่มอุปกรณ์ลูก
     const handleAdd = async () => {
-        // if (!quantity || Number(id) === undefined) return;
-        if (quantity === null || Number(quantity) <= 0 || isNaN(Number(id))) return;
+        // if (quantity === null || Number(quantity) <= 0 || isNaN(Number(id))) return;
+        if (quantity === null || Number(quantity) <= 0) return;
         console.log(quantity)
         await onAdd( Number(quantity)); // เรียกใช้งานฟังก์ชันเพิ่มอุปกรณ์ที่ส่งมา
         setQuantity(null); // รีเซ็ตจำนวน
@@ -158,7 +158,6 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                         className="!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
                             if (quantity === null || Number(quantity) <= 0) {
-                                onAdd( Number(quantity));
                                 return;
                             } else {
                                 setIsAddAletOpen(true);

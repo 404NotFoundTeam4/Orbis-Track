@@ -474,10 +474,86 @@ async function getHistoryBorrowTickets(
   const sortField = query.sortField ?? "requestDate";
 
   /**
+   * Description: helper สำหรับสร้างชื่อเต็ม (กัน null/undefined)
+   */
+  const buildFullName = (
+    firstName: string | null | undefined,
+    lastName: string | null | undefined
+  ) => `${firstName ?? ""} ${lastName ?? ""}`.trim();
+
+  /**
+   * Description: map requester baseline จาก users (ไว้เป็น fallback + เอา dept/sec/empCode)
+   */
+  const mapRequesterFromTicketForList = (requester: any) => ({
+    userId: requester?.us_id,
+    fullName: buildFullName(requester?.us_firstname, requester?.us_lastname),
+    employeeCode: requester?.us_emp_code ?? null,
+    department_name: requester?.department?.dept_name ?? null,
+    section_name: requester?.section?.sec_name ?? null,
+  });
+
+  /**
+   * Description: helper รวม origin cart item ids จากรายการ tickets
+   */
+  const collectOriginCartItemIds = (ticketRecords: any[]) => {
+    const ids = ticketRecords
+      .flatMap((ticket) =>
+        (ticket.ticket_devices ?? []).map((td: any) => td.td_origin_cti_id)
+      )
+      .filter((id: any): id is number => typeof id === "number");
+
+    return Array.from(new Set(ids));
+  };
+
+  /**
+   * Description: helper ดึง cart_items แบบ batch แล้วทำเป็น Map<cti_id, cartItem>
+   */
+  const buildCartItemMap = async (ticketRecords: any[]) => {
+    const originCartItemIds = collectOriginCartItemIds(ticketRecords);
+
+    if (originCartItemIds.length === 0) {
+      return new Map<number, { cti_us_name: string | null; cti_phone: string | null }>();
+    }
+
+    const cartItems = await prisma.cart_items.findMany({
+      where: {
+        deleted_at: null,
+        cti_id: { in: originCartItemIds },
+      },
+      select: {
+        cti_id: true,
+        cti_us_name: true,
+        cti_phone: true,
+      },
+    });
+
+    return new Map(
+      cartItems.map((cartItem) => [
+        cartItem.cti_id,
+        { cti_us_name: cartItem.cti_us_name, cti_phone: cartItem.cti_phone },
+      ])
+    );
+  };
+
+  /**
+   * Description: helper เลือก cart_items snapshot ตัวแรกที่หาเจอจาก ticket_devices ของ ticket นั้น
+   */
+  const pickCartSnapshotForTicket = (
+    ticketRecord: any,
+    cartItemById: Map<number, { cti_us_name: string | null; cti_phone: string | null }>
+  ) => {
+    for (const td of ticketRecord.ticket_devices ?? []) {
+      const originId = td?.td_origin_cti_id;
+      if (typeof originId === "number") {
+        const snapshot = cartItemById.get(originId);
+        if (snapshot) return snapshot;
+      }
+    }
+    return null;
+  };
+
+  /**
    * Description: กรณี sort ตามจำนวน child ที่ผูกจริง (deviceChildCount) ใช้ groupBy บน ticket_devices
-   * Input : baseWhere, offsetNumber, limitNumber, sortDirection
-   * Output : { items: HistoryBorrowTicketItem[], pagination: {...} }
-   * Author: Chanwit Muangma (Boom) 66160224
    */
   if (sortField === "deviceChildCount") {
     const totalItems = await prisma.borrow_return_tickets.count({
@@ -540,6 +616,7 @@ async function getHistoryBorrowTickets(
           where: { deleted_at: null },
           select: {
             td_id: true,
+            td_origin_cti_id: true, 
             child: {
               select: {
                 dec_id: true,
@@ -572,7 +649,26 @@ async function getHistoryBorrowTickets(
           Boolean(ticketRecordItem)
       );
 
-    const items = orderedTicketRecords.map(mapTicketToListItem);
+    // ดึง cart_items แบบ batch 
+    const cartItemById = await buildCartItemMap(orderedTicketRecords);
+
+    const items = orderedTicketRecords.map((ticketRecordItem) => {
+      const baseItem = mapTicketToListItem(ticketRecordItem);
+
+      const requesterBaseline = mapRequesterFromTicketForList(ticketRecordItem.requester);
+      const cartSnapshot = pickCartSnapshotForTicket(ticketRecordItem, cartItemById);
+      const cartName = cartSnapshot?.cti_us_name?.trim();
+
+      return {
+        ...baseItem,
+        requester: {
+          ...requesterBaseline,
+          // override name จาก cart_items 
+          fullName:
+            cartName && cartName.length > 0 ? cartName : "",
+        },
+      };
+    });
 
     return {
       items,
@@ -618,18 +714,23 @@ async function getHistoryBorrowTickets(
           brt_id: true,
           brt_status: true,
           created_at: true,
+
           requester: {
             select: {
               us_id: true,
               us_firstname: true,
               us_lastname: true,
               us_emp_code: true,
+              department: { select: { dept_name: true } },
+              section: { select: { sec_name: true } },
             },
           },
+
           ticket_devices: {
             where: { deleted_at: null },
             select: {
               td_id: true,
+              td_origin_cti_id: true, 
               child: {
                 select: {
                   dec_id: true,
@@ -649,7 +750,25 @@ async function getHistoryBorrowTickets(
       }),
     ]);
 
-    const items = ticketRecords.map(mapTicketToListItem);
+    // ดึง cart_items แบบ batch
+    const cartItemById = await buildCartItemMap(ticketRecords);
+
+    const items = ticketRecords.map((ticketRecordItem) => {
+      const baseItem = mapTicketToListItem(ticketRecordItem);
+
+      const requesterBaseline = mapRequesterFromTicketForList(ticketRecordItem.requester);
+      const cartSnapshot = pickCartSnapshotForTicket(ticketRecordItem, cartItemById);
+      const cartName = cartSnapshot?.cti_us_name?.trim();
+
+      return {
+        ...baseItem,
+        requester: {
+          ...requesterBaseline,
+          fullName:
+            cartName && cartName.length > 0 ? cartName : requesterBaseline.fullName,
+        },
+      };
+    });
 
     return {
       items,
@@ -664,9 +783,6 @@ async function getHistoryBorrowTickets(
 
   /**
    * Description: กรณี sort ที่ต้องใช้ข้อมูลหลัง relation แบบ to-many จึงต้อง sort ใน memory
-   * Input : baseWhere, sortField, sortDirection, offsetNumber, limitNumber
-   * Output : { items: HistoryBorrowTicketItem[], pagination: {...} }
-   * Author: Chanwit Muangma (Boom) 66160224
    */
   const allTicketRecords = await prisma.borrow_return_tickets.findMany({
     where: baseWhere,
@@ -675,18 +791,23 @@ async function getHistoryBorrowTickets(
       brt_id: true,
       brt_status: true,
       created_at: true,
+
       requester: {
         select: {
           us_id: true,
           us_firstname: true,
           us_lastname: true,
           us_emp_code: true,
+          department: { select: { dept_name: true } },
+          section: { select: { sec_name: true } },
         },
       },
+
       ticket_devices: {
         where: { deleted_at: null },
         select: {
           td_id: true,
+          td_origin_cti_id: true, // ✅ เพิ่ม
           child: {
             select: {
               device: {
@@ -704,7 +825,25 @@ async function getHistoryBorrowTickets(
     },
   });
 
-  const allItems = allTicketRecords.map(mapTicketToListItem);
+  // ดึง cart_items แบบ batch
+  const cartItemById = await buildCartItemMap(allTicketRecords);
+
+  const allItems = allTicketRecords.map((ticketRecordItem) => {
+    const baseItem = mapTicketToListItem(ticketRecordItem);
+
+    const requesterBaseline = mapRequesterFromTicketForList(ticketRecordItem.requester);
+    const cartSnapshot = pickCartSnapshotForTicket(ticketRecordItem, cartItemById);
+    const cartName = cartSnapshot?.cti_us_name?.trim();
+
+    return {
+      ...baseItem,
+      requester: {
+        ...requesterBaseline,
+        fullName:
+          cartName && cartName.length > 0 ? cartName : requesterBaseline.fullName,
+      },
+    };
+  });
 
   if (sortField === "deviceName") {
     allItems.sort((leftItem, rightItem) => {
@@ -791,6 +930,7 @@ async function getHistoryBorrowTicketDetail(
         where: { deleted_at: null },
         select: {
           td_id: true,
+          td_origin_cti_id: true, 
           child: {
             select: {
               dec_id: true,
@@ -844,7 +984,6 @@ async function getHistoryBorrowTicketDetail(
           brts_sec_name: true,
           updated_at: true,
 
-          // ดึง id + name ให้ครบ เพื่อใช้ fallback/mapping 
           department: { select: { dept_id: true, dept_name: true } },
           section: { select: { sec_id: true, sec_name: true } },
 
@@ -868,7 +1007,62 @@ async function getHistoryBorrowTicketDetail(
     throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
   }
 
-  return await mapTicketToDetail(ticketRecord);
+  // หา cart_items snapshot จาก td_origin_cti_id 
+  const originCartItemIds = (ticketRecord.ticket_devices ?? [])
+    .map((td: any) => td.td_origin_cti_id)
+    .filter((id: any): id is number => typeof id === "number");
+
+  let cartName: string | null = null;
+  let cartPhone: string | null = null;
+
+  if (originCartItemIds.length > 0) {
+    const cartItems = await prisma.cart_items.findMany({
+      where: {
+        deleted_at: null,
+        cti_id: { in: originCartItemIds },
+      },
+      select: {
+        cti_id: true,
+        cti_us_name: true,
+        cti_phone: true,
+      },
+    });
+
+    const cartItemById = new Map(cartItems.map((c) => [c.cti_id, c]));
+
+    for (const id of originCartItemIds) {
+      const c = cartItemById.get(id);
+      if (c) {
+        const name = c.cti_us_name?.trim() ?? "";
+        const phone = c.cti_phone?.trim() ?? "";
+        cartName = name.length > 0 ? name : null;
+        cartPhone = phone.length > 0 ? phone : null;
+        break;
+      }
+    }
+  }
+
+  const detail = await mapTicketToDetail(ticketRecord);
+
+  // fallback จาก users 
+  const requesterFullNameFromUser = `${ticketRecord.requester?.us_firstname ?? ""} ${
+    ticketRecord.requester?.us_lastname ?? ""
+  }`.trim();
+
+  return {
+    ...detail,
+    requester: {
+      ...detail.requester,
+    userId: ticketRecord.requester?.us_id,
+    // ไม่มี cart -> ให้เป็น "" 
+    fullName: cartName && cartName.length > 0 ? cartName : "",
+    employeeCode: ticketRecord.requester?.us_emp_code ?? null,
+    // ไม่มี cart -> ให้เป็น null 
+    phoneNumber: cartPhone && cartPhone.length > 0 ? cartPhone : null,
+    department_name: ticketRecord.requester?.department?.dept_name ?? null,
+    section_name: ticketRecord.requester?.section?.sec_name ?? null,
+    },
+  };
 }
 
 /**

@@ -281,11 +281,11 @@ export default function History() {
         {activeTabKey === "borrow" && (
           <div className="w-full overflow-x-auto">
             <div
-              className="grid grid-cols-[2.2fr_1fr_1.2fr_1.6fr_1.3fr_1.1fr_44px]
+              className="grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_70px]
                         bg-white border border-[#D9D9D9] font-semibold text-gray-700
-                        rounded-[16px] mb-[10px] h-[61px] items-center gap-3 px-[30px]"
+                        rounded-[16px] mb-[10px] h-[61px] items-center p-4 pl-6"
             >
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 อุปกรณ์
                 <button type="button" onClick={() => onClickSort("deviceName")}>
                   <Icon
@@ -297,7 +297,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 จำนวน
                 <button type="button" onClick={() => onClickSort("deviceChildCount")}>
                   <Icon
@@ -309,7 +309,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 หมวดหมู่
                 <button type="button" onClick={() => onClickSort("category")}>
                   <Icon
@@ -321,7 +321,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 ชื่อผู้ร้องขอ
                 <button type="button" onClick={() => onClickSort("requester")}>
                   <Icon
@@ -333,7 +333,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 วันที่ร้องขอ
                 <button type="button" onClick={() => onClickSort("requestDate")}>
                   <Icon
@@ -345,7 +345,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 สถานะ
                 <button type="button" onClick={() => onClickSort("status")}>
                   <Icon
@@ -355,6 +355,9 @@ export default function History() {
                     className="ml-1"
                   />
                 </button>
+              </div>
+              <div className="h-full">
+
               </div>
 
               <div className="py-2" />
@@ -370,7 +373,7 @@ export default function History() {
                 )}
 
                 {!isLoadingList && ticketItems.length === 0 && (
-                  <div className="px-2 py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
+                  <div className="px-2 py-8 text-sm text-neutral-600"></div>
                 )}
 
                 {!isLoadingList &&
@@ -497,7 +500,7 @@ function TabButton({
       className={classNames(
         "h-10 rounded-full border px-5 text-sm font-semibold",
         active
-          ? "border-sky-300 bg-sky-500 text-white"
+          ? "border-sky-300 bg-[#1890FF] text-neutral-50"
           : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
       )}
     >

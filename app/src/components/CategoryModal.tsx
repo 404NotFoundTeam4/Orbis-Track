@@ -148,7 +148,7 @@ export function CategoryModal({
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
+            <div className="absolute inset-0 bg-black/10" onClick={handleClose} />
 
             {/* Modal */}
             <div className="relative bg-white border border-[#858585] rounded-[42px] w-[804px] h-[371px]">

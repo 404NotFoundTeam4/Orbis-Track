@@ -200,7 +200,7 @@ const RequestItemHome = ({
         onClick={toggleExpand}
       >
         {/* Device Name & ID */}
-        <div className="flex flex-col">
+        <div className="flex flex-col pl-2">
           <span className="text-[#000000]">{ticket.device_summary.name}</span>
         </div>
 

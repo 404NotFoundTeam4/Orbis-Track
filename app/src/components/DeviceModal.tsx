@@ -790,9 +790,6 @@ const MainDeviceModal = ({
                 required
                 error={errors.serialNumber}
               />
-              {errors.serialNumber && (
-                <p className="text-sm mt-1 text-[#F5222D]">{errors.serialNumber}</p>
-              )}
             </div>
           </div>
           {/* แผนก / หมวดหมู่ / ฝ่ายย่อย */}
@@ -1081,6 +1078,9 @@ const MainDeviceModal = ({
                 items={approveItems}
                 onChange={handleSelectApprover}
                 placeholder="ลำดับการอนุมัติ"
+                triggerClassName={
+                  errors.afId ? "!border-red-500" : "!border-[#D8D8D8]"
+                }
               />
               <Button
                 className="bg-[#1890FF] w-[173px]"

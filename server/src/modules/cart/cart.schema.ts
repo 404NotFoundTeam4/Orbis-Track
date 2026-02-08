@@ -191,8 +191,8 @@ export const borrowReturnTicketStagesSchema = z.object({
     ]).openapi({ description: "บทบาท" }),
     brts_dept_id: z.coerce.number().nullable().openapi({ description: "รหัสแผนก" }),
     brts_sec_id: z.coerce.number().nullable().openapi({ description: "รหัสฝ่าย" }),
-    brts_dept_name: z.string().min(1).max(255).openapi({ description: "ชื่อแผนก" }),
-    brts_sec_name: z.string().min(1).max(255).openapi({ description: "ชื่อฝ่าย" }),
+    brts_dept_name: z.string().min(1).max(255).nullable().openapi({ description: "ชื่อแผนก" }),
+    brts_sec_name: z.string().min(1).max(255).nullable().openapi({ description: "ชื่อฝ่าย" }),
     brts_status: z.enum([
         "PENDING",
         "APPROVED",

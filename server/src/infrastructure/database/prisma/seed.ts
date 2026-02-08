@@ -956,24 +956,21 @@ async function main() {
   console.log("  Password: password123");
 
   //ป้องกัน id ซ้ำกันหลังจาก seed
-  await prisma.$executeRawUnsafe(`
+  const resetSeq = async (table: string, col: string) => {
+    await prisma.$executeRawUnsafe(`
     SELECT setval(
-      pg_get_serial_sequence('borrow_return_tickets', 'brt_id'),
-      (SELECT COALESCE(MAX(brt_id), 0) FROM borrow_return_tickets)
+      pg_get_serial_sequence('${table}', '${col}'),
+      (SELECT COALESCE(MAX(${col}), 0) FROM ${table})
     );
   `);
-  await prisma.$executeRawUnsafe(`
-    SELECT setval(
-      pg_get_serial_sequence('borrow_return_ticket_stages', 'brts_id'),
-      (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
-    );
-  `);
-   await prisma.$executeRawUnsafe(`
-    SELECT setval(
-      pg_get_serial_sequence('approval_flow_steps', 'afs_id'),
-      (SELECT COALESCE(MAX(afs_id), 0) FROM approval_flow_steps)
-    );
-  `);
+  };
+
+  await resetSeq("public.borrow_return_tickets", "brt_id");
+  await resetSeq("public.borrow_return_ticket_stages", "brts_id");
+  await resetSeq("public.approval_flow_steps", "afs_id");
+  await resetSeq("public.device_availabilities", "da_id");
+  // เพิ่มตารางอื่น ๆ ต่อเอง
+
 }
 
 

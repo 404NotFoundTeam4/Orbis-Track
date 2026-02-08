@@ -195,7 +195,6 @@ export const Cart = () => {
       closeModal();
     } catch (err) {
       // console.error("ส่งคำร้องไม่สำเร็จ:", err);
-      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง" });
       if (axios.isAxiosError(err)) {
         console.error("ส่งคำร้องไม่สำเร็จ (backend):", {
           status: err.response?.status,

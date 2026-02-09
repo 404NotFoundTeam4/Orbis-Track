@@ -26,7 +26,11 @@ export const initSocket = (httpServer: HttpServer) => {
       credentials: true,
     },
     path: "/socket.io",
-    transports: ["websocket", "polling"], // fallback support
+    transports: ["polling", "websocket"], // polling first, upgrade to websocket
+    allowUpgrades: true,
+    upgradeTimeout: 30000, // 30 seconds to upgrade
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   io.use(socketAuthMiddleware);

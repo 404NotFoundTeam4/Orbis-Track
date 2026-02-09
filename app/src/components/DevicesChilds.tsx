@@ -4,21 +4,43 @@ import QuantityInput from "./QuantityInput"
 import Checkbox from "./Checkbox"
 import DropDown from "./DropDown"
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
 import { AlertDialog } from "./AlertDialog"
 import { useMemo } from "react"
 import type { DeviceChild } from "../services/InventoryService"
 
+// อุปกรณ์ลูกจริง
+type RealDeviceRow = DeviceChild & {
+    __draft?: false;
+};
+
+// อุปกรณ์ลูกแบบร่าง
+type DraftDeviceRow = DraftDevice & {
+    __draft: true;
+    dec_id: number; // id ชั่วคราว
+};
+
+type DeviceRow = RealDeviceRow | DraftDeviceRow;
+
+// โครงสร้างของอุปกรณ์ลูกแบบร่าง
+export interface DraftDevice {
+    draft_id: number;
+    dec_serial_number: string | null;
+    dec_asset_code: string;
+    dec_status: DeviceChild["dec_status"];
+}
+
 // โครงสร้าง props ที่ต้องส่งมาเรียกใช้งาน
 interface DevicesChildsProps {
+    parentCode: string | undefined;
     devicesChilds: DeviceChild[]; // ข้อมูลอุปกรณ์ลูก
-    onAdd: ( quantity: number) => Promise<void>; // ฟังก์ชันเพิ่มอุปกรณ์ลูก
+    onSaveDraft: (drafts: DraftDevice[]) => Promise<void>;
     onUpload?: (file: File | undefined) => void; // ฟังก์ชันเพิ่มอุปกรณ์ลูกแบบอัปโหลดไฟล์ (CSV / Excel)
     onDelete: (ids: number[]) => Promise<void>; // ฟังก์ชันลบอุปกรณ์ลูก
     onChangeStatus: (id: number, status: DeviceChild["dec_status"]) => void; // ฟังก์ชันเปลี่ยนสถานะอุปกรณ์ลูก
+    lastAssetCode: string | null; // รหัส asset code ล่าสุด
 }
 
-const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatus }: DevicesChildsProps) => {
+const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode }: DevicesChildsProps) => {
     // สถานะของอุปกรณ์ลูก
     const statusItems = [
         { id: 1, label: "พร้อมใช้งาน", value: "READY", textColor: "#73D13D" },
@@ -40,20 +62,42 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
     const [isUploadAlertOpen, setIsUploadAlertOpen] = useState(false);
     // เก็บรายการอุปกรณ์ลูกที่ต้องการลบ
     const [selectedDevices, setSelectedDevices] = useState<number[]>([]);
+    // เก็บรายการอุปกรณ์ลูกแบบ draft
+    const [draftDevice, setDraftDevice] = useState<DraftDevice[]>([]);
+    // เก็บรายการอุปกรณ์ลูก (draft) ที่ต้องการลบ
+    const [selectedDraft, setSelectedDraft] = useState<number[]>([]);
 
-    // ดึง id อุปกรณ์แม่จาก URL
-    const { id } = useParams();
-
-    // เลือกรายการทีละตัว
-    const toggleSelect = (id: number) => {
-        setSelectedDevices((prev) =>
-            prev.includes(id)
-                ? prev.filter((item) => item !== id) // ถ้าติ๊กซ้ำ เอาออก
-                : [...prev, id] // ถ้ายังกดไม่เลือก เพิ่มเข้า
-        );
+    /**
+    * Description: ฟังก์ชันสำหรับเลือกหรือยกเลิกการเลือกอุปกรณ์ลูก
+    * Input     : device - ข้อมูลอุปกรณ์ลูก
+    * Output    : อัปเดต state การเลือกอุปกรณ์
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    const toggleSelect = (device: DeviceRow) => {
+        // กรณีเป็นอุปกรณ์แบบ draft
+        if (device.__draft) {
+            setSelectedDraft(prev =>
+                // ถ้าเคยถูกเลือกแล้วเอาออก
+                prev.includes(device.draft_id)
+                    ? prev.filter(id => id !== device.draft_id)
+                    // ถ้ายังไม่ถูกเลือกเพิ่มเข้าไป
+                    : [...prev, device.draft_id]
+            );
+        } else {
+            setSelectedDevices(prev =>
+                prev.includes(device.dec_id)
+                    ? prev.filter(id => id !== device.dec_id)
+                    : [...prev, device.dec_id]
+            );
+        }
     }
 
-    // เลือกรายการทั้งหมด
+    /**
+    * Description: ฟังก์ชันสำหรับเลือกหรือยกเลิกการเลือกอุปกรณ์ลูกทั้งหมด
+    * Input     : -
+    * Output    : อัปเดต state selectedDevices
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
     const toggleSelectAll = () => {
         if (selectedDevices.length === devicesChilds.length) {
             setSelectedDevices([]); // เอาออกทั้งหมด
@@ -62,29 +106,77 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
         }
     }
 
-    // เพิ่มอุปกรณ์ลูก
-    const handleAdd = async () => {
-        // if (quantity === null || Number(quantity) <= 0 || isNaN(Number(id))) return;
-        if (quantity === null || Number(quantity) <= 0) return;
-        console.log(quantity)
-        await onAdd( Number(quantity)); // เรียกใช้งานฟังก์ชันเพิ่มอุปกรณ์ที่ส่งมา
-        setQuantity(null); // รีเซ็ตจำนวน
-        setIsAddAletOpen(false);
+    /**
+    * Description: ฟังก์ชันสำหรับบันทึกอุปกรณ์ลูกที่อยู่ในสถานะ draft
+    * Input     : -
+    * Output    :
+    *             - ส่งข้อมูลไปให้ parent
+    *             - ล้างข้อมูล draft ออกจาก state
+    *             - รีเซ็ตจำนวนอุปกรณ์ที่กรอก
+    *             - ปิด dialog การบันทึก
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    const handleSaveDraft = async () => {
+        if (draftDevice.length === 0) return; // ถ้าไม่มี draft ไม่ต้องทำอะไร
+
+        await onSaveDraft(draftDevice);   // ส่ง draft ไปให้ parent
+        setDraftDevice([]);         // ล้าง draft
+        setQuantity(null);          // reset จำนวน
+        setIsAddAletOpen(false);    // ปิด dialog
     }
 
-    // ลบอุปกรณ์ลูก
+    /**
+    * Description: ฟังก์ชันสำหรับลบอุปกรณ์ลูกที่ถูกเลือก
+    * Input     : -
+    * Output    :
+    *             - ลบอุปกรณ์ลูก
+    *             - เรียกใช้งานฟังก์ชันลบอุปกรณ์จาก parent
+    *             - รีเซ็ตสถานะการเลือกอุปกรณ์
+    *             - ปิด dialog ยืนยันการลบ
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
     const handleDelete = async () => {
-        await onDelete(selectedDevices); // เรียกใช้ฟังก์ชันลบที่ส่งมา
-        setSelectedDevices([]); // เคลียร์ list
+        // ตรวจสอบว่ามี draft ที่ถูกเลือกไว้หรือไม่
+        if (selectedDraft.length > 0) {
+            // ลบ draft ที่มี draft_id อยู่ในรายการที่ถูกเลือก
+            setDraftDevice(prev =>
+                prev.filter(d => !selectedDraft.includes(d.draft_id))
+            );
+            // // รีเซ็ตรายการ draft ที่ถูกเลือก
+            setSelectedDraft([]);
+        }
+
+        // ตรวจสอบว่ามีอุปกรณ์จริงที่ถูกเลือกไว้หรือไม่
+        if (selectedDevices.length > 0) {
+            // เรียกใช้งานฟังก์ชันลบจาก parent
+            await onDelete(selectedDevices);
+            // รีเซ็ตรายการอุปกรณ์จริงที่ถูกเลือก
+            setSelectedDevices([]);
+        }
+
+        // ปิด dialog ยืนยันการลบ
         setIsDeleteAlertOpen(false);
     }
 
-    // เปลี่ยนสถานะอุปกรณ์ลูก
+    /**
+    * Description: ฟังก์ชันสำหรับเปลี่ยนสถานะของอุปกรณ์ลูก
+    * Input     : id, status - รหัสอุปกรณ์ลูก, สถานะใหม่
+    * Output    : ให้ parent component อัปเดตสถานะอุปกรณ์ลูก
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
     const changeStatusDevice = (id: number, status: DeviceChild["dec_status"]) => {
         onChangeStatus(id, status);
     }
 
-    // อัปโหลดไฟล์อุปกรณ์ที่จะเพิ่ม
+    /**
+    * Description: ฟังก์ชันสำหรับอัปโหลดไฟล์อุปกรณ์ลูก
+    * Input     : -
+    * Output    : 
+    *             - ส่งไฟล์อัปโหลดไปให้ parent
+    *             - รีเซ็ตไฟล์ที่เลือก
+    *             - ปิด dialog ยืนยันการอัปโหลด
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
     const handleUploadFile = async () => {
         if (!uploadFile) return;
         await onUpload?.(uploadFile); // เรียกใช้ฟังก์ชันเพิ่มอุปกรณ์ด้วยไฟล์ที่ส่งมา
@@ -96,7 +188,15 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
     const filteredDevices = useMemo(() => {
-        let result = [...devicesChilds];
+        // แปลงรายการ draft ให้มีโครงสร้างเหมือนอุปกรณ์จริง
+        const draftAsDevices: DeviceRow[] = draftDevice.map(d => ({
+            ...d,
+            dec_id: d.draft_id,
+            __draft: true,
+        }));
+
+        // รวมอุปกรณ์จริงและอุปกรณ์ draft เข้าเป็น array เดียว
+        let result = [...devicesChilds, ...draftAsDevices];
 
         // SORT
         if (sortField) {
@@ -114,7 +214,7 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
         }
 
         return result;
-    }, [devicesChilds, sortField, sortDirection]);
+    }, [devicesChilds, draftDevice, sortField, sortDirection]);
 
     useEffect(() => {
         setPage(1);
@@ -140,6 +240,90 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
         return filteredDevices.slice(start, start + pageSize);
     }, [filteredDevices, page, pageSize]);
 
+    /**
+    * Description: คำนวณเลข running number ที่มากที่สุดจาก asset code
+    * Input     : -
+    * Output    : ค่า running number ที่มากที่สุด
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    const getMaxRunningNo = () => {
+        // ดึง asset code ของอุปกรณ์ลูกทั้งหมด
+        const numbers = devicesChilds
+            .map(device => {
+                const match = device.dec_asset_code?.match(/(\d+)$/); // ดึงตัวเลขที่อยู่ท้ายสุดของ asset code
+                return match ? Number(match[1]) : null; // แปลงเป็น number
+            })
+            .filter((number): number is number => number !== null); // กรองเฉพาะค่าที่เป็น number จริง
+
+        return numbers.length > 0 ? Math.max(...numbers) : 0; // คืนค่าเลขที่มากที่สุด
+    };
+
+    /**
+    * Description: สร้าง asset code ของอุปกรณ์ลูก โดยอิงจาก asset code ของอุปกรณ์แม่
+    * Input     : parentCode, runningNo - รหัสอุปกรณ์แม่, เลข running number
+    * Output    : asset code ใหม่ในรูปแบบ ASSET-{prefix}-{runningNo}
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    const makeAssetCode = (parentCode: string, runningNo: number) => {
+        const parts = parentCode.split("-"); // แยกรหัสอุปกรณ์แม่ด้วยเครื่องหมาย "-"
+        const last = parts[parts.length - 1]; // ดึงค่าตัวสุดท้ายของรหัสอุปกรณ์แม่
+
+        // ถ้าตัวสุดท้ายไม่ใช่ตัวเลข
+        if (!/^\d+$/.test(last)) {
+            return `ASSET-${parentCode}`; // สร้าง asset code แบบไม่มี running number ต่อท้าย
+        }
+
+        const prefix = parts.slice(0, -1).join("-"); // ดึงส่วนหน้าของรหัสอุปกรณ์แม่ (ตัดตัวเลขท้ายออก)
+        const next = String(runningNo).padStart(last.length, "0"); // แปลง running number เป็น string แล้วเติมเลข 0 ด้านหน้า
+
+        return `ASSET-${prefix}-${next}`; // รวม prefix และ running number
+    };
+
+    /**
+    * Description: ดึงค่า running number ที่อยู่ท้ายสุดของ asset code
+    * Input     : assetCode - รหัส asset
+    * Output    : ค่า running number
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    const getRunningFromAssetCode = (assetCode: string | null) => {
+        if (!assetCode) return 0;
+        // ดึงตัวเลขที่อยู่ท้ายสุดของ asset code
+        const match = assetCode.match(/(\d+)$/);
+        // ถ้าพบตัวเลข แปลงเป็น number ถ้าไม่พบคืนค่า 0
+        return match ? Number(match[1]) : 0;
+    };
+
+    /**
+    * Description: สร้างรายการอุปกรณ์ลูกแบบ draft ตามจำนวนที่ระบุ
+    * Input     : qty - จำนวนอุปกรณ์ลูกที่ต้องการเพิ่ม
+    * Output    : อัปเดต draft device
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    const generateDraftDevice = (qty: number) => {
+        // ตรวจสอบว่ามี parentCode และ qty มากกว่า 0
+        if (!parentCode || !qty || qty <= 0) return;
+        // ดึง running number ล่าสุดจาก asset code ตัวสุดท้าย
+        const maxRunning = getRunningFromAssetCode(lastAssetCode);
+        // ดึง running number ที่มากที่สุดจากอุปกรณ์ลูกใน state ปัจจุบัน
+        const localRunning = getMaxRunningNo();
+        // เลือกค่า running number ที่มากที่สุด เพื่อป้องกัน asset code ซ้ำ
+        const start = Math.max(maxRunning, localRunning) + 1;
+        // สร้าง draft อุปกรณ์ลูกตามจำนวนที่ระบุ
+        const draft: DraftDevice[] = Array.from({ length: qty }).map((_, index) => {
+            // คำนวณ running number ของแต่ละอุปกรณ์
+            const runningNo = start + index;
+            // คืนค่า object draft อุปกรณ์ลูก
+            return {
+                draft_id: Date.now() + index,
+                dec_serial_number: "",
+                dec_asset_code: makeAssetCode(parentCode, runningNo),
+                dec_status: "READY",
+            };
+        });
+
+        setDraftDevice(draft);
+    };
+
     return (
         <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[1660px] h-[984px] px-[30px] py-[60px] pt-[30px] pb-[60px]">
             {/* จำนวน / เพิ่ม / อัปโหลดไฟล์ */}
@@ -157,17 +341,17 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                     <Button
                         className="!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
-                            if (quantity === null || Number(quantity) <= 0) {
+                            if (quantity === null) {
                                 return;
                             } else {
-                                setIsAddAletOpen(true);
+                                generateDraftDevice(quantity);
                             }
                         }}>
                         + เพิ่ม
                     </Button>
                 </div>
                 {/* อัปโหลดไฟล์ */}
-                <div className="w-[144px] h-[66px] px-[10px] py-[10px]">
+                <div className="flex items-center min-w-[144px] h-[66px] px-[10px] py-[10px]">
                     <Button className="relative flex gap-[5px] !bg-[#1890FF] min-w-[124px] overflow-hidden cursor-pointer">
                         <Icon
                             icon="ic:baseline-upload"
@@ -187,6 +371,18 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                             }}
                         />
                     </Button>
+                    {
+                        draftDevice.length > 0 && (
+                            <div className="flex justify-end px-[10px] py-[10px]">
+                                <Button
+                                    className="!bg-[#1890FF]"
+                                    onClick={() => setIsAddAletOpen(true)}
+                                >
+                                    บันทึก
+                                </Button>
+                            </div>
+                        )
+                    }
                 </div>
             </div>
             {/* หัวข้ออุปกรณ์ลูก */}
@@ -249,23 +445,52 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                             <div className="flex gap-[10px] w-[147px]">
                                 <Checkbox
                                     className="bg-[#FFFFFF] border border-[#BFBFBF]"
-                                    isChecked={selectedDevices.includes(device.dec_id)}
-                                    onClick={() => toggleSelect(device.dec_id)}
+                                    isChecked={
+                                        "__draft" in device
+                                            ? selectedDraft.includes(device.draft_id)
+                                            : selectedDevices.includes(device.dec_id)
+                                    }
+                                    onClick={() => toggleSelect(device)}
                                 />
                                 <p>{(page - 1) * pageSize + (index + 1)}</p>
                             </div>
                             <p className="w-[230px]">{device.dec_asset_code}</p>
                             <div className="flex w-[230px]">
-                                <p className="flex items-center w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]">
-                                    {device.dec_serial_number}
-                                </p>
+                                <input
+                                    type="text"
+                                    value={device.dec_serial_number ?? ""}
+                                    onChange={(event) => {
+                                        if ("__draft" in device) {
+                                            setDraftDevice(prev =>
+                                                prev.map(d =>
+                                                    d.draft_id === device.dec_id
+                                                        ? { ...d, dec_serial_number: event.target.value }
+                                                        : d
+                                                )
+                                            );
+                                        }
+                                    }}
+                                    className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
+                                />
                             </div>
                             <div className="flex w-[200px]">
                                 <DropDown
                                     className="!w-[137px]"
                                     items={statusItems}
                                     value={statusItems.find(s => s.value === device.dec_status)}
-                                    onChange={(status) => changeStatusDevice(device.dec_id, status.value as DeviceChild["dec_status"])}
+                                    onChange={(status) => {
+                                        if ("__draft" in device) {
+                                            setDraftDevice(prev =>
+                                                prev.map(d =>
+                                                    d.draft_id === device.dec_id
+                                                        ? { ...d, dec_status: status.value as DeviceChild["dec_status"] }
+                                                        : d
+                                                )
+                                            );
+                                        } else {
+                                            changeStatusDevice(device.dec_id, status.value as DeviceChild["dec_status"]);
+                                        }
+                                    }}
                                     triggerClassName="!border-[#a2a2a2]"
                                     searchable={false}
                                 />
@@ -275,11 +500,10 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                 ))}
             </div>
             {/* Footer */}
-            <div className={`flex items-center mt-4 ${selectedDevices.length > 0 ? "justify-between" : "justify-end"
-                }`}>
+            <div className={`flex items-center mt-4 ${selectedDevices.length > 0 || selectedDraft.length > 0 ? "justify-between" : "justify-end"}`}>
                 {/* ปุ่มลบ (เลือกอุปกรณ์อย่างน้อย 1 ตัวถึงจะแสดง) */}
                 {
-                    selectedDevices.length > 0 && (
+                    (selectedDevices.length > 0 || selectedDraft.length > 0) && (
                         <div className="flex items-center gap-[14px]">
                             <Button
                                 className="flex items-center gap-[5px] bg-[#F5222D] w-[150px] hover:bg-red-600"
@@ -292,7 +516,7 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                                 />
                                 ลบอุปกรณ์
                             </Button>
-                            <p className="text-[#F5222D]">เลือกลบอุปกรณ์ ({selectedDevices.length})</p>
+                            <p className="text-[#F5222D]">เลือกลบอุปกรณ์ ({selectedDevices.length + selectedDraft.length})</p>
                         </div>
                     )
                 }
@@ -394,7 +618,7 @@ const DevicesChilds = ({ devicesChilds, onAdd, onUpload, onDelete, onChangeStatu
                         tone="success"
                         title="ต้องการเพิ่มอุปกรณ์นี้ลงในคลัง?"
                         description="อุปกรณ์นี้จะถูกเพิ่มลงในรายการคลังของคุณ"
-                        onConfirm={handleAdd}
+                        onConfirm={handleSaveDraft}
                     />
                 )
             }

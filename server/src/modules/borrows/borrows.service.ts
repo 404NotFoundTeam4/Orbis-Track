@@ -5,6 +5,7 @@ import {
   IdParamDto,
 } from "./borrows.schema.js";
 import { notificationsService } from "../notifications/notifications.service.js";
+import { SocketEmitter } from "../../infrastructure/websocket/socket.emitter.js";
 import { US_ROLE } from "@prisma/client";
 
 /**
@@ -366,9 +367,9 @@ async function createBorrowTicket(
         ...(firstApproveStage.brts_role === "HOD"
           ? { us_dept_id: firstApproveStage.brts_dept_id }
           : {
-              us_dept_id: firstApproveStage.brts_dept_id,
-              us_sec_id: firstApproveStage.brts_sec_id,
-            }),
+            us_dept_id: firstApproveStage.brts_dept_id,
+            us_sec_id: firstApproveStage.brts_sec_id,
+          }),
       },
       select: { us_id: true },
     });
@@ -457,6 +458,13 @@ async function createBorrowTicket(
     event: "APPROVAL_REQUESTED",
     brt_id: result.brt_id,
     target_route: `/request-borrow-ticket/${result.brt_id}`,
+  });
+
+  // Emit socket event to refresh request page for approvers (realtime update)
+  result.nextApprovers.forEach((approver) => {
+    SocketEmitter.toUser(approver.us_id, "REFRESH_REQUEST_PAGE", {
+      ticketId: result.brt_id,
+    });
   });
 
   return result;

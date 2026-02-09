@@ -24,6 +24,6 @@ export default function RolePathRedirect() {
     // สร้าง path ใหม่จาก role base และ path ปัจจุบัน
     const target = `${roleBase}${location.pathname}${location.search}${location.hash}`;
 
-    // redirect ไปยัง path ใหม่
-    return <Navigate to={target} replace />
+    // redirect ไปยัง path ใหม่ พร้อม preserve location.state (เช่น expandId)
+    return <Navigate to={target} replace state={location.state} />
 }

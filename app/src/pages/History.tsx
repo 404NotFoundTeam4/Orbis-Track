@@ -136,6 +136,9 @@ export default function History() {
     };
   }, [currentPage, pageSizeLimit, searchText, selectedStatus, sortField, sortDirection]);
 
+  // Track if we have a mock item for expandId that shouldn't be overwritten
+  const mockExpandIdRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (activeTabKey !== "borrow") return;
 
@@ -147,7 +150,26 @@ export default function History() {
         const response = await historyBorrowService.getHistoryBorrowTickets(queryParams);
         if (cancelled) return;
 
-        setTicketItems(response.items);
+        // ถ้ามี mock item สำหรับ expandId ให้รวมเข้าไปด้วย
+        if (mockExpandIdRef.current) {
+          const mockId = mockExpandIdRef.current;
+          // ตรวจสอบว่า mock item อยู่ใน response หรือไม่
+          const existsInResponse = response.items.some((t: HistoryBorrowTicketItem) => t.ticketId === mockId);
+          if (!existsInResponse) {
+            // หา mock item จาก ticketItems ปัจจุบัน
+            setTicketItems(prev => {
+              const mockItem = prev.find(t => t.ticketId === mockId);
+              if (mockItem) {
+                return [mockItem, ...response.items];
+              }
+              return response.items;
+            });
+          } else {
+            setTicketItems(response.items);
+          }
+        } else {
+          setTicketItems(response.items);
+        }
         setTotalPages(response.pagination.totalPages || 1);
       } catch (error) {
         if (cancelled) return;
@@ -168,40 +190,115 @@ export default function History() {
 
   /**
    * Description: Auto-expand ticket when navigating with expandId from notification/link
+   *              If ticket not in current list, fetch it directly and add to list
    * Input : expandId (number | undefined)
    * Output : void (auto-triggers toggleOpen)
    * Author: Chanwit Muangma (Boom) 66160224
    */
   const lastExpandedIdRef = useRef<number | null>(null);
   useEffect(() => {
-    if (expandId && ticketItems.length > 0 && lastExpandedIdRef.current !== expandId) {
-      const ticketExists = ticketItems.some((t) => t.ticketId === expandId);
-      if (ticketExists) {
-        lastExpandedIdRef.current = expandId;
-        // Inline the expand logic to avoid dependency on toggleOpen
-        setExpandedTicketIds((prev) => {
-          const next = new Set(prev);
-          next.add(expandId);
-          return next;
-        });
-        // Load detail if not already loaded
-        if (!ticketDetailByIdMap[expandId]) {
-          setLoadingDetailTicketId(expandId);
-          historyBorrowService.getHistoryBorrowTicketDetail(expandId)
-            .then((detail) => {
-              setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: detail }));
-            })
-            .catch((error) => {
-              console.error(error);
-              setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: undefined }));
-            })
-            .finally(() => {
-              setLoadingDetailTicketId(null);
-            });
-        }
-      }
+    // Debug log
+    console.log('[History] useEffect triggered:', {
+      expandId,
+      isLoadingList,
+      ticketCount: ticketItems.length,
+      ticketIds: ticketItems.map(t => t.ticketId),
+      lastExpandedId: lastExpandedIdRef.current
+    });
+
+    // ต้องมี expandId
+    if (!expandId) return;
+
+    // ถ้ายัง processing expandId เดิมอยู่ ข้าม
+    if (lastExpandedIdRef.current === expandId) {
+      console.log('[History] Already processed this expandId');
+      return;
     }
-  }, [expandId, ticketItems, ticketDetailByIdMap]);
+
+    // รอให้โหลด list เสร็จก่อน
+    if (isLoadingList) {
+      console.log('[History] Still loading, waiting...');
+      return;
+    }
+
+    const ticketExists = ticketItems.some((t) => t.ticketId === expandId);
+    console.log('[History] ticketExists:', ticketExists);
+
+    if (ticketExists) {
+      // Ticket อยู่ใน list - expand มัน
+      console.log('[History] Found ticket, expanding:', expandId);
+      lastExpandedIdRef.current = expandId;
+      setExpandedTicketIds((prev) => {
+        const next = new Set(prev);
+        next.add(expandId);
+        return next;
+      });
+      // Load detail if not already loaded
+      if (!ticketDetailByIdMap[expandId]) {
+        setLoadingDetailTicketId(expandId);
+        historyBorrowService.getHistoryBorrowTicketDetail(expandId)
+          .then((detail) => {
+            setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: detail }));
+          })
+          .catch((error) => {
+            console.error(error);
+            setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: undefined }));
+          })
+          .finally(() => {
+            setLoadingDetailTicketId(null);
+          });
+      }
+    } else {
+      // Ticket ไม่อยู่ใน list ปัจจุบัน - fetch โดยตรงและเพิ่มเข้า list
+      console.log('[History] Ticket not in list, fetching directly:', expandId);
+      lastExpandedIdRef.current = expandId;
+      setLoadingDetailTicketId(expandId);
+      historyBorrowService.getHistoryBorrowTicketDetail(expandId)
+        .then((detail) => {
+          console.log('[History] Fetched detail, creating mock item');
+          // สร้าง mock ticket item จาก detail
+          const mockTicketItem: HistoryBorrowTicketItem = {
+            ticketId: detail.ticketId,
+            status: detail.status,
+            requestDateTime: detail.requestDateTime,
+            deviceChildCount: detail.deviceChildCount,
+            requester: {
+              userId: detail.requester.userId,
+              fullName: detail.requester.fullName,
+              employeeCode: detail.requester.employeeCode,
+              department_name: detail.requester.department_name,
+              section_name: detail.requester.section_name,
+            },
+            deviceSummary: {
+              deviceId: detail.device.deviceId,
+              deviceName: detail.device.deviceName,
+              deviceSerialNumber: detail.device.deviceSerialNumber,
+              categoryName: detail.device.categoryName,
+            },
+          };
+          // เพิ่ม mock item ไว้ต้น list และ track ไว้ไม่ให้โดน overwrite
+          mockExpandIdRef.current = expandId;
+          setTicketItems((prev) => {
+            if (prev.some((t) => t.ticketId === expandId)) return prev;
+            return [mockTicketItem, ...prev];
+          });
+          console.log('[History] Mock item added, setting expanded');
+          setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: detail }));
+          setExpandedTicketIds((prev) => {
+            const next = new Set(prev);
+            next.add(expandId);
+            console.log('[History] expandedTicketIds now:', Array.from(next));
+            return next;
+          });
+        })
+        .catch((error) => {
+          console.error("[History] Failed to fetch ticket for expandId:", error);
+        })
+        .finally(() => {
+          setLoadingDetailTicketId(null);
+        });
+    }
+  }, [expandId, ticketItems, ticketDetailByIdMap, isLoadingList]);
 
   /**
    * Description: จัดการคลิก sort ที่หัวตาราง โดยสลับทิศทางเมื่อคลิกซ้ำคอลัมน์เดิม

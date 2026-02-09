@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import CardHome from "../components/CardHome";
 import RequestItemHome from "../components/RequestItemHome";
 import { Icon } from "@iconify/react";
@@ -89,25 +89,73 @@ export const Home = () => {
 
     fetchData();
   }, []);
-
   /**
-   * Description: Redirect ไป /history/:id ถ้า expandId ไม่พบใน tickets (5 รายการล่าสุด)
+   * Description: Auto-expand ticket เมื่อมี expandId จาก URL/location.state
+   *              หรือ redirect ไป /history/:id ถ้าไม่พบใน 5 รายการล่าสุด
    * Input     : expandId, tickets, isLoading
-   * Output    : void (redirect ถ้าไม่พบ ticket)
+   * Output    : void
    * Author    : Pakkapon Chomchoey (Tonnam) 66160080
    */
+  const processedExpandIdRef = useRef<number | null>(null);
+
   useEffect(() => {
+    // Debug log
+    console.log('[Home] useEffect triggered:', {
+      expandId,
+      isLoading,
+      ticketCount: tickets.length,
+      ticketIds: tickets.map(t => t.id),
+      processedExpandId: processedExpandIdRef.current
+    });
+
+    // ไม่มี expandId ให้ทำอะไร
+    if (!expandId) return;
+
     // รอให้โหลด tickets เสร็จก่อน
-    if (isLoading || !expandId) return;
+    if (isLoading) {
+      console.log('[Home] Still loading, waiting...');
+      return;
+    }
+
+    // ถ้ายังไม่มี tickets และไม่ได้ loading แสดงว่า load เสร็จแต่ไม่มี tickets
+    // ให้ redirect ไป history
+    if (tickets.length === 0) {
+      console.log('[Home] No tickets, redirecting to history');
+      const pathParts = location.pathname.split('/').filter(Boolean);
+      const rolePrefix = pathParts.length > 0 ? `/${pathParts[0]}` : '';
+      navigate(`${rolePrefix}/history/${expandId}`, { replace: true });
+      return;
+    }
+
+    // ป้องกันการประมวลผลซ้ำสำหรับ expandId เดียวกัน
+    if (processedExpandIdRef.current === expandId) {
+      console.log('[Home] Already processed this expandId');
+      return;
+    }
 
     // ตรวจสอบว่า ticket อยู่ใน 5 รายการล่าสุดหรือไม่
+    console.log('[Home] Checking ticket match:', {
+      expandId,
+      expandIdType: typeof expandId,
+      ticketIds: tickets.map(t => ({ id: t.id, type: typeof t.id, matches: t.id === expandId }))
+    });
     const ticketExists = tickets.some((t) => t.id === expandId);
+    console.log('[Home] ticketExists:', ticketExists);
 
-    // ถ้าไม่พบ ticket ใน Home ให้ redirect ไป History
-    if (!ticketExists) {
-      navigate(`/history/${expandId}`, { replace: true });
+    if (ticketExists) {
+      // พบ ticket - auto-expand
+      console.log('[Home] Found ticket, expanding:', expandId);
+      processedExpandIdRef.current = expandId;
+      setExpandedId(expandId);
+    } else {
+      // ไม่พบ ticket ใน Home - redirect ไป History
+      console.log('[Home] Ticket not found, redirecting to history');
+      processedExpandIdRef.current = expandId;
+      const pathParts = location.pathname.split('/').filter(Boolean);
+      const rolePrefix = pathParts.length > 0 ? `/${pathParts[0]}` : '';
+      navigate(`${rolePrefix}/history/${expandId}`, { replace: true });
     }
-  }, [expandId, tickets, isLoading, navigate]);
+  }, [expandId, tickets, isLoading, navigate, location.pathname]);
 
   /**
    * Description: จัดการการขยาย/ย่อ รายการคำร้อง (Expand/Collapse)
@@ -381,7 +429,7 @@ export const Home = () => {
                         expandedId === ticket.id && isLoadingDetail
                       }
                       onExpand={() => handleExpand(ticket.id)}
-                      forceExpand={expandedId === ticket.id || ticket.id === expandId}
+                      forceExpand={expandedId === ticket.id}
                     />
                   ))
               )}

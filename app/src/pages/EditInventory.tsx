@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import MainDeviceModal from "../components/DeviceModal";
-import DevicesChilds from "../components/DevicesChilds";
+import DevicesChilds, { type DraftDevice } from "../components/DevicesChilds";
 import { useToast } from "../components/Toast";
-
 import {
   DeviceService,
+  type CreateDeviceChildPayload,
   type DeviceChild,
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
-import { useLocation,useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
 const EditInventory = () => {
-   const { id } = useParams();
+  const { id } = useParams();
   const location = useLocation();
 
   // รับจาก navigate
@@ -19,12 +19,12 @@ const EditInventory = () => {
 
 
 
- 
+
   // ดึง url ปัจจุบัน
-  
+
   // ข้อมูลอุปกรณ์แม่ที่ส่งมา
-  
-  
+
+
   // รหัสอุปกรณ์แม่
   const parentId = id
   console.log(id)
@@ -46,27 +46,29 @@ const EditInventory = () => {
     sessionStorage.getItem("User") || localStorage.getItem("User");
 
   const user = userString ? JSON.parse(userString) : null;
+
+  // เก็บข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
+  const [lastAssetCode, setLastAssetCode] = useState<string | null>(null);
+
+  /**
+  * Description: ฟังก์ชันสำหรับดึงข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
+  * Input     : -
+  * Output    : asset code ล่าสุดของอุปกรณ์ลูก
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const fetchLastAssetCode = async () => {
+    const lastAsset = await DeviceService.getLastAssetCode(Number(parentId));
+    setLastAssetCode(lastAsset.dec_asset_code);
+  }
+
   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
     fetchDevice();
+    fetchLastAssetCode();
   }, [parentId]);
 
   // เรียกใช้งาน toast
   const { push } = useToast();
-
-  // เพิ่มอุปกรณ์ลูก
-  const handleAddDeviceChild = async (quantity: number) => {
-    if (!quantity) {
-      push({ tone: "warning", message: "กรุณาระบุจำนวนอุปกรณ์!" });
-      return;
-    }
-
-    const payload = { dec_de_id: parentId, quantity };
-    // เรียกใช้งาน service
-    await DeviceService.createDeviceChild(payload);
-    push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" });
-    await fetchDevice(); // โหลดข้อมูลใหม่
-  };
 
   // ลบอุปกรณ์ลูก
   const handleDeleteDeviceChild = async (ids: number[]) => {
@@ -162,6 +164,34 @@ const EditInventory = () => {
       }
     }
   };
+
+  /**
+   * Description: ฟังก์ชันสำหรับบันทึกอุปกรณ์ลูกที่อยู่ในสถานะ draft
+   * Input     : drafts - รายการอุปกรณ์ลูกแบบ draft ที่ผู้ใช้เพิ่ม
+   * Output    : 
+   *             - สร้างอุปกรณ์ลูกในฐานข้อมูล
+   *             - แสดง toast ผลการทำงาน
+   *             - โหลดข้อมูลอุปกรณ์ใหม่
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  const handleSaveDraft = async (drafts: DraftDevice[]) => {
+    // แปลงข้อมูล draft ให้เป็นรูปแบบ payload
+    const payload: CreateDeviceChildPayload[] = drafts.map((draft) => ({
+      dec_de_id: Number(parentId),
+      dec_serial_number: draft.dec_serial_number?.trim() || null,
+      dec_asset_code: draft.dec_asset_code,
+      dec_status: draft.dec_status
+    }));
+
+    try {
+      await DeviceService.createDeviceChild(payload); // เรียกใช้งาน API
+      push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" }); // แสดง toast
+      await fetchDevice(); // โหลดข้อมูลใหม่
+    } catch (error) {
+      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" })
+    }
+  }
+
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}
@@ -184,11 +214,13 @@ const EditInventory = () => {
         }}
       />
       <DevicesChilds
+        parentCode={parentDevice?.de_serial_number}
         devicesChilds={deviceChilds}
-        onAdd={handleAddDeviceChild}
+        onSaveDraft={handleSaveDraft}
         onUpload={handleUploadFile}
         onDelete={handleDeleteDeviceChild}
         onChangeStatus={handleChangeStatus}
+        lastAssetCode={lastAssetCode}
       />
     </div>
   );

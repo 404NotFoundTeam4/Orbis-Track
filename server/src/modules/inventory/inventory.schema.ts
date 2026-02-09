@@ -308,21 +308,18 @@ export const getDeviceWithChildsSchema = z.object({
 }).nullable();
 
 // ข้อมูลที่ส่งเข้ามาตอนเพิ่มอุปกรณ์ลูก
-export const createDeviceChildPayload = z.object({
-  dec_de_id: z.number().openapi({ description: "รหัสอุปกรณ์แม่" }),
-  quantity: z.number().positive().openapi({ description: "จำนวนที่ต้องการเพิ่ม" }),
-});
+export const createDeviceChildPayload = z.array(
+  z.object({
+    dec_de_id: z.number(),
+    dec_serial_number: z.string().nullable(),
+    dec_asset_code: z.string(),
+    dec_status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS),
+  })
+);
 
 // ข้อมูลหลังจากทำการเพิ่มอุปกรณ์ลูก
 export const createDeviceChildSchema = z.object({
-  dec_id: z.number().openapi({ description: "รหัสอุปกรณ์ลูก" }),
-  dec_serial_number: z.string().nullable().openapi({ description: "Serial Number" }),
-  dec_asset_code: z.string().openapi({ description: "Asset Code" }),
-  dec_status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS).openapi({ description: "สถานะ" }),
-  dec_has_serial_number: z.boolean().openapi({ description: "มี Serial Number" }),
-  dec_de_id: z.number().openapi({ description: "รหัสอุปกรณ์แม่" }),
-  created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
-  updated_at: z.date().nullable().openapi({ description: "วันที่แก้ไข" }),
+  count: z.number(),
 });
 
 // ข้อมูลที่ส่งเข้ามาตอนเพิ่มอุปกรณ์ลูกด้วยไฟล์
@@ -448,6 +445,10 @@ export const updateDevicePayload = z.object({
   ),
 });
 
+export const getLastAssetCodeResponse = z.object({
+  dec_asset_code: z.string()
+}).nullable();
+
 export type InventorySchema = z.infer<typeof inventorySchema>;
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
@@ -494,3 +495,5 @@ export type UploadFileDeviceChildSchema = z.infer<
 export type DeleteDeviceChildPayload = z.infer<typeof deleteDeviceChildPayload>;
 
 export type UpdateDevicePayload = z.infer<typeof updateDevicePayload>;
+
+export type GetLastAssetCodeResponse = z.infer<typeof getLastAssetCodeResponse>;

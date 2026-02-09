@@ -16,7 +16,8 @@ import {
   GetApprovalFlowSchema,
   InventorySchema,
   UploadFileDeviceChildSchema,
-  updateDevicePayload
+  updateDevicePayload,
+  GetLastAssetCodeResponse
 } from "./inventory.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 
@@ -43,7 +44,7 @@ export class InventoryController extends BaseController {
   * Output    : { data } - ข้อมูลอุปกรณ์ลูกที่เพิ่มใหม่
   * Author    : Thakdanai Makmi (Ryu) 66160355
   */
-  async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<CreateDeviceChildSchema[]>> {
+  async create(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<CreateDeviceChildSchema>> {
     const payload = createDeviceChildPayload.parse(req.body);
     const data = await inventoryService.createDeviceChild(payload);
     return { data };
@@ -225,5 +226,17 @@ export class InventoryController extends BaseController {
     const imagePath = req.file?.path;
     const result = await inventoryService.updateDevice(id, body, imagePath);
     return { data: result };
+  }
+
+  /**
+  * Description: ดึงข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
+  * Input     : req.params - รหัสอุปกรณ์แม่
+  * Output    : { data } - asset code ล่าสุด
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  async getLastAssetCode(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetLastAssetCodeResponse>> {
+    const params = idParamSchema.parse(req.params);
+    const data = await inventoryService.getLastAssetCode(params);
+    return { data }
   }
 }

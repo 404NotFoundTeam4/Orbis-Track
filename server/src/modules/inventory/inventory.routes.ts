@@ -16,7 +16,8 @@ import {
     getApprovalFlowSchema,
     inventorySchema,
     softDeleteResponseSchema,
-    updateDevicePayload
+    updateDevicePayload,
+    getLastAssetCodeResponse
 } from "./inventory.schema.js";
 
 const inventoryController = new InventoryController();
@@ -67,5 +68,7 @@ router.patchDoc("/devices/:id", {
     res: inventorySchema,  
     auth: true 
 },upload.single("de_images"), inventoryController.update);
+
+router.getDoc("/:id/last-asset", { tag: "Inventory", params: idParamSchema, res: getLastAssetCodeResponse }, inventoryController.getLastAssetCode);
 
 export default router.instance;

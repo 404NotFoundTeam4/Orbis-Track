@@ -37,13 +37,13 @@ export async function getDevicesAll(): Promise<getAllDevices> {
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export async function createDevicesdata(payload: CreateDevicePayload) {
-  const res = await DeviceService.createDevices(payload);
+export async function createDevicesdata(payload: FormData | CreateDevicePayload) {
+  const res = await DeviceService.createDevices(payload as CreateDevicePayload);
   return res;
 }
 
-export async function updateDevicesdata(id: number, payload: CreateDevicePayload) {
-  const res = await DeviceService.updateDevices(id, payload);
+export async function updateDevicesdata(id: number, payload: FormData | CreateDevicePayload) {
+  const res = await DeviceService.updateDevices(id, payload as CreateDevicePayload);
   return res;
 }
 

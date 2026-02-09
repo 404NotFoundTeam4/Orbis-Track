@@ -283,8 +283,8 @@ export const DeviceService = {
   createApprove: async (
     payload: CreateApprovalFlowPayload,
   ): Promise<CreateDeviceResponse> => {
-    const res = api.post("inventory/approval", payload);
-    return res;
+    const { data } = await api.post("inventory/approval", payload);
+    return data;
   },
 
   /**
@@ -315,13 +315,13 @@ export const DeviceService = {
     return data.data;
   },
 
-   /**
-   * Description: ดึงข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
-   * Input     : id - รหัสอุปกรณ์แม่
-   * Output    : asset code ล่าสุดของอุปกรณ์ลูก
-   * Endpoint  : GET /api/inventory/:id/last-asset
-   * Author    : Thakdanai Makmi (Ryu) 66160355
-   */
+  /**
+  * Description: ดึงข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
+  * Input     : id - รหัสอุปกรณ์แม่
+  * Output    : asset code ล่าสุดของอุปกรณ์ลูก
+  * Endpoint  : GET /api/inventory/:id/last-asset
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
   getLastAssetCode: async (id: number) => {
     const { data } = await api.get(`/inventory/${id}/last-asset`);
     return data.data;
@@ -340,10 +340,23 @@ export interface GetInventory {
   total: number;
 }
 
+// Raw inventory item จาก API
+interface RawInventoryItem {
+  de_id: number;
+  de_name: string;
+  de_serial_number: string;
+  de_images: string | null;
+  category_name?: string;
+  department_name?: string;
+  sub_section_name?: string;
+  available?: number;
+  quantity?: number;
+}
+
 export const inventoryService = {
   getInventory: async (): Promise<GetInventory[]> => {
     const { data } = await api.get("/inventory");
-    return data.data.map((item: any) => ({
+    return data.data.map((item: RawInventoryItem) => ({
       ...item,
       category: item.category_name || "-",
       department: item.department_name || "-",

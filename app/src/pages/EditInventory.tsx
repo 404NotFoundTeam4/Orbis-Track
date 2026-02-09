@@ -8,11 +8,12 @@ import {
   type DeviceChild,
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
+import type { CreateApprovalFlowPayload } from "../services/InventoryService";
+
 const EditInventory = () => {
   const { id } = useParams();
-  const location = useLocation();
 
   // รับจาก navigate
 
@@ -36,16 +37,16 @@ const EditInventory = () => {
   const [deviceChilds, setDeviceChilds] = useState<DeviceChild[]>([]);
 
   // ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
+  // ดึงชื่ออุปกรณ์ที่มีอยู่แล้วจาก sessionStorage
+  const existingDeviceNames: string[] = JSON.parse(
+    sessionStorage.getItem("existingDeviceNames") ?? "[]"
+  );
+
   const fetchDevice = async () => {
-    const device = await DeviceService.getDeviceWithChilds(parentId);
+    const device = await DeviceService.getDeviceWithChilds(Number(parentId));
     setParentDevice(device); // เก็บข้อมูลอุปกรณ์แม่เข้า state
     setDeviceChilds(device?.device_childs ?? []); // เก็บข้อมูลอุปกรณ์ลูกเข้า state
   };
-
-  const userString =
-    sessionStorage.getItem("User") || localStorage.getItem("User");
-
-  const user = userString ? JSON.parse(userString) : null;
 
   // เก็บข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
   const [lastAssetCode, setLastAssetCode] = useState<string | null>(null);
@@ -103,10 +104,10 @@ const EditInventory = () => {
 
     try {
       // เรียกใช้งาน service
-      await DeviceService.uploadFileDeviceChild(parentId, formData);
+      await DeviceService.uploadFileDeviceChild(Number(parentId), formData);
       push({ tone: "success", message: "อัปโหลดไฟล์สำเร็จ!" });
       await fetchDevice(); // โหลดข้อมูลใหม่
-    } catch (error) {
+    } catch {
       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
     }
   };
@@ -121,7 +122,7 @@ const EditInventory = () => {
       formData.delete("data");
 
       try {
-        const res = useInventorys.updateDevicesdata(parentId, formData);
+        await useInventorys.updateDevicesdata(Number(parentId), formData);
 
         push({
           tone: "confirm",
@@ -141,13 +142,13 @@ const EditInventory = () => {
       // ลบทิ้งก่อนส่ง backend
       formData.delete("data");
       console.log("app")
-      const payload = {
-        af_name: formData.get("af_name"),
+      const payload: CreateApprovalFlowPayload = {
+        af_name: String(formData.get("af_name") ?? ""),
         af_us_id: 1,
-        approvalflowsstep: formData.get("approvalflowsstep"),
+        approvalflowsstep: JSON.parse(String(formData.get("approvalflowsstep") ?? "[]")),
       };
       try {
-        const res = await useInventorys.createApprovedata(payload);
+        await useInventorys.createApprovedata(payload);
         push({
           tone: "confirm",
           message: "เพิ่มการอนุมัติเรียบร้อยแล้ว",

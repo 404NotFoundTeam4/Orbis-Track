@@ -103,10 +103,6 @@ export const MenuConfig: menuItem[] = [
     iconRight: faChevronUp,
     roles: [
       UserRole.ADMIN,
-      UserRole.HOD,
-      UserRole.HOS,
-      UserRole.STAFF,
-      UserRole.TECHNICAL,
     ],
     children: [
       {

@@ -499,7 +499,7 @@ export default function BorrowModal({
                                     className="text-white"
                                   />
                                 </span>
-                                <span>{device.dec_serial_number}</span>
+                                <span>{device.dec_asset_code}</span>
                               </div>
 
                               <span className="px-3 py-1 rounded-lg text-sm bg-[#00AA1A]/10 text-[#00AA1A]">
@@ -537,7 +537,7 @@ export default function BorrowModal({
                                 <div className="w-5 h-5 rounded-full bg-[#ED1A1A] flex items-center justify-center">
                                   <div className="w-3 h-3 rounded-full bg-[#ED1A1A] border border-white "></div>
                                 </div>
-                                <span>{device.dec_serial_number}</span>
+                                <span>{device.dec_asset_code}</span>
                               </div>
 
                               <span className="px-3 py-1 rounded-lg text-sm bg-[#ED1A1A]/10 text-[#ED1A1A]">

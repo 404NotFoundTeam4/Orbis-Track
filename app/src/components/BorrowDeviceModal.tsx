@@ -709,7 +709,7 @@ const BorrowEquipmentModal = ({
             *ยืมได้สูงสุดไม่เกิน {equipment.maxBorrowDays} วัน
           </p>
           <p className="flex justify-center items-center bg-[#00AA1A]/10 rounded-[10px] text-[#00AA1A] min-w-[191px] h-[39px] px-[20px]">
-            ขณะนี้ว่าง {readyDevices.length} ชิ้น
+            ขณะนี้ว่าง {readyDevices ? readyDevices.length :availableDevices.length} ชิ้น
           </p>
         </div>
       </div>

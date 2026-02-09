@@ -12,7 +12,6 @@ export default defineConfig({
         target: 'http://server:4041',
         changeOrigin: true,
         ws: true,
-        rewrite: (p) => p.replace(/^\/api/, '/api/v1'),
       },
     },
   },

@@ -146,9 +146,8 @@ export const Navbar = () => {
               (setActive(active === "cart" ? null : "cart"),
                 navigate("/list-devices/cart"));
             }}
-            className={`h-full px-6.5 ${
-              active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-            } flex justify-center items-center relative`}
+            className={`h-full px-6.5 ${active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+              } flex justify-center items-center relative`}
           >
             {active !== "cart" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"></div>

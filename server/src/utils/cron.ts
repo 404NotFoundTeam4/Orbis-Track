@@ -187,8 +187,7 @@ async function handleTicketDeadlines() {
       base_event: BASE_EVENT.TICKET_DUE_SOON,
       brt_id: ticket.brt_id,
       upsert: true,
-      // TO DO : add target route to ticket detail page
-      // target_route: `/requests/${ticket.brt_id}`,
+      target_route: `/home/${ticket.brt_id}`,
     });
   }
 
@@ -211,8 +210,7 @@ async function handleTicketDeadlines() {
       base_event: BASE_EVENT.TICKET_OVERDUE,
       brt_id: ticket.brt_id,
       upsert: true,
-      // TO DO : add target route to ticket detail page
-      // target_route: `/requests/${ticket.brt_id}`,
+      target_route: `/home/${ticket.brt_id}`,
     });
   }
 

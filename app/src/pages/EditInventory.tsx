@@ -212,6 +212,7 @@ const EditInventory = () => {
         onSubmit={(data) => {
           handleSubmit(data);
         }}
+        existingDeviceNames={existingDeviceNames}
       />
       <DevicesChilds
         parentCode={parentDevice?.de_serial_number}

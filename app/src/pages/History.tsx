@@ -1,6 +1,7 @@
 // src/pages/History.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useParams, useLocation } from "react-router-dom";
 import HistoryBorrowTicket from "../components/HistoryBorrowTicketCard";
 import {
   historyBorrowService,
@@ -50,6 +51,13 @@ type StatusOption = {
 export default function History() {
   const didInitializeSearchRef = useRef(false);
   const lastSearchTextRef = useRef<string>("");
+
+  // Get expandId from URL params or location state
+  const { id } = useParams();
+  const location = useLocation();
+  const expandId = id
+    ? parseInt(id)
+    : (location.state as { expandId?: number })?.expandId;
 
   /**
    * Description: handler รับค่าจาก SearchFilter แล้วอัปเดต search + reset pagination
@@ -157,6 +165,43 @@ export default function History() {
       cancelled = true;
     };
   }, [activeTabKey, queryParams]);
+
+  /**
+   * Description: Auto-expand ticket when navigating with expandId from notification/link
+   * Input : expandId (number | undefined)
+   * Output : void (auto-triggers toggleOpen)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const lastExpandedIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (expandId && ticketItems.length > 0 && lastExpandedIdRef.current !== expandId) {
+      const ticketExists = ticketItems.some((t) => t.ticketId === expandId);
+      if (ticketExists) {
+        lastExpandedIdRef.current = expandId;
+        // Inline the expand logic to avoid dependency on toggleOpen
+        setExpandedTicketIds((prev) => {
+          const next = new Set(prev);
+          next.add(expandId);
+          return next;
+        });
+        // Load detail if not already loaded
+        if (!ticketDetailByIdMap[expandId]) {
+          setLoadingDetailTicketId(expandId);
+          historyBorrowService.getHistoryBorrowTicketDetail(expandId)
+            .then((detail) => {
+              setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: detail }));
+            })
+            .catch((error) => {
+              console.error(error);
+              setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: undefined }));
+            })
+            .finally(() => {
+              setLoadingDetailTicketId(null);
+            });
+        }
+      }
+    }
+  }, [expandId, ticketItems, ticketDetailByIdMap]);
 
   /**
    * Description: จัดการคลิก sort ที่หัวตาราง โดยสลับทิศทางเมื่อคลิกซ้ำคอลัมน์เดิม
@@ -403,9 +448,8 @@ export default function History() {
                   <button
                     type="button"
                     onClick={() => setCurrentPage(1)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                      }`}
                   >
                     1
                   </button>
@@ -427,11 +471,10 @@ export default function History() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(totalPages)}
-                      className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                        currentPage === totalPages
-                          ? "border-[#000000] text-[#000000]"
-                          : "border-[#D9D9D9]"
-                      }`}
+                      className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === totalPages
+                        ? "border-[#000000] text-[#000000]"
+                        : "border-[#D9D9D9]"
+                        }`}
                     >
                       {totalPages}
                     </button>

@@ -49,6 +49,7 @@ function App() {
   const commonRoutes = (
     <>
       <Route path="home" element={<Home />} />
+      <Route path="home/:id?" element={<Home />} />
       <Route path="profile" element={<Profile />} />
       <Route path="setting" element={<Settings />} />
       <Route path="list-devices/cart" element={<Cart />} />
@@ -56,6 +57,7 @@ function App() {
       <Route path="list-devices/cart/edit/:id?" element={<EditCart />} />
       <Route path="setting" element={<Settings />} />
       <Route path="history" element={<History />} />
+      <Route path="history/:id?" element={<History />} />
       <Route path="list-devices" element={<ListDevices />} />
       <Route path="list-devices/borrow" element={<BorrowDevice />} />
       <Route path="list-devices/borrow/:id?" element={<BorrowDevice />} />
@@ -154,11 +156,14 @@ function App() {
                   element={<RolePathRedirect />}
                 />
                 <Route path="/home" element={<RolePathRedirect />} />
+                <Route path="/home/:id?" element={<RolePathRedirect />} />
+
                 <Route path="/dashboard" element={<RolePathRedirect />} />
                 <Route path="/setting" element={<RolePathRedirect />} />
                 <Route path="/profile" element={<RolePathRedirect />} />
 
                 <Route path="/history" element={<RolePathRedirect />} />
+                <Route path="/history/:id?" element={<RolePathRedirect />} />
 
                 <Route
                   path="/request-borrow-ticket"

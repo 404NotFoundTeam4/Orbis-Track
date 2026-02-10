@@ -5,6 +5,8 @@ import { UserRole } from "../../core/roles.enum.js";
 export const idParamSchema = z.object({
   id: z.coerce.number().positive().openapi({ description: "ID ของรายการ" }),
 });
+
+// ตรวจสอบข้อมูลอุปกรณ์ย่อย 
 const createAccessoriesPayload = z.object({
   acc_id: z.coerce.number().int().openapi({ description: "รหัสอุปกรณ์เสริม" }),
   acc_name: z.string().min(1).max(100).openapi({ description: "ชื่ออุปกรณ์เสริม" }),
@@ -17,14 +19,14 @@ const createAccessoriesSchema = z.object({
   acc_quantity: z.coerce.number().int().nonnegative().openapi({ description: "จำนวน" }),
   acc_de_id: z.number().openapi({ description: "รหัสอุปกรณ์หลัก" }),
 });
-
+// ตรวจสอบข้อมูลบุคลตอนเพิ่มลำดับอนุมัติ
 const createApprovalFlowsStepPayload = z.object({
   afs_step_approve: z.coerce.number().int().positive().openapi({ description: "ลำดับการอนุมัติ" }),
   afs_dept_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัสแผนก" }),
   afs_sec_id: z.coerce.number().int().positive().nullable().optional().openapi({ description: "รหัสฝ่าย" }),
   afs_role: z.enum(Object.values(UserRole) as [string, ...string[]]).openapi({ description: "บทบาทผู้อนุมัติ" }),
 });
-
+// ตรวจสอบข้อมูลตอนเพิ่มลำดับอนุมัติ
 export const createApprovalFlowsPayload = z.object({
   af_name: z.string().min(1).max(100).openapi({ description: "ชื่อ Flow การอนุมัติ" }),
   af_us_id: z.coerce.number().int().positive().openapi({ description: "รหัสผู้สร้าง" }),
@@ -35,12 +37,13 @@ export const createApprovalFlowsPayload = z.object({
     return val;
   }, z.array(createApprovalFlowsStepPayload).min(1).openapi({ description: "ขั้นตอนการอนุมัติ" })),
 });
-
+// ตรวจสอบข้อมูลรหัสอุปกรณ์
 export const serialNumbersPayload = z.object({
   id: z.coerce.number().int().positive().openapi({ description: "ID" }),
   value: z.string().openapi({ description: "Serial Number" }),
 });
 
+// ตรวจสอบข้อมูลตอนเพิ่มอุปกรณ์
 export const createDevicePayload = z.object({
   de_serial_number: z.string().min(1).max(100).openapi({ description: "หมายเลขซีเรียล" }),
   de_name: z.string().min(1).max(200).openapi({ description: "ชื่ออุปกรณ์" }),
@@ -77,11 +80,13 @@ export const createDevicePayload = z.object({
   }, z.array(serialNumbersPayload).optional().openapi({ description: "รายการ Serial Number" })),
 });
 
+// ดึงข้อมูลผู้ใช้ในลำดับอนุมัติ
 export const approvalStepUserSchema = z.object({
   us_id: z.number().openapi({ description: "รหัสผู้ใช้" }),
   fullname: z.string().openapi({ description: "ชื่อ-นามสกุล" }),
 });
 
+// ดึงข้อมูลลำดับอนุมัติ
 export const getApprovalFlowStepResponseSchema = z.object({
   afs_id: z.number().openapi({ description: "ID ขั้นตอน" }),
   afs_step_approve: z.number().openapi({ description: "ลำดับการอนุมัติ" }),
@@ -92,7 +97,7 @@ export const getApprovalFlowStepResponseSchema = z.object({
   afs_name: z.string().nullable().openapi({ description: "ชื่อขั้นตอน" }),
   users: z.array(approvalStepUserSchema).openapi({ description: "รายชื่อผู้อนุมัติในขั้นตอนนี้" }),
 });
-
+// Schema สำหรับ getApprovalFlowStepResponseSchema
 export const getApprovalFlowOnlySchema = z.object({
   af_id: z.number().openapi({ description: "รหัส Flow" }),
   af_name: z.string().openapi({ description: "ชื่อ Flow" }),
@@ -163,6 +168,7 @@ export const getApprovalFlowSchema = z.object({
   staff: z.array(getStaffSchema).openapi({ description: "ข้อมูลเจ้าหน้าที่ทั้งหมด" }),
 });
 
+// Schema สำหรับสร้างตัวลำดับอนุมัติ
 export const createapprovalFlowStepResponseSchema = z.object({
   afs_id: z.number().openapi({ description: "ID ขั้นตอน" }),
   afs_step_approve: z.number().openapi({ description: "ลำดับ" }),

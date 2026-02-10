@@ -108,9 +108,9 @@ export const Inventory = () => {
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const [sortField, setSortField] = useState<keyof Equipment | "status_text">(
-    "last_edited"
+    "created_at"
   );
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   //States: Pagination
   const [page, setPage] = useState(1);

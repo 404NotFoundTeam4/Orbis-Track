@@ -34,7 +34,9 @@ export const SocketEmitter = {
     const { role, dept, sec, event, data } = params;
     try {
       // ถ้าไม่มี sec (เช่น HOD) ให้ใช้ชื่อห้องแบบไม่มี sec หรือใช้ 0 เป็น default
-      const roomName = sec ? `role_${role}_${dept}_${sec}` : `role_${role}_${dept}`;
+      const roomName = sec
+        ? `role_${role}_${dept}_${sec}`
+        : `role_${role}_${dept}`;
       // console.log(`Socket emitting to ${roomName}: ${event} with ticketId: ${data.ticketId}`);
       getIO().to(roomName).emit(event, data);
     } catch (e) {

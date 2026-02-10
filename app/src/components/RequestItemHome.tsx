@@ -47,6 +47,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "เลยกำหนด",
     className: "border-[#FF4D4F] text-[#FF4D4F]",
   },
+  COMPLETED: {
+    label: "คืนแล้ว",
+    className: "border-[#C7D2FE] text-[#4F46E5]",
+  },
 };
 
 /**
@@ -55,7 +59,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
  * Output    : boolean - true ถ้าเป็นลำดับสุดท้าย
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
-const checkLastStage = (
+const _checkLastStage = (
   currentStage: number | null | undefined,
   stageLength: number
 ) => {
@@ -177,7 +181,7 @@ const RequestItemHome = ({
     "https://placehold.co/200x150/png?text=Device";
   const sectionName =
     typeof ticket.device_summary.section === "object" &&
-    ticket.device_summary.section
+      ticket.device_summary.section
       ? ticket.device_summary.section
       : ticket.device_summary.section || "-";
 
@@ -188,13 +192,15 @@ const RequestItemHome = ({
     <div className="w-full">
       {/* Summary Row */}
       <div
-        className="grid [grid-template-columns:2fr_0.8fr_1.2fr_1.5fr_1.2fr_1.2fr_1fr_50px]
-             items-center px-6 h-[72px]
-             hover:bg-gray-50 cursor-pointer"
+        className="grid
+    lg:[grid-template-columns:1.6fr_0.7fr_1fr_1.2fr_1fr_1fr_0.9fr_40px]
+    xl:[grid-template-columns:2fr_0.8fr_1.2fr_1.5fr_1.2fr_1.2fr_1fr_50px]
+    items-center px-6 h-[72px]
+    hover:bg-gray-50 cursor-pointer"
         onClick={toggleExpand}
       >
         {/* Device Name & ID */}
-        <div className="flex flex-col">
+        <div className="flex flex-col pl-2">
           <span className="text-[#000000]">{ticket.device_summary.name}</span>
         </div>
 
@@ -243,20 +249,18 @@ const RequestItemHome = ({
           <FontAwesomeIcon
             size="lg"
             icon={faChevronDown}
-            className={`text-[#000000] transition-transform duration-200 ${
-              isExpanded ? "transform rotate-180" : ""
-            }`}
+            className={`text-[#000000] transition-transform duration-200 ${isExpanded ? "transform rotate-180" : ""
+              }`}
           />
         </div>
       </div>
 
       {/* Expanded Details */}
       <div
-        className={`transition-all duration-300 ease-in-out ${
-          isExpanded
+        className={`transition-all duration-300 ease-in-out ${isExpanded
             ? "max-h-[600px] opacity-100 visible"
             : "max-h-0 opacity-0 invisible"
-        }`}
+          }`}
       >
         {isLoadingDetail ? (
           <div className="p-6 flex items-center justify-center">
@@ -281,20 +285,20 @@ const RequestItemHome = ({
                       คำขอถูกปฏิเสธ ({" "}
                       {ticketDetail.details.reject_date
                         ? new Date(
-                            ticketDetail.details.reject_date
-                          ).toLocaleDateString("th-TH", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          }) +
-                          " - " +
-                          new Date(
-                            ticketDetail.details.reject_date
-                          ).toLocaleTimeString("th-TH", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }) +
-                          " น."
+                          ticketDetail.details.reject_date
+                        ).toLocaleDateString("th-TH", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        }) +
+                        " - " +
+                        new Date(
+                          ticketDetail.details.reject_date
+                        ).toLocaleTimeString("th-TH", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }) +
+                        " น."
                         : "-"}{" "}
                       )
                     </span>
@@ -316,8 +320,7 @@ const RequestItemHome = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
                           ? "border-[#4CAF50] text-[#4CAF50]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#4CAF50] text-[#4CAF50]"
@@ -328,18 +331,17 @@ const RequestItemHome = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "border-[#4CAF50] text-[#4CAF50]"
                                   : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       <Icon
                         icon="ic:sharp-check"
                         width="20"
                         height="20"
-                        // color="blue"
+                      // color="blue"
                       />
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${
-                        getStepTicket() === "PENDING"
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
                           ? "bg-[#4CAF50]"
                           : getStepTicket() === "APPROVED"
                             ? "bg-[#4CAF50]"
@@ -350,14 +352,13 @@ const RequestItemHome = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "bg-[#4CAF50]"
                                   : "bg-[#9E9E9E]"
-                      }`}
+                        }`}
                     ></div>
                   </div>
 
                   <div className="pt-2">
                     <span
-                      className={`text-sm font-medium ${
-                        getStepTicket() === "PENDING"
+                      className={`text-sm font-medium ${getStepTicket() === "PENDING"
                           ? " text-[#4CAF50]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#4CAF50]"
@@ -368,7 +369,7 @@ const RequestItemHome = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "text-[#4CAF50]"
                                   : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       ส่งคำร้อง
                     </span>
@@ -379,8 +380,7 @@ const RequestItemHome = ({
                 <div className="flex gap-3 relative group">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
                           ? "border-[#000000] text-[#000000]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#4CAF50] text-[#4CAF50]"
@@ -391,7 +391,7 @@ const RequestItemHome = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "border-[#FF4D4F] text-[#FF4D4F]"
                                   : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       {getStepTicket() !== "REJECTED" ? (
                         <Icon
@@ -404,8 +404,7 @@ const RequestItemHome = ({
                       )}
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${
-                        getStepTicket() === "PENDING"
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
                           ? "bg-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "bg-[#4CAF50]"
@@ -414,13 +413,12 @@ const RequestItemHome = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "bg-[#4CAF50]"
                                 : "bg-[#9E9E9E]"
-                      }`}
+                        }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`cursor-pointer ${
-                        getStepTicket() === "PENDING"
+                      className={`cursor-pointer ${getStepTicket() === "PENDING"
                           ? " text-[#000000]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#4CAF50]"
@@ -431,7 +429,7 @@ const RequestItemHome = ({
                                 : getStepTicket() === "REJECTED"
                                   ? "border-[#FF4D4F] text-[#FF4D4F]"
                                   : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       อนุมัติ
                     </span>
@@ -459,15 +457,14 @@ const RequestItemHome = ({
                                   {/* Icon & Line */}
                                   <div className="flex flex-col items-center">
                                     <div
-                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                                        stage.status === "APPROVED"
+                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
                                           ? "border-[#4CAF50] text-[#4CAF50]"
                                           : stage.status === "REJECTED"
                                             ? "border-[#FF4D4F] text-[#FF4D4F]"
                                             : isNextApprover
                                               ? "border-[#000000] text-[#000000]"
                                               : "border-[#9E9E9E] text-[#9E9E9E]"
-                                      }`}
+                                        }`}
                                     >
                                       {stage.status === "REJECTED" ? (
                                         <Icon
@@ -486,11 +483,10 @@ const RequestItemHome = ({
                                     {/* Connecting Line - hide for last item */}
                                     {!isLast && (
                                       <div
-                                        className={`w-0.5 h-12 -my-1 ${
-                                          stage.status === "APPROVED"
+                                        className={`w-0.5 h-12 -my-1 ${stage.status === "APPROVED"
                                             ? "bg-[#4CAF50]"
                                             : "bg-[#9E9E9E]"
-                                        }`}
+                                          }`}
                                       ></div>
                                     )}
                                   </div>
@@ -499,15 +495,14 @@ const RequestItemHome = ({
                                     className={`${stage.status === "APPROVED" || stage.status === "REJECTED" ? "" : "pt-1"} ${!isLast ? "pb-3" : ""} `}
                                   >
                                     <span
-                                      className={`text-sm ${
-                                        stage.status === "APPROVED"
+                                      className={`text-sm ${stage.status === "APPROVED"
                                           ? "text-[#4CAF50]"
                                           : stage.status === "REJECTED"
                                             ? "text-[#FF4D4F]"
                                             : isNextApprover
                                               ? "text-[#000000]"
                                               : "text-[#9E9E9E]"
-                                      }`}
+                                        }`}
                                     >
                                       {stage.role_name}
                                       {stage.dept_name && ` ${stage.dept_name}`}
@@ -544,7 +539,7 @@ const RequestItemHome = ({
                                         </div>
                                       )}
                                     {stage.status === "APPROVED" ||
-                                    stage.status === "REJECTED" ? (
+                                      stage.status === "REJECTED" ? (
                                       <>
                                         <div
                                           className={`text-xs text-[#9E9E9E]`}
@@ -583,8 +578,7 @@ const RequestItemHome = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
                           ? "border-[#9E9E9E] text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#000000] text-[#000000]"
@@ -593,18 +587,17 @@ const RequestItemHome = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "border-[#4CAF50] text-[#4CAF50]"
                                 : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       <Icon
                         icon="material-symbols-light:devices-outline"
                         width="23"
                         height="23"
-                        // color="blue"
+                      // color="blue"
                       />
                     </div>
                     <div
-                      className={`w-[2px] h-12 -my-1 ${
-                        getStepTicket() === "PENDING"
+                      className={`w-[2px] h-12 -my-1 ${getStepTicket() === "PENDING"
                           ? "bg-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "bg-[#9E9E9E]"
@@ -613,13 +606,12 @@ const RequestItemHome = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "bg-[#4CAF50]"
                                 : "bg-[#9E9E9E]"
-                      }`}
+                        }`}
                     ></div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`${
-                        getStepTicket() === "PENDING"
+                      className={`${getStepTicket() === "PENDING"
                           ? " text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#000000]"
@@ -628,7 +620,7 @@ const RequestItemHome = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "text-[#4CAF50]"
                                 : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       กำลังใช้งาน
                     </span>
@@ -639,8 +631,7 @@ const RequestItemHome = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
-                        getStepTicket() === "PENDING"
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${getStepTicket() === "PENDING"
                           ? "border-[#9E9E9E] text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? "border-[#9E9E9E] text-[#9E9E9E]"
@@ -649,20 +640,19 @@ const RequestItemHome = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "border-[#4CAF50] text-[#4CAF50]"
                                 : "border-[#9E9E9E] text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       <Icon
                         icon="streamline:return-2"
                         width="20"
                         height="20"
-                        // color="blue"
+                      // color="blue"
                       />
                     </div>
                   </div>
                   <div className="pt-2">
                     <span
-                      className={`${
-                        getStepTicket() === "PENDING"
+                      className={`${getStepTicket() === "PENDING"
                           ? " text-[#9E9E9E]"
                           : getStepTicket() === "APPROVED"
                             ? " text-[#9E9E9E]"
@@ -671,7 +661,7 @@ const RequestItemHome = ({
                               : getStepTicket() === "COMPLETED"
                                 ? "text-[#4CAF50]"
                                 : " text-[#9E9E9E]"
-                      }`}
+                        }`}
                     >
                       คืนอุปกรณ์
                     </span>
@@ -819,9 +809,9 @@ const RequestItemHome = ({
                     <span className="text-[#636363] text-sm">
                       {ticketDetail?.requester?.us_phone
                         ? ticketDetail.requester.us_phone.replace(
-                            /(\d{3})(\d{3})(\d{4})/,
-                            "$1-$2-$3"
-                          )
+                          /(\d{3})(\d{3})(\d{4})/,
+                          "$1-$2-$3"
+                        )
                         : "000-000-0000"}
                     </span>
                   </div>
@@ -834,7 +824,7 @@ const RequestItemHome = ({
                     </span>
                   </div>
                   {ticketDetail?.accessories &&
-                  ticketDetail.accessories.length > 0 ? (
+                    ticketDetail.accessories.length > 0 ? (
                     ticketDetail.accessories.map((acc, index) => (
                       <div
                         key={acc.acc_id || index}

@@ -4,24 +4,81 @@ import api from "../api/axios";
 export interface DeviceChild {
   dec_id: number;
   dec_serial_number: string | null;
-  dec_asset_code: string | null;
+  dec_asset_code: string;
   dec_status: "READY" | "BORROWED" | "DAMAGED" | "REPAIRING" | "LOST";
   dec_has_serial_number: boolean;
   dec_de_id: number;
 }
 
+// โครงสร้าง Category response
+export interface CategoryResponse {
+  ca_id: number;
+  ca_name: string;
+}
+
+// โครงสร้าง Department response
+export interface DepartmentResponse {
+  dept_id: number;
+  dept_name: string;
+}
+
+// โครงสร้าง Section response
+export interface SectionResponse {
+  sec_id: number;
+  sec_name: string;
+  department?: DepartmentResponse;
+}
+
+// โครงสร้าง Accessory response
+export interface AccessoryResponse {
+  acc_id: number;
+  acc_name: string;
+  acc_quantity: number;
+}
+
+// โครงสร้าง Approval Flow Step response
+export interface ApprovalFlowStepResponse {
+  afs_id: number;
+  afs_step_approve: number;
+  afs_role: string;
+  afs_dept_id: number | null;
+  afs_sec_id: number | null;
+}
+
+// โครงสร้าง Approval Flow response
+export interface ApprovalFlowResponse {
+  af_id: number;
+  af_name: string;
+  steps: ApprovalFlowStepResponse[];
+}
+
 // โครงสร้างข้อมูลอุปกรณ์แม่พร้อมอุปกรณ์ลูก
 export interface GetDeviceWithChildsResponse {
   de_id: number;
-  de_name: string;
   de_serial_number: string;
+  de_name: string;
+  de_description: string | null;
+  de_location: string;
+  de_max_borrow_days: number;
+  de_images: string | null;
+  de_af_id: number;
+  de_ca_id: number;
+  de_us_id: number;
+  de_sec_id: number;
   device_childs: DeviceChild[];
+  category?: CategoryResponse;
+  section?: SectionResponse;
+  accessories: AccessoryResponse[];
+  approval_flow?: ApprovalFlowResponse;
+  total_quantity?: number;
 }
 
 // โครงสร้างข้อมูลตอนเพิ่มอุปกรณ์ลูก
 export interface CreateDeviceChildPayload {
   dec_de_id: number;
-  quantity: number;
+  dec_serial_number: string | null;
+  dec_asset_code: string;
+  dec_status: DeviceChild["dec_status"];
 }
 
 // โครงสร้างข้อมูลหลังจากเพิ่มอุปกรณ์ลูก (อัปโหลดไฟล์)
@@ -49,6 +106,31 @@ export interface Category {
   ca_name: string;
 }
 
+// Approval Flow Only schema
+export interface ApprovalFlowOnly {
+  af_id: number;
+  af_name: string;
+  af_us_id: number;
+  af_is_active: boolean;
+}
+
+// Approval Flow with steps for step display
+export interface ApprovalFlowStepWithUsers {
+  afs_id: number;
+  afs_step_approve: number;
+  afs_dept_id: number | null;
+  afs_sec_id: number | null;
+  afs_role: string;
+  afs_af_id: number;
+  afs_name: string | null;
+  users: { us_id: number; fullname: string }[];
+}
+
+export interface ApprovalFlowWithSteps {
+  af_id: number;
+  steps: ApprovalFlowStepWithUsers[];
+}
+
 export interface getAllDevices {
   success: boolean;
   message: string;
@@ -56,6 +138,8 @@ export interface getAllDevices {
     sections: Section[];
     departments: Department[];
     categories: Category[];
+    approval_flows: ApprovalFlowOnly[];
+    approval_flow_step: ApprovalFlowWithSteps[];
   };
 }
 export interface Accessory {
@@ -119,7 +203,7 @@ export const DeviceService = {
    * Author    : Thakdanai Makmi (Ryu) 66160355
    */
   createDeviceChild: async (
-    payload: CreateDeviceChildPayload,
+    payload: CreateDeviceChildPayload[]
   ): Promise<{ message: string }> => {
     const { data } = await api.post(`/inventory/devices-childs`, payload);
     return data;
@@ -199,8 +283,8 @@ export const DeviceService = {
   createApprove: async (
     payload: CreateApprovalFlowPayload,
   ): Promise<CreateDeviceResponse> => {
-    const res = api.post("inventory/approval", payload);
-    return res;
+    const { data } = await api.post("inventory/approval", payload);
+    return data;
   },
 
   /**
@@ -230,6 +314,18 @@ export const DeviceService = {
     const { data } = await api.patch(`/inventory/devices/${id}`, payload);
     return data.data;
   },
+
+  /**
+  * Description: ดึงข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
+  * Input     : id - รหัสอุปกรณ์แม่
+  * Output    : asset code ล่าสุดของอุปกรณ์ลูก
+  * Endpoint  : GET /api/inventory/:id/last-asset
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  getLastAssetCode: async (id: number) => {
+    const { data } = await api.get(`/inventory/${id}/last-asset`);
+    return data.data;
+  },
 };
 
 export interface GetInventory {
@@ -244,16 +340,29 @@ export interface GetInventory {
   total: number;
 }
 
+// Raw inventory item จาก API
+interface RawInventoryItem {
+  de_id: number;
+  de_name: string;
+  de_serial_number: string;
+  de_images: string | null;
+  category_name?: string;
+  department_name?: string;
+  sub_section_name?: string;
+  available?: number;
+  quantity?: number;
+}
+
 export const inventoryService = {
   getInventory: async (): Promise<GetInventory[]> => {
     const { data } = await api.get("/inventory");
-    return data.data.map((item: any) => ({
+    return data.data.map((item: RawInventoryItem) => ({
       ...item,
       category: item.category_name || "-",
       department: item.department_name || "-",
       sub_section: item.sub_section_name || "-",
-      available: item.quantity || 0,
-      total: item.total_quantity || 0,
+      available: item.available || 0,
+      total: item.quantity || 0,
     }));
   },
 };

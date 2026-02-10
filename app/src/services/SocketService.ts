@@ -42,18 +42,21 @@ class SocketService {
     }
 
     const socketUrl =
-      url || import.meta.env.VITE_API_URL || "http://localhost:4041";
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+      url ||
+      import.meta.env.VITE_API_URL ||
+      (import.meta.env.DEV ? "http://localhost:4041" : "");
 
     console.log("Connecting to socket at:", socketUrl);
 
     this.socket = io(socketUrl, {
       path: "/socket.io",
       autoConnect: true,
-      auth: {
-        token: token,
+      auth: (cb) => {
+        const token =
+          localStorage.getItem("token") || sessionStorage.getItem("token");
+        cb({ token });
       },
+      transports: ["polling", "websocket"],
     });
 
     this.socket.on("connect", () => {
@@ -62,6 +65,13 @@ class SocketService {
 
     this.socket.on("connect_error", (err) => {
       console.error("SocketService connection error:", err.message);
+
+      if (
+        err.message === "jwt expired" ||
+        err.message === "Socket Auth Error"
+      ) {
+        console.warn("Token might be expired. Please refresh token.");
+      }
     });
 
     this.socket.on("disconnect", (reason) => {

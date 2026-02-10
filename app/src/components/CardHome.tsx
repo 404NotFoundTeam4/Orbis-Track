@@ -14,17 +14,17 @@ export type CardHomeProps = {
   unit?: string;
 
   // Customization
-  width?: number | string;  //  ปรับความกว้างได้ (default 380px)
+  width?: number | string; //  ปรับความกว้างได้ (default 380px)
   height?: number | string; // ปรับความสูงได้ (default 170px)
   className?: string;
   onClick?: () => void;
 };
 // กำหนดสีและไอคอนตามประเภทของการ์ด
 const CARD_CONFIG: Record<CardHomeType, { color: string; icon: string }> = {
-  Borrowed: { color: "#40A9FF", icon: "lucide:box" },
+  Borrowed: { color: "#40A9FF", icon: "solar:box-outline" },
   Returned: { color: "#FF884D", icon: "lucide:clock" },
-  Waiting:  { color: "#FFC53D", icon: "lucide:user-check" },
-  Report:   { color: "#FF4D4F", icon: "lucide:wrench" },
+  Waiting: { color: "#FFC53D", icon: "mi:user-check" },
+  Report: { color: "#FF4D4F", icon: "mage:wrench" },
 };
 // CardHome Component
 const CardHome: React.FC<CardHomeProps> = ({
@@ -32,10 +32,9 @@ const CardHome: React.FC<CardHomeProps> = ({
   title,
   count,
   unit = "ชิ้น",
-  width = 380,     
-  height = 170, 
+  height = 170,
   className = "",
-  onClick
+  onClick,
 }) => {
   const config = CARD_CONFIG[cardType];
 
@@ -49,55 +48,70 @@ const CardHome: React.FC<CardHomeProps> = ({
       onClick={onClick}
       className={`
         relative flex items-center bg-white rounded-[12px] border 
-        p-5 overflow-hidden select-none shadow-sm hover:shadow-md transition-shadow
-        min-w-[200px]
+  p-4 sm:p-5
+  overflow-hidden select-none shadow-sm hover:shadow-md transition-shadow
+  min-w-[200px]
         ${className}
       `}
       style={{
         borderColor: config.color,
-        width: width ? getSizeStyle(width) : "100%",
         height: getSizeStyle(height),
       }}
     >
       {/* Corner Triangle */}
       <div
-        className="absolute top-0 right-0 w-[40px] h-[40px]"
+        className="absolute top-0 right-0 w-[30px] h-[30px]"
         style={{
           backgroundColor: config.color,
           clipPath: "polygon(0 0, 100% 0, 100% 100%)",
         }}
       />
 
-        {/* Content */}
-      <div className="flex items-center justify-center gap-4 w-full">
-        
-        {/* Icon */}
-        <div className="flex-shrink-0">
+      {/* Content */}
+      <div className="flex items-center justify-center w-full">
+        <div className="flex items-center gap-[clamp(12px,2vw,32px)]">
+          {/* Icon */}
           <Icon
             icon={config.icon}
-            width="130" 
-            height="130"
-            style={{ color: config.color }}
+            className="shrink-0"
+            style={{
+              color: config.color,
+              fontSize: "clamp(36px, 6vw, 120px)",
+            }}
           />
-        </div>
 
-        {/* Info Text */}
-        <div className="flex flex-col min-w-0"> 
-          <div className="flex items-baseline gap-2">
-            <span className="text-[32px] font-semibold text-[#1F1F1F] leading-none">
-              {count}
-            </span>
-            <span className="text-[14px] text-[#595959] font-normal whitespace-nowrap">
-              {unit}
+          {/* Info Text */}
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-baseline gap-[clamp(6px,1vw,12px)]">
+              <span
+                className="font-medium leading-none text-[#221818]"
+                style={{
+                  fontSize: "clamp(28px, 4vw, 48px)",
+                }}
+              >
+                {count}
+              </span>
+
+              <span
+                className="text-[#595959] whitespace-nowrap"
+                style={{
+                  fontSize: "clamp(12px, 1.4vw, 16px)",
+                }}
+              >
+                {unit}
+              </span>
+            </div>
+            <span
+              className="truncate mt-[clamp(8px,1.5vw,16px)]"
+              style={{
+                color: config.color,
+                fontSize: "clamp(14px, 1.8vw, 20px)",
+              }}
+              title={title}
+            >
+              {title}
             </span>
           </div>
-          <span 
-            className="text-[16px] truncate"
-            style={{ color: config.color }}
-            title={title}
-          >
-            {title}
-          </span>
         </div>
       </div>
     </div>

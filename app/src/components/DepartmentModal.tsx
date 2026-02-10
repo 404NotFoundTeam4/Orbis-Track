@@ -99,7 +99,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       ? ""
       : `แผนก: ${department || initialData?.department || "-"}`;
 
-  const iconName = isEdit ? "ci:warning" : "mdi:clipboard-check-outline";
+  const _iconName = isEdit ? "ci:warning" : "mdi:clipboard-check-outline";
   const dialogTone: "success" | "warning" | "danger" = isEdit
     ? "warning"
     : "success";
@@ -224,17 +224,17 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
   const buildPayload = () =>
     type.includes("section")
       ? {
-          id: sectionId || initialData?.sectionId,
-          departmentId:
-            type === "add-section"
-              ? selectedDepartment?.value
-              : initialData?.departmentId,
-          section,
-        }
+        id: sectionId || initialData?.sectionId,
+        departmentId:
+          type === "add-section"
+            ? selectedDepartment?.value
+            : initialData?.departmentId,
+        section,
+      }
       : {
-          id: initialData?.id,
-          department,
-        };
+        id: initialData?.id,
+        department,
+      };
 
   const [deptError, setDeptError] = useState("");
 

@@ -1,4 +1,4 @@
-import { $Enums } from "@prisma/client";
+import { $Enums, US_ROLE, Prisma } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
 import { ValidationError } from "../../errors/errors.js";
 import xlsx from "xlsx";
@@ -141,7 +141,7 @@ async function getDeviceWithChilds(params: IdParamDto) {
  * Author    : Thakdanai Makmi (Ryu) 66160355
  */
 async function createDeviceChild(payload: CreateDeviceChildPayload) {
-  const { dec_de_id, quantity } = payload;
+  const dec_de_id = payload[0].dec_de_id;
 
   // หาอุปกรณ์แม่
   const parent = await prisma.devices.findFirst({
@@ -157,71 +157,9 @@ async function createDeviceChild(payload: CreateDeviceChildPayload) {
 
   if (!parent) throw new Error("Parent device not found");
 
-  // ดึง serial number ล่าสุด
-  const lastedChild = await prisma.device_childs.findFirst({
-    where: {
-      dec_de_id,
-    },
-    orderBy: {
-      dec_id: "desc",
-    },
-    select: {
-      dec_serial_number: true,
-    },
+  const newDeviceChilds = await prisma.device_childs.createMany({
+    data: payload
   });
-
-  // หาเลข serial number ถัดไป
-  let nextSerialNumber = 1; // serial number เริ่มต้นที่ 1
-  if (lastedChild?.dec_serial_number) {
-    // ถ้ามีอุปกรณ์ลูกล่าสุด (ตัวท้าย)
-    const extract = lastedChild.dec_serial_number.split("-").pop(); // ตัดคำด้วย - แล้วเอาส่วนสุดท้าย
-    const lastSerialNumber = parseInt(extract || "0"); // แปลงจาก string เป็น int (ถ้า extract เป็น undefined ใช้ 0 แทน)
-    if (!isNaN(lastSerialNumber)) {
-      // ถ้าเป็นตัวเลข
-      nextSerialNumber = lastSerialNumber + 1; // serial number บวก 1 จากเลขล่าสุด
-    }
-  }
-
-  // prefix serial number
-  const SERIAL_PREFIX = parent.de_name
-    .split(" ") // แยกชื่ออุปกรณ์แม่ด้วยช่องว่าง
-    .filter((word) => /^[A-Za-z0-9-]+$/.test(word)) // เก็บเฉพาะ a-z, A-Z, 0-9 หรือ -
-    .join("-") // นำคำมาต่อกันด้วย -
-    .replace(/([A-Za-z])-(\d)/g, "$1$2") // ตัด - ระหว่างตัวอักษรกับตัวเลข
-    .toUpperCase(); // ตัวพิมพ์ใหญ่
-
-  // prefix asset code
-  const assetParts = parent.de_serial_number.split("-"); // แยกคำด้วย -
-  const ASSET_PREFIX = assetParts.slice(0, -1).join("-"); // ตัดตัวสุดท้ายออก (ตัวเลข) แล้วรวมคำด้วย -
-
-  // // สร้างอุปกรณ์ลูกตามจำนวน
-  const newDeviceChilds = await Promise.all(
-    Array.from({ length: quantity }).map((_, index) => {
-      // สร้าง array เปล่าที่มีความยาว = quantity แล้วลูปตามจำนวน
-      const serialNumber = String(nextSerialNumber + index).padStart(3, "0"); // สร้าง serial number และเติม 0 ให้เป็นเลข 3 หลัก
-      return prisma.device_childs.create({
-        data: {
-          dec_serial_number: `SN-${SERIAL_PREFIX}-${serialNumber}`,
-          dec_asset_code: `ASSET-${ASSET_PREFIX}-${serialNumber}`,
-          dec_status: $Enums.DEVICE_CHILD_STATUS.READY,
-          dec_has_serial_number: true,
-          dec_de_id,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-        select: {
-          dec_id: true,
-          dec_serial_number: true,
-          dec_asset_code: true,
-          dec_status: true,
-          dec_has_serial_number: true,
-          dec_de_id: true,
-          created_at: true,
-          updated_at: true,
-        },
-      });
-    })
-  );
 
   return newDeviceChilds;
 }
@@ -259,29 +197,22 @@ async function uploadFileDeviceChild(payload: UploadFileDeviceChildPayload) {
 
   if (!parent) throw new Error("Parent device not found");
 
-  const serialParts = parent.de_serial_number.split("-"); // แยกคำด้วย -
-  const SERIAL_PREFIX = serialParts.slice(1, serialParts.length - 1).join("-"); // ตัดส่วนหน้าสุดและท้ายสุดออก แล้วรวมคำด้วย -
-
   // วนลูปเพื่อ map ข้อมูลในไฟล์
   const childs = data.map((row: any) => {
     const serialNumber = row["Serial Number"]?.trim(); // ดึง Serial Number จากไฟล์
+    const status = row["Status"]?.trim()?.toUpperCase() as $Enums.DEVICE_CHILD_STATUS;
 
-    if (!serialNumber)
-      throw new Error("Serial Number is required in first upload");
-
-    // ตรวจสอบว่า Serial Number ว่าคำเริ่มต้นถูกไหม
-    if (!serialNumber.startsWith(`SN-${SERIAL_PREFIX}-`)) {
-      throw new Error(
-        `Serial Number '${serialNumber}' is invalid. Expected prefix 'SN-${SERIAL_PREFIX}-'`
-      );
+    // ถ้า status ไม่ตรงกับ ENUM
+    if (!Object.values($Enums.DEVICE_CHILD_STATUS).includes(status)) {
+      throw new Error(`Invalid status '${status}'`);
     }
 
     // คืนค่าข้อมูลที่พร้อม insert ลงฐานข้อมูล
     return {
-      dec_serial_number: serialNumber,
+      dec_serial_number: row["Serial Number"],
       dec_asset_code: row["Asset Code"] || null,
-      dec_has_serial_number: true,
-      dec_status: $Enums.DEVICE_CHILD_STATUS.READY,
+      dec_has_serial_number: Boolean(serialNumber),
+      dec_status: status,
       dec_de_id: de_id,
     };
   });
@@ -360,7 +291,15 @@ async function createDevice(payload: CreateDevicePayload, images?: string) {
   return await prisma.$transaction(async (tx) => {
     const device = await tx.devices.create({
       data: {
-        ...deviceData,
+        de_serial_number: deviceData.de_serial_number,
+        de_name: deviceData.de_name,
+        de_description: deviceData.de_description ?? null,
+        de_location: deviceData.de_location,
+        de_max_borrow_days: deviceData.de_max_borrow_days,
+        de_af_id: deviceData.de_af_id,
+        de_ca_id: deviceData.de_ca_id,
+        de_us_id: deviceData.de_us_id,
+        de_sec_id: deviceData.de_sec_id ?? 1, // Default to 1 if not provided
         de_images: finalImages,
         created_at: new Date(),
       },
@@ -622,7 +561,7 @@ async function createApprovesFlows(payload: CreateApprovalFlowsPayload) {
         afs_step_approve: step.afs_step_approve,
         afs_dept_id: step.afs_dept_id ?? null,
         afs_sec_id: step.afs_sec_id ?? null,
-        afs_role: step.afs_role,
+        afs_role: step.afs_role as US_ROLE,
         afs_af_id: approvalFlow.af_id,
         created_at: new Date(),
       })),
@@ -890,6 +829,7 @@ async function getAllWithDevices() {
       af_id: item.de_af_id,
 
       quantity: totalQuantity,
+      available: availableQuantity,
       status_type: statusType,
       device_childs: item.device_childs,
     };
@@ -946,10 +886,18 @@ export async function updateDevice(
   const updated = await prisma.devices.update({
     where: { de_id: id },
     data: {
-      ...deviceData,
+      de_serial_number: deviceData.de_serial_number,
+      de_name: deviceData.de_name,
+      de_description: deviceData.de_description,
+      de_location: deviceData.de_location,
+      de_max_borrow_days: deviceData.de_max_borrow_days,
+      ...(deviceData.de_af_id !== undefined && { de_af_id: deviceData.de_af_id }),
+      ...(deviceData.de_ca_id !== undefined && { de_ca_id: deviceData.de_ca_id }),
+      ...(deviceData.de_us_id !== undefined && { de_us_id: deviceData.de_us_id }),
+      ...(deviceData.de_sec_id !== undefined && { de_sec_id: deviceData.de_sec_id }),
       de_images: finalImages,
       updated_at: new Date(),
-    },
+    } as Prisma.devicesUncheckedUpdateInput,
   });
   if (Array.isArray(accessories)) {
     const incomingAccIds = accessories
@@ -1013,6 +961,33 @@ async function getApprovalFlows() {
   });
 }
 
+// ดึงข้อมูลพื้นฐานสำหรับหน้าสร้างอุปกรณ์
+async function getDefaultsdata() {
+  return await getAllDevices();
+}
+
+/**
+ * Description: ดึง asset code ล่าสุด ของอุปกรณ์ลูก
+ * Input: params (number) - รหัสอุปกรณ์แม่
+ * Output: asset code ล่าสุด
+ * Author: Thakdanai Makmi (Ryu) 66160355
+ */
+async function getLastAssetCode(params: IdParamDto) {
+  const { id } = params;
+
+  return await prisma.device_childs.findFirst({
+    where: {
+      dec_de_id: id
+    },
+    orderBy: {
+      created_at: "desc"
+    },
+    select: {
+      dec_asset_code: true
+    }
+  })
+}
+
 export const inventoryService = {
   getDeviceWithChilds,
   createDeviceChild,
@@ -1027,4 +1002,6 @@ export const inventoryService = {
   createApprovesFlows,
   getAllApproves,
   createDevice,
+  getDefaultsdata,
+  getLastAssetCode
 };

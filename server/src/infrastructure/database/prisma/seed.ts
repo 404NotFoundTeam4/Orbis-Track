@@ -609,6 +609,7 @@ async function main() {
           brts_role: s.role,
           brts_dept_id: s.deptId,
           brts_dept_name: "Mock Dept",
+          brts_sec_id: s.secId,
           brts_sec_name: "N/A",
           brts_status: s.status,
           brts_us_id: s.usId || null,
@@ -955,19 +956,23 @@ async function main() {
   console.log("  Password: password123");
 
   //ป้องกัน id ซ้ำกันหลังจาก seed
-  await prisma.$executeRawUnsafe(`
+  const resetSeq = async (table: string, col: string) => {
+    await prisma.$executeRawUnsafe(`
     SELECT setval(
-      pg_get_serial_sequence('borrow_return_tickets', 'brt_id'),
-      (SELECT COALESCE(MAX(brt_id), 0) FROM borrow_return_tickets)
+      pg_get_serial_sequence('${table}', '${col}'),
+      (SELECT COALESCE(MAX(${col}), 0) FROM ${table})
     );
   `);
-  await prisma.$executeRawUnsafe(`
-    SELECT setval(
-      pg_get_serial_sequence('borrow_return_ticket_stages', 'brts_id'),
-      (SELECT COALESCE(MAX(brts_id), 0) FROM borrow_return_ticket_stages)
-    );
-  `);
+  };
+
+  await resetSeq("public.borrow_return_tickets", "brt_id");
+  await resetSeq("public.borrow_return_ticket_stages", "brts_id");
+  await resetSeq("public.approval_flow_steps", "afs_id");
+  await resetSeq("public.device_availabilities", "da_id");
+  // เพิ่มตารางอื่น ๆ ต่อเอง
+
 }
+
 
 main()
   .catch((e) => {

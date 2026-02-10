@@ -10,9 +10,8 @@
 import { DeviceService } from "../services/InventoryService";
 import type {
   getAllDevices,
-  createDevices,
-  createApprove,
-
+  CreateDevicePayload,
+  CreateApprovalFlowPayload,
 } from "../services/InventoryService";
 
 /**
@@ -38,13 +37,13 @@ export async function getDevicesAll(): Promise<getAllDevices> {
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export async function createDevicesdata(payload: createDevices) {
-  const res = await DeviceService.createDevices(payload);
+export async function createDevicesdata(payload: FormData | CreateDevicePayload) {
+  const res = await DeviceService.createDevices(payload as CreateDevicePayload);
   return res;
 }
 
-export async function updateDevicesdata(id:number,payload: createDevices) {
-  const res = await DeviceService.updateDevices(id,payload);
+export async function updateDevicesdata(id: number, payload: FormData | CreateDevicePayload) {
+  const res = await DeviceService.updateDevices(id, payload as CreateDevicePayload);
   return res;
 }
 
@@ -57,7 +56,7 @@ export async function updateDevicesdata(id:number,payload: createDevices) {
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export async function createApprovedata(payload: createApprove) {
+export async function createApprovedata(payload: CreateApprovalFlowPayload) {
   const res = await DeviceService.createApprove(payload);
   return res;
 }

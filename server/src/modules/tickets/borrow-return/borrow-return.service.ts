@@ -26,7 +26,7 @@ import { SocketEmitter } from "../../../infrastructure/websocket/socket.emitter.
 import { logger } from "../../../infrastructure/logger.js";
 
 export class BorrowReturnService {
-  constructor(private readonly repository: BorrowReturnRepository) { }
+  constructor(private readonly repository: BorrowReturnRepository) {}
 
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อมรายละเอียดสำหรับแต่ละรายการ
@@ -165,16 +165,16 @@ export class BorrowReturnService {
       accessories:
         ticket.ticket_devices[0]?.child.device?.accessories?.length > 0
           ? [
-            {
-              acc_id:
-                ticket.ticket_devices[0].child.device.accessories[0].acc_id,
-              acc_name:
-                ticket.ticket_devices[0].child.device.accessories[0].acc_name,
-              acc_quantity:
-                ticket.ticket_devices[0].child.device.accessories[0]
-                  .acc_quantity,
-            },
-          ]
+              {
+                acc_id:
+                  ticket.ticket_devices[0].child.device.accessories[0].acc_id,
+                acc_name:
+                  ticket.ticket_devices[0].child.device.accessories[0].acc_name,
+                acc_quantity:
+                  ticket.ticket_devices[0].child.device.accessories[0]
+                    .acc_quantity,
+              },
+            ]
           : [],
 
       timeline: ticket.stages.map((stage: any) => ({
@@ -232,7 +232,7 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-        currentStageData.brts_sec_id === approvalUser?.sec;
+          currentStageData.brts_sec_id === approvalUser?.sec;
 
     if (!isGrantApproveUser)
       throw new HttpError(
@@ -268,8 +268,7 @@ export class BorrowReturnService {
           event: NR_EVENT.YOUR_TICKET_APPROVED,
           brt_id: ticketId,
           upsert: true,
-          // TO DO : add target route to ticket detail page
-          // target_route: `/request-borrow-ticket/${ticketId}`,
+          target_route: `/home/${ticketId}`,
         });
 
         // ถ้าถึงเวลาใช้งานแล้ว ส่ง notification เพิ่ม
@@ -300,8 +299,7 @@ export class BorrowReturnService {
           base_event: "TICKET_STAGE_PASSED",
           event: "YOUR_TICKET_STAGE_APPROVED",
           brt_id: ticketId,
-          // TO DO : add target route to ticket detail page
-          // target_route: `/request-borrow-ticket/${ticketId}`,
+          target_route: `/home/${ticketId}`,
           upsert: true,
         });
       } catch (error) {
@@ -335,9 +333,9 @@ export class BorrowReturnService {
             ...(nextStage.brts_role === "HOD"
               ? { us_dept_id: nextStage.brts_dept_id }
               : {
-                us_dept_id: nextStage.brts_dept_id,
-                us_sec_id: nextStage.brts_sec_id,
-              }),
+                  us_dept_id: nextStage.brts_dept_id,
+                  us_sec_id: nextStage.brts_sec_id,
+                }),
           },
           select: { us_id: true },
         });
@@ -414,7 +412,7 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-        currentStageData.brts_sec_id === approvalUser?.sec;
+          currentStageData.brts_sec_id === approvalUser?.sec;
 
     if (!isGrantApproveUser)
       throw new HttpError(
@@ -439,8 +437,7 @@ export class BorrowReturnService {
         base_event: "TICKET_REJECTED",
         event: "YOUR_TICKET_REJECTED",
         brt_id: ticketId,
-        // TO DO : add target route to ticket detail page
-        // target_route: `/request-borrow-ticket/${ticketId}`,
+        target_route: `/home/${ticketId}`,
         upsert: true,
       }),
       notificationsService.dismissNotificationsByTicket({
@@ -567,7 +564,7 @@ export class BorrowReturnService {
         event: NR_EVENT.YOUR_TICKET_RETURNED,
         base_event: BASE_EVENT.TICKET_RETURNED,
         brt_id: ticketId,
-        // target_route: `/requests/${ticketId}`, // TODO: add target route
+        target_route: `/home/${ticketId}`,
       });
     }
 

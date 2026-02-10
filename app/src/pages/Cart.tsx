@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertDialog, type AlertTone } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { Link } from "react-router-dom";
-import api from "../api/axios.js";
 import CartService from "../services/CartService";
+import axios from "axios";
 
 /**
  * Description : หน้า Cart สำหรับจัดการรายการอุปกรณ์ที่ผู้ใช้เลือกยืม
@@ -183,11 +183,9 @@ export const Cart = () => {
   const handleConfirmSubmit = async () => {
     try {
       // ส่งคำร้องตามรายการที่เลือก
-      await Promise.all(
-        selectedItems.map((cartItemId) =>
-          CartService.createBorrowTicket({ cartItemId })
-        )
-      );
+      for (const cartItemId of selectedItems) {
+        await CartService.createBorrowTicket({ cartItemId });
+      }
 
       await loadCart();
       push({ tone: "success", message: "ส่งคำร้องสำเร็จ!" });
@@ -196,7 +194,18 @@ export const Cart = () => {
       setSelectedItems([]);
       closeModal();
     } catch (err) {
-      console.error("ส่งคำร้องไม่สำเร็จ:", err);
+      // console.error("ส่งคำร้องไม่สำเร็จ:", err);
+      if (axios.isAxiosError(err)) {
+        console.error("ส่งคำร้องไม่สำเร็จ (backend):", {
+          status: err.response?.status,
+          data: err.response?.data,
+          url: err.config?.url,
+          method: err.config?.method,
+          requestBody: err.config?.data,
+        });
+      } else {
+        console.error("ส่งคำร้องไม่สำเร็จ:", err);
+      }
       push({ tone: "danger", message: "เกิดข้อผิดพลาดในการส่งคำร้อง" });
     }
   };
@@ -212,12 +221,12 @@ export const Cart = () => {
       if (selectDeleteMode) {
         await Promise.all(
           selectedItems.map((id) =>
-            CartService.deleteCartItem({ cartItemId: id })
-          )
+            CartService.deleteCartItem({ cartItemId: id }),
+          ),
         );
 
         setItems((prev) =>
-          prev.filter((item) => !selectedItems.includes(item.id))
+          prev.filter((item) => !selectedItems.includes(item.id)),
         );
 
         push({
@@ -267,12 +276,14 @@ export const Cart = () => {
     if (item.isBorrow) return;
 
     setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
+      prev.includes(id)
+        ? prev.filter((itemId) => itemId !== id)
+        : [...prev, id],
     );
   };
 
   const selectableItems = items.filter(
-    (item) => item.availability === "พร้อมใช้งาน" && !item.isBorrow
+    (item) => item.availability === "พร้อมใช้งาน" && !item.isBorrow,
   );
   const selectableIds = selectableItems.map((item) => item.id);
 
@@ -307,6 +318,7 @@ export const Cart = () => {
       tone: "danger" as AlertTone,
       confirmText: "ยืนยัน",
       showRing: true,
+      width: 850,
     };
   } else if (modalType === "success") {
     modalProps = {
@@ -368,7 +380,7 @@ export const Cart = () => {
 
               <span
                 className="w-[29px] h-[29px] rounded-[8px] border border-[#BFBFBF] bg-white flex items-center justify-center
-                        transition-colors peer-checked:bg-[#0072FF] peer-checked:border-[#0072FF] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
+                        transition-colors peer-checked:bg-[#000000] peer-checked:border-[#000000] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
               >
                 <Icon
                   icon="rivet-icons:check"
@@ -384,9 +396,9 @@ export const Cart = () => {
             {selectedItemCount > 0 && (
               <button
                 onClick={handleSelectDelete}
-                className="px-[15px] py-[6.4px] w-[114px] h-[46px] bg-[#FF4D4F] text-white rounded-full text-[18px] font-semibold hover:bg-[#D9363E] transition-colors"
+                className="px-[15px] py-[6.4px] w-[167px] h-[46px] bg-[#FF4D4F] text-white rounded-full text-[18px] font-semibold hover:bg-[#D9363E] transition-colors"
               >
-                ลบ
+                ลบคำขอยืม
               </button>
             )}
           </div>
@@ -417,7 +429,7 @@ export const Cart = () => {
                       {/* กล่อง checkbox */}
                       <span
                         className="w-[29px] h-[29px] rounded-[8px] border border-[#BFBFBF] bg-white flex items-center justify-center
-                        transition-colors peer-checked:bg-[#0072FF] peer-checked:border-[#0072FF] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
+                        transition-colors peer-checked:bg-[#000000] peer-checked:border-[#000000] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
                       >
                         <Icon
                           icon="rivet-icons:check"
@@ -459,7 +471,8 @@ export const Cart = () => {
                         <div>หมวดหมู่ : {item.category}</div>
                         <div>แผนก : {item.department}</div>
                         <div>
-                          คงเหลือ : {item.readyQuantity}/{item.maxQuantity} ชิ้น
+                          คงเหลือ : {item.readyQuantity} / {item.maxQuantity}{" "}
+                          ชิ้น
                         </div>
                       </div>
                       <Link
@@ -491,8 +504,8 @@ export const Cart = () => {
                     >
                       <Icon
                         icon="solar:trash-bin-trash-outline"
-                        width="20"
-                        height="20"
+                        width="30"
+                        height="30"
                       />
                     </button>
                   </div>
@@ -528,8 +541,8 @@ export const Cart = () => {
 
             <div className="pt-3 mt-3 shrink-0">
               <div className="font-semibold flex justify-between text-lg mb-4 border-t border-gray-200 pt-3">
-                <span className="text-black">รวม :</span>
-                <span className="text-[#FF4D4F]">{totalItems} ชิ้น</span>
+                <span className="text-[#000000]">รวม :</span>
+                <span className="text-[#000000]">{totalItems} ชิ้น</span>
               </div>
 
               <button
@@ -537,7 +550,7 @@ export const Cart = () => {
                 className="w-full bg-[#40A9FF] text-white py-3 rounded-full text-center text-base font-semibold hover:bg-[#0050B3] transition-colors disabled:bg-gray-400"
                 disabled={selectedItemCount === 0}
               >
-                ส่งคำร้อง ({selectedItemCount})
+                ส่งคำร้อง
               </button>
             </div>
           </div>

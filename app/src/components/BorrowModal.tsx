@@ -1,4 +1,4 @@
-import React from "react";
+
 
 type BorrowModalProps = {
   open: boolean;
@@ -13,11 +13,11 @@ const devices = [
 
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
- {/* ================= LEFT ================= */}
+{/* ================= LEFT ================= */ }
 
 
 
-  {/* ================= LEFT ================= */}
+{/* ================= LEFT ================= */ }
 
 
 export default function BorrowModal({ open, onClose }: BorrowModalProps) {
@@ -56,31 +56,28 @@ export default function BorrowModal({ open, onClose }: BorrowModalProps) {
               <div
                 key={d.id}
                 className={`flex items-center justify-between mb-2 p-3 rounded-xl border
-                ${
-                  d.status === "available"
+                ${d.status === "available"
                     ? "border-green-300"
                     : "border-red-300"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={`w-3 h-3 rounded-full
-                    ${
-                      d.status === "available"
+                    ${d.status === "available"
                         ? "bg-green-500"
                         : "bg-red-500"
-                    }`}
+                      }`}
                   />
                   <span>{d.code}</span>
                 </div>
 
                 <span
                   className={`px-3 py-1 rounded-lg text-sm
-                  ${
-                    d.status === "available"
+                  ${d.status === "available"
                       ? "bg-green-100 text-green-600"
                       : "bg-red-100 text-red-600"
-                  }`}
+                    }`}
                 >
                   {d.status === "available" ? "พร้อมยืม" : "ถูกยืม"}
                 </span>

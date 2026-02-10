@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Icon } from "@iconify/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 
@@ -16,7 +15,6 @@ interface Props {
   options: Option[];
 }
 
-
 export default function Dropdown({
   value,
   onChange,
@@ -26,6 +24,7 @@ export default function Dropdown({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [selectedTime, setSelectedTime] = useState<Option>();
+
   // ปิด dropdown เมื่อคลิกนอก
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -36,6 +35,10 @@ export default function Dropdown({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  useEffect(() => {
+    const found = options.find((time) => time.value === value);
+    setSelectedTime(found);
+  }, [value, options]);
 
   return (
     <div ref={ref} className="relative w-full">
@@ -50,7 +53,7 @@ export default function Dropdown({
         "
       >
         <span className={selectedTime ? "text-gray-900" : "text-gray-400"}>
-          {selectedTime?.label || placeholder}
+          {selectedTime ? selectedTime.label : placeholder}
         </span>
 
         <FontAwesomeIcon
@@ -75,7 +78,7 @@ export default function Dropdown({
                 key={opt.id}
                 onClick={() => {
                   setSelectedTime(opt);
-                  onChange(opt.value); 
+                  onChange(opt.value);
                   setOpen(false);
                 }}
                 className={`

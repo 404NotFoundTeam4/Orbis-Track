@@ -25,9 +25,9 @@ export default function AddInventory() {
           tone: "confirm",
           message: "เพิ่มอุปกรณ์เรียบร้อยแล้ว",
         });
-             setTimeout(() => {
-            window.location.reload();
-          }, 1500); // หน่วง 1.5 วินาที
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500); // หน่วง 1.5 วินาที
       } catch (e) {
         console.log(e);
         push({
@@ -49,9 +49,7 @@ export default function AddInventory() {
           tone: "confirm",
           message: "เพิ่มการอนุมัติเรียบร้อยแล้ว",
         });
-             setTimeout(() => {
-            window.location.reload();
-          }, 1500); // หน่วง 1.5 วินาที
+ // หน่วง 1.5 วินาที
       } catch (e) {
         console.log(e);
         push({
@@ -62,6 +60,11 @@ export default function AddInventory() {
     }
   };
 
+  // ดึงรายชื่ออุปกรณ์ที่มีอยู่แล้วจาก sessionStorage ออกมา
+  const existingDeviceNames = JSON.parse(
+    sessionStorage.getItem("existingDeviceNames") ?? "[]"
+  );
+
   return (
     <div className="p-4">
       <div className="mb-[8px] space-x-[9px]">
@@ -69,7 +72,7 @@ export default function AddInventory() {
         <span className="text-[#858585]">&gt;</span>
         <span className="text-[#000000]">คลังอุปกรณ์</span>
         <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000]">เพิ่มอุปกรณ์ใหม่</span>
+        <span className="text-[#000000]">เพิ่มอุปกรณ์ใหม่</span>
       </div>
 
       {/* ชื่อหน้า */}
@@ -83,6 +86,7 @@ export default function AddInventory() {
         onSubmit={(data) => {
           handleSubmit(data);
         }}
+        existingDeviceNames={existingDeviceNames}
       />
 
       {/* ===== Alert ยืนยัน ===== */}

@@ -35,24 +35,54 @@ export function routes(app: Express) {
 
   api.use("/auth", authMiddleware, fetchMeRouter);
 
-  api.use("/departments", authMiddleware, requireRole([UserRole.ADMIN]), departmentRouter);
+  api.use(
+    "/departments",
+    authMiddleware,
+    requireRole([UserRole.ADMIN]),
+    departmentRouter,
+  );
 
   api.get("/health", (_req, res) => res.json({ ok: true }));
 
-  api.use("/accounts", authMiddleware, requireRole([UserRole.ADMIN]), accountsRouter);
+  api.use(
+    "/accounts",
+    authMiddleware,
+    requireRole([UserRole.ADMIN]),
+    accountsRouter,
+  );
 
   api.use("/roles", authMiddleware, roleRouter);
-  
+
   api.use("/notifications", authMiddleware, notificationsRouter);
-  
-  api.use("/tickets/borrow-return", authMiddleware, borrowReturnRouter);
 
-  api.use("/inventory", authMiddleware, inventoryRouter);
+  api.use(
+    "/tickets/borrow-return",
+    authMiddleware,
+    requireRole([
+      UserRole.ADMIN,
+      UserRole.HEADDEPT,
+      UserRole.HEADSEC,
+      UserRole.STAFF,
+    ]),
+    borrowReturnRouter,
+  );
 
-  api.use("/category", authMiddleware, categoryRouter);
-  
+  api.use(
+    "/inventory",
+    authMiddleware,
+    requireRole([UserRole.ADMIN, UserRole.STAFF]),
+    inventoryRouter,
+  );
+
+  api.use(
+    "/category",
+    authMiddleware,
+    requireRole([UserRole.ADMIN, UserRole.STAFF]),
+    categoryRouter,
+  );
+
   api.use("/borrow/cart", authMiddleware, cartsRouter);
-  
+
   api.use("/user", authMiddleware, usersRouter);
 
   api.use("/borrow", authMiddleware, borrowRouter);

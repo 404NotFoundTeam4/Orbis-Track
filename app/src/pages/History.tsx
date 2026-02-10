@@ -1,6 +1,7 @@
 // src/pages/History.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useParams, useLocation } from "react-router-dom";
 import HistoryBorrowTicket from "../components/HistoryBorrowTicketCard";
 import {
   historyBorrowService,
@@ -64,6 +65,13 @@ const allowedRolesForApprovalHistory = ["ADMIN", "STAFF", "HOD", "HOS"] as const
 export default function History() {
   const didInitializeSearchRef = useRef(false);
   const lastSearchTextRef = useRef<string>("");
+
+  // Get expandId from URL params or location state
+  const { id } = useParams();
+  const location = useLocation();
+  const expandId = id
+    ? parseInt(id)
+    : (location.state as { expandId?: number })?.expandId;
 
   /**
    * Description: handler รับค่าจาก SearchFilter แล้วอัปเดต search + reset pagination
@@ -157,6 +165,9 @@ export default function History() {
     };
   }, [currentPage, pageSizeLimit, searchText, selectedStatus, sortField, sortDirection]);
 
+  // Track if we have a mock item for expandId that shouldn't be overwritten
+  const mockExpandIdRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (activeTabKey !== "borrow") return;
 
@@ -168,7 +179,26 @@ export default function History() {
         const response = await historyBorrowService.getHistoryBorrowTickets(queryParams);
         if (isCancelled) return;
 
-        setTicketItems(response.items);
+        // ถ้ามี mock item สำหรับ expandId ให้รวมเข้าไปด้วย
+        if (mockExpandIdRef.current) {
+          const mockId = mockExpandIdRef.current;
+          // ตรวจสอบว่า mock item อยู่ใน response หรือไม่
+          const existsInResponse = response.items.some((t: HistoryBorrowTicketItem) => t.ticketId === mockId);
+          if (!existsInResponse) {
+            // หา mock item จาก ticketItems ปัจจุบัน
+            setTicketItems(prev => {
+              const mockItem = prev.find(t => t.ticketId === mockId);
+              if (mockItem) {
+                return [mockItem, ...response.items];
+              }
+              return response.items;
+            });
+          } else {
+            setTicketItems(response.items);
+          }
+        } else {
+          setTicketItems(response.items);
+        }
         setTotalPages(response.pagination.totalPages || 1);
       } catch (error) {
         if (isCancelled) return;
@@ -186,6 +216,118 @@ export default function History() {
       isCancelled = true;
     };
   }, [activeTabKey, queryParams]);
+
+  /**
+   * Description: Auto-expand ticket when navigating with expandId from notification/link
+   *              If ticket not in current list, fetch it directly and add to list
+   * Input : expandId (number | undefined)
+   * Output : void (auto-triggers toggleOpen)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const lastExpandedIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    // Debug log
+    console.log('[History] useEffect triggered:', {
+      expandId,
+      isLoadingList,
+      ticketCount: ticketItems.length,
+      ticketIds: ticketItems.map(t => t.ticketId),
+      lastExpandedId: lastExpandedIdRef.current
+    });
+
+    // ต้องมี expandId
+    if (!expandId) return;
+
+    // ถ้ายัง processing expandId เดิมอยู่ ข้าม
+    if (lastExpandedIdRef.current === expandId) {
+      console.log('[History] Already processed this expandId');
+      return;
+    }
+
+    // รอให้โหลด list เสร็จก่อน
+    if (isLoadingList) {
+      console.log('[History] Still loading, waiting...');
+      return;
+    }
+
+    const ticketExists = ticketItems.some((t) => t.ticketId === expandId);
+    console.log('[History] ticketExists:', ticketExists);
+
+    if (ticketExists) {
+      // Ticket อยู่ใน list - expand มัน
+      console.log('[History] Found ticket, expanding:', expandId);
+      lastExpandedIdRef.current = expandId;
+      setExpandedTicketIds((prev) => {
+        const next = new Set(prev);
+        next.add(expandId);
+        return next;
+      });
+      // Load detail if not already loaded
+      if (!ticketDetailByIdMap[expandId]) {
+        setLoadingDetailTicketId(expandId);
+        historyBorrowService.getHistoryBorrowTicketDetail(expandId)
+          .then((detail) => {
+            setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: detail }));
+          })
+          .catch((error) => {
+            console.error(error);
+            setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: undefined }));
+          })
+          .finally(() => {
+            setLoadingDetailTicketId(null);
+          });
+      }
+    } else {
+      // Ticket ไม่อยู่ใน list ปัจจุบัน - fetch โดยตรงและเพิ่มเข้า list
+      console.log('[History] Ticket not in list, fetching directly:', expandId);
+      lastExpandedIdRef.current = expandId;
+      setLoadingDetailTicketId(expandId);
+      historyBorrowService.getHistoryBorrowTicketDetail(expandId)
+        .then((detail) => {
+          console.log('[History] Fetched detail, creating mock item');
+          // สร้าง mock ticket item จาก detail
+          const mockTicketItem: HistoryBorrowTicketItem = {
+            ticketId: detail.ticketId,
+            status: detail.status,
+            requestDateTime: detail.requestDateTime,
+            deviceChildCount: detail.deviceChildCount,
+            requester: {
+              userId: detail.requester.userId,
+              fullName: detail.requester.fullName,
+              employeeCode: detail.requester.employeeCode,
+              department_name: detail.requester.department_name,
+              section_name: detail.requester.section_name,
+            },
+            deviceSummary: {
+              deviceId: detail.device.deviceId,
+              deviceName: detail.device.deviceName,
+              deviceSerialNumber: detail.device.deviceSerialNumber,
+              categoryName: detail.device.categoryName,
+            },
+          };
+          // เพิ่ม mock item ไว้ต้น list และ track ไว้ไม่ให้โดน overwrite
+          mockExpandIdRef.current = expandId;
+          setTicketItems((prev) => {
+            if (prev.some((t) => t.ticketId === expandId)) return prev;
+            return [mockTicketItem, ...prev];
+          });
+          console.log('[History] Mock item added, setting expanded');
+          setTicketDetailByIdMap((prev) => ({ ...prev, [expandId]: detail }));
+          setExpandedTicketIds((prev) => {
+            const next = new Set(prev);
+            next.add(expandId);
+            console.log('[History] expandedTicketIds now:', Array.from(next));
+            return next;
+          });
+        })
+        .catch((error) => {
+          console.error("[History] Failed to fetch ticket for expandId:", error);
+        })
+        .finally(() => {
+          setLoadingDetailTicketId(null);
+        });
+    }
+  }, [expandId, ticketItems, ticketDetailByIdMap, isLoadingList]);
 
   /**
    * Description: จัดการคลิก sort ที่หัวตาราง โดยสลับทิศทางเมื่อคลิกซ้ำคอลัมน์เดิม
@@ -1030,11 +1172,11 @@ export default function History() {
         {activeTabKey === "borrow" && (
           <div className="w-full overflow-x-auto">
             <div
-              className="grid grid-cols-[2.2fr_1fr_1.2fr_1.6fr_1.3fr_1.1fr_44px]
+              className="grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_70px]
                         bg-white border border-[#D9D9D9] font-semibold text-gray-700
-                        rounded-[16px] mb-[10px] h-[61px] items-center gap-3 px-[30px]"
+                        rounded-[16px] mb-[10px] h-[61px] items-center p-4 pl-6"
             >
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 อุปกรณ์
                 <button type="button" onClick={() => onClickSort("deviceName")}>
                   <Icon
@@ -1046,7 +1188,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 จำนวน
                 <button type="button" onClick={() => onClickSort("deviceChildCount")}>
                   <Icon
@@ -1058,7 +1200,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 หมวดหมู่
                 <button type="button" onClick={() => onClickSort("category")}>
                   <Icon
@@ -1070,7 +1212,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 ชื่อผู้ร้องขอ
                 <button type="button" onClick={() => onClickSort("requester")}>
                   <Icon
@@ -1082,7 +1224,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 วันที่ร้องขอ
                 <button type="button" onClick={() => onClickSort("requestDate")}>
                   <Icon
@@ -1094,7 +1236,7 @@ export default function History() {
                 </button>
               </div>
 
-              <div className="py-2 text-left flex items-center">
+              <div className="text-left flex items-center h-full">
                 สถานะ
                 <button type="button" onClick={() => onClickSort("status")}>
                   <Icon
@@ -1104,6 +1246,9 @@ export default function History() {
                     className="ml-1"
                   />
                 </button>
+              </div>
+              <div className="h-full">
+
               </div>
 
               <div className="py-2" />
@@ -1119,7 +1264,7 @@ export default function History() {
                 )}
 
                 {!isLoadingList && ticketItems.length === 0 && (
-                  <div className="px-2 py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
+                  <div className="px-2 py-8 text-sm text-neutral-600"></div>
                 )}
 
                 {!isLoadingList &&
@@ -1149,9 +1294,8 @@ export default function History() {
                   <button
                     type="button"
                     onClick={() => setCurrentPage(1)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                      }`}
                   >
                     1
                   </button>
@@ -1173,11 +1317,10 @@ export default function History() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(totalPages)}
-                      className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                        currentPage === totalPages
-                          ? "border-[#000000] text-[#000000]"
-                          : "border-[#D9D9D9]"
-                      }`}
+                      className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === totalPages
+                        ? "border-[#000000] text-[#000000]"
+                        : "border-[#D9D9D9]"
+                        }`}
                     >
                       {totalPages}
                     </button>
@@ -1247,7 +1390,7 @@ function TabButton({
       className={classNames(
         "h-10 rounded-full border px-5 text-sm font-semibold",
         active
-          ? "border-sky-300 bg-sky-500 text-white"
+          ? "border-sky-300 bg-[#1890FF] text-neutral-50"
           : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
       )}
     >

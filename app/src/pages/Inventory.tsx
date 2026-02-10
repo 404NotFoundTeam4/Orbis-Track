@@ -1,115 +1,3 @@
-// import { useEffect, useState } from "react"
-// import MainDeviceModal from "../components/DeviceModal"
-// import DevicesChilds from "../components/DevicesChilds"
-// import { useToast } from "../components/Toast";
-// import { DeviceService, type DeviceChild, type GetDeviceWithChildsResponse } from "../services/InventoryService";
-// import { useParams } from "react-router-dom";
-
-// const Inventory = () => {
-//   // ดึง parent id จาก URL
-//   const { id } = useParams();
-//   const parentId = Number(id);
-
-//   // เก็บข้อมูลอุปกรณ์แม่
-//   const [parentDevice, setParentDevice] = useState<GetDeviceWithChildsResponse | null>(null);
-//   // เก็บข้อมูลอุปกรณ์ลูก
-//   const [deviceChilds, setDeviceChilds] = useState<DeviceChild[]>([]);
-
-//   // ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
-//   const fetchDevice = async () => {
-//     const device = await DeviceService.getDeviceWithChilds(parentId);
-//     setParentDevice(device); // เก็บข้อมูลอุปกรณ์แม่เข้า state
-//     setDeviceChilds(device?.device_childs ?? []); // เก็บข้อมูลอุปกรณ์ลูกเข้า state
-//   }
-
-//   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
-//   useEffect(() => {
-//     fetchDevice();
-//   }, [parentId]);
-
-//   // เรียกใช้งาน toast
-//   const { push } = useToast();
-
-//   // เพิ่มอุปกรณ์ลูก
-//   const handleAddDeviceChild = async (parentId: number, quantity: number) => {
-//     if (!quantity) {
-//       push({ tone: "warning", message: "กรุณาระบุจำนวนอุปกรณ์!" });
-//       return;
-//     }
-
-//     const payload = { dec_de_id: parentId, quantity };
-//     // เรียกใช้งาน service
-//     await DeviceService.createDeviceChild(payload);
-//     push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" });
-//     await fetchDevice(); // โหลดข้อมูลใหม่
-//   }
-
-//   // ลบอุปกรณ์ลูก
-//   const handleDeleteDeviceChild = async (ids: number[]) => {
-//     await DeviceService.deleteDeviceChild({ dec_id: ids });
-//     push({ tone: "danger", message: "ลบอุปกรณ์สำเร็จ!" });
-//     setDeviceChilds(prev => prev.filter(device => !ids.includes(device.dec_id)));
-//     await fetchDevice(); // โหลดข้อมูลใหม่
-//   };
-
-//   // เปลี่ยนสถานะอุปกรณ์
-//   const handleChangeStatus = (id: number, status: DeviceChild["dec_status"]) => {
-//     setDeviceChilds(prev =>
-//       prev.map(device =>
-//         device.dec_id === id
-//           ? { ...device, dec_status: status }
-//           : device
-//       )
-//     );
-//   };
-
-//   // อัปโหลดไฟล์อุปกรณ์ลูก
-//   const handleUploadFile = async (file?: File) => {
-//     if (!file) return;
-
-//     const formData = new FormData();
-//     formData.append("file", file);
-
-//     try {
-//       // เรียกใช้งาน service
-//       await DeviceService.uploadFileDeviceChild(parentId, formData);
-//       push({ tone: "success", message: "อัปโหลดไฟล์สำเร็จ!" });
-//       await fetchDevice(); // โหลดข้อมูลใหม่
-//     } catch (error) {
-//       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
-//     }
-//   }
-
-//   return (
-//     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
-//       {/* แถบนำทาง */}
-//       <div className="text-[18px] mb-[8px] space-x-[9px]">
-//         <span className="text-[#858585]">การจัดการ</span>
-//         <span className="text-[#858585]">&gt;</span>
-//         <span className="text-[#858585]">คลังอุปกรณ์</span>
-//         <span className="text-[#858585]">&gt;</span>
-//         <span className="text-[#000000]">แก้ไขอุปกรณ์</span>
-//       </div>
-//       {/* ชื่อหน้า */}
-//       <div className="flex items-center gap-[14px] mb-[21px]">
-//         <h1 className="text-[36px] font-semibold">แก้ไขอุปกรณ์</h1>
-//       </div>
-//       <MainDeviceModal
-//         mode="edit"
-//         defaultValues={parentDevice}
-//         onSubmit={() => console.log("Submit Device")}
-//       />
-//       <DevicesChilds
-//         devicesChilds={deviceChilds}
-//         onAdd={handleAddDeviceChild}
-//         onUpload={handleUploadFile}
-//         onDelete={handleDeleteDeviceChild}
-//         onChangeStatus={handleChangeStatus}
-//       />
-//     </div>
-//   )
-// }
-
 // export default Inventory
 /**
  * Page: Inventory.
@@ -119,6 +7,7 @@
  * Author: Worrawat Namwat (Wave) 66160372
  */
 import "../styles/css/User.css";
+import "../styles/css/icon.css";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/Button.js";
@@ -128,8 +17,11 @@ import { Icon } from "@iconify/react";
 import { useToast } from "../components/Toast.js";
 import { AlertDialog } from "../components/AlertDialog.js";
 import api from "../api/axios.js";
+import getImageUrl from "../services/GetImage";
 
-const API_BASE_URL = "http://localhost:4041/api/v1";
+
+
+
 // type อุปกรณ์ย่อย
 type DeviceChild = {
   dec_id: number;
@@ -222,13 +114,24 @@ export const Inventory = () => {
 
   //States: Pagination
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const pageSize = 10;
 
   // เปลี่ยนหน้า
   const navigate = useNavigate();
 
   //Handler: Modal Actions
-  const handleOpenAddModal = () => navigate("/inventory/add");
+  const handleOpenAddModal = () => {
+    // ดึงชื่อรายการอุปกรณ์ทั้งหมด
+    const existingDeviceNames = items.map(item => item.name);
+
+    // เก็บชื่ออุปกรณ์ทั้งหมดไว้ใน sessionStorage
+    sessionStorage.setItem(
+      "existingDeviceNames",
+      JSON.stringify(existingDeviceNames)
+    )
+
+    navigate("/inventory/add");
+  }
 
   const handleOpenEditModal = (item: Equipment) => {
     navigate(`/inventory/edit/${item.id}`, {
@@ -236,7 +139,7 @@ export const Inventory = () => {
         device: item,
       },
     });
-    
+
   };
 
   //Handlers: Delete Logic
@@ -251,9 +154,9 @@ export const Inventory = () => {
     const idsToDelete = deleteId ? [deleteId] : selectedItems;
     try {
       await Promise.all(
-        idsToDelete.map((id) => api.delete(`${API_BASE_URL}/inventory/${id}`))
+        idsToDelete.map((id) => api.delete(`/inventory/${id}`))
       );
-      toast.push({ message: "ลบข้อมูลสำเร็จ", tone: "success" });
+      toast.push({ message: "ลบอุปกรณ์เสร็จสิ้น!", tone: "danger" });
       setSelectedItems([]);
       setDeleteId(null);
       setIsAlertOpen(false);
@@ -270,7 +173,7 @@ export const Inventory = () => {
     const fetchEquipment = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get(`${API_BASE_URL}/inventory`);
+        const response = await api.get(`/inventory`);
         const rawData = response.data.data || response.data || [];
 
         const formattedData: Equipment[] = rawData.map((item: any) => {
@@ -285,9 +188,7 @@ export const Inventory = () => {
             name: item.de_name || "ไม่มีชื่อ",
             description: item.de_description || "",
             location: item.de_location || "-",
-            image: item.de_images
-              ? `${API_BASE_URL}/${item.de_images.replace(/\\/g, "/")}`
-              : null,
+            image: getImageUrl(item.de_images?.replace(/\\/g, "/")),
             department: item.department_name || "-",
             category: item.category_name || "-",
             sub_section: item.sub_section_name || "-",
@@ -329,10 +230,10 @@ export const Inventory = () => {
     return isNaN(d.getTime())
       ? "-"
       : d.toLocaleDateString("th-TH", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        });
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
   };
 
   //จัดการ Sort
@@ -494,7 +395,7 @@ export const Inventory = () => {
             <div className="flex items-center gap-[10px] pl-[35px] h-full">
               <input
                 type="checkbox"
-                className="custom-checkbox-inventory focus:ring-blue-500 cursor-pointer shrink-0"
+                className="custom-checkbox-inventory "
                 checked={isAllSelected}
                 onChange={handleSelectAll}
                 disabled={isLoading}
@@ -620,105 +521,107 @@ export const Inventory = () => {
           </div>
 
           {/* 2. Body (ตารางข้อมูล) */}
-          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px]">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <Icon
-                  icon="eos-icons:loading"
-                  width="40"
-                  className="animate-spin text-blue-500 mb-2"
-                />
-                กำลังโหลด...
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <Icon
-                  icon="tabler:database-off"
-                  width="48"
-                  className="mb-2 opacity-50"
-                />
-                ไม่พบข้อมูลอุปกรณ์
-              </div>
-            ) : (
-              pageRows.map((item) => (
-                <div
-                  key={item.id}
-                  className="grid items-center hover:bg-gray-50 text-[16px] min-h-[70px]"
-                  style={{ gridTemplateColumns: gridCols }}
-                >
-                  {/* --- รวม Checkbox และ ชื่ออุปกรณ์ --- */}
-                  <div className="flex items-center gap-[10px] pl-[35px] h-full overflow-hidden">
-                    <input
-                      type="checkbox"
-                      className="custom-checkbox-inventory focus:ring-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                      checked={selectedItems.includes(item.id)}
-                      onChange={() => handleSelectItem(item.id)}
-                      disabled={item.status_type === "BORROWED"}
-                    />
-                    <div
-                      className="font-medium text-gray-900 truncate"
-                      title={item.name}
-                    >
-                      {item.name}
-                    </div>
-                  </div>
-                  <div
-                    className="py-2 px-4 truncate text-gray-600"
-                    title={item.department}
-                  >
-                    {item.department}
-                  </div>
-                  <div
-                    className="py-2 px-4 truncate text-gray-600"
-                    title={item.category}
-                  >
-                    {item.category}
-                  </div>
-                  <div
-                    className="py-2 px-4 truncate text-gray-600"
-                    title={item.sub_section}
-                  >
-                    {item.sub_section}
-                  </div>
-                  <div className="py-2 px-4 text-gray-900 font-medium pl-8">
-                    {item.quantity}
-                  </div>
-                  <div className="py-2 px-4 text-gray-600 flex items-center justify-center">
-                    {FormatThaiDate(item.last_edited)}
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-[25px] py-2 px-4">
-                    {/* Status */}
-                    {item.status_type === "BORROWED" ? (
-                      <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
-                        มีการยืมอยู่
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#868686] text-[#868686] rounded-full text-base">
-                        ไม่มีการยืม
-                      </span>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleOpenEditModal(item)}
-                        className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
-                        title="แก้ไข"
-                      >
-                        <Icon
-                          icon="prime:pen-to-square"
-                          width="30"
-                          height="30"
-                        />
-                      </button>
-                    </div>
-                  </div>
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] h-[620px] flex flex-col">
+            <div className="flex-1 overflow-auto">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                  <Icon
+                    icon="eos-icons:loading"
+                    width="40"
+                    className="animate-spin text-blue-500 mb-2"
+                  />
+                  กำลังโหลด...
                 </div>
-              ))
-            )}
-            <div className="flex flex-wrap items-center justify-between p-4 ">
+              ) : filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                  <Icon
+                    icon="tabler:database-off"
+                    width="48"
+                    className="mb-2 opacity-50"
+                  />
+                  ไม่พบข้อมูลอุปกรณ์
+                </div>
+              ) : (
+                pageRows.map((item) => (
+                  <div
+                    key={item.id}
+                    className="grid items-center hover:bg-gray-50 text-[16px] min-h-[70px]"
+                    style={{ gridTemplateColumns: gridCols }}
+                  >
+                    {/* --- รวม Checkbox และ ชื่ออุปกรณ์ --- */}
+                    <div className="flex items-center gap-[10px] pl-[35px] h-full overflow-hidden">
+                      <input
+                        type="checkbox"
+                        className="custom-checkbox-inventory focus:ring-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                        checked={selectedItems.includes(item.id)}
+                        onChange={() => handleSelectItem(item.id)}
+                        disabled={item.status_type === "BORROWED"}
+                      />
+                      <div
+                        className=" text-black truncate"
+                        title={item.name}
+                      >
+                        {item.name}
+                      </div>
+                    </div>
+                    <div
+                      className="py-2 px-4 truncate text-black -ml-2"
+                      title={item.department}
+                    >
+                      {item.department}
+                    </div>
+                    <div
+                      className="py-2 px-4 truncate text-black -ml-3"
+                      title={item.category}
+                    >
+                      {item.category}
+                    </div>
+                    <div
+                      className="py-2 px-4 truncate text-black -ml-4"
+                      title={item.sub_section}
+                    >
+                      {item.sub_section}
+                    </div>
+                    <div className="py-2 px-4 text-black font-medium -ml-4">
+                      {item.quantity}
+                    </div>
+                    <div className="py-2 px-4 text-black flex items-center justify-center">
+                      {FormatThaiDate(item.last_edited)}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-[25px] py-2 px-4">
+                      {/* Status */}
+                      {item.status_type === "BORROWED" ? (
+                        <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#73D13D] text-[#73D13D] rounded-full text-base">
+                          มีการยืมอยู่
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center w-[120px] h-[35px] border border-[#868686] text-[#868686] rounded-full text-base">
+                          ไม่มีการยืม
+                        </span>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          className="text-[#1890FF] hover:text-[#1890FF] cursor-pointer"
+                          title="แก้ไข"
+                        >
+                          <Icon
+                            icon="prime:pen-to-square"
+                            width="30"
+                            height="30"
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-between px-[35px] py-4 mt-auto ">
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleDeleteSelected}
@@ -751,11 +654,10 @@ export const Inventory = () => {
                 <button
                   type="button"
                   onClick={() => setPage(1)}
-                  className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                    page === 1
-                      ? "border-[#000000] text-[#000000]"
-                      : "border-[#D9D9D9]"
-                  }`}
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1
+                    ? "border-[#000000] text-[#000000]"
+                    : "border-[#D9D9D9]"
+                    }`}
                 >
                   1
                 </button>
@@ -777,11 +679,10 @@ export const Inventory = () => {
                   <button
                     type="button"
                     onClick={() => setPage(totalPages)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      page === totalPages
-                        ? "border-[#000000] text-[#000000]"
-                        : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages
+                      ? "border-[#000000] text-[#000000]"
+                      : "border-[#D9D9D9]"
+                      }`}
                   >
                     {totalPages}
                   </button>

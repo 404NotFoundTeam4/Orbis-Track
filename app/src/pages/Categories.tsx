@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import Button from "../components/Button";
 import SearchFilter from "../components/SearchFilter";
@@ -184,7 +184,7 @@ export const Categories = () => {
         {/* Table หมวดหมู่*/}
         <div className=" bg-[#FFFFFF] mb-[16px]">
           {/* Header row (หมวดหมู่ , จัดการ) */}
-          <div className="flex items-center justify-between px-[16px]  h-[61px] border border-[#D9D9D9] rounded-[16px] ">
+          <div className="flex items-center justify-between px-[35px]  h-[61px] border border-[#D9D9D9] rounded-[16px] ">
             <div className="flex items-center gap-2 font-semibold">
               <span>หมวดหมู่</span>
               <button type="button" onClick={handleSortName}>
@@ -201,11 +201,11 @@ export const Categories = () => {
 
         <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] ">
           {/* Row */}
-          <div className="px-[16px] py-[10px] h-[520px] overflow-y-auto ">
+          <div className="px-[35px] py-[10px] h-[520px] overflow-y-auto ">
             {loading ? (
               <div className="py-6 text-[#858585]">กำลังโหลด...</div>
             ) : rows.length === 0 ? (
-              <div className="py-6 text-[#858585]">ไม่พบข้อมูล</div>
+              <div className="py-6 text-[#858585]"></div>
             ) : (
               rows.map((c) => (
                 <div
@@ -223,7 +223,7 @@ export const Categories = () => {
                       }}
                       className="group w-[40px] h-[40px] flex items-center justify-center rounded-[12px]
   text-[#1890FF]   transition-colors duration-150
-  hover:bg[#40A9FF] hover:text-white"
+  hover:bg-[#40A9FF] hover:text-white"
                       title="แก้ไข"
                     >
                       <Icon icon="prime:pen-to-square" width="22" height="22" />

@@ -96,7 +96,7 @@ const DeviceManageModal = ({
   }>({
     title: "",
     description: "",
-    onConfirm: async () => {},
+    onConfirm: async () => { },
     onCancel: undefined,
     tone: "success",
   });
@@ -201,7 +201,7 @@ const DeviceManageModal = ({
    * Output     : void - เปิด AlertDialog และจัดการ state เมื่อยืนยัน
    * Author     : Pakkapon Chomchoey (Tonnam) 66160080
    */
-  const handleDeleteClick = (index: number) => {
+  const _handleDeleteClick = (index: number) => {
     const device = localDevices[index];
 
     setConfirmData({

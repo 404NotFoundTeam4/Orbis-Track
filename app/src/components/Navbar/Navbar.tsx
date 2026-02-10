@@ -11,7 +11,7 @@
  * Author: Panyapon Phollert (Ton) 66160086
  */
 
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Icon } from "@iconify/react";
@@ -23,6 +23,7 @@ import { type menuItem, Images, Icons } from "./MenuConfig";
 import { getBasePath } from "../../constants/rolePath";
 import { useNotifications } from "../../hooks/useNotifications";
 import { NotificationList } from "../Notification";
+import { NavLink } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -39,6 +40,71 @@ const Navbar = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [active, setActive] = useState<"bell" | "cart" | null>(null);
+  const location = useLocation();
+
+  // Sync sidebar activeMenu with URL when navigating (e.g., from notification)
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+
+    // Main menus
+    if (path.includes('/home')) {
+      setActiveMenu('home');
+      setOpenMenu(null);
+      setDropdownOpen(false);
+    } else if (path.includes('/history')) {
+      setActiveMenu('history');
+      setOpenMenu(null);
+      setDropdownOpen(false);
+    } else if (path.includes('/list-devices') && !path.includes('/cart')) {
+      setActiveMenu('devices');
+      setOpenMenu(null);
+      setDropdownOpen(false);
+    } else if (path.includes('/repair')) {
+      setActiveMenu('repair');
+      setOpenMenu(null);
+      setDropdownOpen(false);
+    } else if (path.includes('/dashboard')) {
+      setActiveMenu('dashboard');
+      setOpenMenu(null);
+      setDropdownOpen(false);
+    } else if (path.includes('/setting')) {
+      setActiveMenu('setting');
+      setOpenMenu(null);
+      setDropdownOpen(false);
+    }
+    // Submenus under "จัดการ" (management_admin)
+    else if (path.includes('/request-borrow-ticket')) {
+      setActiveMenu('management_requests'); // For HOD/HOS/STAFF
+      setActiveSubMenu('คำร้อง');
+      setOpenMenu('จัดการ');
+      setDropdownOpen(true);
+    } else if (path.includes('/account-management')) {
+      setActiveMenu('management_admin');
+      setActiveSubMenu('บัญชีผู้ใช้');
+      setOpenMenu('จัดการ');
+      setDropdownOpen(true);
+    } else if (path.includes('/inventory')) {
+      setActiveMenu('management_admin');
+      setActiveSubMenu('คลังอุปกรณ์');
+      setOpenMenu('จัดการ');
+      setDropdownOpen(true);
+    } else if (path.includes('/chatbot')) {
+      setActiveMenu('management_admin');
+      setActiveSubMenu('แชทบอท');
+      setOpenMenu('จัดการ');
+      setDropdownOpen(true);
+    } else if (path.includes('/departments-management')) {
+      setActiveMenu('management_admin');
+      setActiveSubMenu('แผนกและฝ่ายย่อย');
+      setOpenMenu('จัดการ');
+      setDropdownOpen(true);
+    } else if (path.includes('/category')) {
+      setActiveMenu('management_admin');
+      setActiveSubMenu('หมวดหมู่อุปกรณ์');
+      setOpenMenu('จัดการ');
+      setDropdownOpen(true);
+    }
+  }, [location.pathname]);
   const [User, setUser] = useState(() => {
     const data = localStorage.getItem("User") || sessionStorage.getItem("User");
     return data ? JSON.parse(data) : null;
@@ -166,7 +232,7 @@ const Navbar = () => {
   };
 
   return (
-    <div className="flex flex-col background w-full min-h-screen">
+    <div className="flex flex-col bg-[#FAFAFA] w-full min-h-screen">
       <div className="fixed  w-full bg-[linear-gradient(to_right,#ffffff_0%,#ffffff_75%,#e7f7ff_90%,#dcf3ff_100%)] text-white px-4  h-[100px] flex justify-between items-center  top-0 left-0 z-50">
         <div className="flex gap-15 justify-center z-51">
           <div className="px-7.5">
@@ -232,7 +298,7 @@ const Navbar = () => {
           </button>
 
           <div className="flex gap-5 items-centerx border-l border-l-[#D9D9D9] ml-[21px] pl-11  pr-1 ">
-            <div className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
+            <NavLink to="profile" className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
               <img
                 src={getImageUrl(user.us_images)}
                 alt=""
@@ -246,7 +312,7 @@ const Navbar = () => {
                   {UserRoleTH[user.us_role as UserRole]}
                 </div>
               </div>
-            </div>
+            </NavLink>
           </div>
         </div>
       </div>

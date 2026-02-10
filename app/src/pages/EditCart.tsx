@@ -14,7 +14,7 @@
  * Author: Salsabeela Sa-e (San) 66160349
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate,useParams  } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import BorrowDeviceModal from "../components/BorrowDeviceModal";
 import CartService from "../services/CartService";
 import {
@@ -71,11 +71,12 @@ export interface BorrowFormData {
 }
 
 const EditCart = () => {
-  
+
   const navigate = useNavigate();
   const { push } = useToast();
   const { id } = useParams()
-  const ctiId = id
+  // const ctiId = id
+  const ctiId = id ? Number(id) : null;
   const [cartItem, setCartItem] = useState<CartItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [availableDevices, setAvailableDevices] = useState<GetAvailable[]>([]);
@@ -178,7 +179,7 @@ const EditCart = () => {
      *
      * Author: Salsabeela Sa-e (San) 66160349
      */
-    
+
     const loadCartItem = async () => {
       try {
         const res = await CartService.getCartItems();
@@ -193,12 +194,12 @@ const EditCart = () => {
         const sectionRawClean = cleanBaseName(rawSection);
         const sectionWithoutDept = deptClean
           ? sectionRawClean.replace(
-              new RegExp(
-                deptClean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-                "gu"
-              ),
-              ""
-            )
+            new RegExp(
+              deptClean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+              "gu"
+            ),
+            ""
+          )
           : sectionRawClean;
 
         const mapped: CartItem = {
@@ -226,8 +227,8 @@ const EditCart = () => {
         setCartItem(mapped);
         const decIds = item?.device_childs?.length
           ? item.device_childs
-              .map((dec) => dec?.dec_id)
-              .filter((id): id is number => typeof id === "number")
+            .map((dec) => dec?.dec_id)
+            .filter((id): id is number => typeof id === "number")
           : [];
 
         setSelectedDeviceIds(decIds);
@@ -240,9 +241,9 @@ const EditCart = () => {
           );
           const accessory = deviceDetail.accessories
             ? deviceDetail.accessories.map((acc: any) => ({
-                name: acc.acc_name,
-                qty: acc.acc_quantity,
-              }))
+              name: acc.acc_name,
+              qty: acc.acc_quantity,
+            }))
             : [];
 
           setAccessories(accessory);
@@ -268,10 +269,10 @@ const EditCart = () => {
         setLoading(false);
       }
     };
-   
+
     loadCartItem();
   }, [ctiId, navigate]);
-  
+
   //ฟังก์ชันเดียวสำหรับ auto-remove ที่ถูก filter ออก
   const refreshAndFilter = async (
     payload: { startISO: string; endISO: string },
@@ -456,7 +457,7 @@ const EditCart = () => {
       console.error("refresh available devices error:", err);
     }
   };
-
+  console.log(cartItem)
   return (
     <div className="w-full min-h-screen flex flex-row p-4 gap-6">
       <div className="flex-1">
@@ -479,10 +480,11 @@ const EditCart = () => {
           <span className="text-[#000000] font-medium">แก้ไขรายละเอียด</span>
         </div>
         <h1 className="text-2xl font-semibold mb-[24px]">แก้ไขรายละเอียด</h1>
-
+        
         <BorrowDeviceModal
           mode="edit-detail"
           equipment={{
+            deviceId :ctiId,
             name: cartItem.name,
             serialNumber: cartItem.code,
             category: cartItem.category,
@@ -526,14 +528,15 @@ const EditCart = () => {
           description={
             enterRemovedSerials.length > 0
               ? `ระบบได้ยกเลิกการเลือกอุปกรณ์ย่อย Serial: ${enterRemovedSerials.join(
-                  ", "
-                )} เนื่องจากช่วงเวลาที่เลือกไม่พร้อมใช้งาน`
+                ", "
+              )} เนื่องจากช่วงเวลาที่เลือกไม่พร้อมใช้งาน`
               : undefined
           }
           confirmText="รับทราบ"
           cancelText="ปิด"
-          actionsMode = "single"
+          actionsMode="single"
           onConfirm={() => setEnterAlertOpen(false)}
+          width={800}
         />
       </div>
     </div>

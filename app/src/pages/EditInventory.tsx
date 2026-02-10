@@ -1,30 +1,31 @@
 import { useEffect, useState } from "react";
 import MainDeviceModal from "../components/DeviceModal";
-import DevicesChilds from "../components/DevicesChilds";
+import DevicesChilds, { type DraftDevice } from "../components/DevicesChilds";
 import { useToast } from "../components/Toast";
-
 import {
   DeviceService,
+  type CreateDeviceChildPayload,
   type DeviceChild,
   type GetDeviceWithChildsResponse,
 } from "../services/InventoryService";
-import { useLocation,useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
+import type { CreateApprovalFlowPayload } from "../services/InventoryService";
+
 const EditInventory = () => {
-   const { id } = useParams();
-  const location = useLocation();
+  const { id } = useParams();
 
   // รับจาก navigate
 
 
 
 
- 
+
   // ดึง url ปัจจุบัน
-  
+
   // ข้อมูลอุปกรณ์แม่ที่ส่งมา
-  
-  
+
+
   // รหัสอุปกรณ์แม่
   const parentId = id
   console.log(id)
@@ -36,37 +37,39 @@ const EditInventory = () => {
   const [deviceChilds, setDeviceChilds] = useState<DeviceChild[]>([]);
 
   // ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
+  // ดึงชื่ออุปกรณ์ที่มีอยู่แล้วจาก sessionStorage
+  const existingDeviceNames: string[] = JSON.parse(
+    sessionStorage.getItem("existingDeviceNames") ?? "[]"
+  );
+
   const fetchDevice = async () => {
-    const device = await DeviceService.getDeviceWithChilds(parentId);
+    const device = await DeviceService.getDeviceWithChilds(Number(parentId));
     setParentDevice(device); // เก็บข้อมูลอุปกรณ์แม่เข้า state
     setDeviceChilds(device?.device_childs ?? []); // เก็บข้อมูลอุปกรณ์ลูกเข้า state
   };
 
-  const userString =
-    sessionStorage.getItem("User") || localStorage.getItem("User");
+  // เก็บข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
+  const [lastAssetCode, setLastAssetCode] = useState<string | null>(null);
 
-  const user = userString ? JSON.parse(userString) : null;
+  /**
+  * Description: ฟังก์ชันสำหรับดึงข้อมูล asset code ล่าสุดของอุปกรณ์ลูก
+  * Input     : -
+  * Output    : asset code ล่าสุดของอุปกรณ์ลูก
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const fetchLastAssetCode = async () => {
+    const lastAsset = await DeviceService.getLastAssetCode(Number(parentId));
+    setLastAssetCode(lastAsset.dec_asset_code);
+  }
+
   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
     fetchDevice();
+    fetchLastAssetCode();
   }, [parentId]);
 
   // เรียกใช้งาน toast
   const { push } = useToast();
-
-  // เพิ่มอุปกรณ์ลูก
-  const handleAddDeviceChild = async (quantity: number) => {
-    if (!quantity) {
-      push({ tone: "warning", message: "กรุณาระบุจำนวนอุปกรณ์!" });
-      return;
-    }
-
-    const payload = { dec_de_id: parentId, quantity };
-    // เรียกใช้งาน service
-    await DeviceService.createDeviceChild(payload);
-    push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" });
-    await fetchDevice(); // โหลดข้อมูลใหม่
-  };
 
   // ลบอุปกรณ์ลูก
   const handleDeleteDeviceChild = async (ids: number[]) => {
@@ -101,27 +104,29 @@ const EditInventory = () => {
 
     try {
       // เรียกใช้งาน service
-      await DeviceService.uploadFileDeviceChild(parentId, formData);
+      await DeviceService.uploadFileDeviceChild(Number(parentId), formData);
       push({ tone: "success", message: "อัปโหลดไฟล์สำเร็จ!" });
       await fetchDevice(); // โหลดข้อมูลใหม่
-    } catch (error) {
+    } catch {
       push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
     }
   };
+
   const handleSubmit = async (formData: FormData) => {
     const data = formData.get("data") as string | null;
     if (data === "devices") {
+      const isEdit = Boolean(parentId);
       // ใช้ก่อน
 
       // ลบทิ้งก่อนส่ง backend
       formData.delete("data");
 
       try {
-        const res = useInventorys.updateDevicesdata(parentId, formData);
+        await useInventorys.updateDevicesdata(Number(parentId), formData);
 
         push({
           tone: "confirm",
-          message: "เพิ่มอุปกรณ์เรียบร้อยแล้ว",
+          message: isEdit ? "แก้ไขข้อมูลอุปกรณ์ในคลังแล้ว!" : "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!",
         });
         setTimeout(() => {
           window.location.reload();
@@ -130,20 +135,20 @@ const EditInventory = () => {
         console.log(e);
         push({
           tone: "danger",
-          message: "ไม่สามารถเพิ่มอุปกรณ์",
+          message: isEdit ? "เกิดข้อผิดพลาดในการแก้ไขอุปกรณ์" : "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์",
         });
       }
     } else if (data === "approve") {
       // ลบทิ้งก่อนส่ง backend
       formData.delete("data");
       console.log("app")
-      const payload = {
-        af_name: formData.get("af_name"),
+      const payload: CreateApprovalFlowPayload = {
+        af_name: String(formData.get("af_name") ?? ""),
         af_us_id: 1,
-        approvalflowsstep: formData.get("approvalflowsstep"),
+        approvalflowsstep: JSON.parse(String(formData.get("approvalflowsstep") ?? "[]")),
       };
       try {
-        const res = await useInventorys.createApprovedata(payload);
+        await useInventorys.createApprovedata(payload);
         push({
           tone: "confirm",
           message: "เพิ่มการอนุมัติเรียบร้อยแล้ว",
@@ -160,6 +165,34 @@ const EditInventory = () => {
       }
     }
   };
+
+  /**
+   * Description: ฟังก์ชันสำหรับบันทึกอุปกรณ์ลูกที่อยู่ในสถานะ draft
+   * Input     : drafts - รายการอุปกรณ์ลูกแบบ draft ที่ผู้ใช้เพิ่ม
+   * Output    : 
+   *             - สร้างอุปกรณ์ลูกในฐานข้อมูล
+   *             - แสดง toast ผลการทำงาน
+   *             - โหลดข้อมูลอุปกรณ์ใหม่
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  const handleSaveDraft = async (drafts: DraftDevice[]) => {
+    // แปลงข้อมูล draft ให้เป็นรูปแบบ payload
+    const payload: CreateDeviceChildPayload[] = drafts.map((draft) => ({
+      dec_de_id: Number(parentId),
+      dec_serial_number: draft.dec_serial_number?.trim() || null,
+      dec_asset_code: draft.dec_asset_code,
+      dec_status: draft.dec_status
+    }));
+
+    try {
+      await DeviceService.createDeviceChild(payload); // เรียกใช้งาน API
+      push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" }); // แสดง toast
+      await fetchDevice(); // โหลดข้อมูลใหม่
+    } catch (error) {
+      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" })
+    }
+  }
+
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}
@@ -180,13 +213,16 @@ const EditInventory = () => {
         onSubmit={(data) => {
           handleSubmit(data);
         }}
+        existingDeviceNames={existingDeviceNames}
       />
       <DevicesChilds
+        parentCode={parentDevice?.de_serial_number}
         devicesChilds={deviceChilds}
-        onAdd={handleAddDeviceChild}
+        onSaveDraft={handleSaveDraft}
         onUpload={handleUploadFile}
         onDelete={handleDeleteDeviceChild}
         onChangeStatus={handleChangeStatus}
+        lastAssetCode={lastAssetCode}
       />
     </div>
   );

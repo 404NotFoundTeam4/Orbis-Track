@@ -1,11 +1,12 @@
 import * as Popover from "@radix-ui/react-popover"
-import { useState } from "react"
+import { Icon } from "@iconify/react"
 
 // โครงสร้าง props ที่ต้องส่งมาเมื่อเรียกใช้งาน
 interface TimePickerFieldProps {
     label?: string; // หัวข้อ
     value: string; // เวลา
     width?: number;
+    placeholder?: string;
     onChange: (time: string) => void; // เปลี่ยนเวลา
 }
 
@@ -14,9 +15,11 @@ const TimePickerField = ({
     label = "เวลา",
     value,
     width = 137,
+    placeholder = "ชั่วโมง : นาที",
     onChange
 }: TimePickerFieldProps) => {
     const hours = [
+        "08:00", "08:30",
         "09:00", "09:30",
         "10:00", "10:30",
         "11:00", "11:30",
@@ -25,11 +28,20 @@ const TimePickerField = ({
         "14:00", "14:30",
         "15:00", "15:30",
         "16:00", "16:30",
-        "17:00"
+        "17:00", "17:30",
+        "18:00"
     ]; // เวลาที่สามารถเลือกได้ภายใน Popup
 
+    // แปลงเวลาเป็น AM หรือ PM
+    const formatToAMPM = (time: string) => {
+        const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+        const period = hour >= 12 ? "PM" : "AM"; // แปลงชั่วโมงเป็น AM หรือ PM
+        const hour12 = (hour % 12 === 0 ? 12 : hour % 12).toString().padStart(2, "0");
+        return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
+    };
+
     return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 z-10">
             {/* หัวข้อ */}
             <label className="font-medium">{label}</label>
             {/* เวลา */}
@@ -38,18 +50,25 @@ const TimePickerField = ({
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        className={`border border-[#A2A2A2] rounded-[16px] h-[46px] text-center text-[16px] ${value ? "text-black" : "text-[#CDCDCD]"}`}
+                        className={`group flex items-center justify-between border border-[#D8D8D8] rounded-[16px] h-[46px] text-left px-5 text-[16px] ${value ? "text-black" : "text-[#CDCDCD]"}`}
                         style={{ width: width }}
                     >
-                        {value || "ขั่วโมง : นาที"}
+                        {value ? formatToAMPM(value) : placeholder}
+
+                        <Icon
+                            icon="mdi:chevron-down"
+                            className="text-[#A2A2A2] transition-transform duration-200 group-data-[state=open]:rotate-180"
+                            width={22}
+                            height={22}
+                        />
                     </button>
                 </Popover.Trigger>
                 {/* Popup เลือกเวลา */}
                 <Popover.Content
                     sideOffset={6} // ระยะห่างจากปุ่มที่กด (trigger)
-                    className="bg-white rounded-2xl shadow-xl p-4 flex flex-col gap-2 w-[137px]"
+                    className="bg-white rounded-2xl shadow-xl flex flex-col gap-2 w-[239px]"
                 >
-                    <div className="flex flex-col gap-2 max-h-[200px] overflow-y-scroll">
+                    <div className="flex flex-col max-h-[322px] overflow-y-scroll">
                         {
                             // ลูปแสดงเวลา
                             hours.map((hour) => (
@@ -57,13 +76,13 @@ const TimePickerField = ({
                                     <button
                                         type="button"
                                         onClick={() => onChange(hour)}
-                                        className={`py-2 rounded-xl text-[18px]
+                                        className={`px-5 py-3 rounded-xl text-left text-[16px]
                                     ${value === hour
-                                                ? "bg-[#40A9FF] text-white"
-                                                : "hover:bg-blue-100"
+                                                ? "bg-[#F6F6F6]"
+                                                : "hover:bg-[#F6F6F6]"
                                             }
                 `               }>
-                                        {hour}
+                                        {formatToAMPM(hour)}
                                     </button>
                                 </Popover.Close>
                             ))}

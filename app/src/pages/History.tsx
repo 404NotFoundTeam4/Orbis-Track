@@ -13,6 +13,19 @@ import {
 } from "../services/HistoryBorrowService.ts";
 import DropDown from "../components/DropDown";
 import SearchFilter from "../components/SearchFilter";
+import { currentUserService, type CurrentUserProfile } from "../services/CurrentUserService";
+import {
+  approvalHistoryService,
+  type HistoryApprovalDetail,
+  type HistoryApprovalItem,
+  type ApprovalDecision,
+  type GetHistoryApprovalListParams,
+  type HistoryApprovalSortField,
+  type SortDirection,
+} from "../services/HistoryApprovalService.ts";
+
+import ApprovalHistoryDetailModal from "../components/HistoryApprovalDetailModal";
+
 
 /**
  * Description: คีย์ของแท็บในหน้า History
@@ -41,6 +54,7 @@ type StatusOption = {
   label: string;
   value: "" | HistoryBorrowStatus;
 };
+const allowedRolesForApprovalHistory = ["ADMIN", "STAFF", "HOD", "HOS"] as const;
 
 /**
  * Description: หน้า History (รวม 3 แท็บ) โดยแท็บหลักที่ใช้งานคือ “ประวัติยืม-คืน”
@@ -118,10 +132,25 @@ export default function History() {
 
   const [loadingDetailTicketId, setLoadingDetailTicketId] = useState<number | null>(null);
 
+
+
+  /**
+   * Description: reset state เมื่อสลับแท็บ
+   * - borrow: reset page และการ expand การ์ด
+   * - approve: reset page ของ approval ด้วย
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
   useEffect(() => {
     setCurrentPage(1);
     setExpandedTicketIds(new Set());
+
+    setApprovalCurrentPage(1);
+    setApprovalSearchText("");
+    setSelectedApprovalDecision("");
+    setSelectedApprovalDecisionOption(approvalDecisionOptions[0]);
   }, [activeTabKey]);
+
 
   const queryParams: GetHistoryBorrowListParams = useMemo(() => {
     const trimmedSearchText = searchText.trim();
@@ -142,13 +171,13 @@ export default function History() {
   useEffect(() => {
     if (activeTabKey !== "borrow") return;
 
-    let cancelled = false;
+    let isCancelled = false;
 
     const loadHistoryBorrowList = async () => {
       try {
         setIsLoadingList(true);
         const response = await historyBorrowService.getHistoryBorrowTickets(queryParams);
-        if (cancelled) return;
+        if (isCancelled) return;
 
         // ถ้ามี mock item สำหรับ expandId ให้รวมเข้าไปด้วย
         if (mockExpandIdRef.current) {
@@ -172,19 +201,19 @@ export default function History() {
         }
         setTotalPages(response.pagination.totalPages || 1);
       } catch (error) {
-        if (cancelled) return;
+        if (isCancelled) return;
         console.error(error);
         setTicketItems([]);
         setTotalPages(1);
       } finally {
-        if (!cancelled) setIsLoadingList(false);
+        if (!isCancelled) setIsLoadingList(false);
       }
     };
 
     loadHistoryBorrowList();
 
     return () => {
-      cancelled = true;
+      isCancelled = true;
     };
   }, [activeTabKey, queryParams]);
 
@@ -367,6 +396,422 @@ export default function History() {
     return "bx:sort-down";
   };
 
+
+  /**
+   * Description: เก็บข้อมูลผู้ใช้ปัจจุบันขั้นต่ำที่จำเป็นสำหรับการเช็คสิทธิ์การแสดงผลแท็บ "ประวัติการอนุมัติ"
+   * - ดึงผ่าน currentUserService.getCurrentUserProfile() (ซึ่ง normalize แล้ว เช่น userRole)
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const [currentUserProfile, setCurrentUserProfile] =
+    useState<CurrentUserProfile | null>(null);
+
+  /**
+   * Description: สถานะการโหลดข้อมูลผู้ใช้ปัจจุบัน
+   * - ใช้กัน UI กระพริบ และกันเงื่อนไขเช็คสิทธิ์ผิดก่อนโหลดเสร็จ
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const [isLoadingCurrentUserProfile, setIsLoadingCurrentUserProfile] =
+    useState<boolean>(true);
+
+  /**
+   * Description: ดึงข้อมูลผู้ใช้ปัจจุบันเมื่อเข้าหน้า History
+   * - เรียกผ่าน currentUserService เพื่อให้ได้ข้อมูลที่ normalize แล้ว (เช่น userRole)
+   * - ใช้สำหรับตรวจสิทธิ์การแสดงผลแท็บ "ประวัติการอนุมัติ"
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      try {
+        setIsLoadingCurrentUserProfile(true);
+
+        const profile = await currentUserService.getCurrentUserProfile();
+        setCurrentUserProfile(profile);
+
+        console.log("[History] currentUserProfile =", profile);
+
+      } catch (error) {
+        console.log("[History] fetch current user profile failed", error);
+        setCurrentUserProfile(null);
+      } finally {
+        setIsLoadingCurrentUserProfile(false);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, []);
+
+  /**
+   * Description: เงื่อนไขการมองเห็นแท็บ "ประวัติการอนุมัติ"
+   * - อนุญาตเฉพาะ Role: ADMIN, STAFF, HOD, HOS
+   * - ใช้ field userRole (มาจาก currentUserService ที่ map จาก us_role)
+   * - ทำ normalize role ด้วย trim + toUpperCase เพื่อกันค่ามีช่องว่าง/ตัวพิมพ์เล็ก
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const canViewApprovalHistoryTab = useMemo(() => {
+    const normalizedUserRole = String(currentUserProfile?.userRole ?? "")
+      .trim()
+      .toUpperCase();
+
+    return allowedRolesForApprovalHistory.includes(normalizedUserRole as any);
+  }, [currentUserProfile]);
+
+  /**
+   * Description: กันกรณีผู้ใช้ไม่มีสิทธิ์ แต่ activeTabKey ถูกตั้งเป็น "approve"
+   * - เช่น restore state / มีโค้ดอื่นตั้งค่า / ผู้ใช้เข้าหน้านี้จากสถานะเดิม
+   * - ถ้าไม่มีสิทธิ์ ให้เด้งกลับไปแท็บ "borrow"
+   * - รอให้โหลดข้อมูลผู้ใช้เสร็จก่อน (isLoadingCurrentUserProfile) เพื่อไม่ให้เด้งผิดตอนยังไม่รู้ role
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  useEffect(() => {
+    if (
+      !isLoadingCurrentUserProfile &&
+      !canViewApprovalHistoryTab &&
+      activeTabKey === "approve"
+    ) {
+      setActiveTabKey("borrow");
+    }
+  }, [isLoadingCurrentUserProfile, canViewApprovalHistoryTab, activeTabKey]);
+
+  
+  // History-Approval
+  /**
+   * Description: รวม className หลายค่าเข้าด้วยกัน โดยตัดค่าที่เป็น falsy ออก
+   * Input : classNameParts (Array<string | false | undefined | null>)
+   * Output : string (className)
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  function mergeClassNames(...classNameParts: Array<string | false | undefined | null>) {
+    return classNameParts.filter(Boolean).join(" ");
+  }
+
+  /**
+   * Description: ฟอร์แมตวันเวลาให้เป็นรูปแบบภาษาไทย (ใกล้เคียง mock)
+   * Input : isoString (string)
+   * Output : string
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  function formatThaiDateTime(isoString: string): string {
+    if (!isoString) return "-";
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return new Intl.DateTimeFormat("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  }
+
+  /**
+   * Description: option สำหรับ filter ผลการอนุมัติในแท็บ "ประวัติการอนุมัติ"
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  type ApprovalDecisionOption = {
+    id: "ALL" | ApprovalDecision;
+    label: string;
+    value: "" | ApprovalDecision;
+  };
+
+  const approvalDecisionOptions: readonly ApprovalDecisionOption[] = [
+    { id: "ALL", label: "ทั้งหมด", value: "" },
+    { id: "APPROVED", label: "อนุมัติคำขอ", value: "APPROVED" },
+    { id: "REJECTED", label: "ปฏิเสธคำขอ", value: "REJECTED" },
+  ] as const;
+
+  /**
+   * Description: state สำหรับ list "ประวัติการอนุมัติ"
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const [approvalSearchText, setApprovalSearchText] = useState<string>("");
+  const [selectedApprovalDecision, setSelectedApprovalDecision] = useState<ApprovalDecision | "">("");
+  const [selectedApprovalDecisionOption, setSelectedApprovalDecisionOption] =
+    useState<ApprovalDecisionOption>(approvalDecisionOptions[0]);
+
+  const [isLoadingApprovalList, setIsLoadingApprovalList] = useState<boolean>(false);
+  const [approvalItems, setApprovalItems] = useState<HistoryApprovalItem[]>([]);
+  const [approvalCurrentPage, setApprovalCurrentPage] = useState<number>(1);
+  const [approvalTotalPages, setApprovalTotalPages] = useState<number>(1);
+  const approvalPageSizeLimit = 5;
+
+
+
+    /**
+   * Description: state สำหรับ sort ของแท็บ "ประวัติการอนุมัติ"
+   * - sortField: ฟิลด์ที่ใช้ sort
+   * - sortDirection: ทิศทางการ sort
+   * - หมายเหตุ: categoryName จะ sort ฝั่งหน้า (in-memory) เพราะ backend ยังไม่รับ sortField นี้
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  type ApprovalSortFieldUI = HistoryApprovalSortField | "categoryName";
+
+  const [approvalSortField, setApprovalSortField] =
+    useState<ApprovalSortFieldUI>("actionDateTime");
+  const [approvalSortDirection, setApprovalSortDirection] =
+    useState<SortDirection>("desc");
+
+  /**
+   * Description: คลิกหัวตารางเพื่อ sort (ตรรกะเหมือนประวัติยืม-คืน)
+   * - คลิกคอลัมน์ใหม่: เปลี่ยน field และตั้ง direction เริ่มต้นเป็น "asc" (เพื่อให้ icon เปลี่ยนทันที)
+   * - คลิกคอลัมน์เดิม: สลับ asc/desc
+   * - reset หน้าเป็น 1 เพื่อไม่ให้ pagination เพี้ยน
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const onClickApprovalSort = (field: ApprovalSortFieldUI) => {
+    if (approvalSortField !== field) {
+      setApprovalSortField(field);
+      setApprovalSortDirection("asc"); // เหมือน borrow: เปลี่ยน field แล้วเริ่ม asc
+      setApprovalCurrentPage(1);
+      return;
+    }
+
+    setApprovalSortDirection((prevDir) => (prevDir === "asc" ? "desc" : "asc"));
+    setApprovalCurrentPage(1);
+  };
+
+  /**
+   * Description: icon สำหรับแสดงสถานะ sort ในหัวตาราง
+   * - ใช้ helper เดียวกับ borrow (getSortIcon)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const getApprovalSortIcon = (field: ApprovalSortFieldUI) => {
+    return getSortIcon(String(approvalSortField), String(field), approvalSortDirection);
+  };
+
+
+  /**
+   * Description: state สำหรับ Modal รายละเอียด "ประวัติการอนุมัติ"
+   * - selectedApprovalTicketId: เก็บ ticketId ของรายการที่ผู้ใช้กด "รายละเอียด"
+   * - ใช้ร่วมกับ useEffect เพื่อ trigger โหลด detail เมื่อ id เปลี่ยน
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const [isApprovalDetailModalOpen, setIsApprovalDetailModalOpen] = useState<boolean>(false);
+  const [selectedApprovalTicketId, setSelectedApprovalTicketId] = useState<number | null>(null);
+  const [isLoadingApprovalDetail, setIsLoadingApprovalDetail] = useState<boolean>(false);
+  const [approvalDetail, setApprovalDetail] = useState<HistoryApprovalDetail | null>(null);
+
+  /**
+   * Description: handler ค้นหาในแท็บ "ประวัติการอนุมัติ"
+   * - เปลี่ยน search แล้ว reset หน้าเป็น 1
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const handleApprovalSearchChange = ({ search }: { search: string }) => {
+    const normalizedSearchText = (search ?? "").trim();
+    setApprovalSearchText(normalizedSearchText);
+    setApprovalCurrentPage(1);
+  };
+
+    /**
+     * Description: query params สำหรับเรียก list "ประวัติการอนุมัติ"
+     * - ส่งเป็น action ให้ตรงกับ backend (APPROVED/REJECTED)
+     * - ส่ง sortField/sortDirection ให้ backend เฉพาะฟิลด์ที่ backend รองรับ
+     * - ถ้าเลือก sort "categoryName" จะไม่ส่งไป backend (แล้วค่อย sort ฝั่งหน้า)
+     *
+     * Author: Chanwit Muangma (Boom) 66160224
+     */
+    const approvalQueryParams: GetHistoryApprovalListParams = useMemo(() => {
+      const trimmedSearchText = approvalSearchText.trim();
+
+      /**
+       * Description: backend ยังไม่รองรับ sort categoryName
+       * Author: Chanwit Muangma (Boom) 66160224
+       */
+      const backendSortableField =
+        approvalSortField === "categoryName" ? undefined : approvalSortField;
+
+      return {
+        page: approvalCurrentPage,
+        limit: approvalPageSizeLimit,
+        search: trimmedSearchText ? trimmedSearchText : undefined,
+
+        // สำคัญ: ใช้ชื่อ action ให้ตรงกับ backend
+        action: selectedApprovalDecision || undefined,
+
+        /**
+         * Description: ส่ง sort ให้ backend เฉพาะ field ที่รองรับ
+         * Author: Chanwit Muangma (Boom) 66160224
+         */
+        sortField: backendSortableField,
+        sortDirection: backendSortableField ? approvalSortDirection : undefined,
+      };
+    }, [
+      approvalCurrentPage,
+      approvalPageSizeLimit,
+      approvalSearchText,
+      selectedApprovalDecision,
+      approvalSortField,
+      approvalSortDirection,
+    ]);
+
+  /**
+   * Description: โหลด list "ประวัติการอนุมัติ" เมื่ออยู่แท็บ approve และมีสิทธิ์
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  useEffect(() => {
+    if (activeTabKey !== "approve") return;
+    if (!canViewApprovalHistoryTab) return;
+
+    let isCancelled = false;
+
+    const loadApprovalHistoryList = async () => {
+      try {
+        setIsLoadingApprovalList(true);
+
+        console.log("[History][Approve] approvalQueryParams =", approvalQueryParams);
+
+        const response = await approvalHistoryService.getHistoryApprovalList(approvalQueryParams);
+        if (isCancelled) return;
+
+        console.log("[History][Approve] list response =", response);
+
+        setApprovalItems(Array.isArray(response.items) ? response.items : []);
+        setApprovalTotalPages(response.pagination?.totalPages ? Number(response.pagination.totalPages) : 1);
+      } catch (error) {
+        if (isCancelled) return;
+        console.error("[History][Approve] load list failed", error);
+        setApprovalItems([]);
+        setApprovalTotalPages(1);
+      } finally {
+        if (!isCancelled) setIsLoadingApprovalList(false);
+      }
+    };
+
+    loadApprovalHistoryList();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeTabKey, canViewApprovalHistoryTab, approvalQueryParams]);
+
+    /**
+     * Description: รายการสำหรับ render ตาราง (รองรับ sort categoryName ฝั่งหน้า)
+     * - ถ้าไม่ได้ sort categoryName จะใช้ approvalItems เดิม
+     *
+     * Author: Chanwit Muangma (Boom) 66160224
+     */
+    const approvalItemsForRender = useMemo(() => {
+      if (approvalSortField !== "categoryName") return approvalItems;
+
+      const copiedItems = [...approvalItems];
+
+      copiedItems.sort((leftItem, rightItem) => {
+        const leftValue = leftItem.device?.categoryName ?? "";
+        const rightValue = rightItem.device?.categoryName ?? "";
+
+        return approvalSortDirection === "asc"
+          ? leftValue.localeCompare(rightValue)
+          : rightValue.localeCompare(leftValue);
+      });
+
+      return copiedItems;
+    }, [approvalItems, approvalSortField, approvalSortDirection]);
+
+
+  
+
+  /**
+   * Description: เปิด Modal และโหลด detail "ประวัติการอนุมัติ" ตาม ticketId
+   * - backend detail ใช้ path /history-approval/{ticketId}
+   * - เปิด modal ก่อน แล้วค่อยโหลดข้อมูลเพื่อให้ UX คล่อง
+   *
+   * Input : ticketId (number)
+   * Output : Promise<void>
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const openApprovalDetailModal = async (ticketId: number): Promise<void> => {
+    setIsApprovalDetailModalOpen(true);
+
+    // เก็บ ticketId ที่เลือก (ใช้เพื่อ debug/ต่อยอดได้ แม้ตอนนี้ไม่ได้ใช้ render)
+    setSelectedApprovalTicketId(ticketId);
+    setApprovalDetail(null);
+
+    try {
+      setIsLoadingApprovalDetail(true);
+
+      // เรียก service ด้วย ticketId
+      const detailResponse = await approvalHistoryService.getHistoryApprovalDetail(ticketId);
+      setApprovalDetail(detailResponse);
+    } catch (error) {
+      console.error("[History][Approve] load detail failed", error);
+      setApprovalDetail(null);
+    } finally {
+      setIsLoadingApprovalDetail(false);
+    }
+  };
+
+  /**
+   * Description: โหลด detail เมื่อ Modal เปิดและมี selectedApprovalTicketId
+   * - แยก logic โหลดข้อมูลออกจาก handler เพื่อให้อ่านง่าย และใช้ state ได้จริง
+   * - กัน race condition ด้วย flag cancelled
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  useEffect(() => {
+    if (!isApprovalDetailModalOpen) return;
+    if (!selectedApprovalTicketId) return;
+
+    let isCancelled = false;
+
+    const loadApprovalDetail = async () => {
+      try {
+        setIsLoadingApprovalDetail(true);
+
+        const detailResponse =
+          await approvalHistoryService.getHistoryApprovalDetail(selectedApprovalTicketId);
+
+        if (isCancelled) return;
+        setApprovalDetail(detailResponse);
+      } catch (error) {
+        if (isCancelled) return;
+        console.error(error);
+        setApprovalDetail(null);
+      } finally {
+        if (!isCancelled) setIsLoadingApprovalDetail(false);
+      }
+    };
+
+    loadApprovalDetail();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isApprovalDetailModalOpen, selectedApprovalTicketId]);
+
+  /**
+   * Description: ปิด Modal รายละเอียด
+   * - reset state ที่เกี่ยวข้องเพื่อกันข้อมูลค้าง
+   *
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const closeApprovalDetailModal = (): void => {
+    setIsApprovalDetailModalOpen(false);
+    setSelectedApprovalTicketId(null);
+    setApprovalDetail(null);
+  };
+
+
+  
+
+  
+
+  
+
+
+
+
   return (
     <div className="mx-auto w-full px-[20px] py-[20px]">
       <div className="text-sm text-neutral-500">ดูประวัติ</div>
@@ -375,49 +820,353 @@ export default function History() {
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <TabButton active={activeTabKey === "borrow"} onClick={() => setActiveTabKey("borrow")}>
-          ประวัติยืม-คืน
-        </TabButton>
+      <TabButton
+        active={activeTabKey === "borrow"}
+        onClick={() => setActiveTabKey("borrow")}
+      >
+        ประวัติยืม-คืน
+      </TabButton>
 
-        <TabButton active={activeTabKey === "repair"} onClick={() => setActiveTabKey("repair")}>
-          ประวัติการแจ้งซ่อม
-        </TabButton>
+      <TabButton
+        active={activeTabKey === "repair"}
+        onClick={() => setActiveTabKey("repair")}
+      >
+        ประวัติการแจ้งซ่อม
+      </TabButton>
 
-        <TabButton active={activeTabKey === "approve"} onClick={() => setActiveTabKey("approve")}>
+      {/* 
+        Description: แสดงแท็บ "ประวัติการอนุมัติ" เฉพาะ role ที่ได้รับอนุญาต
+        - กันการ render ระหว่างโหลด role ด้วย isLoadingCurrentUserProfile
+        Author: Chanwit Muangma (Boom) 66160224
+      */}
+      {!isLoadingCurrentUserProfile && canViewApprovalHistoryTab && (
+        <TabButton
+          active={activeTabKey === "approve"}
+          onClick={() => setActiveTabKey("approve")}
+        >
           ประวัติการอนุมัติ
         </TabButton>
-      </div>
-
+      )}
+    </div>
       <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center">
+        {/* 
+          Description: Search + Dropdown เปลี่ยนตามแท็บ
+          - borrow ใช้ handleSearchChange + statusOptions
+          - approve ใช้ handleApprovalSearchChange + approvalDecisionOptions
+          Author: Chanwit Muangma (Boom) 66160224
+        */}
         <div className="relative flex-1">
-          <SearchFilter onChange={handleSearchChange} />
+          {activeTabKey === "borrow" && <SearchFilter onChange={handleSearchChange} />}
+          {activeTabKey === "approve" && <SearchFilter onChange={handleApprovalSearchChange} />}
+          {activeTabKey === "repair" && <SearchFilter onChange={() => {}} />}
         </div>
 
         <div className="md:ml-auto">
-          <DropDown
-            items={statusOptions as any}
-            value={selectedStatusOption as any}
-            onChange={(item: StatusOption) => {
-              setSelectedStatusOption(item);
+          {activeTabKey === "borrow" && (
+            <DropDown
+              items={statusOptions as any}
+              value={selectedStatusOption as any}
+              onChange={(item: StatusOption) => {
+                setSelectedStatusOption(item);
 
-              const nextStatusValue = item.value || "";
-              setSelectedStatus(nextStatusValue as HistoryBorrowStatus | "");
+                const nextStatusValue = item.value || "";
+                setSelectedStatus(nextStatusValue as HistoryBorrowStatus | "");
 
-              setCurrentPage(1);
-              setExpandedTicketIds(new Set());
-            }}
-            placeholder="สถานะ"
-            searchable={false}
-            dropdownHeight={240}
-          />
+                setCurrentPage(1);
+                setExpandedTicketIds(new Set());
+              }}
+              placeholder="สถานะ"
+              searchable={false}
+              dropdownHeight={240}
+            />
+          )}
+
+          {activeTabKey === "approve" && (
+            <DropDown
+              items={approvalDecisionOptions as any}
+              value={selectedApprovalDecisionOption as any}
+              onChange={(item: ApprovalDecisionOption) => {
+                /**
+                 * Description: เปลี่ยน filter ผลการอนุมัติ แล้ว reset หน้าเป็น 1
+                 * Author: Chanwit Muangma (Boom) 66160224
+                 */
+                setSelectedApprovalDecisionOption(item);
+
+                const nextDecisionValue = item.value || "";
+                setSelectedApprovalDecision(nextDecisionValue as ApprovalDecision | "");
+
+                setApprovalCurrentPage(1);
+              }}
+              placeholder="ทั้งหมด"
+              searchable={false}
+              dropdownHeight={200}
+            />
+          )}
+
+          {activeTabKey === "repair" && (
+            <DropDown
+              items={[{ id: "ALL", label: "ทั้งหมด", value: "" }] as any}
+              value={{ id: "ALL", label: "ทั้งหมด", value: "" } as any}
+              onChange={() => {}}
+              placeholder="ทั้งหมด"
+              searchable={false}
+              dropdownHeight={120}
+            />
+          )}
         </div>
       </div>
 
       <div className="mt-4">
-        {activeTabKey !== "borrow" && (
+        {activeTabKey === "repair" && (
           <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
             หน้านี้ยังไม่ถูกพัฒนา (เว้นไว้ก่อน)
           </div>
+        )}
+
+        {activeTabKey === "approve" && (
+          isLoadingCurrentUserProfile ? (
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
+              กำลังตรวจสอบสิทธิ์...
+            </div>
+          ) : canViewApprovalHistoryTab ? (
+             
+            // Header ตาราง
+            <div className="w-full overflow-x-auto">
+              <div
+                className="grid grid-cols-[2.2fr_1.3fr_1.6fr_1.3fr_80px]
+                          bg-white border border-[#D9D9D9] font-semibold text-gray-700
+                          rounded-[16px] mb-[10px] h-[61px] items-center gap-3 px-[30px]"
+              >
+                <button
+                  type="button"
+                  onClick={() => onClickApprovalSort("actionDateTime")}
+                  className="py-2 text-left flex items-center gap-2"
+                >
+                  วันที่-เวลา
+                  <Icon
+                    icon={getApprovalSortIcon("actionDateTime")}
+                    width="24"
+                    height="24"
+                    className="ml-1 text-neutral-700"
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onClickApprovalSort("requester")}
+                  className="py-2 text-left flex items-center gap-2"
+                >
+                  ผู้ส่งคำขอ
+                  <Icon icon={getApprovalSortIcon("requester")} 
+                  width="24"
+                  height="24"
+                  className="text-[18px] text-neutral-700" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onClickApprovalSort("deviceName")}
+                  className="py-2 text-left flex items-center gap-2"
+                >
+                  อุปกรณ์
+                  <Icon icon={getApprovalSortIcon("deviceName")} 
+                  width="24"
+                  height="24"
+                  className="text-[18px] text-neutral-700" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onClickApprovalSort("categoryName")}
+                  className="py-2 text-left flex items-center gap-2"
+                >
+                  หมวดหมู่
+                  <Icon icon={getApprovalSortIcon("categoryName")} 
+                  width="24"
+                  height="24"
+                  className="text-[18px] text-neutral-700" />
+                </button>
+                <div className="py-2" />
+              </div>
+
+              <div className="bg-white border border-[#D9D9D9] rounded-[16px]">
+                {/* ===== loading/empty state ===== */}
+                {isLoadingApprovalList && (
+                  <div className="flex items-center gap-2 px-[30px] py-6 text-sm text-neutral-600">
+                    <Icon icon="mdi:loading" className="animate-spin text-lg" />
+                    กำลังโหลดข้อมูล...
+                  </div>
+                )}
+
+                {!isLoadingApprovalList && approvalItemsForRender.length === 0 && (
+                  <div className="px-[30px] py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
+                )}
+
+                {/* ===== rows ===== */}
+                {!isLoadingApprovalList && approvalItemsForRender.map((approvalItem) => {
+                  const isRejected = approvalItem.decision === "REJECTED";
+                  const decisionLabel = isRejected ? "ปฏิเสธคำขอ" : "อนุมัติคำขอ";
+                  const decisionIcon = isRejected ? "mdi:close" : "mdi:check";
+                  const decisionIconContainerClassName = isRejected
+                    ? "bg-white text-red-600 border border-red-600"
+                    : "bg-white text-green-600 border border-green-600";
+
+
+                  const deviceName = approvalItem.device?.deviceName ?? "-";
+                  const deviceSerialNumber = approvalItem.device?.deviceSerialNumber ?? "-";
+                  const rowKey = `${approvalItem.ticketId}-${approvalItem.actionDateTime}`;
+
+                  return (
+                    <div
+                      key={rowKey}
+                      className="grid grid-cols-[2.2fr_1.3fr_1.6fr_1.3fr_80px]
+                                items-center gap-3 px-[30px] py-5"
+                    >
+                      {/* วันที่-เวลา (แสดงผลการอนุมัติ + เวลา ตามภาพ) */}
+                      <div className="flex items-start gap-3">
+                        <div className={mergeClassNames(
+                          "mt-0.5 flex h-9 w-9 items-center justify-center rounded-full",
+                          decisionIconContainerClassName
+                        )}>
+                          <Icon icon={decisionIcon} className="text-xl" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className={mergeClassNames(
+                            "font-semibold",
+                            isRejected ? "text-red-600" : "text-green-600"
+                          )}>
+                            {decisionLabel}
+                          </div>
+                          <div className="text-xs text-neutral-500">
+                            {formatThaiDateTime(approvalItem.actionDateTime)} น.
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ผู้ส่งคำขอ */}
+                      <div className="min-w-0">
+                        <div className="truncate font-medium text-neutral-900">
+                          {approvalItem.requester.fullName}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {approvalItem.requester.employeeCode ?? "-"}
+                        </div>
+                      </div>
+                      
+                      {/* อุปกรณ์ */}
+                      <div className="min-w-0">
+                        <div className="truncate font-medium text-neutral-900">
+                          {deviceName}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          รหัส : {deviceSerialNumber}
+                        </div>
+                      </div>
+
+                      {/* ผู้ดำเนินการ */}
+                      <div className="min-w-0">
+                        <div className="truncate font-medium text-neutral-900">
+                          {approvalItem.device?.categoryName ?? "-"}
+                        </div>
+
+                    
+                      </div>
+
+                      {/* รายละเอียด */}
+                      <div className="flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => openApprovalDetailModal(approvalItem.ticketId)}
+                          className="text-sm font-semibold text-sky-500 hover:underline"
+                        >
+                          รายละเอียด
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* ===== pagination (โครงเดียวกับ borrow แต่ใช้ state ของ approve) ===== */}
+                <div className="mt-auto mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setApprovalCurrentPage((page) => Math.max(1, page - 1))}
+                      disabled={approvalCurrentPage === 1}
+                      className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+                    >
+                      {"<"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setApprovalCurrentPage(1)}
+                      className={mergeClassNames(
+                        "h-8 min-w-8 px-2 rounded border text-sm",
+                        approvalCurrentPage === 1
+                          ? "border-[#000000] text-[#000000]"
+                          : "border-[#D9D9D9]"
+                      )}
+                    >
+                      1
+                    </button>
+
+                    {approvalCurrentPage > 2 && <span className="px-1 text-gray-400">…</span>}
+
+                    {approvalCurrentPage > 1 && approvalCurrentPage < approvalTotalPages && (
+                      <button
+                        type="button"
+                        className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                      >
+                        {approvalCurrentPage}
+                      </button>
+                    )}
+
+                    {approvalCurrentPage < approvalTotalPages - 1 && (
+                      <span className="px-1 text-gray-400">…</span>
+                    )}
+
+                    {approvalTotalPages > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setApprovalCurrentPage(approvalTotalPages)}
+                        className={mergeClassNames(
+                          "h-8 min-w-8 px-2 rounded border text-sm",
+                          approvalCurrentPage === approvalTotalPages
+                            ? "border-[#000000] text-[#000000]"
+                            : "border-[#D9D9D9]"
+                        )}
+                      >
+                        {approvalTotalPages}
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setApprovalCurrentPage((page) => Math.min(approvalTotalPages, page + 1))}
+                      disabled={approvalCurrentPage === approvalTotalPages}
+                      className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+                    >
+                      {">"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {/* ===== Modal รายละเอียด  ===== */}
+              <ApprovalHistoryDetailModal
+                isOpen={isApprovalDetailModalOpen}
+                isLoading={isLoadingApprovalDetail}
+                detail={approvalDetail}
+                onClose={closeApprovalDetailModal}
+              />
+            </div>       
+
+          ) : (
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
+              คุณไม่มีสิทธิ์เข้าถึงหน้านี้
+            </div>
+          )
         )}
 
         {activeTabKey === "borrow" && (
@@ -613,6 +1362,7 @@ export default function History() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

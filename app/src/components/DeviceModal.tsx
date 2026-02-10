@@ -117,7 +117,7 @@ const MainDeviceModal = ({
   mode,
   defaultValues,
   onSubmit,
-  existingDeviceNames = []
+  existingDeviceNames = [],
 }: MainDeviceModalProps) => {
   // สำหรับเปลี่ยนหน้า
   const navigate = useNavigate();
@@ -181,7 +181,7 @@ const MainDeviceModal = ({
     fetchDataApprove();
     fetchDataDevices();
   }, []);
-  
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; // เลือกเฉพาะไฟล์แรกที่อัปโหลด
     if (!file) return;
@@ -271,7 +271,16 @@ const MainDeviceModal = ({
   const removeAccessory = (id: number) => {
     setAccessories((prev) => prev.filter((item) => item.id !== id));
   };
-
+  /**
+   * ============================================================
+   * Modal เพิ่มลำดับอนุมัติ 
+   * ------------------------------------------------------------
+   * ใช้จัดการ state และ logic ที่เกี่ยวข้องกับ modal
+   * สำหรับเพิ่มลำดับการอนุมัติ
+   *
+   * Author: ปัญญพนต์ ผลเลิศ (66160086)
+   * ============================================================
+   */
   /*========================== Modal เพิ่มลำดับอนุมัติ ========================== */
   // modal สำหรับจัดการลำดับการอนุมัติ
   const [isApproverModalOpen, setIsApproverModalOpen] = useState(false);
@@ -296,8 +305,25 @@ const MainDeviceModal = ({
       setApproveErrors({});
     }
   }, [isApproverModalOpen]);
-
   /*========================== func เพิ่ม-ลบ  เพิ่มลำดับอนุมัติ ========================== */
+
+  /**
+ * ============================================================
+ * Func: เพิ่มกลุ่มผู้อนุมัติ 
+ * ------------------------------------------------------------
+ * เพิ่มกลุ่มผู้อนุมัติเข้าไปใน flow
+ * - ป้องกันการเพิ่มซ้ำ (เช็คจาก label)
+ * - ล้าง error เมื่อมีการเลือกผู้อนุมัติแล้ว
+ *
+ * Input:
+ * - item: object (ข้อมูลกลุ่มผู้อนุมัติ)
+ *
+ * Output:
+ * - approverGroupFlow (state) ถูกอัปเดต
+ *
+ * Author: ปัญญพนต์ ผลเลิศ (66160086)
+ * ============================================================
+ */
   const handleApproverGroup = (item: any) => {
     setApproverGroupFlow((prev: any) =>
       prev.some((v: any) => v.label === item.label) ? prev : [...prev, item],
@@ -305,6 +331,21 @@ const MainDeviceModal = ({
     // ล้าง error ผู้อนุมัติ ตอนเลือก
     setApproveErrors((prev) => ({ ...prev, approvers: undefined }));
   };
+  /**
+ * ============================================================
+ * Func: ลบกลุ่มผู้อนุมัติ 
+ * ------------------------------------------------------------
+ * ลบกลุ่มผู้อนุมัติออกจาก flow ตาม label
+ *
+ * Input:
+ * - value: string (label ของกลุ่มผู้อนุมัติ)
+ *
+ * Output:
+ * - approverGroupFlow (state) ถูกอัปเดต
+ *
+ * Author: ปัญญพนต์ ผลเลิศ (66160086)
+ * ============================================================
+ */
   const handleDeleteApproverGroup = (value: string) => {
     setApproverGroupFlow((prev) => prev.filter((item) => item.label !== value));
   };
@@ -324,18 +365,50 @@ const MainDeviceModal = ({
   /*========================== func สำหรับลากและย้ายตำแหน่งการอนุมัติ ========================== */
   const dragItemIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
-
+  /**
+ * เริ่มลาก item
+ *
+ * Input:
+ * - e: DragEvent
+ * - index: number
+ *
+ * Output:
+ * - เก็บ index ที่กำลังลาก
+ * 
+ * Author: ปัญญพนต์ ผลเลิศ (66160086)
+ */
   const handleDragStart = (e: React.DragEvent, index: number) => {
     dragItemIndex.current = index;
     e.dataTransfer.effectAllowed = "move";
   };
-
+  /**
+ * ลากผ่านตำแหน่ง step อื่น
+ *
+ * Input:
+ * - e: DragEvent
+ * - index: number
+ *
+ * Output:
+ * - เก็บ index ที่จะวาง
+ * 
+ * Author: ปัญญพนต์ ผลเลิศ (66160086)
+ */
   const handleDragOverStep = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     dragOverIndex.current = index;
     e.dataTransfer.dropEffect = "move";
   };
-
+  /**
+ * วาง item และสลับตำแหน่ง
+ *
+ * Input:
+ * - e: DragEvent
+ *
+ * Output:
+ * - approverGroupFlow ถูกจัดเรียงใหม่
+ * 
+ * Author: ปัญญพนต์ ผลเลิศ (66160086)
+ */
   const handleDropStep = (e: React.DragEvent) => {
     e.preventDefault();
 
@@ -362,6 +435,21 @@ const MainDeviceModal = ({
   };
 
   /*========================== func แสดงข้อมูล User เกี่ยวกับกับการอนุมัติ ========================== */
+  /**
+ * ============================================================
+ * Func: ดึงข้อมูลผู้ใช้งานตามกลุ่มการอนุมัติ
+ * ------------------------------------------------------------
+ * แยกประเภทกลุ่มผู้อนุมัติจาก label แล้วดึง user ที่เกี่ยวข้อง
+ *
+ * Input:
+ * - item: { value: number; label: string }
+ *
+ * Output:
+ * - users: User[]
+ *
+ * Author: ปัญญพนต์ ผลเลิศ
+ * ============================================================
+ */
   const getUsersByLabel = (item: { value: number; label: string }) => {
     // เจ้าหน้าที่คลัง ไป staff
     if (item.label.includes("เจ้าหน้าที่คลัง")) {
@@ -370,12 +458,15 @@ const MainDeviceModal = ({
     // หัวหน้า + !ฝ่ายย่อย ไป sections
     if (item.label.includes("แผนก") && !item.label.includes("ฝ่ายย่อย")) {
       return (
-        departmentsApprove.find((dept) => dept.dept_id === item.value)?.users ?? []
+        departmentsApprove.find((dept) => dept.dept_id === item.value)?.users ??
+        []
       );
     }
     // หัวหน้า + ฝ่ายย่อย ไป sections
     if (item.label.includes("ฝ่ายย่อย")) {
-      return sectionsApprove.find((sec) => sec.sec_id === item.value)?.users ?? [];
+      return (
+        sectionsApprove.find((sec) => sec.sec_id === item.value)?.users ?? []
+      );
     }
 
     return [];
@@ -479,11 +570,11 @@ const MainDeviceModal = ({
 
   const mappedSerialNumbers = checked
     ? serialNumbers
-      .filter((sn) => sn.value.trim() !== "")
-      .map((sn) => ({
-        id: sn.id,
-        value: sn.value.trim(),
-      }))
+        .filter((sn) => sn.value.trim() !== "")
+        .map((sn) => ({
+          id: sn.id,
+          value: sn.value.trim(),
+        }))
     : [];
 
   // ตัดคำว่าหัวหน้าออกจากข้อมูลใน Dropdown
@@ -507,7 +598,7 @@ const MainDeviceModal = ({
     label: cleanDropdown(sec.sec_name),
     value: sec.sec_id,
   }));
-  
+
   const approveItems: DropdownItem[] = approvalflows.map((af: any) => ({
     id: af.af_id,
     label: af.af_name,
@@ -520,7 +611,7 @@ const MainDeviceModal = ({
       id: st.st_sec_id,
       label: st.st_name,
       value: st.st_sec_id,
-      type: "STAFF"
+      type: "STAFF",
     }));
 
   const departmentApproveItems: DropdownItem[] = departmentsApprove
@@ -529,7 +620,7 @@ const MainDeviceModal = ({
       id: dep.dept_id,
       label: cleanDropdown(dep.dept_name),
       value: dep.dept_id,
-      type: "HOD"
+      type: "HOD",
     }));
 
   const sectionApproveItems: DropdownItem[] = sectionsApprove
@@ -538,7 +629,7 @@ const MainDeviceModal = ({
       id: sec.sec_id,
       label: cleanDropdown(sec.sec_name),
       value: sec.sec_id,
-      type: "HOS"
+      type: "HOS",
     }));
 
   /*========================== func ส่งข้อมูลอุปกรณ์ ========================== */
@@ -565,7 +656,6 @@ const MainDeviceModal = ({
       formData.append("de_images", imageFile);
     }
     onSubmit(formData);
-    
   };
   /*========================== func ส่งข้อมูลเพิ่มลำดับการอนุมัติ ========================== */
   const handleSumbitApprove = () => {
@@ -573,7 +663,7 @@ const MainDeviceModal = ({
       (ap: any, indexvalue) => {
         // เจ้าหน้าที่คลัง
         if (ap.type === "STAFF") {
-          const sec = sections.find(item => item.sec_id === ap.value);
+          const sec = sections.find((item) => item.sec_id === ap.value);
 
           return {
             afs_step_approve: indexvalue + 1,
@@ -594,7 +684,7 @@ const MainDeviceModal = ({
         }
 
         // หัวหน้าฝ่ายย่อย
-        const sec = sections.find(item => item.sec_id === ap.value);
+        const sec = sections.find((item) => item.sec_id === ap.value);
 
         return {
           afs_step_approve: indexvalue + 1,
@@ -610,12 +700,12 @@ const MainDeviceModal = ({
     formData.append("af_us_id", userId);
     formData.append("approvalflowsstep", JSON.stringify(approver));
     onSubmit(formData);
-      setTimeout(() => {
-            setIsApproverModalOpen(false)
-            fetchDataDevices()
-            setApproverGroupFlow([])
-            setTitleApprove("")
-          }, 800); // หน่วง 1.5 วินาที
+    setTimeout(() => {
+      setIsApproverModalOpen(false);
+      fetchDataDevices();
+      setApproverGroupFlow([]);
+      setTitleApprove("");
+    }, 800); // หน่วง 1.5 วินาที
   };
 
   /*========================== ยืนยันข้อมูล ========================== */
@@ -631,7 +721,7 @@ const MainDeviceModal = ({
 
     // เปิด modal
     setOpenConfirm(true);
-  }
+  };
 
   // ฟังก์ชันสำหรับการเปิด modal ยืนยันการเพิ่มลำดับการอนุมัติ
   const handleOpenApproverModal = () => {
@@ -641,7 +731,7 @@ const MainDeviceModal = ({
     }
 
     setOpenConfirmApprove(true);
-  }
+  };
 
   // กรองฝ่ายย่อยตามแผนกที่เลือก
   const filteredSections = selectedDepartment
@@ -666,13 +756,13 @@ const MainDeviceModal = ({
       const duplicateList =
         mode === "edit"
           ? existingDeviceNames.filter(
-            (name) => name.trim().toLowerCase() !== originalName
-          )
+              (name) => name.trim().toLowerCase() !== originalName,
+            )
           : existingDeviceNames;
 
       // ค้นหาชื่อที่ซ้ำ
       const isDuplicateName = duplicateList.some(
-        (name) => name.trim().toLowerCase() === inputName
+        (name) => name.trim().toLowerCase() === inputName,
       );
 
       if (isDuplicateName) {
@@ -739,7 +829,9 @@ const MainDeviceModal = ({
     }
     // ตรวจสอบชื่อซ้ำ
     const isDuplicate = approvalflows.some(
-      (approve) => approve.af_name.trim().toLowerCase() === titleApprove.trim().toLowerCase()
+      (approve) =>
+        approve.af_name.trim().toLowerCase() ===
+        titleApprove.trim().toLowerCase(),
     );
     // ชื่อซ้ำ
     if (isDuplicate) {
@@ -749,7 +841,7 @@ const MainDeviceModal = ({
     setApproveErrors(newError);
 
     return Object.keys(newError).length === 0;
-  }
+  };
 
   return (
     <div className="flex flex-col gap-[60px] bg-[#FFFFFF] border border-[#BFBFBF] w-[1660px] rounded-[16px] px-[60px] py-[60px]">
@@ -1166,7 +1258,7 @@ const MainDeviceModal = ({
       <div className="flex justify-end gap-[20px]">
         <Button
           className="bg-[#D8D8D8] border border-[#CDCDCD] text-black hover:bg-[#D8D8D8]"
-          onClick={() => navigate('/inventory')}
+          onClick={() => navigate("/inventory")}
         >
           ยกเลิก
         </Button>
@@ -1213,7 +1305,9 @@ const MainDeviceModal = ({
                       onChange={handleApproverGroup}
                       placeholder="เจ้าหน้าที่คลัง"
                       triggerClassName={
-                        approveErrors.approvers ? "!border-red-500" : "!border-[#D8D8D8]"
+                        approveErrors.approvers
+                          ? "!border-red-500"
+                          : "!border-[#D8D8D8]"
                       }
                     />
                     <DropDown
@@ -1223,7 +1317,9 @@ const MainDeviceModal = ({
                       onChange={handleApproverGroup}
                       placeholder="หัวหน้าแผนก"
                       triggerClassName={
-                        approveErrors.approvers ? "!border-red-500" : "!border-[#D8D8D8]"
+                        approveErrors.approvers
+                          ? "!border-red-500"
+                          : "!border-[#D8D8D8]"
                       }
                     />
                     <DropDown
@@ -1233,12 +1329,16 @@ const MainDeviceModal = ({
                       onChange={handleApproverGroup}
                       placeholder="หัวหน้าฝ่ายย่อย"
                       triggerClassName={
-                        approveErrors.approvers ? "!border-red-500" : "!border-[#D8D8D8]"
+                        approveErrors.approvers
+                          ? "!border-red-500"
+                          : "!border-[#D8D8D8]"
                       }
                     />
                   </div>
                   {approveErrors.approvers && (
-                    <p className="text-sm mt-1 text-[#F5222D]">{approveErrors.approvers}</p>
+                    <p className="text-sm mt-1 text-[#F5222D]">
+                      {approveErrors.approvers}
+                    </p>
                   )}
                   <div className=" space-y-[7px]">
                     <div className="flex items-center gap-1">
@@ -1376,7 +1476,7 @@ const MainDeviceModal = ({
         onConfirm={async () => {
           handleSubmit();
         }}
-        onCancel={() => { }}
+        onCancel={() => {}}
       />
       <AlertDialog
         width={680}
@@ -1397,7 +1497,7 @@ const MainDeviceModal = ({
         onConfirm={async () => {
           handleSumbitApprove();
         }}
-        onCancel={() => { }}
+        onCancel={() => {}}
       />
     </div>
   );

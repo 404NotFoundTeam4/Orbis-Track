@@ -96,6 +96,12 @@ export default function DateValue({
     startDate && endDate && date > startDate && date < endDate;
 
  const handleSelect = (date: Date) => {
+  if (maxBorrow === 1) {
+    setStartDate(date);
+    setEndDate(date);
+    return;
+  }
+
   if (!startDate || endDate) {
     setStartDate(date);
     setEndDate(null);

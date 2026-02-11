@@ -15,6 +15,8 @@ import { auditLogger } from "./audit-logger.js";
 import { SocketEmitter } from "../infrastructure/websocket/socket.emitter.js";
 import { notificationsService } from "../modules/notifications/notifications.service.js";
 import { BorrowReturnRepository } from "../modules/tickets/borrow-return/borrow-return.repository.js";
+import { jobDispatcher } from "../infrastructure/queue/job.dispatcher.js";
+import { JobType } from "../infrastructure/queue/job.types.js";
 
 // Repository instance สำหรับ query tickets
 const borrowReturnRepository = new BorrowReturnRepository();
@@ -179,6 +181,16 @@ async function handleTicketDeadlines() {
       hour12: false,
     });
 
+    await jobDispatcher.dispatch(JobType.EMAIL_TICKET_DUE_SOON, {
+      email: ticket.requester.us_email,
+      name: ticket.requester.us_firstname,
+      username: ticket.requester.us_username,
+      ticketId: ticket.brt_id,
+      deviceName: deviceName,
+      dueTime: endTime,
+      ticketUrl: `${process.env.FRONTEND_URL}/home/${ticket.brt_id}`,
+    });
+
     await notificationsService.createNotification({
       recipient_ids: [ticket.brt_user_id],
       title: "มีอุปกรณ์ใกล้กำหนดคืน",
@@ -201,6 +213,18 @@ async function handleTicketDeadlines() {
   for (const ticket of overdueTickets) {
     const deviceName =
       ticket.ticket_devices[0]?.child?.device?.de_name || "อุปกรณ์";
+
+    const overdueDuration = calculateOverdueDuration(ticket.brt_end_date, now);
+
+    await jobDispatcher.dispatch(JobType.EMAIL_TICKET_OVER_DUE, {
+      email: ticket.requester.us_email,
+      name: ticket.requester.us_firstname,
+      username: ticket.requester.us_username,
+      ticketId: ticket.brt_id,
+      deviceName: deviceName,
+      overdueSince: overdueDuration,
+      ticketUrl: `${process.env.FRONTEND_URL}/home/${ticket.brt_id}`,
+    });
 
     await notificationsService.createNotification({
       recipient_ids: [ticket.brt_user_id],
@@ -238,4 +262,15 @@ async function cleanupCompletedAvailabilities() {
       `🗑️ Cleaned up ${result.count} completed device availability records`,
     );
   }
+}
+
+function calculateOverdueDuration(endDate: Date, now: Date): string {
+  const diffMs = now.getTime() - endDate.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 0) return `${diffDays} วัน`;
+  if (diffHours > 0) return `${diffHours} ชั่วโมง`;
+  return `${diffMins} นาที`;
 }

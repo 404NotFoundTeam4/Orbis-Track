@@ -8,6 +8,8 @@ import DashboardDeviceUsageSection, {
   type HBarItem,
 } from "../components/DashboardDevice";
 
+import DashboardRepair from "../components/DashboardRepair";
+
 /**
  * Description: รวม className หลายค่าเข้าด้วยกัน โดยตัดค่าที่เป็น falsy ออก
  * Input : classNameParts (Array<string | false | undefined | null>)
@@ -48,7 +50,7 @@ type SummaryCard = {
  */
 export default function Dashboard() {
   // ---- UI state ----
-  const [activeTabKey, setActiveTabKey] = useState<DashboardTabKey>("deviceUsage");
+  const [activeTabKey, setActiveTabKey] = useState<DashboardTabKey>("issueHistory");
   const [activeRange, setActiveRange] = useState<RangeKey>("today");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -299,10 +301,21 @@ export default function Dashboard() {
       </div>
 
       {/* Loading strip (เฉพาะตอนอยู่ deviceUsage) */}
-      {activeTabKey === "deviceUsage" && isLoading && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600">
-          <Icon icon="mdi:loading" className="animate-spin text-lg" />
-          กำลังโหลดข้อมูล...
+      {activeTabKey === "issueHistory" ? (
+        <DashboardRepair
+          summaryCards={summaryCardsForRender}
+          lineData={lineData}
+          barData={barData}
+          hbarData={hbarData}
+          statusSummary={{
+            title: "จำนวนอุปกรณ์ทั้งหมดในแผนก",
+            rows: statusSummary.rows,
+            max: statusSummary.max,
+          }}
+        />
+      ) : (
+        <div className="mt-4 rounded-2xl border border-[#D9D9D9] bg-white p-6 text-sm text-neutral-600">
+          กำลังพัฒนา
         </div>
       )}
 

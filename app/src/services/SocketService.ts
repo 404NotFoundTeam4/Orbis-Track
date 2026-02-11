@@ -56,7 +56,7 @@ class SocketService {
           localStorage.getItem("token") || sessionStorage.getItem("token");
         cb({ token });
       },
-      transports: ["polling", "websocket"],
+      transports: ["websocket", "polling"],
     });
 
     this.socket.on("connect", () => {

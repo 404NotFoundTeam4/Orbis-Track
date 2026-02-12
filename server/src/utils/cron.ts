@@ -41,9 +41,24 @@ export const initCronJobs = () => {
     );
     try {
       await handleStatusTransitions();
-      await handleTicketDeadlines();
+      await handleDueSoonTickets();
     } catch (error) {
       logger.error({ error }, "Failed to run cron job");
+    }
+  });
+
+  /**
+   * Description: Cron Job ตรวจสอบ Ticket ที่เกินกำหนด (Overdue)
+   * Schedule  : 0 9 *\/2 * * (ทุก 2 วัน เวลา 09:00)
+   * Action    : ส่งอีเมลและแจ้งเตือน Ticket ที่เกินกำหนด
+   * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+   */
+  cron.schedule("0 9 */2 * *", async () => {
+    logger.info("Running overdue check cron job...");
+    try {
+      await handleOverdueTickets();
+    } catch (error) {
+      logger.error({ error }, "Failed to run overdue check cron job");
     }
   });
 
@@ -161,11 +176,11 @@ async function handleStatusTransitions() {
  * Note      : เรียกใช้ผ่าน Cron Job ทุก 10 นาที
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
-async function handleTicketDeadlines() {
+async function handleDueSoonTickets() {
   const now = new Date();
   const thirtyMinutesLater = new Date(now.getTime() + 30 * 60 * 1000);
 
-  // 1. แจ้งเตือน Ticket ที่ต้องคืนใน 30 นาทีข้างหน้า (Due Soon)
+  // แจ้งเตือน Ticket ที่ต้องคืนใน 30 นาทีข้างหน้า (Due Soon)
   const dueSoonTickets = await borrowReturnRepository.findDueSoonTickets(
     now,
     thirtyMinutesLater,
@@ -206,8 +221,18 @@ async function handleTicketDeadlines() {
   if (dueSoonTickets.length > 0) {
     logger.info(`📢 Sent ${dueSoonTickets.length} 'Due Soon' reminders`);
   }
+}
 
-  // 2. แจ้งเตือน Ticket ที่ "เกินกำหนด" แล้ว (Overdue)
+/**
+ * Description: ตรวจสอบ Ticket ที่ "เกินกำหนด" แล้ว (Overdue) และส่งแจ้งเตือน
+ * Input     : ไม่มี (ใช้ Repository query)
+ * Output    : Promise<void> - ส่งอีเมลแจ้งเตือนและ Notification ไปยังผู้ยืม
+ * Note      : เรียกใช้ผ่าน Cron Job ทุกวัน เวลา 9:00, 11:00, ... (ทุก 2 ชั่วโมง)
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function handleOverdueTickets() {
+  const now = new Date();
+  //แจ้งเตือน Ticket ที่ "เกินกำหนด" แล้ว (Overdue)
   const overdueTickets = await borrowReturnRepository.findOverdueTickets(now);
 
   for (const ticket of overdueTickets) {
@@ -247,7 +272,7 @@ async function handleTicketDeadlines() {
  * Description: ลบ device_availabilities ที่มี status เป็น COMPLETED
  * Input     : ไม่มี
  * Output    : Promise<void> - ลบ records ที่ไม่จำเป็นออก
- * Note      : เรียกใช้ผ่าน Cron Job ทุก 10 นาที เพื่อ cleanup ข้อมูล
+ * Note      : เรียกใช้ผ่าน Cron Job เที่ยงคืน เพื่อ cleanup ข้อมูล
  * Author    : Pakkapon Chomchoey (Tonnam) 66160080
  */
 async function cleanupCompletedAvailabilities() {
@@ -264,6 +289,13 @@ async function cleanupCompletedAvailabilities() {
   }
 }
 
+/**
+ * Description: คำนวณระยะเวลาที่เกินกำหนดคืน (วัน, ชั่วโมง, หรือ นาที)
+ * Input     : endDate (Date) - วันที่ครบกำหนดคืน, now (Date) - วันที่ปัจจุบัน
+ * Output    : string - ระยะเวลาที่เกินกำหนดในรูปแบบข้อความ (เช่น "2 วัน", "5 ชั่วโมง", "30 นาที")
+ * Note      : ใช้สำหรับแสดงในอีเมลแจ้งเตือน
+ * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+ */
 function calculateOverdueDuration(endDate: Date, now: Date): string {
   const diffMs = now.getTime() - endDate.getTime();
   const diffMins = Math.floor(diffMs / 60000);

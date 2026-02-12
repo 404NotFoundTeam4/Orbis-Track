@@ -1,5 +1,5 @@
 /**
- * Description: Section ใต้แท็บ "การใช้งานอุปกรณ์" (ส่วนในวงแดงตามภาพ)
+ * Description: Section ใต้แท็บ "การใช้งานอุปกรณ์"
  * - รับข้อมูลจาก Dashboard.tsx ผ่าน props
  * - Layout: Summary Cards (บน) -> Line Chart + Status Summary (กลาง) -> Bar + HBar (ล่าง)
  * Author    : Nontapat Sinthum (Guitar) 66160104
@@ -14,7 +14,9 @@ import DashboardSummaryCard, {
  * Description: รวม className หลายค่าเข้าด้วยกัน โดยตัดค่าที่เป็น falsy ออก
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-function classNames(...classNameParts: Array<string | false | undefined | null>) {
+function classNames(
+  ...classNameParts: Array<string | false | undefined | null>
+) {
   return classNameParts.filter(Boolean).join(" ");
 }
 
@@ -89,7 +91,7 @@ export default function DashboardDevice({
 }: DashboardDeviceProps) {
   return (
     <div className="mt-4">
-      {/* ===== Summary Cards (แถวบน) ===== */}
+      {/* ===== Summary Cards ===== */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {summaryCards.map((c) => (
           <DashboardSummaryCard
@@ -129,46 +131,46 @@ export default function DashboardDevice({
             {statusSummary.title ?? "จำนวนอุปกรณ์ทั้งหมดในแผนก"}
           </div>
 
-          <div className="mt-4 overflow-x-auto">
-            <div className="min-w-[360px]">
-              <div className="grid grid-cols-[1.2fr_0.6fr] px-2 text-xs font-semibold text-neutral-500">
-                <div>สถานะอุปกรณ์</div>
-                <div className="text-right">จำนวน</div>
-              </div>
+          <div className="mt-4">
+            {/* Header ต้องใช้ grid เดียวกับ rows */}
+            <div className="grid grid-cols-[minmax(0,1fr)_110px] items-center gap-6 text-xs font-semibold text-neutral-500">
+              <div className="pl-6">สถานะอุปกรณ์</div>
+              <div className="text-right pr-2">จำนวน</div>
+            </div>
 
-              <div className="mt-2 space-y-2">
-                {statusSummary.rows.map((row) => {
-                  const pct = Math.max(
-                    0,
-                    Math.min(100, (row.value / Math.max(statusSummary.max, 1)) * 100)
-                  );
+            <div className="mt-3 space-y-4">
+              {statusSummary.rows.map((row) => {
+                const pct = Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    (row.value / Math.max(statusSummary.max, 1)) * 100,
+                  ),
+                );
 
-                  return (
-                    <div
-                      key={row.label}
-                      className="grid grid-cols-[1.2fr_0.6fr] items-center gap-3 rounded-xl px-2 py-2"
-                      style={{ background: row.bg }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-white/70">
-                          <div
-                            className="h-2 rounded-full"
-                            style={{ width: `${pct}%`, background: row.bar }}
-                          />
-                        </div>
-
-                        <div className="min-w-[110px] text-sm font-medium text-neutral-800">
-                          {row.label}
-                        </div>
-                      </div>
-
-                      <div className="text-right text-sm font-semibold text-neutral-900">
-                        {row.value}
+                return (
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-[minmax(0,1fr)_110px] items-center gap-6"
+                  >
+                    {/* ซ้าย: แถบ (อยู่แค่คอลัมน์ซ้าย ไม่ทับตัวเลข) */}
+                    <div className="relative h-[56px] overflow-hidden rounded-[10px]">
+                      <div
+                        className="absolute inset-y-0 left-0"
+                        style={{ width: `${pct}%`, background: row.bg }}
+                      />
+                      <div className="relative z-10 flex h-full items-center pl-6 text-[18px] font-medium text-[#8C8C8C]">
+                        {row.label}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* ขวา: จำนวน (align ตรงกับ header) */}
+                    <div className="text-right pr-2 text-[20px] font-semibold text-neutral-900">
+                      {row.value}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </Card>
@@ -231,7 +233,10 @@ function Legend({ items }: { items: { label: string; dot: string }[] }) {
     <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs text-neutral-600">
       {items.map((it) => (
         <div key={it.label} className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full" style={{ background: it.dot }} />
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: it.dot }}
+          />
           {it.label}
         </div>
       ))}
@@ -270,12 +275,14 @@ function LineChartSvg({ data, height }: { data: LinePoint[]; height: number }) {
   const tickMax = Math.max(...ticks, maxValue);
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height }}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full"
+      style={{ height }}
+    >
       {ticks.map((t) => {
         const y =
-          padding.top +
-          plotH -
-          ((t - 0) / Math.max(tickMax - 0, 1)) * plotH;
+          padding.top + plotH - ((t - 0) / Math.max(tickMax - 0, 1)) * plotH;
 
         return (
           <g key={t}>
@@ -297,7 +304,14 @@ function LineChartSvg({ data, height }: { data: LinePoint[]; height: number }) {
       <path d={pathD} fill="none" stroke="#1890FF" strokeWidth="3" />
 
       {points.map((p, idx) => (
-        <circle key={idx} cx={p.x} cy={p.y} r="4" fill="#1890FF" opacity={0.95} />
+        <circle
+          key={idx}
+          cx={p.x}
+          cy={p.y}
+          r="4"
+          fill="#1890FF"
+          opacity={0.95}
+        />
       ))}
 
       {data.map((d, i) => {
@@ -323,7 +337,13 @@ function LineChartSvg({ data, height }: { data: LinePoint[]; height: number }) {
  * Description: Grouped bar chart แบบ SVG (3 series)
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-function GroupedBarChartSvg({ data, height }: { data: BarGroup[]; height: number }) {
+function GroupedBarChartSvg({
+  data,
+  height,
+}: {
+  data: BarGroup[];
+  height: number;
+}) {
   const width = 980;
   const padding = { top: 10, right: 20, bottom: 34, left: 36 };
 
@@ -351,14 +371,19 @@ function GroupedBarChartSvg({ data, height }: { data: BarGroup[]; height: number
 
   const groupWidth =
     seriesOrder.length * barWidth + (seriesOrder.length - 1) * barGap;
-  const totalGroupsWidth = data.length * groupWidth + (data.length - 1) * groupGap;
+  const totalGroupsWidth =
+    data.length * groupWidth + (data.length - 1) * groupGap;
 
   const startX = padding.left + Math.max(0, (plotW - totalGroupsWidth) / 2);
 
   const ticks = [0, 30, 60, 90, 120, 150];
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height }}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full"
+      style={{ height }}
+    >
       {ticks.map((t) => {
         const y =
           padding.top +
@@ -426,7 +451,13 @@ function GroupedBarChartSvg({ data, height }: { data: BarGroup[]; height: number
  * Description: Horizontal bar chart แบบ SVG
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-function HorizontalBarChartSvg({ data, height }: { data: HBarItem[]; height: number }) {
+function HorizontalBarChartSvg({
+  data,
+  height,
+}: {
+  data: HBarItem[];
+  height: number;
+}) {
   const width = 980;
   const padding = { top: 10, right: 20, bottom: 16, left: 140 };
 
@@ -438,13 +469,17 @@ function HorizontalBarChartSvg({ data, height }: { data: HBarItem[]; height: num
   const rowGap = 12;
   const barH = Math.max(
     10,
-    (plotH - rowGap * (data.length - 1)) / Math.max(data.length, 1)
+    (plotH - rowGap * (data.length - 1)) / Math.max(data.length, 1),
   );
 
   const ticks = [0, 100, 500, 1000];
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height }}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full"
+      style={{ height }}
+    >
       {ticks.map((t) => {
         const x = padding.left + (t / ticks[ticks.length - 1]) * plotW;
         return (
@@ -457,7 +492,13 @@ function HorizontalBarChartSvg({ data, height }: { data: HBarItem[]; height: num
               stroke="#F0F0F0"
               strokeWidth="1"
             />
-            <text x={x} y={height - 2} fontSize="12" fill="#9CA3AF" textAnchor="middle">
+            <text
+              x={x}
+              y={height - 2}
+              fontSize="12"
+              fill="#9CA3AF"
+              textAnchor="middle"
+            >
               {t}
             </text>
           </g>

@@ -242,7 +242,7 @@ export default function Dashboard() {
   return (
     <div className="mx-auto w-full px-[20px] py-[20px]">
       {/* Breadcrumb */}
-      <div className="text-sm text-neutral-500">การจัดการ &nbsp;&gt;&nbsp; แดชบอร์ด</div>
+      <div className="text-sm text-neutral-500">แดชบอร์ด</div>
 
       {/* Header */}
       <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

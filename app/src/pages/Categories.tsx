@@ -142,9 +142,9 @@ export const Categories = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   return (
-    <div className="w-full h-screen overflow-hidden flex flex-col p-[16px]">
+    <div className="w-full h-screen overflow-hidden flex flex-col p-[20px]">
       <div className="flex-1 overflow-hidden ">
-        <div className="mb-[8px] space-x-[9px]">
+        <div className="mb-[22px] space-x-[9px]">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">หมวดหมู่อุปกรณ์</span>
@@ -152,13 +152,13 @@ export const Categories = () => {
 
         {/* Title จัดการหมวดหมู่*/}
         <div className="flex items-center gap-[14px] mb-[21px] h-[34px]">
-          <h1 className="text-[24px] font-semibold">จัดการหมวดหมู่อุปกรณ์</h1>
+          <h1 className="text-[36px] font-semibold">จัดการหมวดหมู่อุปกรณ์</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             หมวดหมู่ทั้งหมด {activeTotal}
           </div>
         </div>
 
-        <div className="w-full mb-[16px]">
+        <div className="w-full mb-[20px]">
           <div className="flex flex-wrap justify-between items-center gap-3">
             {/* ช่องค้นหา */}
             <div className="w-[420px] max-w-full">
@@ -184,8 +184,8 @@ export const Categories = () => {
         {/* Table หมวดหมู่*/}
         <div className=" bg-[#FFFFFF] mb-[16px]">
           {/* Header row (หมวดหมู่ , จัดการ) */}
-          <div className="flex items-center justify-between px-[35px]  h-[61px] border border-[#D9D9D9] rounded-[16px] ">
-            <div className="flex items-center gap-2 font-semibold">
+          <div className="flex items-center justify-between px-16  h-[61px] border border-[#D9D9D9] rounded-[16px] ">
+            <div className="flex items-center gap-2 font-semibold mx-4">
               <span>หมวดหมู่</span>
               <button type="button" onClick={handleSortName}>
                 <Icon
@@ -199,9 +199,9 @@ export const Categories = () => {
           </div>
         </div>
 
-        <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] ">
+        <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px]  ">
           {/* Row */}
-          <div className="px-[35px] py-[10px] h-[520px] overflow-y-auto ">
+          <div className=" py-[10px] h-[520px] overflow-y-auto ">
             {loading ? (
               <div className="py-6 text-[#858585]">กำลังโหลด...</div>
             ) : rows.length === 0 ? (
@@ -210,9 +210,9 @@ export const Categories = () => {
               rows.map((c) => (
                 <div
                   key={c.ca_id}
-                  className="flex items-center justify-between h-[62px]  border-[#F3F3F3] last:border-b-0"
+                  className="flex items-center justify-between h-[62px]  border-[#F3F3F3] last:border-b-0 px-17 "
                 >
-                  <div className="text-[16px]">{c.ca_name}</div>
+                  <div className="px-3 text-[16px]">{c.ca_name}</div>
 
                   <div className="flex items-center gap-[10px]">
                     {/* edit */}
@@ -221,7 +221,7 @@ export const Categories = () => {
                       onClick={() => {
                         (setIsEditCategory(true), setEditingCategory(c));
                       }}
-                      className="group w-[40px] h-[40px] flex items-center justify-center rounded-[12px]
+                      className="group w-[35px] h-[35px] flex items-center justify-center rounded-[12px]
   text-[#1890FF]   transition-colors duration-150
   hover:bg-[#40A9FF] hover:text-white"
                       title="แก้ไข"
@@ -245,7 +245,7 @@ export const Categories = () => {
                         type="button"
                         onClick={() => setDeleteTarget(c)}
                         title="ลบ"
-                        className="group w-[40px] h-[40px] flex items-center justify-center rounded-[12px]
+                        className="group w-[35px] h-[35px] flex items-center justify-center rounded-[12px]
                                                 text-[#FF4D4F] transition-colors duration-150
                                                 hover:bg-[#FF7875] hover:text-white"
                       >
@@ -347,27 +347,26 @@ export const Categories = () => {
         </div>
       </div>
       <AlertDialog
+      width={786}
         open={!!deleteTarget}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
         tone="danger"
-        title="ยืนยันการลบหมวดหมู่"
+        title="คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่อุปกรณ์นี้"
         description={
           deleteTarget ? (
             <>
-              ต้องการลบหมวดหมู่{" "}
-              <span className="font-semibold">{deleteTarget.ca_name}</span>{" "}
-              ใช่หรือไม่
+             หมวดหมู่ อุปกรณ์ทั่วไป จะถูกลบและการดำเนินการนี้ไม่สามารถกู้คืนได้
             </>
           ) : null
         }
-        confirmText="ลบ"
+        confirmText="ยืนยัน"
         cancelText="ยกเลิก"
         onConfirm={async () => {
           if (!deleteTarget) return;
           await categoryService.deleteCategory(deleteTarget.ca_id);
-          toast.push({ message: "ลบหมวดหมู่สำเร็จ", tone: "confirm" });
+          toast.push({ message: "ลบหมวดหมู่อุปกรณ์เสร็จสิ้น!", tone: "danger" });
           setRefreshTrigger((p) => p + 1);
         }}
       />

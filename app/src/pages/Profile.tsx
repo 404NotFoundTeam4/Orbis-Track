@@ -349,11 +349,12 @@ const Profile: React.FC = () => {
                 <div className="flex flex-col items-center gap-5 shrink-0">
                   <div className="w-[184px] h-[184px] rounded-full overflow-hidden bg-[#F3F4F6] border border-black flex items-center justify-center">
                     {(previewUrl || profileData.us_images) && (
-                      <img
-                        src={getImageUrl(previewUrl)}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                      />
+                     <img
+  src={getImageUrl(previewUrl || profileData.us_images)}
+  alt="Avatar"
+  className="w-full h-full object-cover"
+/>
+
                     )}
                   </div>
                   <input

@@ -321,7 +321,7 @@ const Navbar = () => {
           <div className="flex flex-col justify-between h-[calc(100vh-100px)] px-2 py-4 text-lg whitespace-nowrap">
             <nav className="text-left">{menus.map(renderMenu)}</nav>
 
-            <div className="text-left">
+            <div className="text-left mb-[31px]">
               <button
                 onClick={handleLogout}
                 className="px-7.5  py-[11px]  flex  items-center gap-3   hover:text-black hover:bg-[#F7F7F7] rounded-md  w-full"

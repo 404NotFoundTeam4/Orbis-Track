@@ -89,7 +89,7 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
- 
+
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
@@ -207,11 +207,18 @@ const BorrowEquipmentModal = ({
    * Output : ส่งข้อมูลไปยัง parent component เพื่อบันทึกลงตะกร้า
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
-  const handleAddToCart = () => {
-    // ส่งข้อมูลไปยัง parent component
-    onAddToCart?.({
-      data: form,
-    });
+  
+  const handleAddToCart = async () => {
+    try {
+      // ส่งข้อมูลไปยัง parent component
+      await onAddToCart?.({ data: form });
+
+      // แจ้ง Navbar ให้เช็คของใหม่
+      //Nontapat Sinthum (Guitar) 66160104
+      window.dispatchEvent(new Event("cart:changed"));
+    } catch (error) {
+      console.error("add to cart error:", error);
+    }
   };
 
   /**
@@ -316,53 +323,59 @@ const BorrowEquipmentModal = ({
     fetchData();
   }, []);
   const isBorrowAvailable = (
-      start: Date | null,
-      end: Date | null,
-      timeStart?: string,
-      timeEnd?: string,
-      activeBorrow?: ActiveBorrow[] | null,
-    ): boolean => {
-      if (!activeBorrow || activeBorrow.length === 0) return true;
-  
-      const now = new Date();
-  
-      const parseTime = (time?: string) => {
-        if (!time) {
-          return {
-            hour: now.getHours(),
-            minute: now.getMinutes(),
-          };
-        }
-        const [hours, minutes] = time.split(":").map(Number);
-        return { hour: hours, minute: minutes };
-      };
-  
-      const combineDateTime = (date: Date, time?: string) => {
-        const day = new Date(date);
-        const { hour, minute } = parseTime(time);
-        day.setHours(hour, minute, 0, 0);
-        return day;
-      };
-  
-      const startDate = start ?? now;
-      const endDate = end ?? now;
-  
-      const userStart = combineDateTime(startDate, timeStart);
-      const userEnd = combineDateTime(endDate, timeEnd);
-  
-      if (userStart > userEnd) return false;
-  
-      return !activeBorrow.some((borrow) => {
-        const borrowStart = new Date(borrow.da_start);
-        const borrowEnd = new Date(borrow.da_end);
-        return userStart < borrowEnd && userEnd > borrowStart;
-      });
+    start: Date | null,
+    end: Date | null,
+    timeStart?: string,
+    timeEnd?: string,
+    activeBorrow?: ActiveBorrow[] | null,
+  ): boolean => {
+    if (!activeBorrow || activeBorrow.length === 0) return true;
+
+    const now = new Date();
+
+    const parseTime = (time?: string) => {
+      if (!time) {
+        return {
+          hour: now.getHours(),
+          minute: now.getMinutes(),
+        };
+      }
+      const [hours, minutes] = time.split(":").map(Number);
+      return { hour: hours, minute: minutes };
     };
-    
-     const readyDevices = (availableDevices ?? []).filter((device) =>
-    isBorrowAvailable(form.dateRange[0], form.dateRange[1],  form.borrowTime,form.returnTime, device.activeBorrow),
+
+    const combineDateTime = (date: Date, time?: string) => {
+      const day = new Date(date);
+      const { hour, minute } = parseTime(time);
+      day.setHours(hour, minute, 0, 0);
+      return day;
+    };
+
+    const startDate = start ?? now;
+    const endDate = end ?? now;
+
+    const userStart = combineDateTime(startDate, timeStart);
+    const userEnd = combineDateTime(endDate, timeEnd);
+
+    if (userStart > userEnd) return false;
+
+    return !activeBorrow.some((borrow) => {
+      const borrowStart = new Date(borrow.da_start);
+      const borrowEnd = new Date(borrow.da_end);
+      return userStart < borrowEnd && userEnd > borrowStart;
+    });
+  };
+
+  const readyDevices = (availableDevices ?? []).filter((device) =>
+    isBorrowAvailable(
+      form.dateRange[0],
+      form.dateRange[1],
+      form.borrowTime,
+      form.returnTime,
+      device.activeBorrow,
+    ),
   );
-  
+
   return (
     <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
@@ -538,48 +551,44 @@ const BorrowEquipmentModal = ({
           <div className="grid grid-cols-2 gap-[22px]">
             {
               // เทสแสดงรายการอุปกรณ์ที่พร้อมใช้งาน (ให้ผู้ใช้เลือกเอง)
-            readyDevices
-                .map((device) => {
-                  // ตรวจสอบว่าอุปกรณ์ที่เลือกอยู่ในรายการที่เลือกอยู่แล้วหรือไม่
-                  const checked = selectedDeviceIds.includes(device.dec_id);
-                  return (
-                    <label
-                      key={device.dec_id}
-                      className="flex items-center gap-[10px] border border-[#A2A2A2] rounded-[12px] px-[12px] py-[10px] cursor-pointer
+              readyDevices.map((device) => {
+                // ตรวจสอบว่าอุปกรณ์ที่เลือกอยู่ในรายการที่เลือกอยู่แล้วหรือไม่
+                const checked = selectedDeviceIds.includes(device.dec_id);
+                return (
+                  <label
+                    key={device.dec_id}
+                    className="flex items-center gap-[10px] border border-[#A2A2A2] rounded-[12px] px-[12px] py-[10px] cursor-pointer
                                     "
-                    >
-                      <input
-                        type="checkbox"
-                        className="custom-checkbox-inventory"
-                        checked={checked}
-                        onChange={() => {
-                          if (checked) {
-                            // ถ้าถูกเลือกอยู่ -> เอาติ๊กออก ถ้ายังไม่ถูกเลือก -> ติ๊ก
-                            onSelectDevice(
-                              selectedDeviceIds.filter(
-                                (id) => id !== device.dec_id,
-                              ),
-                            );
-                          } else {
-                            // ยังไม่ถูกเลือก เพิ่มเข้ารายการที่เลือก
-                            onSelectDevice([
-                              ...selectedDeviceIds,
-                              device.dec_id,
-                            ]);
-                          }
-                        }}
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {device.dec_serial_number}
-                        </span>
-                        <span className="text-[12px] text-[#888]">
-                          {device.dec_asset_code}
-                        </span>
-                      </div>
-                    </label>
-                  );
-                })
+                  >
+                    <input
+                      type="checkbox"
+                      className="custom-checkbox-inventory"
+                      checked={checked}
+                      onChange={() => {
+                        if (checked) {
+                          // ถ้าถูกเลือกอยู่ -> เอาติ๊กออก ถ้ายังไม่ถูกเลือก -> ติ๊ก
+                          onSelectDevice(
+                            selectedDeviceIds.filter(
+                              (id) => id !== device.dec_id,
+                            ),
+                          );
+                        } else {
+                          // ยังไม่ถูกเลือก เพิ่มเข้ารายการที่เลือก
+                          onSelectDevice([...selectedDeviceIds, device.dec_id]);
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {device.dec_serial_number}
+                      </span>
+                      <span className="text-[12px] text-[#888]">
+                        {device.dec_asset_code}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })
             }
           </div>
         </div>
@@ -709,7 +718,8 @@ const BorrowEquipmentModal = ({
             *ยืมได้สูงสุดไม่เกิน {equipment.maxBorrowDays} วัน
           </p>
           <p className="flex justify-center items-center bg-[#00AA1A]/10 rounded-[10px] text-[#00AA1A] min-w-[191px] h-[39px] px-[20px]">
-            ขณะนี้ว่าง {readyDevices ? readyDevices.length :availableDevices.length} ชิ้น
+            ขณะนี้ว่าง{" "}
+            {readyDevices ? readyDevices.length : availableDevices.length} ชิ้น
           </p>
         </div>
       </div>

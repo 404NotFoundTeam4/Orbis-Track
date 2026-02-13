@@ -4,7 +4,7 @@ import Input from "./Input";
 import { Icon } from "@iconify/react";
 import TimePickerField from "./TimePickerField";
 import { AlertDialog } from "./AlertDialog";
-import type { GetAvailable } from "../services/BorrowService";
+import type { ActiveBorrow, GetAvailable } from "../services/BorrowService";
 import { useNavigate } from "react-router-dom";
 import getImageUrl from "../services/GetImage";
 import BorrowModal from "./BorrowDate/BorrowModal";
@@ -53,10 +53,7 @@ interface BorrowEquipmentModalProps {
   onSelectDevice: (ids: number[]) => void; // เปลี่ยนอุปกรณ์ที่เลือก
   onDateTimeChange: (payload: { startISO: string; endISO: string }) => void; // เปลี่ยนวันเวลา
 }
-export interface ActiveBorrow {
-  da_start: string;
-  da_end: string;
-}
+
 type Device = {
   dec_id: number;
   dec_serial_number?: string;
@@ -65,6 +62,7 @@ type Device = {
   activeBorrow?: ActiveBorrow[];
   maxBorrow: number;
 };
+
 const BorrowEquipmentModal = ({
   mode,
   defaultValue,
@@ -77,11 +75,18 @@ const BorrowEquipmentModal = ({
   onSelectDevice,
   onDateTimeChange,
 }: BorrowEquipmentModalProps) => {
-  // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
 
+  // ดึงข้อมูล user จาก sessionStorage หรือ localStorage
+  const userString = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const user = userString ? JSON.parse(userString) : null;
+  
+  // role ที่สามารถยืมให้ผู้อื่นได้
+  const isCanBorrowForOthers = user.us_role === "STAFF" || user.us_role === "ADMIN";
+
+  // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
   const initialForm: BorrowFormData = {
-    borrower: defaultValue?.borrower ?? "",
-    phone: defaultValue?.phone ?? "",
+    borrower: defaultValue?.borrower ?? `${user.us_firstname ?? ""} ${user.us_lastname ?? ""}`.trim(),
+    phone: defaultValue?.phone ?? user.us_phone ?? "",
     reason: defaultValue?.reason ?? "",
     placeOfUse: defaultValue?.placeOfUse ?? "",
     quantity: defaultValue?.quantity ?? 1,
@@ -89,7 +94,6 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
- 
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
@@ -281,6 +285,7 @@ const BorrowEquipmentModal = ({
   //     onDateTimeChange();
   //   }
   // }, [form.dateRange, form.borrowTime, form.returnTime]);
+
   useEffect(() => {
     const startDate = form.dateRange[0];
     const endDate = form.dateRange[1] ?? form.dateRange[0];
@@ -302,10 +307,10 @@ const BorrowEquipmentModal = ({
       endISO: end.toISOString(),
     });
   }, [form.dateRange, form.borrowTime, form.returnTime]);
+
   const fetchData = async () => {
     try {
       const res = await borrowService.getAvailable(equipment.deviceId);
-
       setData(res);
     } catch (error) {
       console.error("API error:", error);
@@ -314,55 +319,60 @@ const BorrowEquipmentModal = ({
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [equipment.deviceId]);
+
+  // เช็คอุปกรณ์ว่างตามช่วงเวลา
   const isBorrowAvailable = (
-      start: Date | null,
-      end: Date | null,
-      timeStart?: string,
-      timeEnd?: string,
-      activeBorrow?: ActiveBorrow[] | null,
-    ): boolean => {
-      if (!activeBorrow || activeBorrow.length === 0) return true;
-  
-      const now = new Date();
-  
-      const parseTime = (time?: string) => {
-        if (!time) {
-          return {
-            hour: now.getHours(),
-            minute: now.getMinutes(),
-          };
-        }
-        const [hours, minutes] = time.split(":").map(Number);
-        return { hour: hours, minute: minutes };
-      };
-  
-      const combineDateTime = (date: Date, time?: string) => {
-        const day = new Date(date);
-        const { hour, minute } = parseTime(time);
-        day.setHours(hour, minute, 0, 0);
-        return day;
-      };
-  
-      const startDate = start ?? now;
-      const endDate = end ?? now;
-  
-      const userStart = combineDateTime(startDate, timeStart);
-      const userEnd = combineDateTime(endDate, timeEnd);
-  
-      if (userStart > userEnd) return false;
-  
-      return !activeBorrow.some((borrow) => {
-        const borrowStart = new Date(borrow.da_start);
-        const borrowEnd = new Date(borrow.da_end);
-        return userStart < borrowEnd && userEnd > borrowStart;
-      });
+    start: Date | null,
+    end: Date | null,
+    timeStart?: string,
+    timeEnd?: string,
+    activeBorrow?: ActiveBorrow[] | null,
+  ): boolean => {
+    // ยังไม่เลือกวันเวลา
+    if (!start || !end || !timeStart || !timeEnd) return true;
+    // อุปกรณ์นี้ไม่มีประวัติถูกยืม
+    if (!activeBorrow || activeBorrow.length === 0) return true;
+
+    // รวมวันเวลา ให้กลายเป็น Date
+    const combineDateTime = (date: Date, time: string) => {
+      const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+      const dateTime = new Date(date);
+      dateTime.setHours(hour, minute, 0, 0);
+      return dateTime;
     };
-    
-     const readyDevices = (availableDevices ?? []).filter((device) =>
-    isBorrowAvailable(form.dateRange[0], form.dateRange[1],  form.borrowTime,form.returnTime, device.activeBorrow),
-  );
-  
+
+    // เวลาที่ผู้ใช้ต้องการยืม
+    const userStart = combineDateTime(start, timeStart);
+    const userEnd = combineDateTime(end, timeEnd);
+
+    // ถ้าเวลาเริ่มมากกว่าเวลาสิ้นสุด
+    if (userStart > userEnd) return false;
+
+    // ตรวจสอบช่วงเวลาที่ผู้ใช้เลือก ชนกับช่วงเวลาที่ถูกยืมอยู่หรือไม่
+    return !activeBorrow.some((borrow) => {
+      const borrowStart = new Date(borrow.start);
+      const borrowEnd = new Date(borrow.end);
+      return userStart < borrowEnd && userEnd > borrowStart;
+    });
+  };
+
+  // หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก (ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด X ชิ้น)
+  const readyDevices =
+    form.dateRange[0] && form.dateRange[1] && form.borrowTime && form.returnTime
+      ? (availableDevices ?? [])
+        .filter((devices) => devices.dec_status === "READY")
+        .filter((device) =>
+          isBorrowAvailable(
+            form.dateRange[0],
+            form.dateRange[1],
+            form.borrowTime,
+            form.returnTime,
+            device.availabilities,
+          ),
+        )
+      : [];
+
   return (
     <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
@@ -381,11 +391,13 @@ const BorrowEquipmentModal = ({
               ชื่อผู้ยืม <span className="text-[#F5222D]">*</span>
             </label>
             <Input
+              className="disabled:bg-white"
               fullWidth
               placeholder="กรอกข้อมูลชื่อผู้ยืม"
               value={form.borrower}
               onChange={(e) => setForm({ ...form, borrower: e.target.value })}
               error={errors.borrower}
+              disabled={!isCanBorrowForOthers}
             />
           </div>
           {/* เบอร์โทรศัพท์ผู้ยืม */}
@@ -394,12 +406,14 @@ const BorrowEquipmentModal = ({
               เบอร์โทรศัพท์ผู้ยืม <span className="text-[#F5222D]">*</span>
             </label>
             <Input
+              className="disabled:bg-white"
               maxLength={10}
               fullWidth
               placeholder="กรอกข้อมูลเบอร์โทรศัพท์ผู้ยืม"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               error={errors.phone}
+              disabled={!isCanBorrowForOthers}
             />
           </div>
           {/* เหตุผลในการยืม */}
@@ -538,7 +552,7 @@ const BorrowEquipmentModal = ({
           <div className="grid grid-cols-2 gap-[22px]">
             {
               // เทสแสดงรายการอุปกรณ์ที่พร้อมใช้งาน (ให้ผู้ใช้เลือกเอง)
-            readyDevices
+              readyDevices
                 .map((device) => {
                   // ตรวจสอบว่าอุปกรณ์ที่เลือกอยู่ในรายการที่เลือกอยู่แล้วหรือไม่
                   const checked = selectedDeviceIds.includes(device.dec_id);
@@ -583,27 +597,6 @@ const BorrowEquipmentModal = ({
             }
           </div>
         </div>
-
-        {/* <div className="flex flex-col gap-[20px]">
-                    
-                    <div className="flex flex-col gap-[7px]">
-                        <h1 className="text-[18px] font-medium">3. เลือกจำนวนอุปกรณ์ที่ต้องการยืม</h1>
-                        <p className="text-[#40A9FF] font-medium">รายละเอียดจำนวนอุปกรณ์</p>
-                    </div>
-                    
-                    <div>
-                        <label className="text-[16px] font-medium">จำนวนอุปกรณ์ <span className="text-[#F5222D]">*</span></label>
-                        <QuantityInput
-                            width={399}
-                            label=""
-                            value={selectedDeviceIds.length}
-                            onChange={(e: number) => setForm({ ...form, quantity: e })}
-                            min={1}
-                            max={equipment.remain} // ไม่เกินจำนวนคงเหลือ
-                        />
-                    </div>
-                </div> */}
-
         {/* ปุ่ม */}
         <div
           className={`flex gap-[20px] ${mode === "edit-detail" ? "justify-end" : ""}`}
@@ -709,7 +702,7 @@ const BorrowEquipmentModal = ({
             *ยืมได้สูงสุดไม่เกิน {equipment.maxBorrowDays} วัน
           </p>
           <p className="flex justify-center items-center bg-[#00AA1A]/10 rounded-[10px] text-[#00AA1A] min-w-[191px] h-[39px] px-[20px]">
-            ขณะนี้ว่าง {readyDevices ? readyDevices.length :availableDevices.length} ชิ้น
+            ขณะนี้ว่าง {availableCount} ชิ้น
           </p>
         </div>
       </div>

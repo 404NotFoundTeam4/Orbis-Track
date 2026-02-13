@@ -93,6 +93,8 @@ export default function BorrowModal({
   }, []);
 
   // console.log(dateDefault)
+
+  // เช็คอุปกรณ์ว่างตามช่วงเวลา
   const isBorrowAvailable = (
     start: Date | null,
     end: Date | null,
@@ -100,36 +102,27 @@ export default function BorrowModal({
     timeEnd?: string,
     activeBorrow?: ActiveBorrow[] | null,
   ): boolean => {
+    // ยังเลือกวันหรือเวลาไม่ครบ
+    if (!start || !end || !timeStart || !timeEnd) return true;
+    // อุปกรณ์ไม่มีประวัติการยืม
     if (!activeBorrow || activeBorrow.length === 0) return true;
 
-    const now = new Date();
-
-    const parseTime = (time?: string) => {
-      if (!time) {
-        return {
-          hour: now.getHours(),
-          minute: now.getMinutes(),
-        };
-      }
-      const [hours, minutes] = time.split(":").map(Number);
-      return { hour: hours, minute: minutes };
+    // รวมวันเวลา ให้กลายเป็น Date
+    const combineDateTime = (date: Date, time: string) => {
+      const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+      const dateTime = new Date(date);
+      dateTime.setHours(hour, minute, 0, 0);
+      return dateTime;
     };
 
-    const combineDateTime = (date: Date, time?: string) => {
-      const day = new Date(date);
-      const { hour, minute } = parseTime(time);
-      day.setHours(hour, minute, 0, 0);
-      return day;
-    };
+    // เวลาที่ผู้ใช้ต้องการยืม
+    const userStart = combineDateTime(start, timeStart);
+    const userEnd = combineDateTime(end, timeEnd);
 
-    const startDate = start ?? now;
-    const endDate = end ?? now;
-
-    const userStart = combineDateTime(startDate, timeStart);
-    const userEnd = combineDateTime(endDate, timeEnd);
-
+    // ถ้าเวลาเริ่มมากกว่าเวลาสิ้นสุด
     if (userStart > userEnd) return false;
 
+    // ตรวจสอบช่วงเวลาที่ผู้ใช้เลือก ชนกับช่วงเวลาที่ถูกยืมอยู่หรือไม่
     return !activeBorrow.some((borrow) => {
       const borrowStart = new Date(borrow.da_start);
       const borrowEnd = new Date(borrow.da_end);
@@ -209,14 +202,27 @@ export default function BorrowModal({
     if (hour > 12) return `${hour - 12} PM`;
     return `${hour} AM`;
   };
-  const readyDevices = (defaultBorrow ?? []).filter((device) =>
-    isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
-  );
 
-  const borrowDevices = (defaultBorrow ?? []).filter(
-    (device) =>
-      !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
-  );
+  // ตรวจสอบว่าผู้ใช้เลือกวันและเวลาครบแล้วหรือยัง
+  const hasSelectedDateTime = start && end && timeStart && timeEnd;
+
+  // หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก
+  const readyDevices = (defaultBorrow ?? [])
+    .filter((devices) => devices.dec_status === "READY")
+    .filter((device) =>
+      hasSelectedDateTime
+        ? isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow)
+        : true,
+    );
+
+  const borrowDevices = (defaultBorrow ?? [])
+    // เอาเฉพาะสถานะ READY
+    .filter((devices) => devices.dec_status === "READY")
+    .filter((device) =>
+      hasSelectedDateTime
+        ? !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow)
+        : false,
+    );
 
   /* ========================================== */
   const timeToMinutes = (time?: string): number | null => {
@@ -402,7 +408,18 @@ export default function BorrowModal({
       const startDateTime = mergeDateAndTime(start, timeStart);
       const endDateTime = mergeDateAndTime(end, timeEnd);
 
-      return startDateTime <= endDateTime;
+      // เวลาสิ้นสุดน้อยกว่าเวลาเริ่ม
+      if (endDateTime <= startDateTime) return false;
+
+      // ถ้ายืมวันเดียว ขั้นต่ำ 1 ชั่วโมง
+      if (isSameDay(start, end)) {
+        const diffMinutes =
+          (endDateTime.getTime() - startDateTime.getTime()) / 1000 / 60;
+
+        return diffMinutes >= 60;
+      }
+
+      return true;
     })();
   const formatThaiDate = (date: Date) => {
     const months = [
@@ -484,11 +501,10 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
         shadow-md transition-all duration-200 cursor-pointer
-        ${
-          selectedDeviceId === device.dec_id
-            ? "border-[#40A9FF] shadow-lg"
-            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-        }`}
+        ${selectedDeviceId === device.dec_id
+                                  ? "border-[#40A9FF] shadow-lg"
+                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-[#00AA1A] flex items-center justify-center">
@@ -527,11 +543,10 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
                         shadow-md transition-all duration-200 cursor-pointer
-                        ${
-                          selectedDeviceId === device.dec_id
-                            ? "border-[#40A9FF] shadow-lg"
-                            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-                        }`}
+                        ${selectedDeviceId === device.dec_id
+                                  ? "border-[#40A9FF] shadow-lg"
+                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-5 h-5 rounded-full bg-[#ED1A1A] flex items-center justify-center">
@@ -593,14 +608,14 @@ export default function BorrowModal({
                           />
                         </div>
 
-                        {start &&
+                        {/* {start &&
                           end &&
                           isSameDay(start, end) &&
                           !canBorrow && (
                             <p className="text-red-500 text-sm">
                               การยืมวันเดียวกัน ต้องเลือกเวลาขั้นต่ำ 1 ชั่วโมง
                             </p>
-                          )}
+                          )} */}
 
                         <div className="flex gap-2">
                           <button
@@ -622,11 +637,10 @@ export default function BorrowModal({
                             disabled={!isValid}
                             className={`
     flex-1 rounded-xl py-2 text-white transition
-    ${
-      isValid
-        ? "bg-blue-500 hover:bg-blue-600"
-        : "bg-gray-300 cursor-not-allowed"
-    }
+    ${isValid
+                                ? "bg-blue-500 hover:bg-blue-600"
+                                : "bg-gray-300 cursor-not-allowed"
+                              }
   `}
                           >
                             ยืนยัน
@@ -667,9 +681,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("month")}
-                      className={`${baseClass}  rounded-l-xl ${
-                        active === "month" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass}  rounded-l-xl ${active === "month" ? activeClass : inactiveClass
+                        }`}
                     >
                       Month
                     </button>
@@ -677,9 +690,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("week")}
-                      className={`${baseClass} ${
-                        active === "week" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass} ${active === "week" ? activeClass : inactiveClass
+                        }`}
                     >
                       Week
                     </button>
@@ -687,9 +699,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("day")}
-                      className={`${baseClass} rounded-r-xl ${
-                        active === "day" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass} rounded-r-xl ${active === "day" ? activeClass : inactiveClass
+                        }`}
                     >
                       Day
                     </button>
@@ -716,7 +727,7 @@ export default function BorrowModal({
                               {index + 1 <= 31 ? index + 1 : ""}
                             </span>
                             {timeBorrow.map((borrow, idx) =>
-                              (borrow.day === index + 1 && borrow.month === monthShow && borrow.year === yearShow )? (
+                              (borrow.day === index + 1 && borrow.month === monthShow && borrow.year === yearShow) ? (
                                 <div
                                   key={idx}
                                   className="absolute top-10 left-2 right-2 bottom-[10%] w-33.25 h-13

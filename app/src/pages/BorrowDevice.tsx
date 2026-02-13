@@ -77,6 +77,7 @@ const BorrowDevice = () => {
     const fetchDevice = async () => {
       if (!deId) return; // ป้องกันการเรียก API ถ้าไม่มี deId
       const res = await borrowService.getDeviceForBorrow(deId);
+      setAvailableCount(res.ready); // เก็บจำนวนอุปกรณ์ (ขณะนี้ว่าง X ชิ้น)
       // เก็บข้อมูลลงใน state
       setDevice(res);
     };
@@ -97,7 +98,7 @@ const BorrowDevice = () => {
     
   // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
   const equipment = {
-    deviceId :deId,
+    deviceId: deId,
     serialNumber: device.de_serial_number,
     name: device.de_name,
     category: device.category?.ca_name ?? "",
@@ -182,8 +183,8 @@ const BorrowDevice = () => {
 
     setAvailableDevices(filtered);
 
-    const readyCount = filtered.filter((d) => d.dec_status === "READY").length;
-    setAvailableCount(readyCount);
+    // const readyCount = filtered.filter((d) => d.dec_status === "READY").length;
+    // setAvailableCount(readyCount);
 
     setSelectedDeviceIds([]);
   };

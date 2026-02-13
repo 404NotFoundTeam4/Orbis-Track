@@ -731,3 +731,4 @@ const BorrowEquipmentModal = ({
 };
 
 export default BorrowEquipmentModal;
+

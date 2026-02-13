@@ -72,7 +72,6 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
             <Button
               className="!w-[74px] !h-[31px] !min-h-[31px] rounded-full text-sm cursor-pointer"
               onClick={handleBorrow}
-              disabled={device.available === 0}
             >
               ยืม
             </Button>

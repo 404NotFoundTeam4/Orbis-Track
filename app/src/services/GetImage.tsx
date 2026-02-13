@@ -10,7 +10,7 @@ const BASE_URL = import.meta.env.VITE_MY_IMAGE_PATH || (import.meta.env.VITE_API
   ? `${import.meta.env.VITE_API_URL}/api/v1`
   : (import.meta.env.DEV ? "http://localhost:4041/api/v1" : "/api/v1"));
 
-const PATH_BASE_URL = BASE_URL.replace(/\/api\/v1\/?$/,"")+"api/v1";
+
 
 const getImageUrl = (filename: string | null | undefined) => {
   if (!filename || filename === "") {
@@ -21,8 +21,8 @@ const getImageUrl = (filename: string | null | undefined) => {
     filename.startsWith("http")
   )
     return filename;
-  console.log(`${PATH_BASE_URL}/${filename}`)
-  return `${PATH_BASE_URL}/${filename}`;
+
+  return `${BASE_URL}/${filename}`;
 };
 
 export default getImageUrl;

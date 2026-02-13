@@ -180,7 +180,7 @@ const isSelectable = (date: Date) => {
   const dateLabel =
     startDate && endDate
       ? `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`
-      : "วัน/เดือน/ปี";
+      : "";
   console.log(maxBorrow)
   return (
     <div ref={ref} className={`relative ${width}`}>
@@ -195,7 +195,7 @@ const isSelectable = (date: Date) => {
           text-gray-400
         "
       >
-        <span className={dateLabel ? "text-gray-900" : ""}>
+        <span className={dateLabel ? "text-gray-900" : "text-gray-400"}>
           {dateLabel || placeholder}
         </span>
 

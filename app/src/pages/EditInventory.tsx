@@ -193,6 +193,11 @@ const EditInventory = () => {
     }
   }
 
+  // ดึงรหัสอุปกรณ์จาก sessionStorage
+  const existingDeviceCodes: string[] = JSON.parse(
+    sessionStorage.getItem("existingDeviceCodes") ?? "[]"
+  );
+
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
       {/* แถบนำทาง */}
@@ -214,6 +219,7 @@ const EditInventory = () => {
           handleSubmit(data);
         }}
         existingDeviceNames={existingDeviceNames}
+        existingDeviceCodes={existingDeviceCodes}
       />
       <DevicesChilds
         parentCode={parentDevice?.de_serial_number}

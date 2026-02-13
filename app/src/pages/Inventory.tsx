@@ -123,11 +123,19 @@ export const Inventory = () => {
   const handleOpenAddModal = () => {
     // ดึงชื่อรายการอุปกรณ์ทั้งหมด
     const existingDeviceNames = items.map(item => item.name);
+    // รหัสอุปกรณ์ทั้งหมด
+    const existingDeviceCodes = items.map(items => items.serial_number);
 
     // เก็บชื่ออุปกรณ์ทั้งหมดไว้ใน sessionStorage
     sessionStorage.setItem(
       "existingDeviceNames",
       JSON.stringify(existingDeviceNames)
+    )
+
+    // เก็บรหัสอุปกรณ์ทั้งหมดไว้ใน sessionStorage
+    sessionStorage.setItem(
+      "existingDeviceCodes",
+      JSON.stringify(existingDeviceCodes)
     )
 
     navigate("/inventory/add");
@@ -225,15 +233,11 @@ export const Inventory = () => {
 
   //แปลงวันที่เป็น format ไทย
   const FormatThaiDate = (iso: string | Date) => {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    return isNaN(d.getTime())
-      ? "-"
-      : d.toLocaleDateString("th-TH", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+    const dateTime = new Date(iso);
+    const day = dateTime.getDate(); // วัน
+    const month = dateTime.toLocaleString("th-TH", { month: "short" }); // เดือนแบบย่อ
+    const year = dateTime.getFullYear() + 543; // แปลง ค.ศ. → พ.ศ.
+    return `${day} / ${month} / ${year}`;
   };
 
   //จัดการ Sort
@@ -330,7 +334,7 @@ export const Inventory = () => {
   const gridCols = "1.8fr 1fr 1fr 1fr 0.7fr 1fr 1fr";
 
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
+    <div className="w-full flex flex-col p-4">
       <div className="flex-1">
         {/* Breadcrumbs */}
         <div className="mb-[8px] space-x-[9px]">
@@ -521,7 +525,7 @@ export const Inventory = () => {
           </div>
 
           {/* 2. Body (ตารางข้อมูล) */}
-          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] h-[620px] flex flex-col">
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] min-h-[679px] flex flex-col">
             <div className="flex-1 overflow-auto">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -585,7 +589,7 @@ export const Inventory = () => {
                     <div className="py-2 px-4 text-black font-medium -ml-4">
                       {item.quantity}
                     </div>
-                    <div className="py-2 px-4 text-black flex items-center justify-center">
+                    <div className="py-2 px-4 text-black flex items-center justify-center ml-6">
                       {FormatThaiDate(item.last_edited)}
                     </div>
 

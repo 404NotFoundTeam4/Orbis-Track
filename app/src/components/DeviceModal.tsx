@@ -99,6 +99,7 @@ interface MainDeviceModalProps {
   defaultValues?: any; // สำหรับ edit
   onSubmit: (data: any) => void;
   existingDeviceNames?: string[]; // ชื่ออุปกรณ์ที่มีอยู่
+  existingDeviceCodes?: string[]; // รหัสอุปกรณ์ที่มีอยู่
 }
 
 interface DvivceFrom {
@@ -118,6 +119,7 @@ const MainDeviceModal = ({
   defaultValues,
   onSubmit,
   existingDeviceNames = [],
+  existingDeviceCodes = []
 }: MainDeviceModalProps) => {
   // สำหรับเปลี่ยนหน้า
   const navigate = useNavigate();
@@ -775,7 +777,23 @@ const MainDeviceModal = ({
 
     if (!regex.test(deviceCode)) {
       newError.serialNumber = "กรุณาระบุรหัสอุปกรณ์";
-    }
+    } else {
+      // รหัสอุปกรณ์ที่ input เข้ามา
+      const inputCode = deviceCode.trim().toLowerCase();
+
+      // ถ้าเป็น mode edit เอารหัสตัวเองออกก่อน
+      const duplicateCode =
+        mode === "edit"
+          ? existingDeviceCodes.filter((code) => code.trim().toLowerCase() !== defaultValues?.de_serial_number?.toLowerCase())
+          : existingDeviceCodes
+
+        // ตรวจสอบในรายการว่ามีตรงกับที่ input เข้ามาไหม
+        const duplicate = duplicateCode.some((code) => code.trim().toLowerCase() === inputCode);
+
+        if (duplicate) {
+          newError.serialNumber = "รหัสอุปกรณ์นี้มีอยู่แล้ว";
+        }
+      };
 
     if (!selectedDepartment) {
       newError.deptId = "กรุณาระบุแผนกอุปกรณ์";
@@ -1037,7 +1055,7 @@ const MainDeviceModal = ({
         </div>
       </form>
 
-      {/* Serail Number / อุปกรณ์เสริม / ลำดับการอนุมัติ */}
+      {/* Serial Number / อุปกรณ์เสริม / ลำดับการอนุมัติ */}
       <div className="flex flex-col items-center gap-[60px] w-[1540px] px-[100px]">
         {mode == "create" && (
           <div className="flex items-start gap-[110px]">
@@ -1048,17 +1066,17 @@ const MainDeviceModal = ({
               </p>
             </div>
             <div className="flex flex-col gap-[15px] w-[856px]">
-              {/* checkbox อุปกร์มี Serail Number */}
+              {/* checkbox อุปกร์มี Serial Number */}
               <div className="flex gap-2">
                 <Checkbox
                   isChecked={checked}
                   onClick={() => setChecked(!checked)}
                 />
                 <p onClick={() => setChecked(!checked)}>
-                  อุปกรณ์มี Serail Number
+                  อุปกรณ์มี Serial Number
                 </p>
               </div>
-              {/* อุปกรณ์ที่มี Serail Number */}
+              {/* อุปกรณ์ที่มี Serial Number */}
               {checked && (
                 <div className="flex items-start gap-[110px] ">
                   <div className="flex flex-col gap-[15px] h-full">
@@ -1170,6 +1188,7 @@ const MainDeviceModal = ({
                 items={approveItems}
                 onChange={handleSelectApprover}
                 placeholder="ลำดับการอนุมัติ"
+                required
                 triggerClassName={
                   errors.afId ? "!border-red-500" : "!border-[#D8D8D8]"
                 }

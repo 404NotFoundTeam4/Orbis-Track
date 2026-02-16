@@ -75,9 +75,9 @@ export class InventoryController extends BaseController {
 
     const payload = { de_id: params.id, filePath: req.file.path }; // สร้าง payload ที่ clean แล้ว
 
-    const data = await inventoryService.uploadFileDeviceChild(payload);
+    const { message } = await inventoryService.uploadFileDeviceChild(payload);
 
-    return { data };
+    return { message }
   }
 
   /**

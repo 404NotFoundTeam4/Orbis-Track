@@ -38,9 +38,10 @@ interface DevicesChildsProps {
     onDelete: (ids: number[]) => Promise<void>; // ฟังก์ชันลบอุปกรณ์ลูก
     onChangeStatus: (id: number, status: DeviceChild["dec_status"]) => void; // ฟังก์ชันเปลี่ยนสถานะอุปกรณ์ลูก
     lastAssetCode: string | null; // รหัส asset code ล่าสุด
+    isValidateDraft: (drafts: DraftDevice[]) => boolean
 }
 
-const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode }: DevicesChildsProps) => {
+const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode, isValidateDraft }: DevicesChildsProps) => {
     // สถานะของอุปกรณ์ลูก
     const statusItems = [
         { id: 1, label: "พร้อมใช้งาน", value: "READY", textColor: "#73D13D" },
@@ -241,42 +242,37 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
     }, [filteredDevices, page, pageSize]);
 
     /**
-    * Description: คำนวณเลข running number ที่มากที่สุดจาก asset code
-    * Input     : -
-    * Output    : ค่า running number ที่มากที่สุด
+    * Description: ใช้สำหรับแยก asset code
+    * Input     : assetCode (string): asset code ล่าสุด
+    * Output    : { prefix: string, numberLength: number }
     * Author    : Thakdanai Makmi (Ryu) 66160355
     */
-    const getMaxRunningNo = () => {
-        // ดึง asset code ของอุปกรณ์ลูกทั้งหมด
-        const numbers = devicesChilds
-            .map(device => {
-                const match = device.dec_asset_code?.match(/(\d+)$/); // ดึงตัวเลขที่อยู่ท้ายสุดของ asset code
-                return match ? Number(match[1]) : null; // แปลงเป็น number
-            })
-            .filter((number): number is number => number !== null); // กรองเฉพาะค่าที่เป็น number จริง
+    const splitAssetCode = (assetCode: string) => {
+        // แยกข้อความด้านหน้าและตัวเลขท้ายสุด
+        const match = assetCode.match(/^(.*?)(\d+)$/);
+        // ถ้าไม่มีตัวเลขท้ายเลย
+        if (!match) {
+            return { prefix: assetCode, numberLength: 3 };
+        }
 
-        return numbers.length > 0 ? Math.max(...numbers) : 0; // คืนค่าเลขที่มากที่สุด
+        return {
+            prefix: match[1], // ส่วนข้อความด้านหน้า
+            numberLength: match[2].length // ความยาวของตัวเลขท้ายสุด
+        };
     };
 
     /**
-    * Description: สร้าง asset code ของอุปกรณ์ลูก โดยอิงจาก asset code ของอุปกรณ์แม่
-    * Input     : parentCode, runningNo - รหัสอุปกรณ์แม่, เลข running number
-    * Output    : asset code ใหม่ในรูปแบบ ASSET-{prefix}-{runningNo}
+    * Description: สร้าง asset code ตัวถัดไป
+    * Input     : lastAssetCode (string): asset ล่าสุด, nextRunning (number): running number ใหม่
+    * Output    : asset code ใหม่
     * Author    : Thakdanai Makmi (Ryu) 66160355
     */
-    const makeAssetCode = (parentCode: string, runningNo: number) => {
-        const parts = parentCode.split("-"); // แยกรหัสอุปกรณ์แม่ด้วยเครื่องหมาย "-"
-        const last = parts[parts.length - 1]; // ดึงค่าตัวสุดท้ายของรหัสอุปกรณ์แม่
+    const makeNextAssetFromLast = (lastAssetCode: string, nextRunning: number) => {
+        const { prefix, numberLength } = splitAssetCode(lastAssetCode);
 
-        // ถ้าตัวสุดท้ายไม่ใช่ตัวเลข
-        if (!/^\d+$/.test(last)) {
-            return `ASSET-${parentCode}`; // สร้าง asset code แบบไม่มี running number ต่อท้าย
-        }
+        const nextNumber = String(nextRunning).padStart(numberLength, "0");
 
-        const prefix = parts.slice(0, -1).join("-"); // ดึงส่วนหน้าของรหัสอุปกรณ์แม่ (ตัดตัวเลขท้ายออก)
-        const next = String(runningNo).padStart(last.length, "0"); // แปลง running number เป็น string แล้วเติมเลข 0 ด้านหน้า
-
-        return `ASSET-${prefix}-${next}`; // รวม prefix และ running number
+        return `${prefix}${nextNumber}`;
     };
 
     /**
@@ -300,28 +296,34 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
     * Author    : Thakdanai Makmi (Ryu) 66160355
     */
     const generateDraftDevice = (qty: number) => {
-        // ตรวจสอบว่ามี parentCode และ qty มากกว่า 0
-        if (!parentCode || !qty || qty <= 0) return;
-        // ดึง running number ล่าสุดจาก asset code ตัวสุดท้าย
-        const maxRunning = getRunningFromAssetCode(lastAssetCode);
-        // ดึง running number ที่มากที่สุดจากอุปกรณ์ลูกใน state ปัจจุบัน
-        const localRunning = getMaxRunningNo();
-        // เลือกค่า running number ที่มากที่สุด เพื่อป้องกัน asset code ซ้ำ
-        const start = Math.max(maxRunning, localRunning) + 1;
-        // สร้าง draft อุปกรณ์ลูกตามจำนวนที่ระบุ
+        // ไม่มี asset ล่าสุด หรือ qty
+        if (!lastAssetCode || qty <= 0) return;
+
+        // หา running ล่าสุดจาก backend
+        const backendRunning = getRunningFromAssetCode(lastAssetCode);
+
+        // หา running ล่าสุดจาก draft ที่ยังไม่ save
+        const draftRunning = draftDevice.length > 0
+            ? Math.max(
+                ...draftDevice.map(draft => getRunningFromAssetCode(draft.dec_asset_code))
+            )
+            : 0;
+
+        // เลือกค่าที่มากที่สุด เพื่อป้องกัน asset ซ้ำ
+        const baseRunning = Math.max(backendRunning, draftRunning);
+
+        // สร้าง draft ตามจำนวนที่ระบุ
         const draft: DraftDevice[] = Array.from({ length: qty }).map((_, index) => {
-            // คำนวณ running number ของแต่ละอุปกรณ์
-            const runningNo = start + index;
-            // คืนค่า object draft อุปกรณ์ลูก
+            const nextRunning = baseRunning + index + 1;
             return {
                 draft_id: Date.now() + index,
                 dec_serial_number: "",
-                dec_asset_code: makeAssetCode(parentCode, runningNo),
+                dec_asset_code: makeNextAssetFromLast(lastAssetCode, nextRunning),
                 dec_status: "READY",
             };
         });
 
-        setDraftDevice(draft);
+        setDraftDevice(prev => [...prev, ...draft]);
     };
 
     return (
@@ -342,11 +344,12 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                         className="!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
                             if (quantity === null) {
-                                return;
+                                return
                             } else {
                                 generateDraftDevice(quantity);
                             }
-                        }}>
+                        }}
+                        disabled={!quantity}>
                         + เพิ่ม
                     </Button>
                 </div>
@@ -376,7 +379,11 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                             <div className="flex justify-end px-[10px] py-[10px]">
                                 <Button
                                     className="!bg-[#1890FF]"
-                                    onClick={() => setIsAddAletOpen(true)}
+                                    onClick={() => {
+                                        const isValid = isValidateDraft(draftDevice);
+                                        if (!isValid) return;
+                                        setIsAddAletOpen(true);
+                                    }}
                                 >
                                     บันทึก
                                 </Button>
@@ -471,6 +478,7 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                                         }
                                     }}
                                     className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
+                                    disabled={!("__draft" in device)}
                                 />
                             </div>
                             <div className="flex w-[200px]">

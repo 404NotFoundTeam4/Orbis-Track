@@ -83,7 +83,7 @@ export interface CreateDeviceChildPayload {
 
 // โครงสร้างข้อมูลหลังจากเพิ่มอุปกรณ์ลูก (อัปโหลดไฟล์)
 export interface UploadFileDeviceChildResponse {
-  inserted: number;
+  message: string;
 }
 
 export interface DeleteDeviceChlidsPayload {
@@ -180,6 +180,10 @@ export interface CreateDevicePayload {
   accessories: Accessory[];
 }
 
+export interface GetLastAssetCode {
+  decAssetCode: string | null;
+}
+
 export const DeviceService = {
   /**
    * Description: ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
@@ -236,9 +240,15 @@ export const DeviceService = {
     id: number,
     formData: FormData,
   ): Promise<UploadFileDeviceChildResponse> => {
-    return await api.post(`/inventory/devices/${id}/upload-childs`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.post(
+      `/inventory/devices/${id}/upload-childs`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return response.data;
   },
 
   /**
@@ -322,7 +332,7 @@ export const DeviceService = {
   * Endpoint  : GET /api/inventory/:id/last-asset
   * Author    : Thakdanai Makmi (Ryu) 66160355
   */
-  getLastAssetCode: async (id: number) => {
+  getLastAssetCode: async (id: number): Promise<GetLastAssetCode> => {
     const { data } = await api.get(`/inventory/${id}/last-asset`);
     return data.data;
   },

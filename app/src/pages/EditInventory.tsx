@@ -59,7 +59,7 @@ const EditInventory = () => {
   */
   const fetchLastAssetCode = async () => {
     const lastAsset = await DeviceService.getLastAssetCode(Number(parentId));
-    setLastAssetCode(lastAsset.dec_asset_code);
+    setLastAssetCode(lastAsset.decAssetCode);
   }
 
   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
@@ -81,6 +81,7 @@ const EditInventory = () => {
       prev.filter((device) => !ids.includes(device.dec_id))
     );
     await fetchDevice(); // โหลดข้อมูลใหม่
+    await fetchLastAssetCode(); // ดึง asset ล่าสุดใหม่
   };
 
   // เปลี่ยนสถานะอุปกรณ์
@@ -104,11 +105,12 @@ const EditInventory = () => {
 
     try {
       // เรียกใช้งาน service
-      await DeviceService.uploadFileDeviceChild(Number(parentId), formData);
-      push({ tone: "success", message: "อัปโหลดไฟล์สำเร็จ!" });
+      const res = await DeviceService.uploadFileDeviceChild(Number(parentId), formData);
+      push({ tone: "success", message: res.message });
       await fetchDevice(); // โหลดข้อมูลใหม่
-    } catch {
-      push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || "อัปโหลดไฟล์ล้มเหลว";
+      push({ tone: "danger", message });
     }
   };
 
@@ -188,9 +190,51 @@ const EditInventory = () => {
       await DeviceService.createDeviceChild(payload); // เรียกใช้งาน API
       push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" }); // แสดง toast
       await fetchDevice(); // โหลดข้อมูลใหม่
+      await fetchLastAssetCode(); // ดึง asset ล่าสุด
     } catch (error) {
       push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" })
     }
+  }
+
+   /**
+   * Description: ฟังก์ชันสำหรับตรวจสอบ serial number ของอุปกรณ์ลูกแบบ draft
+   * Input     : drafts - รายการอุปกรณ์ลูกแบบ draft ที่ผู้ใช้เพิ่ม
+   * Output    : ผลการตรวจสอบ true / false
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  const isValidateDraft = (drafts: DraftDevice[]) => {
+    // ตรวจสอบ serial number ที่มีอยู่แล้ว
+    const existingSerials = new Set(
+      deviceChilds
+        .map(device => device.dec_serial_number?.trim())
+        .filter(Boolean)
+    );
+
+    // ตรวจสอบ serial number ใน draft
+    const draftSerials = drafts
+      .map(draft => draft.dec_serial_number?.trim())
+      .filter(Boolean);
+
+    const seen = new Set<string>();
+    
+    // เช็คว่า draft ซ้ำกันเองไหม
+    for (const serial of draftSerials) {
+      if (seen.has(serial!)) {
+        push({ tone: "danger", message: "มีรายการ Serial Number ที่ซ้ำกัน" });
+        return false;
+      }
+      seen.add(serial!);
+    }
+
+    // เช็คว่าซ้ำกับของในระบบ
+    for (const serial of draftSerials) {
+      if (existingSerials.has(serial!)) {
+        push({ tone: "danger", message: "Serial Number ซ้ำกับที่มีอยู่" });
+        return false;
+      }
+    }
+
+    return true;
   }
 
   // ดึงรหัสอุปกรณ์จาก sessionStorage
@@ -229,6 +273,7 @@ const EditInventory = () => {
         onDelete={handleDeleteDeviceChild}
         onChangeStatus={handleChangeStatus}
         lastAssetCode={lastAssetCode}
+        isValidateDraft={isValidateDraft}
       />
     </div>
   );

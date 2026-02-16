@@ -69,6 +69,6 @@ router.patchDoc("/devices/:id", {
     auth: true 
 },upload.single("de_images"), inventoryController.update);
 
-router.getDoc("/:id/last-asset", { tag: "Inventory", params: idParamSchema, res: getLastAssetCodeResponse }, inventoryController.getLastAssetCode);
+router.getDoc("/:id/last-asset", { tag: "Inventory", params: idParamSchema, res: getLastAssetCodeResponse, auth: true }, inventoryController.getLastAssetCode);
 
 export default router.instance;

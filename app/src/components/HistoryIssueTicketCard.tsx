@@ -20,6 +20,9 @@ import type { HistoryIssueDetail, HistoryIssueItem } from "../services/HistoryIs
 
 /**
  * Description: ฟอร์แมตวันที่ (DD/MM/YYYY)
+ * Input : dateTimeString (string | null)
+ * Output : string
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function formatDate(dateTimeString: string | null): string {
   if (!dateTimeString) return "-";
@@ -33,6 +36,9 @@ function formatDate(dateTimeString: string | null): string {
 
 /**
  * Description: ฟอร์แมตเวลา (HH:mm)
+ * Input : dateTimeString (string | null)
+ * Output : string
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function formatTime(dateTimeString: string | null): string {
   if (!dateTimeString) return "-";
@@ -45,6 +51,9 @@ function formatTime(dateTimeString: string | null): string {
 
 /**
  * Description: แปลงชื่อแผนกให้เป็นรูปแบบสำหรับแสดงผลใน UI
+ * Input : departmentName (string | null | undefined)
+ * Output : string
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function extractDepartmentDisplayName(
   departmentName: string | null | undefined
@@ -58,6 +67,9 @@ function extractDepartmentDisplayName(
 
 /**
  * Description: แปลงชื่อฝ่ายย่อยให้เหลือเฉพาะชื่อฝ่ายย่อยจริงสำหรับแสดงผลใน UI
+ * Input : sectionName (string | null | undefined)
+ * Output : string
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function extractSectionDisplayNameOnly(
   sectionName: string | null | undefined
@@ -71,6 +83,9 @@ function extractSectionDisplayNameOnly(
 
 /**
  * Description: สร้างข้อความแสดงผล "แผนก / ฝ่ายย่อย"
+ * Input : departmentName, sectionName
+ * Output : string
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function formatDepartmentAndSectionDisplay(
   departmentName: string | null | undefined,
@@ -88,6 +103,9 @@ function formatDepartmentAndSectionDisplay(
  * - IN_PROGRESS: กำลังซ่อม
  * - COMPLETED + SUCCESS: ซ่อมแล้ว
  * - COMPLETED + FAILED: ซ่อมไม่สำเร็จ
+ * Input : issueStatus, issueResult
+ * Output : { label, className }
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function getIssueStatusPill(params: {
   issueStatus: string;
@@ -132,16 +150,25 @@ export default function HistoryIssueTicketCard({
 }: Props) {
   /**
    * Description: state ควบคุมการเปิด/ปิด Modal รายการอุปกรณ์ลูกทั้งหมด
+   * Input : -
+   * Output : isDeviceListModalOpen (boolean)
+   * Author: Chanwit Muangma (Boom) 66160224
    */
   const [isDeviceListModalOpen, setDeviceListModalOpen] = useState(false);
 
   /**
    * Description: state ควบคุมการเปิด/ปิด Modal รูปขนาดใหญ่
+   * Input : -
+   * Output : isImageModalOpen (boolean)
+   * Author: Chanwit Muangma (Boom) 66160224
    */
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   /**
    * Description: สถานะสำหรับแสดง pill (ใช้ detail ก่อน item)
+   * Input : detail, item
+   * Output : issueStatusPill
+   * Author: Chanwit Muangma (Boom) 66160224
    */
   const effectiveIssueStatus = String(detail?.issueStatus ?? item.issueStatus);
   const effectiveIssueResult = String(detail?.issueResult ?? item.issueResult);
@@ -153,11 +180,17 @@ export default function HistoryIssueTicketCard({
 
   /**
    * Description: รายการอุปกรณ์ลูก (ใช้ detail ก่อน)
+   * Input : detail, item
+   * Output : deviceChildList
+   * Author: Chanwit Muangma (Boom) 66160224
    */
   const deviceChildList = detail?.deviceChildList ?? [];
 
   /**
    * Description: map เป็น TicketDevice[] เพื่อ reuse DeviceListModal
+   * Input : deviceChildList
+   * Output : modalDevices
+   * Author: Chanwit Muangma (Boom) 66160224
    */
   const modalDevices = useMemo(() => {
     const ticketDeviceList = deviceChildList.map((deviceChild) => ({
@@ -172,6 +205,9 @@ export default function HistoryIssueTicketCard({
 
   /**
    * Description: แผนก/ฝ่ายย่อยสำหรับแสดงผล (ใช้ detail ก่อน)
+   * Input : detail, item
+   * Output : departmentName, sectionName
+   * Author: Chanwit Muangma (Boom) 66160224
    */
   const departmentName =
     detail?.parentDevice.departmentName ?? item.parentDevice.departmentName ?? null;
@@ -180,9 +216,50 @@ export default function HistoryIssueTicketCard({
 
   /**
    * Description: รูปอุปกรณ์แม่ (ถ้า backend/DTO ยังไม่มี imageUrl จะเป็น null ได้)
+   * Input : detail, item
+   * Output : parentDeviceImageUrl (string | null)
+   * Author: Chanwit Muangma (Boom) 66160224
    */
   const parentDeviceImageUrl =
     detail?.parentDevice.imageUrl ?? item.parentDevice.imageUrl ?? null;
+
+  /**
+   * Description: แสดง empCode ของผู้รับผิดชอบ
+   * - List (Summary): แสดงใต้ชื่อ
+   * - Detail (Expanded): แสดงในวงเล็บหลังชื่อ
+   * Input : item, detail
+   * Output : string (nullable-safe)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const listAssigneeName = item.assigneeUser?.fullName ?? "-";
+  const listAssigneeEmpCode = item.assigneeUser?.empCode ?? null;
+
+  const detailAssigneeName = detail?.assigneeUser?.fullName ?? item.assigneeUser?.fullName ?? "-";
+  const detailAssigneeEmpCode =
+    detail?.assigneeUser?.empCode ?? item.assigneeUser?.empCode ?? null;
+
+  const detailAssigneeDisplay =
+    detailAssigneeEmpCode && detailAssigneeEmpCode.trim().length > 0
+      ? `${detailAssigneeName} (${detailAssigneeEmpCode})`
+      : detailAssigneeName;
+  
+
+  /**
+   * Description: แสดง empCode ของผู้ส่งคำร้อง
+   * - List (Summary): แสดงใต้ชื่อ
+   * - Detail (Expanded): แสดงในวงเล็บหลังชื่อ
+   * Input : item, detail
+   * Output : string (nullable-safe)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+
+  const reporterName = detail?.reporterUser.fullName ?? item.reporterUser.fullName ?? "-";
+  const reporterEmpCode = detail?.reporterUser.empCode ?? item.reporterUser.empCode ?? null;
+
+  const reporterDisplay =
+    reporterEmpCode && reporterEmpCode.trim().length > 0
+      ? `${reporterName} (${reporterEmpCode})`
+      : reporterName;
 
   return (
     <div className="bg-white mb-2 overflow-hidden transition-all duration-300 rounded-[16px]">
@@ -208,9 +285,15 @@ export default function HistoryIssueTicketCard({
           <span className="text-[#7BACFF]">เวลา : {formatTime(item.reportedAt)}</span>
         </div>
 
-        {/* ผู้รับผิดชอบ */}
-        <div className="flex flex-col">
-          <span className="text-[#000000]">{item.assigneeUser?.fullName ?? "-"}</span>
+        {/* ผู้รับผิดชอบ (List: เพิ่ม empCode ใต้ชื่อ) */}
+        <div className="flex flex-col leading-tight">
+          <span className="text-[#000000]">{listAssigneeName}</span>
+
+          {listAssigneeEmpCode ? (
+            <span className="text-[#8C8C8C] ">{listAssigneeEmpCode}</span>
+          ) : (
+            <span className="text-[#8C8C8C] ">-</span>
+          )}
         </div>
 
         {/* สถานะ */}
@@ -283,16 +366,15 @@ export default function HistoryIssueTicketCard({
                 >
                   ดูรูปภาพ
                 </button>
-
               </div>
 
               {/* ---------- ข้อมูลฝั่งขวา ---------- */}
               <div className="flex-1 flex gap-10 pt-1">
-                {/* ซ้ายของฝั่งขวา: กำหนดความกว้างเองด้วย basis */}
+                {/* ซ้ายของฝั่งขวา */}
                 <div className="flex flex-col gap-2 basis-[480px] shrink-0">
                   <FieldRow
                     label="ผู้ส่งคำร้อง"
-                    value={detail?.reporterUser.fullName ?? item.reporterUser.fullName}
+                    value={reporterDisplay}
                   />
 
                   <FieldRow
@@ -309,6 +391,9 @@ export default function HistoryIssueTicketCard({
                     label="แผนก/ฝ่ายย่อย"
                     value={formatDepartmentAndSectionDisplay(departmentName, sectionName)}
                   />
+
+                  {/* ผู้รับผิดชอบ (Detail: empCode ในวงเล็บหลังชื่อ) */}
+                  <FieldRow label="ผู้รับผิดชอบ" value={detailAssigneeDisplay} />
 
                   {/* รหัสอุปกรณ์ลูก (chips) + ปุ่ม ... (แบบ B) */}
                   <div className="grid grid-cols-[150px_1fr] items-start">
@@ -331,7 +416,6 @@ export default function HistoryIssueTicketCard({
                         );
                       })}
 
-                      {/* ===== แบบ B: มีอุปกรณ์ลูกอย่างน้อย 1 ชิ้น ก็ให้ปุ่ม ... โผล่เลย ===== */}
                       {(deviceChildList?.length ?? 0) > 0 && (
                         <button
                           type="button"
@@ -354,7 +438,7 @@ export default function HistoryIssueTicketCard({
                   />
                 </div>
 
-                {/* ขวาสุด: ถ้าอยากกำหนดความกว้างเอง ให้เปลี่ยน flex-1 เป็น basis เช่น basis-[520px] */}
+                {/* ขวาสุด */}
                 <div className="flex flex-col gap-2 flex-1">
                   <FieldRow
                     label="สถานที่รับอุปกรณ์"
@@ -397,6 +481,9 @@ export default function HistoryIssueTicketCard({
 
 /**
  * Description: Component แสดง label/value แบบแถวเดียว
+ * Input : label (string), value (string)
+ * Output : React Component
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function FieldRow(props: { label: string; value: string }) {
   const { label, value } = props;
@@ -411,6 +498,9 @@ function FieldRow(props: { label: string; value: string }) {
 
 /**
  * Description: Modal แสดงรูปขนาดใหญ่ (ใช้ใน Detail)
+ * Input : isOpen, imageUrl, title, onClose
+ * Output : React Component
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 function ImagePreviewModal(props: {
   isOpen: boolean;

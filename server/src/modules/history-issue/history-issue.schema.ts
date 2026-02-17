@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 /**
- * Query schema สำหรับหน้า list (ใช้กับ router.getDoc)
+ * Description: Query schema สำหรับหน้า list (ใช้กับ router.getDoc)
+ * Input : querystring (status, assignedToMe)
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 export const getHistoryIssueQuerySchema = z.object({
   status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED"]).optional(),
@@ -9,15 +12,20 @@ export const getHistoryIssueQuerySchema = z.object({
 });
 
 /**
- * Param schema สำหรับ :id
- * (ถ้าคุณมี idParamSchema ในไฟล์ common อยู่แล้ว ให้ import แทนได้)
+ * Description: Param schema สำหรับ :id
+ * Input : params.id
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
 /**
- * Device child schema (สำหรับ detail)
+ * Description: Device child schema (สำหรับ detail)
+ * Input : deviceChild object
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyIssueDeviceChildSchema = z.object({
   deviceChildId: z.number(),
@@ -27,7 +35,22 @@ export const historyIssueDeviceChildSchema = z.object({
 });
 
 /**
- * Item schema (ใช้ทั้ง list และ detail)
+ * Description: Attachment schema (รูปแนบใบแจ้งซ่อม)
+ * Input : attachment object
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export const historyIssueAttachmentSchema = z.object({
+  attachmentId: z.number(),
+  pathUrl: z.string(),
+  uploadedAt: z.date(),
+});
+
+/**
+ * Description: Item schema (ใช้ทั้ง list และ detail)
+ * Input : HistoryIssueItem DTO
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyIssueItemSchema = z.object({
   issueId: z.number(),
@@ -44,9 +67,15 @@ export const historyIssueItemSchema = z.object({
 
   issueTitle: z.string(),
   issueDescription: z.string(),
-  issueStatus: z.string(),
-  issueResult: z.string(),
 
+  issueStatus: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED"]),
+  issueResult: z.enum(["SUCCESS", "FAILED", "IN_PROGRESS"]),
+
+  /**
+   * หมายเหตุ:
+   * - ถ้าคุณ validate ก่อน res.json() (ยังเป็น Date object) ให้ใช้ z.date() ได้
+   * - ถ้าคุณ validate หลัง serialize (เป็น ISO string) ให้เปลี่ยนเป็น z.string().datetime()
+   */
   reportedAt: z.date(),
 
   reporterUser: z.object({
@@ -55,9 +84,16 @@ export const historyIssueItemSchema = z.object({
     fullName: z.string(),
   }),
 
+  /**
+   * Description: ผู้รับผิดชอบ (เพิ่ม empCode ตาม requirement)
+   * Input : assigneeUser (nullable)
+   * Output : object | null
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
   assigneeUser: z
     .object({
       id: z.number(),
+      empCode: z.string().nullable(),
       fullName: z.string(),
     })
     .nullable(),
@@ -67,16 +103,30 @@ export const historyIssueItemSchema = z.object({
 });
 
 /**
- * Data schema สำหรับ detail (เพื่อเอาไป infer type ได้ง่าย และ reuse ใน response schema)
+ * Description: Data schema สำหรับ detail (extend จาก item)
+ * Input : HistoryIssueDetail DTO
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyIssueDetailDataSchema = historyIssueItemSchema.extend({
   damagedReason: z.string().nullable(),
   resolvedNote: z.string().nullable(),
   deviceChildList: z.array(historyIssueDeviceChildSchema),
+
+  /**
+   * Description: รูปแนบของใบแจ้งซ่อม (ใช้ทำปุ่ม “ดูรูป”)
+   * Input : attachments[]
+   * Output : attachments[]
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  attachments: z.array(historyIssueAttachmentSchema),
 });
 
 /**
- * Response schema สำหรับ list
+ * Description: Response schema สำหรับ list
+ * Input : { success, data }
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyIssueListResponseSchema = z.object({
   success: z.boolean(),
@@ -84,7 +134,10 @@ export const historyIssueListResponseSchema = z.object({
 });
 
 /**
- * Response schema สำหรับ detail
+ * Description: Response schema สำหรับ detail
+ * Input : { success, data }
+ * Output : Zod schema
+ * Author: Chanwit Muangma (Boom) 66160224
  */
 export const historyIssueDetailResponseSchema = z.object({
   success: z.boolean(),
@@ -100,3 +153,4 @@ export type GetHistoryIssueQuery = z.infer<typeof getHistoryIssueQuerySchema>;
 export type HistoryIssueItem = z.infer<typeof historyIssueItemSchema>;
 export type HistoryIssueDetail = z.infer<typeof historyIssueDetailDataSchema>;
 export type HistoryIssueDeviceChild = z.infer<typeof historyIssueDeviceChildSchema>;
+export type HistoryIssueAttachment = z.infer<typeof historyIssueAttachmentSchema>;

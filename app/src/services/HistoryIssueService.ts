@@ -50,6 +50,19 @@ export type HistoryIssueDeviceChild = {
 };
 
 /**
+ * Description: โครงสร้างรูปแนบของใบแจ้งซ่อม (attachments)
+ * - attachmentId: รหัสไฟล์แนบ (iatt_id)
+ * - pathUrl: url/path ของไฟล์ (iatt_path_url)
+ * - uploadedAt: วันที่แนบไฟล์ (uploaded_at) (ISO string)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type HistoryIssueAttachment = {
+  attachmentId: number;
+  pathUrl: string;
+  uploadedAt: string;
+};
+
+/**
  * Description: ข้อมูลรายการในหน้า list
  * Author: Chanwit Muangma (Boom) 66160224
  */
@@ -64,6 +77,12 @@ export type HistoryIssueItem = {
     departmentName: string | null;
     sectionName: string | null;
     locationName: string;
+
+    /**
+     * Description: รูปของอุปกรณ์แม่ (devices.de_images) (nullable)
+     * Note: เป็นรูปของ “อุปกรณ์แม่” ไม่ใช่รูปแนบของใบแจ้งซ่อม
+     * Author: Chanwit Muangma (Boom) 66160224
+     */
     imageUrl: string | null;
   };
 
@@ -72,7 +91,10 @@ export type HistoryIssueItem = {
   issueStatus: HistoryIssueStatus;
   issueResult: HistoryIssueResult;
 
-  
+  /**
+   * Description: วันเวลาที่แจ้ง (backend ส่งเป็น ISO string)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
   reportedAt: string;
 
   reporterUser: {
@@ -81,8 +103,14 @@ export type HistoryIssueItem = {
     fullName: string;
   };
 
+  /**
+   * Description: ผู้รับผิดชอบ (nullable)
+   * Note: ต้องมี empCode ด้วย ตาม requirement ล่าสุด
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
   assigneeUser: {
     id: number;
+    empCode: string | null;
     fullName: string;
   } | null;
 
@@ -93,12 +121,19 @@ export type HistoryIssueItem = {
 
 /**
  * Description: ข้อมูลรายละเอียดในหน้า detail
+ * - เพิ่ม attachments เพื่อใช้ทำปุ่ม “ดูรูป” แล้วเปิดรูปใหญ่
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export type HistoryIssueDetail = HistoryIssueItem & {
   damagedReason: string | null;
   resolvedNote: string | null;
   deviceChildList: HistoryIssueDeviceChild[];
+
+  /**
+   * Description: รูปแนบของใบแจ้งซ่อม (issue_attachments)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  attachments: HistoryIssueAttachment[];
 };
 
 /**

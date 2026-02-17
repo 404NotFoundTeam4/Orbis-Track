@@ -39,7 +39,6 @@ export class HistoryIssueController {
     const data = await this.service.getDetail(issueId);
 
     if (!data) {
-      // response schema ของคุณกำหนดว่า data ต้องเป็น object (ไม่ใช่ null) → เลยต้อง throw 404
       throw new HttpError(HttpStatus.NOT_FOUND, "Issue not found");
     }
 

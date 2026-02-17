@@ -703,7 +703,13 @@ const BorrowEquipmentModal = ({
                     className="flex justify-between items-center"
                   >
                     <p>{acc.name}</p>
-                    <p>{acc.qty} ชิ้น</p>
+                    <p>
+                      {acc.qty *
+                        (selectedDeviceIds.length > 0
+                          ? selectedDeviceIds.length
+                          : 1)}{" "}
+                      ชิ้น
+                    </p>
                   </div>
                 ))}
               </div>

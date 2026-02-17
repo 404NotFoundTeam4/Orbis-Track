@@ -26,6 +26,15 @@ import {
 
 import ApprovalHistoryDetailModal from "../components/HistoryApprovalDetailModal";
 
+import HistoryIssueTicketCard from "../components/HistoryIssueTicketCard";
+import {
+  historyIssueService,
+  type GetHistoryIssueListParams,
+  type HistoryIssueDetail,
+  type HistoryIssueItem,
+  type HistoryIssueStatus,
+} from "../services/HistoryIssueService.ts";
+
 
 /**
  * Description: คีย์ของแท็บในหน้า History
@@ -44,6 +53,31 @@ type TabKey = "borrow" | "repair" | "approve";
 function classNames(...classNameParts: Array<string | false | undefined | null>) {
   return classNameParts.filter(Boolean).join(" ");
 }
+
+
+/**
+ * Description: Type ของ option สำหรับ filter สถานะแจ้งซ่อม (DropDown)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+type RepairStatusOption = {
+  id: "ALL" | HistoryIssueStatus;
+  label: string;
+  value: "" | HistoryIssueStatus;
+};
+
+const repairStatusOptions: readonly RepairStatusOption[] = [
+  { id: "ALL", label: "ทั้งหมด", value: "" },
+  { id: "PENDING", label: "รอรับเรื่อง", value: "PENDING" },
+  { id: "IN_PROGRESS", label: "กำลังซ่อม", value: "IN_PROGRESS" },
+  { id: "COMPLETED", label: "เสร็จสิ้น", value: "COMPLETED" },
+] as const;
+
+/**
+ * Description: ฟิลด์ที่ใช้ sort ในแท็บ "ประวัติการแจ้งซ่อม" (ทำ sort ฝั่งหน้าให้ชัวร์)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+type RepairSortField = "deviceName" | "issueTitle" | "reportedAt" | "assignee" | "status";
+
 
 /**
  * Description: Type ของ option สำหรับ filter สถานะ (DropDown)
@@ -132,6 +166,130 @@ export default function History() {
 
   const [loadingDetailTicketId, setLoadingDetailTicketId] = useState<number | null>(null);
 
+  /**
+ * =========================
+ * History-Issue (Repair Tab)
+ * =========================
+ */
+
+/**
+ * Description: ref กัน SearchFilter ยิงค่าเริ่มต้นซ้ำ (เหมือน borrow)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const didInitializeRepairSearchRef = useRef(false);
+const lastRepairSearchTextRef = useRef<string>("");
+
+/**
+ * Description: state สำหรับ search/filter/sort/pagination ของแท็บ repair
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const [repairSearchText, setRepairSearchText] = useState<string>("");
+const [selectedRepairStatus, setSelectedRepairStatus] = useState<HistoryIssueStatus | "">("");
+const [selectedRepairStatusOption, setSelectedRepairStatusOption] =
+  useState<RepairStatusOption>(repairStatusOptions[0]);
+
+const [repairSortField, setRepairSortField] = useState<RepairSortField>("reportedAt");
+const [repairSortDirection, setRepairSortDirection] = useState<SortDirection>("desc");
+
+const [repairCurrentPage, setRepairCurrentPage] = useState<number>(1);
+const repairPageSizeLimit = 5;
+
+const [isLoadingRepairList, setIsLoadingRepairList] = useState<boolean>(false);
+
+/**
+ * Description: เก็บรายการดิบจาก backend (ยังไม่ search/sort/paginate)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const [repairIssueRawItems, setRepairIssueRawItems] = useState<HistoryIssueItem[]>([]);
+
+const [repairTotalPages, setRepairTotalPages] = useState<number>(1);
+
+const [expandedIssueIds, setExpandedIssueIds] = useState<Set<number>>(new Set());
+
+const [issueDetailByIdMap, setIssueDetailByIdMap] = useState<
+  Record<number, HistoryIssueDetail | undefined>
+>({});
+
+const [loadingDetailIssueId, setLoadingDetailIssueId] = useState<number | null>(null);
+
+/**
+ * Description: handler รับค่าจาก SearchFilter (repair) แล้วอัปเดต search + reset pagination
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const handleRepairSearchChange = ({ search }: { search: string }) => {
+  if (!didInitializeRepairSearchRef.current) {
+    didInitializeRepairSearchRef.current = true;
+    lastRepairSearchTextRef.current = search ?? "";
+    return;
+  }
+
+  const normalizedSearchText = (search ?? "").trim();
+  if (normalizedSearchText === lastRepairSearchTextRef.current) return;
+
+  lastRepairSearchTextRef.current = normalizedSearchText;
+  setRepairSearchText(normalizedSearchText);
+  setRepairCurrentPage(1);
+  setExpandedIssueIds(new Set());
+};
+
+/**
+ * Description: คลิกหัวตารางเพื่อ sort (ตรรกะเหมือน borrow)
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const onClickRepairSort = (field: RepairSortField) => {
+  if (repairSortField !== field) {
+    setRepairSortField(field);
+    setRepairSortDirection("asc");
+    setRepairCurrentPage(1);
+    return;
+  }
+
+  setRepairSortDirection((previousDirection) =>
+    previousDirection === "asc" ? "desc" : "asc"
+  );
+  setRepairCurrentPage(1);
+};
+
+/**
+ * Description: icon sort สำหรับ repair
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const getRepairSortIcon = (field: RepairSortField) => {
+  return getSortIcon(String(repairSortField), String(field), repairSortDirection);
+};
+
+/**
+ * Description: Toggle เปิด/ปิดการ์ด issue และโหลด detail เฉพาะเมื่อยังไม่มีใน cache
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const toggleIssueOpen = async (issueId: number) => {
+  const isCurrentlyOpen = expandedIssueIds.has(issueId);
+  const nextWillOpen = !isCurrentlyOpen;
+
+  setExpandedIssueIds((previousExpandedIssueIds) => {
+    const nextExpandedIssueIds = new Set(previousExpandedIssueIds);
+    if (nextExpandedIssueIds.has(issueId)) nextExpandedIssueIds.delete(issueId);
+    else nextExpandedIssueIds.add(issueId);
+    return nextExpandedIssueIds;
+  });
+
+  if (!nextWillOpen) return;
+  if (issueDetailByIdMap[issueId]) return;
+  if (loadingDetailIssueId === issueId) return;
+
+  try {
+    setLoadingDetailIssueId(issueId);
+    const detail = await historyIssueService.getHistoryIssueDetail(issueId);
+    setIssueDetailByIdMap((previousMap) => ({ ...previousMap, [issueId]: detail }));
+  } catch (error) {
+    console.error(error);
+    setIssueDetailByIdMap((previousMap) => ({ ...previousMap, [issueId]: undefined }));
+  } finally {
+    setLoadingDetailIssueId(null);
+  }
+};
+
+
 
 
   /**
@@ -142,13 +300,22 @@ export default function History() {
    * Author: Chanwit Muangma (Boom) 66160224
    */
   useEffect(() => {
+    //borrow
     setCurrentPage(1);
     setExpandedTicketIds(new Set());
 
+    //approve
     setApprovalCurrentPage(1);
     setApprovalSearchText("");
     setSelectedApprovalDecision("");
     setSelectedApprovalDecisionOption(approvalDecisionOptions[0]);
+
+    //repair
+    setRepairCurrentPage(1);
+    setRepairSearchText("");
+    setSelectedRepairStatus("");
+    setSelectedRepairStatusOption(repairStatusOptions[0]);
+    setExpandedIssueIds(new Set());
   }, [activeTabKey]);
 
 
@@ -695,6 +862,130 @@ export default function History() {
     };
   }, [activeTabKey, canViewApprovalHistoryTab, approvalQueryParams]);
 
+
+  /**
+ * Description: โหลด list "ประวัติการแจ้งซ่อม" เมื่ออยู่แท็บ repair
+ * - backend รองรับ filter status
+ * - search/sort/pagination ทำฝั่งหน้าเพื่อให้เหมือน borrow
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+useEffect(() => {
+  if (activeTabKey !== "repair") return;
+
+  let isCancelled = false;
+
+  const loadHistoryIssueList = async () => {
+    try {
+      setIsLoadingRepairList(true);
+
+      const queryParams: GetHistoryIssueListParams = {
+        status: selectedRepairStatus || undefined,
+      };
+
+      const issueItems = await historyIssueService.getHistoryIssueList(queryParams);
+      if (isCancelled) return;
+
+      setRepairIssueRawItems(Array.isArray(issueItems) ? issueItems : []);
+    } catch (error) {
+      if (isCancelled) return;
+      console.error(error);
+      setRepairIssueRawItems([]);
+    } finally {
+      if (!isCancelled) setIsLoadingRepairList(false);
+    }
+  };
+
+  loadHistoryIssueList();
+
+  return () => {
+    isCancelled = true;
+  };
+}, [activeTabKey, selectedRepairStatus]);
+
+/**
+ * Description: รายการสำหรับ render (search + sort) ของ repair
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const repairFilteredSortedItems = useMemo(() => {
+  const normalizedSearchText = repairSearchText.trim().toLowerCase();
+
+  const filteredItems = repairIssueRawItems.filter((issueItem) => {
+    if (!normalizedSearchText) return true;
+
+    const searchableParts = [
+      issueItem.parentDevice.name,
+      issueItem.parentDevice.serialNumber,
+      issueItem.parentDevice.categoryName,
+      issueItem.issueTitle,
+      issueItem.issueDescription,
+      issueItem.reporterUser.fullName,
+      issueItem.reporterUser.empCode ?? "",
+      issueItem.assigneeUser?.fullName ?? "",
+      issueItem.receiveLocationName ?? "",
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return searchableParts.includes(normalizedSearchText);
+  });
+
+  const sortedItems = [...filteredItems];
+
+  sortedItems.sort((leftItem, rightItem) => {
+    const directionFactor = repairSortDirection === "asc" ? 1 : -1;
+
+    const getValue = (item: HistoryIssueItem): string => {
+      if (repairSortField === "deviceName") return item.parentDevice.name ?? "";
+      if (repairSortField === "issueTitle") return item.issueTitle ?? "";
+      if (repairSortField === "assignee") return item.assigneeUser?.fullName ?? "";
+      if (repairSortField === "status") return String(item.issueStatus ?? "");
+      if (repairSortField === "reportedAt") return item.reportedAt ?? "";
+      return "";
+    };
+
+    const leftValue = getValue(leftItem);
+    const rightValue = getValue(rightItem);
+
+    // reportedAt เป็น ISO string -> เทียบแบบ date
+    if (repairSortField === "reportedAt") {
+      const leftTime = new Date(leftValue).getTime();
+      const rightTime = new Date(rightValue).getTime();
+      return (leftTime - rightTime) * directionFactor;
+    }
+
+    return leftValue.localeCompare(rightValue) * directionFactor;
+  });
+
+  return sortedItems;
+}, [repairIssueRawItems, repairSearchText, repairSortField, repairSortDirection]);
+
+/**
+ * Description: คำนวณ total pages ของ repair จากรายการที่ filter แล้ว
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+useEffect(() => {
+  const computedTotalPages = Math.max(
+    1,
+    Math.ceil(repairFilteredSortedItems.length / repairPageSizeLimit)
+  );
+
+  setRepairTotalPages(computedTotalPages);
+
+  // กัน current page เกิน
+  setRepairCurrentPage((previousPage) => Math.min(previousPage, computedTotalPages));
+}, [repairFilteredSortedItems.length, repairPageSizeLimit]);
+
+/**
+ * Description: slice รายการ repair ตามหน้าปัจจุบัน
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+const repairItemsForRender = useMemo(() => {
+  const startIndex = (repairCurrentPage - 1) * repairPageSizeLimit;
+  const endIndex = startIndex + repairPageSizeLimit;
+  return repairFilteredSortedItems.slice(startIndex, endIndex);
+}, [repairFilteredSortedItems, repairCurrentPage, repairPageSizeLimit]);
+
+
     /**
      * Description: รายการสำหรับ render ตาราง (รองรับ sort categoryName ฝั่งหน้า)
      * - ถ้าไม่ได้ sort categoryName จะใช้ approvalItems เดิม
@@ -858,7 +1149,7 @@ export default function History() {
         <div className="relative flex-1">
           {activeTabKey === "borrow" && <SearchFilter onChange={handleSearchChange} />}
           {activeTabKey === "approve" && <SearchFilter onChange={handleApprovalSearchChange} />}
-          {activeTabKey === "repair" && <SearchFilter onChange={() => {}} />}
+          {activeTabKey === "repair" && <SearchFilter onChange={handleRepairSearchChange} />}
         </div>
 
         <div className="md:ml-auto">
@@ -905,12 +1196,20 @@ export default function History() {
 
           {activeTabKey === "repair" && (
             <DropDown
-              items={[{ id: "ALL", label: "ทั้งหมด", value: "" }] as any}
-              value={{ id: "ALL", label: "ทั้งหมด", value: "" } as any}
-              onChange={() => {}}
-              placeholder="ทั้งหมด"
+              items={repairStatusOptions as any}
+              value={selectedRepairStatusOption as any}
+              onChange={(item: RepairStatusOption) => {
+                setSelectedRepairStatusOption(item);
+
+                const nextStatusValue = item.value || "";
+                setSelectedRepairStatus(nextStatusValue as HistoryIssueStatus | "");
+
+                setRepairCurrentPage(1);
+                setExpandedIssueIds(new Set());
+              }}
+              placeholder="สถานะ"
               searchable={false}
-              dropdownHeight={120}
+              dropdownHeight={220}
             />
           )}
         </div>
@@ -918,10 +1217,144 @@ export default function History() {
 
       <div className="mt-4">
         {activeTabKey === "repair" && (
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
-            หน้านี้ยังไม่ถูกพัฒนา (เว้นไว้ก่อน)
+          <div className="w-full overflow-x-auto">
+            {/* Header ตาราง (โครงเดียวกับ card summary columns) */}
+            <div
+              className="grid [grid-template-columns:1.2fr_1.2fr_0.8fr_0.9fr_0.6fr_70px]
+                        bg-white border border-[#D9D9D9] font-semibold text-gray-700
+                        rounded-[16px] mb-[10px] h-[61px] items-center p-4 pl-6"
+            >
+              <div className="text-left flex items-center h-full">
+                อุปกรณ์
+                <button type="button" onClick={() => onClickRepairSort("deviceName")}>
+                  <Icon icon={getRepairSortIcon("deviceName")} width="24" height="24" className="ml-1" />
+                </button>
+              </div>
+
+              <div className="text-left flex items-center h-full">
+                หัวข้อปัญหา
+                <button type="button" onClick={() => onClickRepairSort("issueTitle")}>
+                  <Icon icon={getRepairSortIcon("issueTitle")} width="24" height="24" className="ml-1" />
+                </button>
+              </div>
+
+              <div className="text-left flex items-center h-full">
+                วันที่แจ้ง
+                <button type="button" onClick={() => onClickRepairSort("reportedAt")}>
+                  <Icon icon={getRepairSortIcon("reportedAt")} width="24" height="24" className="ml-1" />
+                </button>
+              </div>
+
+              <div className="text-left flex items-center h-full">
+                ผู้รับผิดชอบ
+                <button type="button" onClick={() => onClickRepairSort("assignee")}>
+                  <Icon icon={getRepairSortIcon("assignee")} width="24" height="24" className="ml-1" />
+                </button>
+              </div>
+
+              <div className="text-left flex items-center h-full">
+                สถานะ
+                <button type="button" onClick={() => onClickRepairSort("status")}>
+                  <Icon icon={getRepairSortIcon("status")} width="24" height="24" className="ml-1" />
+                </button>
+              </div>
+
+              <div className="h-full" />
+            </div>
+
+            <div className="bg-white border border-[#D9D9D9] rounded-[16px]">
+              <div className="space-y-3">
+                {isLoadingRepairList && (
+                  <div className="flex items-center gap-2 px-2 py-6 text-sm text-neutral-600">
+                    <Icon icon="mdi:loading" className="animate-spin text-lg" />
+                    กำลังโหลดข้อมูล...
+                  </div>
+                )}
+
+                {!isLoadingRepairList && repairItemsForRender.length === 0 && (
+                  <div className="px-2 py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
+                )}
+
+                {!isLoadingRepairList &&
+                  repairItemsForRender.map((issueItem) => (
+                    <HistoryIssueTicketCard
+                      key={issueItem.issueId}
+                      item={issueItem}
+                      isOpen={expandedIssueIds.has(issueItem.issueId)}
+                      detail={issueDetailByIdMap[issueItem.issueId]}
+                      isLoadingDetail={loadingDetailIssueId === issueItem.issueId}
+                      onToggle={() => toggleIssueOpen(issueItem.issueId)}
+                    />
+                  ))}
+              </div>
+
+              {/* Pagination (โครงเดียวกับ borrow แต่ใช้ state ของ repair) */}
+              <div className="mt-auto mb-[24px] pt-3 mr-[24px] flex items-center justify-end">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRepairCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={repairCurrentPage === 1}
+                    className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+                  >
+                    {"<"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRepairCurrentPage(1)}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
+                      repairCurrentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                    }`}
+                  >
+                    1
+                  </button>
+
+                  {repairCurrentPage > 2 && <span className="px-1 text-gray-400">…</span>}
+
+                  {repairCurrentPage > 1 && repairCurrentPage < repairTotalPages && (
+                    <button
+                      type="button"
+                      className="h-8 min-w-8 px-2 rounded border text-sm border-[#000000] text-[#000000]"
+                    >
+                      {repairCurrentPage}
+                    </button>
+                  )}
+
+                  {repairCurrentPage < repairTotalPages - 1 && (
+                    <span className="px-1 text-gray-400">…</span>
+                  )}
+
+                  {repairTotalPages > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setRepairCurrentPage(repairTotalPages)}
+                      className={`h-8 min-w-8 px-2 rounded border text-sm ${
+                        repairCurrentPage === repairTotalPages
+                          ? "border-[#000000] text-[#000000]"
+                          : "border-[#D9D9D9]"
+                      }`}
+                    >
+                      {repairTotalPages}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRepairCurrentPage((page) => Math.min(repairTotalPages, page + 1))
+                    }
+                    disabled={repairCurrentPage === repairTotalPages}
+                    className="h-8 min-w-8 px-2 rounded border text-sm disabled:text-[#D9D9D9] border-[#D9D9D9] disabled:bg-gray-50"
+                  >
+                    {">"}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
+
 
         {activeTabKey === "approve" && (
           isLoadingCurrentUserProfile ? (
@@ -1362,6 +1795,7 @@ export default function History() {
             </div>
           </div>
         )}
+
 
       </div>
     </div>

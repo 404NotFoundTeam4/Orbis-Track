@@ -49,14 +49,14 @@ class SocketService {
     console.log("Connecting to socket at:", socketUrl);
 
     this.socket = io(socketUrl, {
-      path: "/socket.io",
+      path: `${import.meta.env.NODE_ENV === "production" ? "/api/socket.io" : "/socket.io"}`,
       autoConnect: true,
       auth: (cb) => {
         const token =
           localStorage.getItem("token") || sessionStorage.getItem("token");
         cb({ token });
       },
-      transports: ["polling", "websocket"],
+      transports: ["websocket", "polling"],
     });
 
     this.socket.on("connect", () => {

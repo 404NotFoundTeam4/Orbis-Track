@@ -24,13 +24,18 @@ import { getBasePath } from "../../constants/rolePath";
 import { useNotifications } from "../../hooks/useNotifications";
 import { NotificationList } from "../Notification";
 import { NavLink } from "react-router-dom";
+import CartService from "../../services/CartService";
+import {
+  getSeenCartItemIds,
+  setSeenCartItemIds,
+} from "../../utils/cartSeenStorage";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { logout } = useUserStore();
 
   const user = JSON.parse(
-    localStorage.getItem("User") || sessionStorage.getItem("User") || "null"
+    localStorage.getItem("User") || sessionStorage.getItem("User") || "null",
   );
 
   const role = user?.us_role as UserRole;
@@ -42,66 +47,143 @@ const Navbar = () => {
   const [active, setActive] = useState<"bell" | "cart" | null>(null);
   const location = useLocation();
 
+  const userId = user?.us_id as number | undefined;
+
+  const [hasNewCartItems, setHasNewCartItems] = useState(false);
+  const [cartUnseenCount, setCartUnseenCount] = useState(0);
+
+  const isOnCartPage = location.pathname
+    .toLowerCase()
+    .includes("/list-devices/cart");
+
+  /**
+   * Description: เช็คว่ามี cart item ใหม่เมื่อเทียบกับ snapshot ตอนผู้ใช้เปิดหน้า cart ล่าสุด
+   * Input : -
+   * Output : Promise<void>
+   * Author : Nontapat Sinthum (Guitar) 66160104
+   **/
+  const checkCartNewItems = useCallback(async () => {
+    try {
+      if (!userId) return;
+
+      const res = await CartService.getCartItems();
+      const ids = res.itemData.map((i) => i.cti_id);
+
+      const seenIds = getSeenCartItemIds(userId);
+      const seenSet = new Set(seenIds);
+
+      const unseenIds = ids.filter((id) => !seenSet.has(id));
+
+      setHasNewCartItems(unseenIds.length > 0);
+      setCartUnseenCount(unseenIds.length);
+    } catch (err) {
+      console.error("checkCartNewItems error:", err);
+    }
+  }, [userId]);
+
+  // สำหรับเช็คเมื่อ mount/focus
+  useEffect(() => {
+    checkCartNewItems();
+
+    const onFocus = () => checkCartNewItems();
+    window.addEventListener("focus", onFocus);
+
+    const onCartChanged = () => checkCartNewItems();
+    window.addEventListener("cart:changed", onCartChanged as EventListener);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(
+        "cart:changed",
+        onCartChanged as EventListener,
+      );
+    };
+  }, [checkCartNewItems]);
+
+  /**
+   * Description: เมื่อเข้าหน้า cart ให้ mark ว่าเห็นแล้ว (อัปเดต snapshot ids)
+   * Input : isOnCartPage, userId
+   * Output : Promise<void>
+   * Author : Nontapat Sinthum (Guitar) 66160104
+   **/
+  useEffect(() => {
+    if (!isOnCartPage) return;
+    if (!userId) return;
+
+    (async () => {
+      try {
+        const res = await CartService.getCartItems();
+        const ids = res.itemData.map((item) => item.cti_id);
+
+        setSeenCartItemIds(userId, ids);
+        setHasNewCartItems(false);
+        setCartUnseenCount(0);
+      } catch (err) {
+        console.error("markCartSeen(local) error:", err);
+      }
+    })();
+  }, [isOnCartPage, userId]);
+
   // Sync sidebar activeMenu with URL when navigating (e.g., from notification)
   useEffect(() => {
     const path = location.pathname.toLowerCase();
 
     // Main menus
-    if (path.includes('/home')) {
-      setActiveMenu('home');
+    if (path.includes("/home")) {
+      setActiveMenu("home");
       setOpenMenu(null);
       setDropdownOpen(false);
-    } else if (path.includes('/history')) {
-      setActiveMenu('history');
+    } else if (path.includes("/history")) {
+      setActiveMenu("history");
       setOpenMenu(null);
       setDropdownOpen(false);
-    } else if (path.includes('/list-devices') && !path.includes('/cart')) {
-      setActiveMenu('devices');
+    } else if (path.includes("/list-devices") && !path.includes("/cart")) {
+      setActiveMenu("devices");
       setOpenMenu(null);
       setDropdownOpen(false);
-    } else if (path.includes('/repair')) {
-      setActiveMenu('repair');
+    } else if (path.includes("/repair")) {
+      setActiveMenu("repair");
       setOpenMenu(null);
       setDropdownOpen(false);
-    } else if (path.includes('/dashboard')) {
-      setActiveMenu('dashboard');
+    } else if (path.includes("/dashboard")) {
+      setActiveMenu("dashboard");
       setOpenMenu(null);
       setDropdownOpen(false);
-    } else if (path.includes('/setting')) {
-      setActiveMenu('setting');
+    } else if (path.includes("/setting")) {
+      setActiveMenu("setting");
       setOpenMenu(null);
       setDropdownOpen(false);
     }
     // Submenus under "จัดการ" (management_admin)
-    else if (path.includes('/request-borrow-ticket')) {
-      setActiveMenu('management_requests'); // For HOD/HOS/STAFF
-      setActiveSubMenu('คำร้อง');
-      setOpenMenu('จัดการ');
+    else if (path.includes("/request-borrow-ticket")) {
+      setActiveMenu("management_requests"); // For HOD/HOS/STAFF
+      setActiveSubMenu("คำร้อง");
+      setOpenMenu("จัดการ");
       setDropdownOpen(true);
-    } else if (path.includes('/account-management')) {
-      setActiveMenu('management_admin');
-      setActiveSubMenu('บัญชีผู้ใช้');
-      setOpenMenu('จัดการ');
+    } else if (path.includes("/account-management")) {
+      setActiveMenu("management_admin");
+      setActiveSubMenu("บัญชีผู้ใช้");
+      setOpenMenu("จัดการ");
       setDropdownOpen(true);
-    } else if (path.includes('/inventory')) {
-      setActiveMenu('management_admin');
-      setActiveSubMenu('คลังอุปกรณ์');
-      setOpenMenu('จัดการ');
+    } else if (path.includes("/inventory")) {
+      setActiveMenu("management_admin");
+      setActiveSubMenu("คลังอุปกรณ์");
+      setOpenMenu("จัดการ");
       setDropdownOpen(true);
-    } else if (path.includes('/chatbot')) {
-      setActiveMenu('management_admin');
-      setActiveSubMenu('แชทบอท');
-      setOpenMenu('จัดการ');
+    } else if (path.includes("/chatbot")) {
+      setActiveMenu("management_admin");
+      setActiveSubMenu("แชทบอท");
+      setOpenMenu("จัดการ");
       setDropdownOpen(true);
-    } else if (path.includes('/departments-management')) {
-      setActiveMenu('management_admin');
-      setActiveSubMenu('แผนกและฝ่ายย่อย');
-      setOpenMenu('จัดการ');
+    } else if (path.includes("/departments-management")) {
+      setActiveMenu("management_admin");
+      setActiveSubMenu("แผนกและฝ่ายย่อย");
+      setOpenMenu("จัดการ");
       setDropdownOpen(true);
-    } else if (path.includes('/category')) {
-      setActiveMenu('management_admin');
-      setActiveSubMenu('หมวดหมู่อุปกรณ์');
-      setOpenMenu('จัดการ');
+    } else if (path.includes("/category")) {
+      setActiveMenu("management_admin");
+      setActiveSubMenu("หมวดหมู่อุปกรณ์");
+      setOpenMenu("จัดการ");
       setDropdownOpen(true);
     }
   }, [location.pathname]);
@@ -176,25 +258,28 @@ const Navbar = () => {
               toggleDropdown();
               handleMenuClick(menu.label);
             }}
-            className={`px-7.5 flex items-center w-full cursor-pointer gap-[11px]  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${isDropdownOpen ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"
-              }`}
+            className={`px-7.5 flex items-center w-full cursor-pointer gap-[11px]  py-[11px] text-lg  rounded-[9px] select-none transition-colors duration-200 ${
+              isDropdownOpen ? "bg-[#40A9FF] text-white" : "hover:bg-[#F0F0F0]"
+            }`}
           >
             {menu.icon && <FontAwesomeIcon icon={menu.icon} />}
             {menu.label}
             {menu.iconRight && (
               <FontAwesomeIcon
                 icon={menu.iconRight}
-                className={`mt-1 transform transition-all duration-500 ease-in-out ${isDropdownOpen ? "rotate-0" : "rotate-180"
-                  }`}
+                className={`mt-1 transform transition-all duration-500 ease-in-out ${
+                  isDropdownOpen ? "rotate-0" : "rotate-180"
+                }`}
               />
             )}
           </div>
           <div
             className={`overflow-hidden transition-all duration-500 ease-in-out flex flex-col  gap-1
-    ${openMenu === menu.label
-                ? "max-h-[500px] opacity-100 py-2.5"
-                : "max-h-0 opacity-0"
-              }`}
+    ${
+      openMenu === menu.label
+        ? "max-h-[500px] opacity-100 py-2.5"
+        : "max-h-0 opacity-0"
+    }`}
           >
             {menu.children?.map((child) => (
               <Link
@@ -202,10 +287,11 @@ const Navbar = () => {
                 to={`${basePath}${child.path!}`}
                 onClick={() => handleSubMenuClick(child.label)}
                 className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap
-        ${activeSubMenu === child.label
-                    ? "bg-[#EBF3FE] text-[#40A9FF]"
-                    : "hover:bg-[#F0F0F0]"
-                  }`}
+        ${
+          activeSubMenu === child.label
+            ? "bg-[#EBF3FE] text-[#40A9FF]"
+            : "hover:bg-[#F0F0F0]"
+        }`}
               >
                 {child.label}
               </Link>
@@ -253,16 +339,18 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() => setActive(active === "bell" ? null : "bell")}
-              className={`h-full px-6.5 ${active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-                } flex justify-center items-center relative`}
+              className={`h-full px-6.5 ${
+                active === "bell" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+              } flex justify-center items-center relative`}
             >
               {unreadCount > 0 && (
                 <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-2 ml-3"></div>
               )}
               <FontAwesomeIcon
                 icon={Icons["FABELL"]}
-                className={`text-[23px] ${active === "bell" ? "text-white" : "text-[#595959]"
-                  }`}
+                className={`text-[23px] ${
+                  active === "bell" ? "text-white" : "text-[#595959]"
+                }`}
               />
             </button>
 
@@ -278,27 +366,60 @@ const Navbar = () => {
             )}
           </div>
 
-          <button
+          {/* <button
             type="button"
             onClick={() => {
               setActive(active === "cart" ? null : "cart");
               navigate("/list-devices/cart");
             }}
-            className={`h-full px-6.5 ${active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
-              } flex justify-center items-center relative`}
+            className={`h-full px-6.5 ${
+              active === "cart" ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+            } flex justify-center items-center relative`}
           >
             {active !== "cart" && (
               <div className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"></div>
             )}
+            {hasNewCartItems && !isOnCartPage && (
+              <div
+                className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"
+                title={`มีรายการใหม่ ${cartUnseenCount} รายการ`}
+              />
+            )}
             <FontAwesomeIcon
               icon={Icons["FASHOPPING"]}
-              className={`text-[23px] ${active === "cart" ? "text-white" : "text-[#595959]"
-                }`}
+              className={`text-[23px] ${
+                active === "cart" ? "text-white" : "text-[#595959]"
+              }`}
+            />
+          </button> */}
+          <button
+            type="button"
+            onClick={() => {
+              setActive(null);
+              navigate("/list-devices/cart");
+            }}
+            className={`h-full px-6.5 ${
+              isOnCartPage ? "bg-[#40A9FF]" : "hover:bg-[#F0F0F0]"
+            } flex justify-center items-center relative`}
+          >
+            {hasNewCartItems && !isOnCartPage && (
+              <div
+                className="w-2 h-2 bg-[#FF4D4F] rounded-full border-white border absolute -mt-4 ml-5"
+                title={`มีรายการใหม่ ${cartUnseenCount} รายการ`}
+              />
+            )}
+
+            <FontAwesomeIcon
+              icon={Icons["FASHOPPING"]}
+              className={`text-[23px] ${isOnCartPage ? "text-white" : "text-[#595959]"}`}
             />
           </button>
 
           <div className="flex gap-5 items-centerx border-l border-l-[#D9D9D9] ml-[21px] pl-11  pr-1 ">
-            <NavLink to="profile" className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl">
+            <NavLink
+              to="profile"
+              className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl"
+            >
               <img
                 src={getImageUrl(user.us_images)}
                 alt=""
@@ -321,7 +442,7 @@ const Navbar = () => {
           <div className="flex flex-col justify-between h-[calc(100vh-100px)] px-2 py-4 text-lg whitespace-nowrap">
             <nav className="text-left">{menus.map(renderMenu)}</nav>
 
-            <div className="text-left">
+            <div className="text-left mb-[31px]">
               <button
                 onClick={handleLogout}
                 className="px-7.5  py-[11px]  flex  items-center gap-3   hover:text-black hover:bg-[#F7F7F7] rounded-md  w-full"

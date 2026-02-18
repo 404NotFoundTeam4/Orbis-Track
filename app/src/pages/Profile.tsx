@@ -126,7 +126,7 @@ const Profile: React.FC = () => {
     upper: /[A-Z]/.test(passwordForm.new_password),
     lower: /[a-z]/.test(passwordForm.new_password),
     special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
-      passwordForm.new_password
+      passwordForm.new_password,
     ),
     number: /[0-9]/.test(passwordForm.new_password),
     noSpace:
@@ -169,24 +169,24 @@ const Profile: React.FC = () => {
   };
 
   /**
- * handlePasswordChange
- * Description : จัดการการเปลี่ยนแปลงค่าฟิลด์รหัสผ่าน 
- * Input       : e (React.ChangeEvent<HTMLInputElement>)
- * Output      : อัปเดตสถานะ passwordForm ตามชื่อฟิลด์และค่าที่ผู้ใช้กรอก
- * Author      : Niyada Butchan (Da) 66160361
- */
+   * handlePasswordChange
+   * Description : จัดการการเปลี่ยนแปลงค่าฟิลด์รหัสผ่าน
+   * Input       : e (React.ChangeEvent<HTMLInputElement>)
+   * Output      : อัปเดตสถานะ passwordForm ตามชื่อฟิลด์และค่าที่ผู้ใช้กรอก
+   * Author      : Niyada Butchan (Da) 66160361
+   */
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordForm((prev) => ({ ...prev, [name]: value }));
   };
 
-    /**
- * handleFileChange
- * Description : จัดการการเลือกไฟล์รูปภาพจาก input type="file" สำหรับรูปโปรไฟล์
- * Input       : e (React.ChangeEvent<HTMLInputElement>)
- * Output      : อัปเดตสถานะ selectedFile และ previewUrl เพื่อแสดงตัวอย่างรูปภาพ
- * Author      : Niyada Butchan (Da) 66160361
- */
+  /**
+   * handleFileChange
+   * Description : จัดการการเลือกไฟล์รูปภาพจาก input type="file" สำหรับรูปโปรไฟล์
+   * Input       : e (React.ChangeEvent<HTMLInputElement>)
+   * Output      : อัปเดตสถานะ selectedFile และ previewUrl เพื่อแสดงตัวอย่างรูปภาพ
+   * Author      : Niyada Butchan (Da) 66160361
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -296,12 +296,8 @@ const Profile: React.FC = () => {
   };
 
   const isProfileChanged =
-  profile &&
-  (
-    profileData.us_phone !== profile.us_phone ||
-    selectedFile !== null
-  );
-
+    profile &&
+    (profileData.us_phone !== profile.us_phone || selectedFile !== null);
 
   return (
     <div className="w-full min-h-screen bg-[#F5F7FA] p-8 flex flex-col items-center">
@@ -343,14 +339,13 @@ const Profile: React.FC = () => {
           {activeTab === "profile" ? (
             /* --- Tab Profile --- */
             <>
-             
               <div className="w-full flex flex-col lg:flex-row gap-16 items-start justify-center">
                 {/* ส่วนซ้าย: รูปภาพ */}
                 <div className="flex flex-col items-center gap-5 shrink-0">
                   <div className="w-[184px] h-[184px] rounded-full overflow-hidden bg-[#F3F4F6] border border-black flex items-center justify-center">
                     {(previewUrl || profileData.us_images) && (
                       <img
-                        src={getImageUrl(previewUrl)}
+                        src={getImageUrl(previewUrl || profileData.us_images)}
                         alt="Avatar"
                         className="w-full h-full object-cover"
                       />
@@ -431,17 +426,14 @@ const Profile: React.FC = () => {
                 <button
                   onClick={() => setIsSaveDialogOpen(true)}
                   disabled={
-                    profileData.us_phone.length < 10 ||
-                    !isProfileChanged
+                    profileData.us_phone.length < 10 || !isProfileChanged
                   }
-
-                className={`w-[105px] h-[50px] rounded-full font-bold text-[18px] transition-all text-white
+                  className={`w-[105px] h-[50px] rounded-full font-bold text-[18px] transition-all text-white
                   ${
                     profileData.us_phone.length < 10 || !isProfileChanged
                       ? "bg-gray-300 cursor-not-allowed"
                       : "bg-[#40A9FF] hover:bg-[#1890FF] active:scale-95"
                   }`}
-
                 >
                   บันทึก
                 </button>
@@ -477,7 +469,9 @@ const Profile: React.FC = () => {
                     value={profileData.us_username}
                     disabled={true}
                     width="w-full lg:w-[533px]"
-                    icon={<Icon icon="mynaui:user-solid" width={24} height={24} />}
+                    icon={
+                      <Icon icon="mynaui:user-solid" width={24} height={24} />
+                    }
                   />
 
                   <InputField

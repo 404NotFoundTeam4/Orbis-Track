@@ -211,11 +211,18 @@ const BorrowEquipmentModal = ({
    * Output : ส่งข้อมูลไปยัง parent component เพื่อบันทึกลงตะกร้า
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
-  const handleAddToCart = () => {
-    // ส่งข้อมูลไปยัง parent component
-    onAddToCart?.({
-      data: form,
-    });
+  
+  const handleAddToCart = async () => {
+    try {
+      // ส่งข้อมูลไปยัง parent component
+      await onAddToCart?.({ data: form });
+
+      // แจ้ง Navbar ให้เช็คของใหม่
+      //Nontapat Sinthum (Guitar) 66160104
+      window.dispatchEvent(new Event("cart:changed"));
+    } catch (error) {
+      console.error("add to cart error:", error);
+    }
   };
 
   /**
@@ -561,39 +568,36 @@ const BorrowEquipmentModal = ({
                       key={device.dec_id}
                       className="flex items-center gap-[10px] border border-[#A2A2A2] rounded-[12px] px-[12px] py-[10px] cursor-pointer
                                     "
-                    >
-                      <input
-                        type="checkbox"
-                        className="custom-checkbox-inventory"
-                        checked={checked}
-                        onChange={() => {
-                          if (checked) {
-                            // ถ้าถูกเลือกอยู่ -> เอาติ๊กออก ถ้ายังไม่ถูกเลือก -> ติ๊ก
-                            onSelectDevice(
-                              selectedDeviceIds.filter(
-                                (id) => id !== device.dec_id,
-                              ),
-                            );
-                          } else {
-                            // ยังไม่ถูกเลือก เพิ่มเข้ารายการที่เลือก
-                            onSelectDevice([
-                              ...selectedDeviceIds,
-                              device.dec_id,
-                            ]);
-                          }
-                        }}
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {device.dec_serial_number}
-                        </span>
-                        <span className="text-[12px] text-[#888]">
-                          {device.dec_asset_code}
-                        </span>
-                      </div>
-                    </label>
-                  );
-                })
+                  >
+                    <input
+                      type="checkbox"
+                      className="custom-checkbox-inventory"
+                      checked={checked}
+                      onChange={() => {
+                        if (checked) {
+                          // ถ้าถูกเลือกอยู่ -> เอาติ๊กออก ถ้ายังไม่ถูกเลือก -> ติ๊ก
+                          onSelectDevice(
+                            selectedDeviceIds.filter(
+                              (id) => id !== device.dec_id,
+                            ),
+                          );
+                        } else {
+                          // ยังไม่ถูกเลือก เพิ่มเข้ารายการที่เลือก
+                          onSelectDevice([...selectedDeviceIds, device.dec_id]);
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {device.dec_serial_number}
+                      </span>
+                      <span className="text-[12px] text-[#888]">
+                        {device.dec_asset_code}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })
             }
           </div>
         </div>
@@ -687,7 +691,13 @@ const BorrowEquipmentModal = ({
                     className="flex justify-between items-center"
                   >
                     <p>{acc.name}</p>
-                    <p>{acc.qty} ชิ้น</p>
+                    <p>
+                      {acc.qty *
+                        (selectedDeviceIds.length > 0
+                          ? selectedDeviceIds.length
+                          : 1)}{" "}
+                      ชิ้น
+                    </p>
                   </div>
                 ))}
               </div>

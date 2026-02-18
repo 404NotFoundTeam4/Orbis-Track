@@ -331,7 +331,7 @@ export const Cart = () => {
   }
 
   /**
-   * Description: ฟังก์ชันแปลง ISO Date string เป็นรูปแบบ วัน/เดือน/ปี พ.ศ. + เวลา
+   * Description: ฟังก์ชันแปลง ISO Date string เป็นรูปแบบ วัน / เดือน(ไทย) / ปี พ.ศ. + เวลา
    * Input : isoDate (string | null)
    * Output : string (รูปแบบวันที่ภาษาไทย)
    * Author : Nontapat Sinhum (Guitar) 66160104
@@ -341,14 +341,29 @@ export const Cart = () => {
 
     const date = new Date(isoDate);
 
+    const thaiMonths = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
+
     const day = date.getDate().toString().padStart(2, "0");
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const month = thaiMonths[date.getMonth()];
     const year = (date.getFullYear() + 543).toString(); // แปลงเป็น พ.ศ.
 
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
 
-    return `${day}/${month}/${year}   เวลา : ${hours}:${minutes}`;
+    return `${day} / ${month} / ${year}   เวลา : ${hours}:${minutes}`;
   };
 
   return (
@@ -358,15 +373,18 @@ export const Cart = () => {
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
         <div className="shrink-0">
           {/* แถบนำทาง */}
-          <div className="mb-[24px] space-x-[9px] text-sm">
+          <div className="mb-[8px] space-x-[9px]">
             <Link to="/list-devices" className="text-[#858585]">
               รายการอุปกรณ์
             </Link>
-            {/* <span className="text-[#858585]">รายการอุปกรณ์</span> */}
             <span className="text-[#858585]">&gt;</span>
-            <span className="text-[#000000] font-medium">รถเข็น</span>
+            <span className="text-[#000000]">รถเข็น</span>
           </div>
-          <h1 className="text-2xl font-semibold mb-[24px]">รถเข็น</h1>
+
+          {/* Page Title */}
+          <div className="flex items-center gap-[14px] mb-[21px]">
+            <h1 className="text-2xl font-semibold">รถเข็น</h1>
+          </div>
 
           {/* Select all */}
           <div className="flex items-center gap-2 mb-[24px]">

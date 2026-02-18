@@ -513,27 +513,32 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
       });
     }
 
-    // ถ้ามีอุปกรณ์แม่เดิมอยู่ในรถเข็น -> update, ถ้ายังไม่มี -> create
-    const cartItem = await tx.cart_items.upsert({
+    // หา cartItem เดิมทั้งหมดของ (cart เดียวกัน + device เดียวกัน) ไม่สน deleted_at
+    const dupItems = await tx.cart_items.findMany({
       where: {
-        cti_ct_id_cti_de_id: {
-          cti_ct_id: cart.ct_id,
-          cti_de_id: deviceId,
-        },
+        cti_ct_id: cart.ct_id,
+        cti_de_id: deviceId,
       },
-      update: {
-        cti_us_name: borrower,
-        cti_phone: phone,
-        cti_note: reason,
-        cti_usage_location: placeOfUse,
-        cti_quantity: quantity,
-        cti_start_date: borrowStart,
-        cti_end_date: borrowEnd,
-        created_at: new Date(),
-        updated_at: new Date(),
-        deleted_at: null,
-      },
-      create: {
+      select: { cti_id: true },
+    });
+
+    if (dupItems.length > 0) {
+      const dupIds = dupItems.map((item) => item.cti_id);
+
+      // ลบลูกก่อน (กัน FK พัง)
+      await tx.cart_device_childs.deleteMany({
+        where: { cdc_cti_id: { in: dupIds } },
+      });
+
+      // hard delete ตัวแม่
+      await tx.cart_items.deleteMany({
+        where: { cti_id: { in: dupIds } },
+      });
+    }
+
+    // สร้าง cartItem ใหม่
+    const cartItem = await tx.cart_items.create({
+      data: {
         cti_us_name: borrower,
         cti_phone: phone,
         cti_note: reason,
@@ -544,22 +549,14 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
         cti_ct_id: cart.ct_id,
         cti_de_id: deviceId,
         created_at: new Date(),
+        updated_at: new Date(), // ใส่ไว้กันกรณี updated_at เป็น not null
+        deleted_at: null,
       },
     });
 
     // ถ้ามีอุปกรณ์ลูก
-    // if (deviceChilds.length) {
     if (Array.isArray(deviceChilds) && deviceChilds.length > 0) {
-      // ลบรายการเดิมออก ป้องกันอุปกรณ์ซ้ำ หรือจองเกินจำนวน
-      await tx.cart_device_childs.deleteMany({
-        where: {
-          cdc_cti_id: cartItem.cti_id,
-        },
-      });
-
-      // เพิ่มรายการอุปกรณ์ลูก
       await tx.cart_device_childs.createMany({
-        // วนลูปสร้างรายการอุปกรณ์ลูก
         data: deviceChilds.map((decId: number) => ({
           cdc_cti_id: cartItem.cti_id,
           cdc_dec_id: decId,

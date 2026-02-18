@@ -67,12 +67,7 @@ export function routes(app: Express) {
     borrowReturnRouter,
   );
 
-  api.use(
-    "/inventory",
-    authMiddleware,
-    requireRole([UserRole.ADMIN, UserRole.STAFF]),
-    inventoryRouter,
-  );
+  api.use("/inventory", authMiddleware, inventoryRouter);
 
   api.use(
     "/category",
@@ -88,7 +83,7 @@ export function routes(app: Express) {
   api.use("/borrow", authMiddleware, borrowRouter);
 
   api.use("/home", authMiddleware, homeRouter);
-  
+
   api.use("/history-approval", authMiddleware, historyApprovalRouter);
 
   api.use("/history-borrow", authMiddleware, historyBorrowRouter);

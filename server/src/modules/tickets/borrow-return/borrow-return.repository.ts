@@ -81,8 +81,8 @@ export class BorrowReturnRepository {
       brt_status: status
         ? status
         : {
-          in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
-        },
+            in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
+          },
     };
 
     if (search) {
@@ -725,6 +725,22 @@ export class BorrowReturnRepository {
         }
       }
 
+      const ticket = await tx.borrow_return_tickets.findUnique({
+        where: { brt_id: ticketId },
+        include: {
+          _count: {
+            select: { ticket_devices: true },
+          },
+        },
+      });
+
+      const count = ticket?._count.ticket_devices || 0;
+
+      await tx.borrow_return_tickets.update({
+        where: { brt_id: ticketId },
+        data: { brt_quantity: count },
+      });
+
       // Log การจัดการอุปกรณ์ใน ticket
       if (changes.length > 0) {
         await auditLogger.logBorrowReturn(tx, {
@@ -871,6 +887,13 @@ export class BorrowReturnRepository {
             },
           },
         },
+        requester: {
+          select: {
+            us_email: true,
+            us_firstname: true,
+            us_username: true,
+          },
+        },
       },
     });
   }
@@ -898,6 +921,13 @@ export class BorrowReturnRepository {
             },
           },
         },
+        requester: {
+          select: {
+            us_email: true,
+            us_firstname: true,
+            us_username: true,
+          },
+        },
       },
     });
   }
@@ -920,9 +950,9 @@ export class BorrowReturnRepository {
         ...(role === US_ROLE.HOD
           ? { us_dept_id: deptId }
           : {
-            us_dept_id: deptId,
-            us_sec_id: secId,
-          }),
+              us_dept_id: deptId,
+              us_sec_id: secId,
+            }),
       },
       select: { us_firstname: true, us_lastname: true },
     });

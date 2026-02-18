@@ -65,7 +65,7 @@ const Button: React.FC<ButtonProps> = ({
     accept:
       "bg-[#73D13D] text-[#FFFFFF] hover:bg-[#52C41A] active:bg-[#389E0D]",
     manage:
-      "bg-[#BFBFBF] text-[#FFFFFF] hover:bg-[#8C8C8C] active:bg-[#595959]",
+      "bg-[#DBEAFE] text-[#1D4ED8] hover:bg-[#BFDBFE] active:bg-[#93C5FD]",
   };
 
   // ขนาดปุ่ม (ระยะห่างและขนาดตัวอักษร) แยกเป็น sm / md / lg

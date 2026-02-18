@@ -326,12 +326,21 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
         setDraftDevice(prev => [...prev, ...draft]);
     };
 
+    // ติดตามค่า quantity สำหรับการแสดงปุ่มบันทึก
+    useEffect(() => {
+        if (!quantity && quantity === 0) {
+            setDraftDevice([]);
+        }
+    }, [quantity]);
+
+    const hasSerialNumber = devicesChilds.length > 0 ? devicesChilds[0].dec_has_serial_number : false;
+
     return (
         <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[1660px] h-[984px] px-[30px] py-[60px] pt-[30px] pb-[60px]">
             {/* จำนวน / เพิ่ม / อัปโหลดไฟล์ */}
             <div className="flex justify-between">
                 <div className="flex items-center gap-[16px] w-[590px] h-[66px]">
-                    <div className="flex justify-center items-center bg-[#D9D9D9] rounded-[100px] min-w-[144px] h-[33px] px-[3px] py-[5px]">
+                    <div className="flex justify-center items-center bg-[#D9D9D9] rounded-[100px] min-w-[179px] h-[46px] px-[3px] py-[5px]">
                         <p className="text-[18px] font-medium">จำนวนอุปกรณ์ {devicesChilds.length}</p>
                     </div>
                     <QuantityInput
@@ -341,7 +350,7 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                         onChange={(val) => setQuantity(val)}
                     />
                     <Button
-                        className="!bg-[#1890FF] !w-[69px]"
+                        className="!bg-[#40A9FF] hover:!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
                             if (quantity === null) {
                                 return
@@ -355,7 +364,10 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                 </div>
                 {/* อัปโหลดไฟล์ */}
                 <div className="flex items-center min-w-[144px] h-[66px] px-[10px] py-[10px]">
-                    <Button className="relative flex gap-[5px] !bg-[#1890FF] min-w-[124px] overflow-hidden cursor-pointer">
+                    <Button
+                        variant="outline"
+                        className="relative flex gap-[5px] !border-[#40A9FF] !text-[#40A9FF] min-w-[124px] overflow-hidden cursor-pointer"
+                    >
                         <Icon
                             icon="ic:baseline-upload"
                             width="20"
@@ -378,7 +390,7 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                         draftDevice.length > 0 && (
                             <div className="flex justify-end px-[10px] py-[10px]">
                                 <Button
-                                    className="!bg-[#1890FF]"
+                                    className="!bg-[#40A9FF] hover:!bg-[#1890FF]"
                                     onClick={() => {
                                         const isValid = isValidateDraft(draftDevice);
                                         if (!isValid) return;
@@ -407,23 +419,27 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                         <p>ลำดับ</p>
                     </div>
                     <p className="flex items-center w-[230px] h-full">Asset Code</p>
-                    <div
-                        className="flex items-center w-[230px] h-full cursor-pointer"
-                        onClick={() => handleSort("dec_serial_number")}
-                    >
-                        <p>Serial Number</p>
-                        <Icon
-                            icon={
-                                sortField === "dec_serial_number"
-                                    ? sortDirection === "asc"
-                                        ? "bx:sort-down"
-                                        : "bx:sort-up"
-                                    : "bx:sort-down" //default icon
-                            }
-                            width="24"
-                            height="24"
-                            className="ml-1"
-                        />
+                    <div className="flex items-center w-[230px] h-full">
+                        {hasSerialNumber && (
+                            <div
+                                className="flex items-center cursor-pointer"
+                                onClick={() => handleSort("dec_serial_number")}
+                            >
+                                <p>Serial Number</p>
+                                <Icon
+                                    icon={
+                                        sortField === "dec_serial_number"
+                                            ? sortDirection === "asc"
+                                                ? "bx:sort-down"
+                                                : "bx:sort-up"
+                                            : "bx:sort-down" //default icon
+                                    }
+                                    width="24"
+                                    height="24"
+                                    className="ml-1"
+                                />
+                            </div>
+                        )}
                     </div>
                     <div
                         className="flex items-center w-[200px] h-full cursor-pointer"
@@ -463,23 +479,27 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                             </div>
                             <p className="w-[230px]">{device.dec_asset_code}</p>
                             <div className="flex w-[230px]">
-                                <input
-                                    type="text"
-                                    value={device.dec_serial_number ?? ""}
-                                    onChange={(event) => {
-                                        if ("__draft" in device) {
-                                            setDraftDevice(prev =>
-                                                prev.map(d =>
-                                                    d.draft_id === device.dec_id
-                                                        ? { ...d, dec_serial_number: event.target.value }
-                                                        : d
-                                                )
-                                            );
-                                        }
-                                    }}
-                                    className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
-                                    disabled={!("__draft" in device)}
-                                />
+                                {
+                                    hasSerialNumber && (
+                                        <input
+                                            type="text"
+                                            value={device.dec_serial_number ?? ""}
+                                            onChange={(event) => {
+                                                if ("__draft" in device) {
+                                                    setDraftDevice(prev =>
+                                                        prev.map(d =>
+                                                            d.draft_id === device.dec_id
+                                                                ? { ...d, dec_serial_number: event.target.value }
+                                                                : d
+                                                        )
+                                                    );
+                                                }
+                                            }}
+                                            className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
+                                            disabled={!("__draft" in device)}
+                                        />
+                                    )
+                                }
                             </div>
                             <div className="flex w-[200px]">
                                 <DropDown

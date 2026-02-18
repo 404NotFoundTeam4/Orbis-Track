@@ -18,6 +18,7 @@ import type {
   ApprovalFlowStepPayload,
 } from "../services/InventoryService";
 import { useNavigate } from "react-router-dom";
+import getImageUrl from "../services/GetImage";
 
 // Staff User interface
 interface StaffUser {
@@ -485,7 +486,7 @@ const MainDeviceModal = ({
       originalNameRef.current = (defaultValues.de_name ?? "").trim();
 
       // รูปภาพ
-      setPreview(defaultValues.de_images ?? null);
+      setPreview(defaultValues.de_images ? getImageUrl(defaultValues.de_images) : null);
 
       // Input text
       setDeviceName(defaultValues.de_name ?? "");
@@ -1450,7 +1451,7 @@ const MainDeviceModal = ({
               <div className="flex gap-2.5 justify-end">
                 <Button
                   onClick={() => setIsApproverModalOpen(false)}
-                  className="bg-[#D9D9D9] hover:bg-[#D9D9D9]"
+                  className="bg-[#E5E7EB] hover:bg-[#D9D9D9]"
                 >
                   ยกเลิก
                 </Button>

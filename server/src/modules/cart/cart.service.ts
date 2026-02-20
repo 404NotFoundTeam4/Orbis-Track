@@ -82,6 +82,8 @@ async function getCartItem(params: IdParamDto) {
         cti_end_date: true,
         cti_ct_id: true,
         cti_de_id: true,
+        created_at: true,
+        updated_at: true,
       },
     })) as CartItemSchema[];
 

@@ -55,6 +55,7 @@ services:
       PRISMA_GENERATE: "false" # generate ตอน build แล้ว
       RUN_MIGRATIONS: "true" # ให้ entrypoint รัน Prisma
       PRISMA_STRATEGY: migrate-deploy # ใช้ migrations แบบ production
+      ALLOW_DB_PUSH_IN_PROD: "true" # ไม่มี migrations folder → ใช้ db push แทน
       START_CMD: "node dist/main.js" # รันไฟล์ build แล้ว
     volumes:
       - ./uploads:/app/uploads

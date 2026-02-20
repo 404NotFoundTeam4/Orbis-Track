@@ -240,19 +240,33 @@ async function getAvailable(params: IdParamDto) {
  * Author: Thakdanai Makmi (Ryu) 66160355
  */
 async function createBorrowTicket(
-  payload: CreateBorrowTicketPayload & { userId: number },
+  payload: CreateBorrowTicketPayload & {
+    requesterId: number;
+    borrowerId: number;
+  },
 ) {
-  const { userId, deviceChilds, borrowStart, borrowEnd, reason, placeOfUse } =
+  const { requesterId, borrowerId, deviceChilds, borrowStart, borrowEnd, reason, placeOfUse } =
     payload;
 
   const result = await prisma.$transaction(async (tx) => {
-    // ดึงข้อมูลผู้ใช้เพื่อใช้สร้างใบคำร้อง
-    const user = await tx.users.findUnique({
-      where: { us_id: userId },
+    // ดึงข้อมูลคนกดส่งคำร้อง
+    const requester = await tx.users.findUnique({
+      where: { us_id: requesterId },
       select: { us_firstname: true, us_lastname: true, us_phone: true },
     });
-    if (!user) {
-      throw new Error("User not found");
+
+    if (!requester) {
+      throw new Error("Requester not found");
+    }
+
+    // ดึงข้อมูลคนที่ถูกยืมให้
+    const borrower = await tx.users.findUnique({
+      where: { us_id: borrowerId },
+      select: { us_firstname: true, us_lastname: true, us_phone: true },
+    });
+
+    if (!borrower) {
+      throw new Error("Borrower not found");
     }
 
     // ค้นหารหัส Preset ของอุปกรณ์แม่
@@ -269,9 +283,9 @@ async function createBorrowTicket(
     // สร้าง borrow return ticket
     const ticket = await tx.borrow_return_tickets.create({
       data: {
-        brt_user_id: userId,
-        brt_user: `${user.us_firstname} ${user.us_lastname}`,
-        brt_phone: user.us_phone,
+        brt_user_id: requesterId,
+        brt_user: `${borrower.us_firstname} ${borrower.us_lastname}`,
+        brt_phone: borrower.us_phone,
         brt_borrow_purpose: reason,
         brt_usage_location: placeOfUse,
         brt_start_date: borrowStart,
@@ -432,9 +446,9 @@ async function createBorrowTicket(
       data: {
         lbr_action: "CREATED",
         lbr_new_status: "CREATED",
-        lbr_note: `${user.us_firstname} ${user.us_lastname} ส่งคำร้องการยืมอุปกรณ์`,
+        lbr_note: `${requester.us_firstname} ${requester.us_lastname} ส่งคำร้องการยืมอุปกรณ์`,
         lbr_brt_id: ticket.brt_id,
-        lbr_actor_id: userId,
+        lbr_actor_id: requesterId,
       },
     });
 
@@ -629,6 +643,29 @@ async function checkCart(userId: number) {
     return { massage: "success" };
   });
 }
+
+/**
+ * Description : ดึงรายชื่อผู้ใช้สำหรับยืมให้ผู้อื่น
+ * Input : -
+ * Output : รายชื่อผู้ใช้ (ไอดี, ชื่อ, นามสกุล, ตำแหน่ง, รหัสพนักงาน, เบอร์โทรศัพท์)
+ * Author: Thakdanai Makmi (Ryu) 66160355
+ */
+async function getBorrowUsers() {
+  return await prisma.users.findMany({
+    where: {
+      deleted_at: null
+    },
+    select: {
+      us_id: true,
+      us_firstname: true,
+      us_lastname: true,
+      us_role: true,
+      us_emp_code: true,
+      us_phone: true
+    }
+  })
+}
+
 export const borrowService = {
   getInventory,
   getDeviceForBorrow,
@@ -637,4 +674,5 @@ export const borrowService = {
   addToCart,
   getDeviceAvailabilities,
   checkCart,
+  getBorrowUsers
 };

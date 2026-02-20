@@ -4,11 +4,12 @@ import Input from "./Input";
 import { Icon } from "@iconify/react";
 import TimePickerField from "./TimePickerField";
 import { AlertDialog } from "./AlertDialog";
-import type { ActiveBorrow, GetAvailable } from "../services/BorrowService";
+import type { ActiveBorrow, BorrowUsers, GetAvailable } from "../services/BorrowService";
 import { useNavigate } from "react-router-dom";
 import getImageUrl from "../services/GetImage";
 import BorrowModal from "./BorrowDate/BorrowModal";
 import { borrowService } from "../services/BorrowService";
+import DropDown from "./DropDown";
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
   serialNumber: string;
@@ -30,6 +31,7 @@ interface EquipmentDetail {
 
 // โครงสร้างข้อมูลฟอร์มการยืมอุปกรณ์
 interface BorrowFormData {
+  borrowerId?: number, // ไอดีคนที่จะยืมให้
   borrower: string;
   phone: string;
   reason: string;
@@ -52,6 +54,7 @@ interface BorrowEquipmentModalProps {
   selectedDeviceIds: number[]; // อุปกรณ์ที่เลือก
   onSelectDevice: (ids: number[]) => void; // เปลี่ยนอุปกรณ์ที่เลือก
   onDateTimeChange: (payload: { startISO: string; endISO: string }) => void; // เปลี่ยนวันเวลา
+  borrowUsers?: BorrowUsers[]; // รายชื่อผู้ใช้
 }
 
 type Device = {
@@ -74,18 +77,20 @@ const BorrowEquipmentModal = ({
   selectedDeviceIds,
   onSelectDevice,
   onDateTimeChange,
+  borrowUsers
 }: BorrowEquipmentModalProps) => {
 
   // ดึงข้อมูล user จาก sessionStorage หรือ localStorage
   const userString = sessionStorage.getItem("User") || localStorage.getItem("User");
   const user = userString ? JSON.parse(userString) : null;
-  
+
   // role ที่สามารถยืมให้ผู้อื่นได้
-  const isCanBorrowForOthers = user.us_role === "STAFF" || user.us_role === "ADMIN";
+  const isCanBorrowForOthers = user?.us_role === "STAFF" || user?.us_role === "ADMIN";
 
   // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
   const initialForm: BorrowFormData = {
-    borrower: defaultValue?.borrower ?? `${user.us_firstname ?? ""} ${user.us_lastname ?? ""}`.trim(),
+    borrowerId: user?.us_id, // ไอดีคนที่จะยืมให้
+    borrower: defaultValue?.borrower ?? `${user?.us_firstname ?? ""} ${user?.us_lastname ?? ""}`.trim(),
     phone: defaultValue?.phone ?? user.us_phone ?? "",
     reason: defaultValue?.reason ?? "",
     placeOfUse: defaultValue?.placeOfUse ?? "",
@@ -211,7 +216,6 @@ const BorrowEquipmentModal = ({
    * Output : ส่งข้อมูลไปยัง parent component เพื่อบันทึกลงตะกร้า
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
-  
   const handleAddToCart = async () => {
     try {
       // ส่งข้อมูลไปยัง parent component
@@ -380,6 +384,64 @@ const BorrowEquipmentModal = ({
         )
       : [];
 
+  /**
+  * Description: แปลงค่า role จาก enum ให้เป็นชื่อภาษาไทยสำหรับแสดงใน UI
+  * Input: role - ค่า us_role จากฐานข้อมูล (เช่น ADMIN, STAFF)
+  * Output: ชื่อบทบาทภาษาไทย
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const getRoleName = (role: string) => ({
+    EMPLOYEE: "พนักงาน",
+    ADMIN: "ผู้ดูแลระบบ",
+    STAFF: "เจ้าหน้าที่คลัง",
+    HOD: "หัวหน้าแผนก",
+    HOS: "หัวหน้าฝ่ายย่อย",
+    TECHNICAL: "ช่างเทคนิค",
+  }[role] ?? "ไม่พบตำแหน่ง");
+
+  /**
+  * Description: แปลงข้อมูลผู้ใช้ให้อยู่ในรูปแบบที่ DropDown
+  * Input: borrowUsers - รายชื่อผู้ใช้ที่สามารถเลือกยืมให้ได้
+  * Output: Array ของ object ที่มี id, label และ value สำหรับ DropDown
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const listUserOptions = ((borrowUsers ?? []).map((user) => ({
+    id: user.us_id,
+    label: `${user.us_firstname} ${user.us_lastname} (${getRoleName(user.us_role)} / ${user.us_emp_code})`,
+    value: user.us_id,
+  })));
+
+  /**
+  * Description: ค้นหาผู้ใช้ที่ถูกเลือกอยู่ในฟอร์มจาก borrowerId
+  * Input: form.borrowerId - ID ของผู้ใช้ที่เลือกไว้ในฟอร์ม
+  * Output: object ของผู้ใช้ที่ตรงกับ borrowerId
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const selectedUserItem = listUserOptions.find((item) => item.id === form.borrowerId) ?? null;
+
+  /**
+  * Description: อัปเดตข้อมูลในฟอร์มเมื่อมีการเลือกผู้ใช้
+  * Input: item - id ของผู้ใช้ที่ถูกเลือก
+  * Output: อัปเดต state ของฟอร์ม
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const handleSelectBorrower = (item: { id: number }) => {
+    // หาผู้ใช้ที่เลือก
+    const selectedUser = borrowUsers?.find(
+      (user) => user.us_id === item.id
+    );
+
+    if (!selectedUser) return;
+
+    // เปลี่ยนค่าใน state
+    setForm((prev) => ({
+      ...prev,
+      borrowerId: selectedUser.us_id,
+      borrower: `${selectedUser.us_firstname} ${selectedUser.us_lastname}`,
+      phone: selectedUser.us_phone,
+    }));
+  };
+
   return (
     <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
@@ -397,15 +459,27 @@ const BorrowEquipmentModal = ({
             <label className="text-[16px] font-medium">
               ชื่อผู้ยืม <span className="text-[#F5222D]">*</span>
             </label>
-            <Input
-              className="disabled:bg-white"
-              fullWidth
-              placeholder="กรอกข้อมูลชื่อผู้ยืม"
-              value={form.borrower}
-              onChange={(e) => setForm({ ...form, borrower: e.target.value })}
-              error={errors.borrower}
-              disabled={!isCanBorrowForOthers}
-            />
+            {
+              !isCanBorrowForOthers ? (
+                <Input
+                  className="disabled:bg-white"
+                  fullWidth
+                  placeholder="กรอกข้อมูลชื่อผู้ยืม"
+                  value={form.borrower}
+                  onChange={(e) => setForm({ ...form, borrower: e.target.value })}
+                  error={errors.borrower}
+                  disabled={!isCanBorrowForOthers}
+                />
+              ) :
+                (
+                  <DropDown
+                    className="w-full"
+                    items={listUserOptions}
+                    value={selectedUserItem}
+                    onChange={handleSelectBorrower}
+                  />
+                )
+            }
           </div>
           {/* เบอร์โทรศัพท์ผู้ยืม */}
           <div className="flex flex-col gap-[4px]">
@@ -420,7 +494,7 @@ const BorrowEquipmentModal = ({
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               error={errors.phone}
-              disabled={!isCanBorrowForOthers}
+              disabled
             />
           </div>
           {/* เหตุผลในการยืม */}

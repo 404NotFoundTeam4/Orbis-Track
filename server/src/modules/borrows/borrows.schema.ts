@@ -72,6 +72,7 @@ export const getAvailableSchema = z.array(
 
 // โครงสร้างข้อมูลที่ส่งมาตอนส่งคำร้อง
 export const createBorrowTicketPayload = z.object({
+    borrowerId: z.number().optional(),
     deviceChilds: z.array(z.number()).min(1).openapi({ description: "รายชื่อ ID อุปกรณ์ลูกที่ต้องการยืม" }),
     borrowStart: z.coerce.date().openapi({ description: "วันเวลาที่เริ่มยืม" }),
     borrowEnd: z.coerce.date().openapi({ description: "วันเวลาที่ต้องการคืน" }),
@@ -125,6 +126,18 @@ export const deviceAvailabilityItemSchema = z.object({
     updated_at: z.date().openapi({ description: "วันที่อัปเดต" }),
 })
 
+// โครงสร้างข้อมูลดึงรายชื่อผู้ใช้สำหรับยืมให้ผู้อื่น
+export const getBorrowUsersSchema = z.array(
+    z.object({
+        us_id: z.number(),
+        us_firstname: z.string(),
+        us_lastname: z.string(),
+        us_role: z.string(),
+        us_emp_code: z.string().nullable(),
+        us_phone: z.string()
+    })
+);
+
 export const deviceAvailabilitiesSchema = z.array(deviceAvailabilityItemSchema);
 
 export type GetInventorySchema = z.infer<typeof getInventorySchema>;
@@ -144,3 +157,5 @@ export type AddToCartPayload = z.infer<typeof addToCartPayload>;
 export type AddToCartSchema = z.infer<typeof addToCartSchema>;
 
 export type DeviceAvailabilitiesSchema = z.infer<typeof deviceAvailabilitiesSchema>;
+
+export type GetBorrowUsersSchema = z.infer<typeof getBorrowUsersSchema>;

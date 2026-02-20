@@ -5,11 +5,13 @@ import {
   type GetAvailable,
   type GetDeviceForBorrow,
   type DeviceAvailability,
+  type BorrowUsers,
 } from "../services/BorrowService";
 import { useEffect, useState } from "react";
 import { useToast } from "../components/Toast";
 
 interface BorrowForm {
+  borrowerId: number; // ไอดีคนที่จะยืมให้
   dateRange: [Date | null, Date | null];
   quantity: number;
   reason: string;
@@ -84,6 +86,32 @@ const BorrowDevice = () => {
 
     fetchDevice();
   }, [deId]);
+
+  // ดึงข้อมูล user จาก sessionStorage หรือ localStorage
+  const userString = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const user = userString ? JSON.parse(userString) : null;
+
+  // role ที่สามารถยืมให้ผู้อื่นได้
+  const isCanBorrowForOthers = user?.us_role === "STAFF" || user?.us_role === "ADMIN";
+  // เก็บรายชื่อผู้ใช้
+  const [borrowUsers, setBorrowUsers] = useState<BorrowUsers[]>([]);
+
+  /**
+  * Description: ฟังก์ชันสำหรับดึงรายชื่อในการยืมให้ผู้อื่น (ดึงข้อมูลก็ต่อเมื่อ role นั้น สามารถยืมให้ผู้อื่นได้)
+  * Input : -
+  * Output : รายชื่อผู้ใช้
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
+  useEffect(() => {
+    if (!isCanBorrowForOthers) return;
+
+    const fetchBorrowUsers = async () => {
+      const res = await borrowService.getBorrowUsers();
+      setBorrowUsers(res);
+    };
+
+    fetchBorrowUsers();
+  }, [isCanBorrowForOthers]);
 
   if (!device) {
     return null;
@@ -210,6 +238,7 @@ const BorrowDevice = () => {
       const borrowEnd = buildDateTime(returnDate, data.returnTime);
 
       const payload = {
+        borrowerId: data.borrowerId, // ไอดีคนที่จะยืมให้
         deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
         borrowStart: borrowStart.toISOString(),
         borrowEnd: borrowEnd.toISOString(),
@@ -292,6 +321,7 @@ const BorrowDevice = () => {
         onDateTimeChange={handleDateTimeChange} // เปลี่ยนวันเวลา
         onSubmit={handleSubmit}
         onAddToCart={handleAddToCart}
+        borrowUsers={borrowUsers}
       />
     </div>
   );

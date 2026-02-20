@@ -427,8 +427,8 @@ model device_availabilities {
 model borrow_return_tickets {
   brt_id              Int        @id @default(autoincrement())
   brt_status          BRT_STATUS
-  brt_user            String     @db.VarChar(255)
-  brt_phone           String     @db.VarChar(20)
+  brt_user            String     @default("-") @db.VarChar(255)
+  brt_phone           String     @default("-") @db.VarChar(20)
   brt_usage_location  String     @db.VarChar(255)
   brt_borrow_purpose  String     @db.VarChar(255)
   brt_start_date      DateTime   @db.Timestamptz(6)

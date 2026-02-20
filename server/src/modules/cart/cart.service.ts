@@ -456,6 +456,8 @@ export async function createBorrowTicket(params: CreateBorrowTicketPayload) {
     const newBorrowTicket = await tx.borrow_return_tickets.create({
       data: {
         brt_status: "PENDING",
+        brt_user: cartItem.cti_us_name ?? "Unknown",
+        brt_phone: cartItem.cti_phone ?? "Unknown",
         brt_usage_location: cartItem.cti_usage_location ?? "",
         brt_borrow_purpose: cartItem.cti_note ?? "",
         brt_start_date: cartItem.cti_start_date ?? new Date(),
@@ -767,9 +769,9 @@ async function createBorrowTicketStages(
         ...(firstApproveStage.brts_role === "HOD"
           ? { us_dept_id: firstApproveStage.brts_dept_id }
           : {
-              us_dept_id: firstApproveStage.brts_dept_id,
-              us_sec_id: firstApproveStage.brts_sec_id,
-            }),
+            us_dept_id: firstApproveStage.brts_dept_id,
+            us_sec_id: firstApproveStage.brts_sec_id,
+          }),
       },
       select: { us_id: true },
     });

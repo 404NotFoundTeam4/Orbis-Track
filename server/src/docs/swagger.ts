@@ -27,17 +27,13 @@ registry.registerComponent("securitySchemes", "BearerAuth", {
  */
 export function swagger(app: Express, baseUrl: string) {
   const generator = new OpenApiGeneratorV31(registry.definitions);
-  app.get("/docs.json", (req, res) => {
-    // Generate document dynamically per request to capture correct scheme (http/https) and host
-    // This ensures Swagger works flawlessly whether accessed via localhost, ngrok, or a production HTTPS proxy
-    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
-    const host = req.headers["x-forwarded-host"] || req.get("host");
-    const dynamicBaseUrl = `${protocol}://${host}/api/v1`;
-
+  app.get("/docs.json", (_req, res) => {
     const doc = generator.generateDocument({
       openapi: "3.1.0",
       info: { title: "Orbis Track API", version: "1.0.0" },
-      servers: [{ url: dynamicBaseUrl }],
+      // Use relative path or env API_URL passed from app.ts
+      // This forces the browser to use the domain it is currently on, bypassing any Nginx header missing issues.
+      servers: [{ url: baseUrl }],
     });
 
     res.json(doc);

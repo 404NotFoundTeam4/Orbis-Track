@@ -246,6 +246,15 @@ async function createBorrowTicket(
     payload;
 
   const result = await prisma.$transaction(async (tx) => {
+    // ดึงข้อมูลผู้ใช้เพื่อใช้สร้างใบคำร้อง
+    const user = await tx.users.findUnique({
+      where: { us_id: userId },
+      select: { us_firstname: true, us_lastname: true, us_phone: true },
+    });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     // ค้นหารหัส Preset ของอุปกรณ์แม่
     const device = await tx.devices.findFirst({
       where: {
@@ -261,6 +270,8 @@ async function createBorrowTicket(
     const ticket = await tx.borrow_return_tickets.create({
       data: {
         brt_user_id: userId,
+        brt_user: `${user.us_firstname} ${user.us_lastname}`,
+        brt_phone: user.us_phone,
         brt_borrow_purpose: reason,
         brt_usage_location: placeOfUse,
         brt_start_date: borrowStart,
@@ -414,20 +425,7 @@ async function createBorrowTicket(
       })),
     });
 
-    // ดึงข้อมูลชื่อและนามสกุลของผู้ใช้จาก userId
-    const user = await tx.users.findUnique({
-      where: {
-        us_id: userId,
-      },
-      select: {
-        us_firstname: true,
-        us_lastname: true,
-      },
-    });
 
-    if (!user) {
-      throw new Error("User not found");
-    }
 
     // สร้าง log borrow return
     await tx.log_borrow_returns.create({

@@ -29,6 +29,9 @@ import {
   DepartmentSchema,
   SectionSchema,
 } from "../departments/departments.schema.js";
+import { notificationsService } from "../notifications/notifications.service.js";
+import { US_ROLE } from "@prisma/client";
+import { SocketEmitter } from "../../infrastructure/websocket/socket.emitter.js";
 
 /**
  * Description: ฟังก์ชันสำหรับดึงรายการอุปกรณ์ทั้งหมดในรถเข็น “ตาม User ID (us_id)”
@@ -79,6 +82,8 @@ async function getCartItem(params: IdParamDto) {
         cti_end_date: true,
         cti_ct_id: true,
         cti_de_id: true,
+        created_at: true,
+        updated_at: true,
       },
     })) as CartItemSchema[];
 
@@ -168,10 +173,16 @@ async function getCartItem(params: IdParamDto) {
     ]);
 
     //ทำ index ของ device_availabilities ตาม da_dec_id เพื่อเช็คเร็วว่า dec_id นี้ถูก block ช่วงเวลาไหนบ้าง
-    const availabilitiesByDecId = new Map<number, Array<{ da_start: Date; da_end: Date }>>();
+    const availabilitiesByDecId = new Map<
+      number,
+      Array<{ da_start: Date; da_end: Date }>
+    >();
     for (const da of device_availabilities) {
-      if (!availabilitiesByDecId.has(da.da_dec_id)) availabilitiesByDecId.set(da.da_dec_id, []);
-      availabilitiesByDecId.get(da.da_dec_id)!.push({ da_start: da.da_start, da_end: da.da_end });
+      if (!availabilitiesByDecId.has(da.da_dec_id))
+        availabilitiesByDecId.set(da.da_dec_id, []);
+      availabilitiesByDecId
+        .get(da.da_dec_id)!
+        .push({ da_start: da.da_start, da_end: da.da_end });
     }
 
     /**
@@ -276,19 +287,26 @@ async function getCartItem(params: IdParamDto) {
 
       if (cartStart && cartEnd) {
         // เอาเฉพาะ dec_id ที่เลือกใน cartItem นี้
-        const selectedDecIds = matchedCartDeviceChilds.map((cdc) => cdc.cdc_dec_id);
+        const selectedDecIds = matchedCartDeviceChilds.map(
+          (cdc) => cdc.cdc_dec_id,
+        );
 
         isBorrow = selectedDecIds.some((decId) => {
           const avList = availabilitiesByDecId.get(decId);
           if (!avList || avList.length === 0) return false;
 
           // "อยู่ใน da_start ถึง da_end" = cartStart >= da_start && cartEnd <= da_end
-          return avList.some(({ da_start, da_end }) => cartStart >= da_start && cartEnd <= da_end);
+          return avList.some(
+            ({ da_start, da_end }) =>
+              cartStart >= da_start && cartEnd <= da_end,
+          );
         });
       }
       const category = categories.find((ca) => ca.ca_id === device?.de_ca_id);
 
-      const accessory = accessories.find((acc) => acc.acc_de_id === device?.de_id);
+      const accessory = accessories.find(
+        (acc) => acc.acc_de_id === device?.de_id,
+      );
 
       const section = sections.find((sec) => sec.sec_id === device?.de_sec_id);
 
@@ -740,6 +758,39 @@ async function createBorrowTicketStages(
       }),
     );
 
+    const firstApproveStage = stages[0];
+
+    const nextApprovers = await tx.users.findMany({
+      where: {
+        us_role: firstApproveStage.brts_role as US_ROLE,
+        us_is_active: true,
+        ...(firstApproveStage.brts_role === "HOD"
+          ? { us_dept_id: firstApproveStage.brts_dept_id }
+          : {
+              us_dept_id: firstApproveStage.brts_dept_id,
+              us_sec_id: firstApproveStage.brts_sec_id,
+            }),
+      },
+      select: { us_id: true },
+    });
+
+    await notificationsService.createNotification({
+      recipient_ids: nextApprovers.map((approver) => approver.us_id),
+      title: "แจ้งเตือนคำขอยืมใหม่",
+      message: `มีคำขอยืมกำลังรออนุมัติ`,
+      base_event: "TICKET_STAGE_PASSED",
+      event: "APPROVAL_REQUESTED",
+      brt_id: borrowTicketId,
+      target_route: `/request-borrow-ticket/${borrowTicketId}`,
+    });
+
+    // Emit socket event to refresh request page for approvers (realtime update)
+    nextApprovers.forEach((approver) => {
+      SocketEmitter.toUser(approver.us_id, "REFRESH_REQUEST_PAGE", {
+        ticketId: borrowTicketId,
+      });
+    });
+
     /**
      * Description: สร้าง stage สุดท้ายสำหรับ STAFF Distribution ตามแผนก/ฝ่ายย่อยของอุปกรณ์
      * Input : department, section, borrowTicketId
@@ -843,11 +894,12 @@ async function updateCartDeviceDetail(
 
     // Create new relations
     await tx.cart_device_childs.createMany({
-      data: payload.device_childs?.map((decId) => ({
-        cdc_cti_id: ctiId,
-        cdc_dec_id: decId,
-        created_at: new Date(),
-      })) || [],
+      data:
+        payload.device_childs?.map((decId) => ({
+          cdc_cti_id: ctiId,
+          cdc_dec_id: decId,
+          created_at: new Date(),
+        })) || [],
     });
 
     // Remove device_childs from payload before updating cart_items (not a table column)

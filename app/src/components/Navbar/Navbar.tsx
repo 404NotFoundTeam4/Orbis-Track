@@ -12,7 +12,7 @@
  */
 
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Icon } from "@iconify/react";
 import { useUserStore } from "../../stores/userStore";
@@ -26,8 +26,8 @@ import { NotificationList } from "../Notification";
 import { NavLink } from "react-router-dom";
 import CartService from "../../services/CartService";
 import {
-  getSeenCartItemIds,
-  setSeenCartItemIds,
+  getSeenCartSnapshot,
+  setSeenCartSnapshot,
 } from "../../utils/cartSeenStorage";
 
 const Navbar = () => {
@@ -57,29 +57,80 @@ const Navbar = () => {
     .includes("/list-devices/cart");
 
   /**
-   * Description: เช็คว่ามี cart item ใหม่เมื่อเทียบกับ snapshot ตอนผู้ใช้เปิดหน้า cart ล่าสุด
-   * Input : -
+   * Description: แปลง/normalize ข้อมูลจาก API ให้อยู่ในรูปแบบที่ใช้เช็ค snapshot ได้เสมอ
+   * Input : itemData (any[])
+   * Output : { id: number, updatedAt: string | null, createdAt: string | null }[]
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
+  const normalizeCartItemsForSeen = useCallback((itemData: any[]) => {
+    return (itemData ?? []).map((i: any) => ({
+      id: i.cti_id,
+      updatedAt: i.updated_at ?? i.cti_updated_at ?? null,
+      createdAt: i.created_at ?? i.cti_created_at ?? null,
+    }));
+  }, []);
+
+  const MIN_CART_CHECK_MS = 2500;
+
+  const cartCheckRef = useRef({
+    inFlight: false,
+    lastAt: 0,
+    queued: false,
+  });
+
+  /**
+   * Description: เช็คว่ามี cart item "ใหม่/ถูกแก้ไข" เมื่อเทียบกับ snapshot ตอนผู้ใช้เปิดหน้า cart ล่าสุด
+   * Input : userId (number)
    * Output : Promise<void>
-   * Author : Nontapat Sinthum (Guitar) 66160104
+   * Author : Nontapat Sinhum (Guitar) 66160104
    **/
   const checkCartNewItems = useCallback(async () => {
     try {
       if (!userId) return;
+      if (isOnCartPage) return; // อยู่หน้า cart อยู่แล้ว ไม่ต้องเช็ค badge ถี่ ๆ
+
+      const now = Date.now();
+
+      // throttle: ถี่เกินไปไม่ต้องยิง
+      if (now - cartCheckRef.current.lastAt < MIN_CART_CHECK_MS) return;
+
+      // กันซ้อน: ถ้ากำลังยิงอยู่ ให้คิวไว้ 1 ครั้ง
+      if (cartCheckRef.current.inFlight) {
+        cartCheckRef.current.queued = true;
+        return;
+      }
+
+      cartCheckRef.current.inFlight = true;
+      cartCheckRef.current.lastAt = now;
 
       const res = await CartService.getCartItems();
-      const ids = res.itemData.map((i) => i.cti_id);
+      const serverItems = normalizeCartItemsForSeen(res.itemData);
+      const seen = getSeenCartSnapshot(userId).map;
 
-      const seenIds = getSeenCartItemIds(userId);
-      const seenSet = new Set(seenIds);
+      const unseen = serverItems.filter((it) => {
+        const prevTs = seen[it.id];
+        const nowTs = it.updatedAt ?? it.createdAt;
+        if (!prevTs) return true;
+        if (!nowTs) return false;
+        return new Date(nowTs).getTime() > new Date(prevTs).getTime();
+      });
 
-      const unseenIds = ids.filter((id) => !seenSet.has(id));
-
-      setHasNewCartItems(unseenIds.length > 0);
-      setCartUnseenCount(unseenIds.length);
+      setHasNewCartItems(unseen.length > 0);
+      setCartUnseenCount(unseen.length);
     } catch (err) {
       console.error("checkCartNewItems error:", err);
+    } finally {
+      cartCheckRef.current.inFlight = false;
+
+      // ถ้ามีคิวค้างไว้ ให้ยิงซ้ำ “ครั้งเดียว” หลังจากปล่อย
+      if (cartCheckRef.current.queued) {
+        cartCheckRef.current.queued = false;
+        setTimeout(() => {
+          void checkCartNewItems();
+        }, MIN_CART_CHECK_MS);
+      }
     }
-  }, [userId]);
+  }, [userId, isOnCartPage, normalizeCartItemsForSeen]);
 
   // สำหรับเช็คเมื่อ mount/focus
   useEffect(() => {
@@ -101,10 +152,10 @@ const Navbar = () => {
   }, [checkCartNewItems]);
 
   /**
-   * Description: เมื่อเข้าหน้า cart ให้ mark ว่าเห็นแล้ว (อัปเดต snapshot ids)
+   * Description: เมื่อเข้าหน้า cart ให้ mark ว่าเห็นแล้ว (อัปเดต snapshot: id + updated_at)
    * Input : isOnCartPage, userId
-   * Output : Promise<void>
-   * Author : Nontapat Sinthum (Guitar) 66160104
+   * Output : Promise<void> (อัปเดต localStorage + reset badge state)
+   * Author : Nontapat Sinhum (Guitar) 66160104
    **/
   useEffect(() => {
     if (!isOnCartPage) return;
@@ -113,13 +164,13 @@ const Navbar = () => {
     (async () => {
       try {
         const res = await CartService.getCartItems();
-        const ids = res.itemData.map((item) => item.cti_id);
+        const items = normalizeCartItemsForSeen(res.itemData);
 
-        setSeenCartItemIds(userId, ids);
+        setSeenCartSnapshot(userId, items);
         setHasNewCartItems(false);
         setCartUnseenCount(0);
       } catch (err) {
-        console.error("markCartSeen(local) error:", err);
+        console.error("markCartSeen(v2) error:", err);
       }
     })();
   }, [isOnCartPage, userId]);

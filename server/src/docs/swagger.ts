@@ -27,13 +27,21 @@ registry.registerComponent("securitySchemes", "BearerAuth", {
  */
 export function swagger(app: Express, baseUrl: string) {
   const generator = new OpenApiGeneratorV31(registry.definitions);
-  const doc = generator.generateDocument({
-    openapi: "3.1.0",
-    info: { title: "Orbis Track API", version: "1.0.0" },
-    servers: [{ url: baseUrl }],
-  });
+  app.get("/docs.json", (req, res) => {
+    // Generate document dynamically per request to capture correct scheme (http/https) and host
+    // This ensures Swagger works flawlessly whether accessed via localhost, ngrok, or a production HTTPS proxy
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const host = req.headers["x-forwarded-host"] || req.get("host");
+    const dynamicBaseUrl = `${protocol}://${host}/api/v1`;
 
-  app.get("/docs.json", (_req, res) => res.json(doc));
+    const doc = generator.generateDocument({
+      openapi: "3.1.0",
+      info: { title: "Orbis Track API", version: "1.0.0" },
+      servers: [{ url: dynamicBaseUrl }],
+    });
+
+    res.json(doc);
+  });
 
   // หน้า Swagger UI พร้อม options ที่ปรับแต่งแล้ว
   // ใช้ url: "/docs.json" แทนการ embed spec ใน HTML โดยตรง

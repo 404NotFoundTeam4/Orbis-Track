@@ -14,7 +14,7 @@ services:
     ports:
       - "4042:5432"
     volumes:
-      - pgdbdata:/var/lib/postgresql/data
+      - pgdbdata_api_docs:/var/lib/postgresql/data
       - ./docker/db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -34,7 +34,7 @@ services:
     ports:
       - "4043:6379"
     volumes:
-      - caching_data:/data
+      - caching_data_api_docs:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
@@ -81,5 +81,5 @@ services:
   #   restart: unless-stopped
 
 volumes:
-  pgdbdata:
-  caching_data:
+  pgdbdata_api_docs:
+  caching_data_api_docs:

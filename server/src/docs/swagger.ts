@@ -36,17 +36,18 @@ export function swagger(app: Express, baseUrl: string) {
   app.get("/docs.json", (_req, res) => res.json(doc));
 
   // หน้า Swagger UI พร้อม options ที่ปรับแต่งแล้ว
+  // ใช้ url: "/docs.json" แทนการ embed spec ใน HTML โดยตรง
+  // เพื่อให้ SwaggerUI fetch spec แบบ dynamic ทุกครั้งที่โหลดหน้า
+  // → แก้ปัญหา server URL ผิดเมื่อ API_URL เปลี่ยนแต่ HTML ถูก cache
   app.use(
     "/api/v1/swagger",
     swaggerUi.serve,
-    swaggerUi.setup(doc, {
+    swaggerUi.setup(undefined, {
       swaggerOptions: {
+        url: "/docs.json",
         persistAuthorization: true,
-        tryItOutEnabled: true,  // เปิด input fields เป็น default
-        // defaultModelRendering: "model",
-        // defaultModelsExpandDepth: 1,
+        tryItOutEnabled: true,
         displayRequestDuration: true,
-        // requestSnippetsEnabled: true,
       },
     }),
   );

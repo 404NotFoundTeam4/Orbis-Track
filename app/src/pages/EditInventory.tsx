@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MainDeviceModal from "../components/DeviceModal";
 import DevicesChilds, { type DraftDevice } from "../components/DevicesChilds";
 import { useToast } from "../components/Toast";
@@ -62,10 +62,70 @@ const EditInventory = () => {
     setLastAssetCode(lastAsset.decAssetCode);
   }
 
+  // เก็บข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+  const [deviceChildStatus, setDeviceChildStatus] = useState<DeviceChild["dec_status"][]>([]);
+
+  /**
+  * Description: ฟังก์ชันสำหรับดึงข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+  * Input     : -
+  * Output    : status ทั้งหมดของอุปกรณ์ลูก
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const fetchDeviceChildStatus = async () => {
+    const status = await DeviceService.getDeviceChildStatus();
+    setDeviceChildStatus(status);
+  }
+
+  /**
+  * Description: ฟังก์ชันสำหรับแปลงค่า status ของอุปกรณ์ลูก
+  * Input     : status - ค่าสถานะของอุปกรณ์ลูก
+  * Output    : { label - ชื่อภาษาไทย, color - สี }
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const getStatus = (status: DeviceChild["dec_status"]) => {
+    switch (status) {
+      case "READY":
+        return { label: "พร้อมใช้งาน", color: "#73D13D" };
+      case "BORROWED":
+        return { label: "ถูกยืม", color: "#40A9FF" };
+      case "DAMAGED":
+        return { label: "ชำรุด", color: "#FF4D4F" };
+      case "REPAIRING":
+        return { label: "กำลังซ่อม", color: "#FF7A45" };
+      case "LOST":
+        return { label: "สูญหาย", color: "#000000" };
+      case "UNAVAILABLE":
+        return { label: "ไม่พร้อมใช้งาน", color: "#A0A0A0" };
+      default:
+        return { label: status, color: "#000000" };
+    }
+  };
+
+  /**
+  * Description: แปลงรายการสถานะให้เป็นรูปแบบ DropDown
+  * Input     : deviceChildStatus - รายการสถานะทั้งหมดของอุปกรณ์ลูก
+  * Output    : { id - ลำดับ, value - ค่าสถานะ, label - ชื่อสถานะ, textColor - สี }
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const statusItems = useMemo(() => {
+    return deviceChildStatus.map((status, index) => {
+      const meta = getStatus(status);
+      return {
+        id: index + 1,
+        value: status,
+        label: meta.label,
+        textColor: meta.color,
+      };
+    });
+  }, [deviceChildStatus]);
+
   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
+    if (!parentId) return;
+
     fetchDevice();
     fetchLastAssetCode();
+    fetchDeviceChildStatus();
   }, [parentId]);
 
   // เรียกใช้งาน toast
@@ -266,7 +326,6 @@ const EditInventory = () => {
         existingDeviceCodes={existingDeviceCodes}
       />
       <DevicesChilds
-        parentCode={parentDevice?.de_serial_number}
         devicesChilds={deviceChilds}
         onSaveDraft={handleSaveDraft}
         onUpload={handleUploadFile}
@@ -274,6 +333,7 @@ const EditInventory = () => {
         onChangeStatus={handleChangeStatus}
         lastAssetCode={lastAssetCode}
         isValidateDraft={isValidateDraft}
+        statusItems={statusItems}
       />
     </div>
   );

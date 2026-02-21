@@ -29,9 +29,16 @@ export interface DraftDevice {
     dec_status: DeviceChild["dec_status"];
 }
 
+// โครงสร้าง status ที่ใช้ใน Dropdown
+export type StatusItem = {
+  id: number;
+  value: DeviceChild["dec_status"];
+  label: string;
+  textColor: string;
+};
+
 // โครงสร้าง props ที่ต้องส่งมาเรียกใช้งาน
 interface DevicesChildsProps {
-    parentCode: string | undefined;
     devicesChilds: DeviceChild[]; // ข้อมูลอุปกรณ์ลูก
     onSaveDraft: (drafts: DraftDevice[]) => Promise<void>;
     onUpload?: (file: File | undefined) => void; // ฟังก์ชันเพิ่มอุปกรณ์ลูกแบบอัปโหลดไฟล์ (CSV / Excel)
@@ -39,18 +46,10 @@ interface DevicesChildsProps {
     onChangeStatus: (id: number, status: DeviceChild["dec_status"]) => void; // ฟังก์ชันเปลี่ยนสถานะอุปกรณ์ลูก
     lastAssetCode: string | null; // รหัส asset code ล่าสุด
     isValidateDraft: (drafts: DraftDevice[]) => boolean
+    statusItems: StatusItem[]; // status ทั้งหมดของอุปกรณ์ลูก
 }
 
-const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode, isValidateDraft }: DevicesChildsProps) => {
-    // สถานะของอุปกรณ์ลูก
-    const statusItems = [
-        { id: 1, label: "พร้อมใช้งาน", value: "READY", textColor: "#73D13D" },
-        { id: 2, label: "ถูกยืม", value: "BORROWED", textColor: "#40A9FF" },
-        { id: 3, label: "ชำรุด", value: "DAMAGED", textColor: "#FF4D4F" },
-        { id: 4, label: "กำลังซ่อม", value: "REPAIRING", textColor: "#FF7A45" },
-        { id: 5, label: "สูญหาย", value: "LOST", textColor: "#000000" },
-    ];
-
+const DevicesChilds = ({ devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode, isValidateDraft, statusItems }: DevicesChildsProps) => {
     // กดปุ่มเพิ่มอุปกรณ์ลูก
     const [isAddAletOpen, setIsAddAletOpen] = useState<boolean>(false);
     // กดปุ่มลบอุปกรณ์ลูก
@@ -319,7 +318,7 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                 draft_id: Date.now() + index,
                 dec_serial_number: "",
                 dec_asset_code: makeNextAssetFromLast(lastAssetCode, nextRunning),
-                dec_status: "READY",
+                dec_status: "UNAVAILABLE",
             };
         });
 
@@ -487,10 +486,10 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                                             onChange={(event) => {
                                                 if ("__draft" in device) {
                                                     setDraftDevice(prev =>
-                                                        prev.map(d =>
-                                                            d.draft_id === device.dec_id
-                                                                ? { ...d, dec_serial_number: event.target.value }
-                                                                : d
+                                                        prev.map(draft =>
+                                                            draft.draft_id === device.dec_id
+                                                                ? { ...draft, dec_serial_number: event.target.value }
+                                                                : draft
                                                         )
                                                     );
                                                 }
@@ -503,16 +502,16 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                             </div>
                             <div className="flex w-[200px]">
                                 <DropDown
-                                    className="!w-[137px]"
+                                    className="!w-[160px]"
                                     items={statusItems}
-                                    value={statusItems.find(s => s.value === device.dec_status)}
+                                    value={statusItems.find(status => status.value === device.dec_status)}
                                     onChange={(status) => {
                                         if ("__draft" in device) {
                                             setDraftDevice(prev =>
-                                                prev.map(d =>
-                                                    d.draft_id === device.dec_id
-                                                        ? { ...d, dec_status: status.value as DeviceChild["dec_status"] }
-                                                        : d
+                                                prev.map(draft =>
+                                                    draft.draft_id === device.dec_id
+                                                        ? { ...draft, dec_status: status.value as DeviceChild["dec_status"] }
+                                                        : draft
                                                 )
                                             );
                                         } else {

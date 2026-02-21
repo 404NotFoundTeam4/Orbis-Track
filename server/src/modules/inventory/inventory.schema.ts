@@ -455,6 +455,10 @@ export const getLastAssetCodeResponse = z.object({
   decAssetCode: z.string()
 }).nullable();
 
+export const getDeviceChildStatus = z.array(
+  z.nativeEnum($Enums.DEVICE_CHILD_STATUS)
+);
+
 export type InventorySchema = z.infer<typeof inventorySchema>;
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
@@ -503,3 +507,5 @@ export type DeleteDeviceChildPayload = z.infer<typeof deleteDeviceChildPayload>;
 export type UpdateDevicePayload = z.infer<typeof updateDevicePayload>;
 
 export type GetLastAssetCodeResponse = z.infer<typeof getLastAssetCodeResponse>;
+
+export type GetDeviceChildStatus = z.infer<typeof getDeviceChildStatus>;

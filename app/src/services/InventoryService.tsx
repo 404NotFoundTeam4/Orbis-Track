@@ -5,7 +5,7 @@ export interface DeviceChild {
   dec_id: number;
   dec_serial_number: string | null;
   dec_asset_code: string;
-  dec_status: "READY" | "BORROWED" | "DAMAGED" | "REPAIRING" | "LOST";
+  dec_status: "READY" | "BORROWED" | "DAMAGED" | "REPAIRING" | "LOST" | "UNAVAILABLE";
   dec_has_serial_number: boolean;
   dec_de_id: number;
 }
@@ -336,6 +336,18 @@ export const DeviceService = {
     const { data } = await api.get(`/inventory/${id}/last-asset`);
     return data.data;
   },
+
+  /**
+  * Description: ดึงข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+  * Input     : -
+  * Output    : status ทั้งหมดของอุปกรณ์ลูก
+  * Endpoint  : GET /api/inventory/device-child-status
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  getDeviceChildStatus: async (): Promise<DeviceChild["dec_status"][]> => {
+    const { data } = await api.get(`/inventory/device-child-status`);
+    return data.data;
+  }
 };
 
 export interface GetInventory {

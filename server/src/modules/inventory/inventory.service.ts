@@ -1059,6 +1059,16 @@ async function getLastAssetCode(params: IdParamDto) {
   return childs ? { decAssetCode: childs.dec_asset_code } : null;
 }
 
+/**
+* Description: ดึงข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+* Input     : -
+* Output    : status ทั้งหมดของอุปกรณ์ลูกจาก Enum
+* Author    : Thakdanai Makmi (Ryu) 66160355
+*/
+async function getDeviceChildStatus() {
+  return Object.values($Enums.DEVICE_CHILD_STATUS)
+}
+
 export const inventoryService = {
   getDeviceWithChilds,
   createDeviceChild,
@@ -1074,5 +1084,6 @@ export const inventoryService = {
   getAllApproves,
   createDevice,
   getDefaultsdata,
-  getLastAssetCode
+  getLastAssetCode,
+  getDeviceChildStatus
 };

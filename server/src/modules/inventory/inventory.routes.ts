@@ -17,7 +17,8 @@ import {
     inventorySchema,
     softDeleteResponseSchema,
     updateDevicePayload,
-    getLastAssetCodeResponse
+    getLastAssetCodeResponse,
+    getDeviceChildStatus
 } from "./inventory.schema.js";
 
 const inventoryController = new InventoryController();
@@ -36,6 +37,7 @@ router.getDoc("/devices/:id", { tag: "Inventory", params: idParamSchema,res: get
 router.postDoc("/devices-childs", { tag: "Inventory", body: createDeviceChildPayload, res: createDeviceChildSchema.array(), auth: true }, inventoryController.create);
 router.postDoc("/devices/:id/upload-childs", { tag: "Inventory", params: idParamSchema, res: uploadFileDeviceChildSchema, auth: true }, upload.single("file"), inventoryController.uploadFileDeviceChild);
 router.deleteDoc("/devices-childs", { tag: "Inventory", body: deleteDeviceChildPayload, auth: true }, inventoryController.delete);
+router.getDoc("/device-child-status", { tag: "Inventory", res: getDeviceChildStatus, auth: true }, inventoryController.getDeviceChildStatus);
 
 // Get All Devices
 router.getDoc("/", { 
@@ -69,6 +71,6 @@ router.patchDoc("/devices/:id", {
     auth: true 
 },upload.single("de_images"), inventoryController.update);
 
-router.getDoc("/:id/last-asset", { tag: "Inventory", params: idParamSchema, res: getLastAssetCodeResponse }, inventoryController.getLastAssetCode);
+router.getDoc("/:id/last-asset", { tag: "Inventory", params: idParamSchema, res: getLastAssetCodeResponse, auth: true }, inventoryController.getLastAssetCode);
 
 export default router.instance;

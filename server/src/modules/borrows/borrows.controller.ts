@@ -11,7 +11,8 @@ import {
   GetDeviceForBorrowSchema,
   GetInventorySchema,
   idParamSchema,
-  DeviceAvailabilitiesSchema
+  DeviceAvailabilitiesSchema,
+  GetBorrowUsersSchema
 } from "./borrows.schema.js";
 import { AuthRequest } from "../auth/auth.schema.js";
 
@@ -35,12 +36,12 @@ export class BorrowController extends BaseController {
     return { data: devices };
   }
 
- /**
- * Description: ดึงข้อมูลรายการอุปกรณ์ที่ถูกยืม
- * Input : req.params (ไอดีอุปกรณ์แม่)
- * Output : { data: device } - รายการอุปกรณ์ลูกที่กำลังถูกยืมอยู่
- * Author : Thakdanai Makmi (Ryu) 66160355
- */
+  /**
+  * Description: ดึงข้อมูลรายการอุปกรณ์ที่ถูกยืม
+  * Input : req.params (ไอดีอุปกรณ์แม่)
+  * Output : { data: device } - รายการอุปกรณ์ลูกที่กำลังถูกยืมอยู่
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
   async getAvailable(
     req: Request,
     res: Response,
@@ -83,12 +84,20 @@ export class BorrowController extends BaseController {
       throw new Error("Unauthorized");
     }
 
-    const userId = req.user.sub;
+    const requesterId = req.user.sub; // ไอดีคนที่ส่งคำร้อง
+    const requesterRole = req.user.role; // ตำแหน่งคนที่ส่งคำร้อง
 
     const payload = createBorrowTicketPayload.parse(req.body);
 
+    // กำหนด borrowerId ตามสิทธิ์
+    const borrowerId =
+      requesterRole === "STAFF" || requesterRole === "ADMIN"
+        ? payload.borrowerId ?? requesterId
+        : requesterId;
+
     const result = await borrowService.createBorrowTicket({
-      userId,
+      requesterId,
+      borrowerId,
       ...payload
     })
 
@@ -137,5 +146,20 @@ export class BorrowController extends BaseController {
   ): Promise<BaseResponse<DeviceAvailabilitiesSchema>> {
     const availabilities = await borrowService.getDeviceAvailabilities();
     return { data: availabilities };
+  }
+
+  /**
+   * Description: ดึงรายชื่อผู้ใช้สำหรับการยืมให้ผู้อื่น
+   * Input     : -
+   * Output    : { data: users } - รายชื่อผู้ใช้
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  async getBorrowUsers(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<BaseResponse<GetBorrowUsersSchema>> {
+    const users = await borrowService.getBorrowUsers();
+    return { data: users };
   }
 }

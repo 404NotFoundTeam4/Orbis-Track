@@ -17,7 +17,8 @@ import {
   InventorySchema,
   UploadFileDeviceChildSchema,
   updateDevicePayload,
-  GetLastAssetCodeResponse
+  GetLastAssetCodeResponse,
+  GetDeviceChildStatus
 } from "./inventory.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 
@@ -75,9 +76,9 @@ export class InventoryController extends BaseController {
 
     const payload = { de_id: params.id, filePath: req.file.path }; // สร้าง payload ที่ clean แล้ว
 
-    const data = await inventoryService.uploadFileDeviceChild(payload);
+    const { message } = await inventoryService.uploadFileDeviceChild(payload);
 
-    return { data };
+    return { message }
   }
 
   /**
@@ -237,6 +238,17 @@ export class InventoryController extends BaseController {
   async getLastAssetCode(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetLastAssetCodeResponse>> {
     const params = idParamSchema.parse(req.params);
     const data = await inventoryService.getLastAssetCode(params);
+    return { data }
+  }
+
+  /**
+  * Description: ดึงข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+  * Input     : -
+  * Output    : { data } - status ทั้งหมดของอุปกรณ์ลูก
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  async getDeviceChildStatus(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetDeviceChildStatus>> {
+    const data = await inventoryService.getDeviceChildStatus();
     return { data }
   }
 }

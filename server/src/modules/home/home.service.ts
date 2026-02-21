@@ -173,6 +173,7 @@ async function getRecentTickets(userId: number) {
 
     return {
       id: ticket.brt_id,
+      request_date: ticket.created_at?.toISOString() || null,
       status: ticket.brt_status,
       dates: {
         start: ticket.brt_start_date.toISOString(),
@@ -200,10 +201,12 @@ async function getRecentTickets(userId: number) {
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
         empcode: ticket.requester.us_emp_code,
+         borrow_user  :ticket.brt_user,
+      borrow_phone  :ticket.brt_phone
       },
     };
   });
-
+    
   return formattedTickets;
 }
 
@@ -331,6 +334,8 @@ async function getTicketDetailById(id: number) {
       image: ticket.requester.us_images,
       department: ticket.requester.department?.dept_name || "-",
       us_phone: ticket.requester.us_phone,
+        borrow_user  :ticket.brt_user,
+      borrow_phone  :ticket.brt_phone
     },
   };
 }

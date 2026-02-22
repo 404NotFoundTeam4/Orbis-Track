@@ -291,8 +291,16 @@ const Profile: React.FC = () => {
 
       await fetchProfile();
     } catch (err: any) {
-      push({ tone: "danger", message: "เปลี่ยนรหัสผ่านไม่สำเร็จ" });
-    }
+  const errorMessage =
+    err?.response?.data?.message ||   // กรณี axios error
+    err?.message ||                   // กรณี throw Error ปกติ
+    "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+
+  push({
+    tone: "danger",
+    message: errorMessage,
+  });
+}
   };
 
   const isProfileChanged =

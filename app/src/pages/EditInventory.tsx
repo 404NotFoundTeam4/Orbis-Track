@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MainDeviceModal from "../components/DeviceModal";
 import DevicesChilds, { type DraftDevice } from "../components/DevicesChilds";
 import { useToast } from "../components/Toast";
@@ -59,13 +59,73 @@ const EditInventory = () => {
   */
   const fetchLastAssetCode = async () => {
     const lastAsset = await DeviceService.getLastAssetCode(Number(parentId));
-    setLastAssetCode(lastAsset.dec_asset_code);
+    setLastAssetCode(lastAsset.decAssetCode);
   }
+
+  // เก็บข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+  const [deviceChildStatus, setDeviceChildStatus] = useState<DeviceChild["dec_status"][]>([]);
+
+  /**
+  * Description: ฟังก์ชันสำหรับดึงข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+  * Input     : -
+  * Output    : status ทั้งหมดของอุปกรณ์ลูก
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const fetchDeviceChildStatus = async () => {
+    const status = await DeviceService.getDeviceChildStatus();
+    setDeviceChildStatus(status);
+  }
+
+  /**
+  * Description: ฟังก์ชันสำหรับแปลงค่า status ของอุปกรณ์ลูก
+  * Input     : status - ค่าสถานะของอุปกรณ์ลูก
+  * Output    : { label - ชื่อภาษาไทย, color - สี }
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const getStatus = (status: DeviceChild["dec_status"]) => {
+    switch (status) {
+      case "READY":
+        return { label: "พร้อมใช้งาน", color: "#73D13D" };
+      case "BORROWED":
+        return { label: "ถูกยืม", color: "#40A9FF" };
+      case "DAMAGED":
+        return { label: "ชำรุด", color: "#FF4D4F" };
+      case "REPAIRING":
+        return { label: "กำลังซ่อม", color: "#FF7A45" };
+      case "LOST":
+        return { label: "สูญหาย", color: "#000000" };
+      case "UNAVAILABLE":
+        return { label: "ไม่พร้อมใช้งาน", color: "#A0A0A0" };
+      default:
+        return { label: status, color: "#000000" };
+    }
+  };
+
+  /**
+  * Description: แปลงรายการสถานะให้เป็นรูปแบบ DropDown
+  * Input     : deviceChildStatus - รายการสถานะทั้งหมดของอุปกรณ์ลูก
+  * Output    : { id - ลำดับ, value - ค่าสถานะ, label - ชื่อสถานะ, textColor - สี }
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  const statusItems = useMemo(() => {
+    return deviceChildStatus.map((status, index) => {
+      const meta = getStatus(status);
+      return {
+        id: index + 1,
+        value: status,
+        label: meta.label,
+        textColor: meta.color,
+      };
+    });
+  }, [deviceChildStatus]);
 
   // โหลดข้อมูลเมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
+    if (!parentId) return;
+
     fetchDevice();
     fetchLastAssetCode();
+    fetchDeviceChildStatus();
   }, [parentId]);
 
   // เรียกใช้งาน toast
@@ -81,6 +141,7 @@ const EditInventory = () => {
       prev.filter((device) => !ids.includes(device.dec_id))
     );
     await fetchDevice(); // โหลดข้อมูลใหม่
+    await fetchLastAssetCode(); // ดึง asset ล่าสุดใหม่
   };
 
   // เปลี่ยนสถานะอุปกรณ์
@@ -104,11 +165,12 @@ const EditInventory = () => {
 
     try {
       // เรียกใช้งาน service
-      await DeviceService.uploadFileDeviceChild(Number(parentId), formData);
-      push({ tone: "success", message: "อัปโหลดไฟล์สำเร็จ!" });
+      const res = await DeviceService.uploadFileDeviceChild(Number(parentId), formData);
+      push({ tone: "success", message: res.message });
       await fetchDevice(); // โหลดข้อมูลใหม่
-    } catch {
-      push({ tone: "danger", message: "อัปโหลดไฟล์ล้มเหลว" });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || "อัปโหลดไฟล์ล้มเหลว";
+      push({ tone: "danger", message });
     }
   };
 
@@ -188,10 +250,57 @@ const EditInventory = () => {
       await DeviceService.createDeviceChild(payload); // เรียกใช้งาน API
       push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" }); // แสดง toast
       await fetchDevice(); // โหลดข้อมูลใหม่
+      await fetchLastAssetCode(); // ดึง asset ล่าสุด
     } catch (error) {
       push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" })
     }
   }
+
+   /**
+   * Description: ฟังก์ชันสำหรับตรวจสอบ serial number ของอุปกรณ์ลูกแบบ draft
+   * Input     : drafts - รายการอุปกรณ์ลูกแบบ draft ที่ผู้ใช้เพิ่ม
+   * Output    : ผลการตรวจสอบ true / false
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  const isValidateDraft = (drafts: DraftDevice[]) => {
+    // ตรวจสอบ serial number ที่มีอยู่แล้ว
+    const existingSerials = new Set(
+      deviceChilds
+        .map(device => device.dec_serial_number?.trim())
+        .filter(Boolean)
+    );
+
+    // ตรวจสอบ serial number ใน draft
+    const draftSerials = drafts
+      .map(draft => draft.dec_serial_number?.trim())
+      .filter(Boolean);
+
+    const seen = new Set<string>();
+    
+    // เช็คว่า draft ซ้ำกันเองไหม
+    for (const serial of draftSerials) {
+      if (seen.has(serial!)) {
+        push({ tone: "danger", message: "มีรายการ Serial Number ที่ซ้ำกัน" });
+        return false;
+      }
+      seen.add(serial!);
+    }
+
+    // เช็คว่าซ้ำกับของในระบบ
+    for (const serial of draftSerials) {
+      if (existingSerials.has(serial!)) {
+        push({ tone: "danger", message: "Serial Number ซ้ำกับที่มีอยู่" });
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // ดึงรหัสอุปกรณ์จาก sessionStorage
+  const existingDeviceCodes: string[] = JSON.parse(
+    sessionStorage.getItem("existingDeviceCodes") ?? "[]"
+  );
 
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
@@ -214,15 +323,17 @@ const EditInventory = () => {
           handleSubmit(data);
         }}
         existingDeviceNames={existingDeviceNames}
+        existingDeviceCodes={existingDeviceCodes}
       />
       <DevicesChilds
-        parentCode={parentDevice?.de_serial_number}
         devicesChilds={deviceChilds}
         onSaveDraft={handleSaveDraft}
         onUpload={handleUploadFile}
         onDelete={handleDeleteDeviceChild}
         onChangeStatus={handleChangeStatus}
         lastAssetCode={lastAssetCode}
+        isValidateDraft={isValidateDraft}
+        statusItems={statusItems}
       />
     </div>
   );

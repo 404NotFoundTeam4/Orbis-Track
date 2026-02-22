@@ -29,27 +29,27 @@ export interface DraftDevice {
     dec_status: DeviceChild["dec_status"];
 }
 
+// โครงสร้าง status ที่ใช้ใน Dropdown
+export type StatusItem = {
+  id: number;
+  value: DeviceChild["dec_status"];
+  label: string;
+  textColor: string;
+};
+
 // โครงสร้าง props ที่ต้องส่งมาเรียกใช้งาน
 interface DevicesChildsProps {
-    parentCode: string | undefined;
     devicesChilds: DeviceChild[]; // ข้อมูลอุปกรณ์ลูก
     onSaveDraft: (drafts: DraftDevice[]) => Promise<void>;
     onUpload?: (file: File | undefined) => void; // ฟังก์ชันเพิ่มอุปกรณ์ลูกแบบอัปโหลดไฟล์ (CSV / Excel)
     onDelete: (ids: number[]) => Promise<void>; // ฟังก์ชันลบอุปกรณ์ลูก
     onChangeStatus: (id: number, status: DeviceChild["dec_status"]) => void; // ฟังก์ชันเปลี่ยนสถานะอุปกรณ์ลูก
     lastAssetCode: string | null; // รหัส asset code ล่าสุด
+    isValidateDraft: (drafts: DraftDevice[]) => boolean
+    statusItems: StatusItem[]; // status ทั้งหมดของอุปกรณ์ลูก
 }
 
-const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode }: DevicesChildsProps) => {
-    // สถานะของอุปกรณ์ลูก
-    const statusItems = [
-        { id: 1, label: "พร้อมใช้งาน", value: "READY", textColor: "#73D13D" },
-        { id: 2, label: "ถูกยืม", value: "BORROWED", textColor: "#40A9FF" },
-        { id: 3, label: "ชำรุด", value: "DAMAGED", textColor: "#FF4D4F" },
-        { id: 4, label: "กำลังซ่อม", value: "REPAIRING", textColor: "#FF7A45" },
-        { id: 5, label: "สูญหาย", value: "LOST", textColor: "#000000" },
-    ];
-
+const DevicesChilds = ({ devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode, isValidateDraft, statusItems }: DevicesChildsProps) => {
     // กดปุ่มเพิ่มอุปกรณ์ลูก
     const [isAddAletOpen, setIsAddAletOpen] = useState<boolean>(false);
     // กดปุ่มลบอุปกรณ์ลูก
@@ -241,42 +241,37 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
     }, [filteredDevices, page, pageSize]);
 
     /**
-    * Description: คำนวณเลข running number ที่มากที่สุดจาก asset code
-    * Input     : -
-    * Output    : ค่า running number ที่มากที่สุด
+    * Description: ใช้สำหรับแยก asset code
+    * Input     : assetCode (string): asset code ล่าสุด
+    * Output    : { prefix: string, numberLength: number }
     * Author    : Thakdanai Makmi (Ryu) 66160355
     */
-    const getMaxRunningNo = () => {
-        // ดึง asset code ของอุปกรณ์ลูกทั้งหมด
-        const numbers = devicesChilds
-            .map(device => {
-                const match = device.dec_asset_code?.match(/(\d+)$/); // ดึงตัวเลขที่อยู่ท้ายสุดของ asset code
-                return match ? Number(match[1]) : null; // แปลงเป็น number
-            })
-            .filter((number): number is number => number !== null); // กรองเฉพาะค่าที่เป็น number จริง
+    const splitAssetCode = (assetCode: string) => {
+        // แยกข้อความด้านหน้าและตัวเลขท้ายสุด
+        const match = assetCode.match(/^(.*?)(\d+)$/);
+        // ถ้าไม่มีตัวเลขท้ายเลย
+        if (!match) {
+            return { prefix: assetCode, numberLength: 3 };
+        }
 
-        return numbers.length > 0 ? Math.max(...numbers) : 0; // คืนค่าเลขที่มากที่สุด
+        return {
+            prefix: match[1], // ส่วนข้อความด้านหน้า
+            numberLength: match[2].length // ความยาวของตัวเลขท้ายสุด
+        };
     };
 
     /**
-    * Description: สร้าง asset code ของอุปกรณ์ลูก โดยอิงจาก asset code ของอุปกรณ์แม่
-    * Input     : parentCode, runningNo - รหัสอุปกรณ์แม่, เลข running number
-    * Output    : asset code ใหม่ในรูปแบบ ASSET-{prefix}-{runningNo}
+    * Description: สร้าง asset code ตัวถัดไป
+    * Input     : lastAssetCode (string): asset ล่าสุด, nextRunning (number): running number ใหม่
+    * Output    : asset code ใหม่
     * Author    : Thakdanai Makmi (Ryu) 66160355
     */
-    const makeAssetCode = (parentCode: string, runningNo: number) => {
-        const parts = parentCode.split("-"); // แยกรหัสอุปกรณ์แม่ด้วยเครื่องหมาย "-"
-        const last = parts[parts.length - 1]; // ดึงค่าตัวสุดท้ายของรหัสอุปกรณ์แม่
+    const makeNextAssetFromLast = (lastAssetCode: string, nextRunning: number) => {
+        const { prefix, numberLength } = splitAssetCode(lastAssetCode);
 
-        // ถ้าตัวสุดท้ายไม่ใช่ตัวเลข
-        if (!/^\d+$/.test(last)) {
-            return `ASSET-${parentCode}`; // สร้าง asset code แบบไม่มี running number ต่อท้าย
-        }
+        const nextNumber = String(nextRunning).padStart(numberLength, "0");
 
-        const prefix = parts.slice(0, -1).join("-"); // ดึงส่วนหน้าของรหัสอุปกรณ์แม่ (ตัดตัวเลขท้ายออก)
-        const next = String(runningNo).padStart(last.length, "0"); // แปลง running number เป็น string แล้วเติมเลข 0 ด้านหน้า
-
-        return `ASSET-${prefix}-${next}`; // รวม prefix และ running number
+        return `${prefix}${nextNumber}`;
     };
 
     /**
@@ -300,36 +295,51 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
     * Author    : Thakdanai Makmi (Ryu) 66160355
     */
     const generateDraftDevice = (qty: number) => {
-        // ตรวจสอบว่ามี parentCode และ qty มากกว่า 0
-        if (!parentCode || !qty || qty <= 0) return;
-        // ดึง running number ล่าสุดจาก asset code ตัวสุดท้าย
-        const maxRunning = getRunningFromAssetCode(lastAssetCode);
-        // ดึง running number ที่มากที่สุดจากอุปกรณ์ลูกใน state ปัจจุบัน
-        const localRunning = getMaxRunningNo();
-        // เลือกค่า running number ที่มากที่สุด เพื่อป้องกัน asset code ซ้ำ
-        const start = Math.max(maxRunning, localRunning) + 1;
-        // สร้าง draft อุปกรณ์ลูกตามจำนวนที่ระบุ
+        // ไม่มี asset ล่าสุด หรือ qty
+        if (!lastAssetCode || qty <= 0) return;
+
+        // หา running ล่าสุดจาก backend
+        const backendRunning = getRunningFromAssetCode(lastAssetCode);
+
+        // หา running ล่าสุดจาก draft ที่ยังไม่ save
+        const draftRunning = draftDevice.length > 0
+            ? Math.max(
+                ...draftDevice.map(draft => getRunningFromAssetCode(draft.dec_asset_code))
+            )
+            : 0;
+
+        // เลือกค่าที่มากที่สุด เพื่อป้องกัน asset ซ้ำ
+        const baseRunning = Math.max(backendRunning, draftRunning);
+
+        // สร้าง draft ตามจำนวนที่ระบุ
         const draft: DraftDevice[] = Array.from({ length: qty }).map((_, index) => {
-            // คำนวณ running number ของแต่ละอุปกรณ์
-            const runningNo = start + index;
-            // คืนค่า object draft อุปกรณ์ลูก
+            const nextRunning = baseRunning + index + 1;
             return {
                 draft_id: Date.now() + index,
                 dec_serial_number: "",
-                dec_asset_code: makeAssetCode(parentCode, runningNo),
-                dec_status: "READY",
+                dec_asset_code: makeNextAssetFromLast(lastAssetCode, nextRunning),
+                dec_status: "UNAVAILABLE",
             };
         });
 
-        setDraftDevice(draft);
+        setDraftDevice(prev => [...prev, ...draft]);
     };
+
+    // ติดตามค่า quantity สำหรับการแสดงปุ่มบันทึก
+    useEffect(() => {
+        if (!quantity && quantity === 0) {
+            setDraftDevice([]);
+        }
+    }, [quantity]);
+
+    const hasSerialNumber = devicesChilds.length > 0 ? devicesChilds[0].dec_has_serial_number : false;
 
     return (
         <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[1660px] h-[984px] px-[30px] py-[60px] pt-[30px] pb-[60px]">
             {/* จำนวน / เพิ่ม / อัปโหลดไฟล์ */}
             <div className="flex justify-between">
                 <div className="flex items-center gap-[16px] w-[590px] h-[66px]">
-                    <div className="flex justify-center items-center bg-[#D9D9D9] rounded-[100px] min-w-[144px] h-[33px] px-[3px] py-[5px]">
+                    <div className="flex justify-center items-center bg-[#D9D9D9] rounded-[100px] min-w-[179px] h-[46px] px-[3px] py-[5px]">
                         <p className="text-[18px] font-medium">จำนวนอุปกรณ์ {devicesChilds.length}</p>
                     </div>
                     <QuantityInput
@@ -339,20 +349,24 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                         onChange={(val) => setQuantity(val)}
                     />
                     <Button
-                        className="!bg-[#1890FF] !w-[69px]"
+                        className="!bg-[#40A9FF] hover:!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
                             if (quantity === null) {
-                                return;
+                                return
                             } else {
                                 generateDraftDevice(quantity);
                             }
-                        }}>
+                        }}
+                        disabled={!quantity}>
                         + เพิ่ม
                     </Button>
                 </div>
                 {/* อัปโหลดไฟล์ */}
                 <div className="flex items-center min-w-[144px] h-[66px] px-[10px] py-[10px]">
-                    <Button className="relative flex gap-[5px] !bg-[#1890FF] min-w-[124px] overflow-hidden cursor-pointer">
+                    <Button
+                        variant="outline"
+                        className="relative flex gap-[5px] !border-[#40A9FF] !text-[#40A9FF] min-w-[124px] overflow-hidden cursor-pointer"
+                    >
                         <Icon
                             icon="ic:baseline-upload"
                             width="20"
@@ -375,8 +389,12 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                         draftDevice.length > 0 && (
                             <div className="flex justify-end px-[10px] py-[10px]">
                                 <Button
-                                    className="!bg-[#1890FF]"
-                                    onClick={() => setIsAddAletOpen(true)}
+                                    className="!bg-[#40A9FF] hover:!bg-[#1890FF]"
+                                    onClick={() => {
+                                        const isValid = isValidateDraft(draftDevice);
+                                        if (!isValid) return;
+                                        setIsAddAletOpen(true);
+                                    }}
                                 >
                                     บันทึก
                                 </Button>
@@ -400,23 +418,27 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                         <p>ลำดับ</p>
                     </div>
                     <p className="flex items-center w-[230px] h-full">Asset Code</p>
-                    <div
-                        className="flex items-center w-[230px] h-full cursor-pointer"
-                        onClick={() => handleSort("dec_serial_number")}
-                    >
-                        <p>Serial Number</p>
-                        <Icon
-                            icon={
-                                sortField === "dec_serial_number"
-                                    ? sortDirection === "asc"
-                                        ? "bx:sort-down"
-                                        : "bx:sort-up"
-                                    : "bx:sort-down" //default icon
-                            }
-                            width="24"
-                            height="24"
-                            className="ml-1"
-                        />
+                    <div className="flex items-center w-[230px] h-full">
+                        {hasSerialNumber && (
+                            <div
+                                className="flex items-center cursor-pointer"
+                                onClick={() => handleSort("dec_serial_number")}
+                            >
+                                <p>Serial Number</p>
+                                <Icon
+                                    icon={
+                                        sortField === "dec_serial_number"
+                                            ? sortDirection === "asc"
+                                                ? "bx:sort-down"
+                                                : "bx:sort-up"
+                                            : "bx:sort-down" //default icon
+                                    }
+                                    width="24"
+                                    height="24"
+                                    className="ml-1"
+                                />
+                            </div>
+                        )}
                     </div>
                     <div
                         className="flex items-center w-[200px] h-full cursor-pointer"
@@ -456,35 +478,40 @@ const DevicesChilds = ({ parentCode, devicesChilds, onSaveDraft, onUpload, onDel
                             </div>
                             <p className="w-[230px]">{device.dec_asset_code}</p>
                             <div className="flex w-[230px]">
-                                <input
-                                    type="text"
-                                    value={device.dec_serial_number ?? ""}
-                                    onChange={(event) => {
-                                        if ("__draft" in device) {
-                                            setDraftDevice(prev =>
-                                                prev.map(d =>
-                                                    d.draft_id === device.dec_id
-                                                        ? { ...d, dec_serial_number: event.target.value }
-                                                        : d
-                                                )
-                                            );
-                                        }
-                                    }}
-                                    className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
-                                />
+                                {
+                                    hasSerialNumber && (
+                                        <input
+                                            type="text"
+                                            value={device.dec_serial_number ?? ""}
+                                            onChange={(event) => {
+                                                if ("__draft" in device) {
+                                                    setDraftDevice(prev =>
+                                                        prev.map(draft =>
+                                                            draft.draft_id === device.dec_id
+                                                                ? { ...draft, dec_serial_number: event.target.value }
+                                                                : draft
+                                                        )
+                                                    );
+                                                }
+                                            }}
+                                            className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
+                                            disabled={!("__draft" in device)}
+                                        />
+                                    )
+                                }
                             </div>
                             <div className="flex w-[200px]">
                                 <DropDown
-                                    className="!w-[137px]"
+                                    className="!w-[160px]"
                                     items={statusItems}
-                                    value={statusItems.find(s => s.value === device.dec_status)}
+                                    value={statusItems.find(status => status.value === device.dec_status)}
                                     onChange={(status) => {
                                         if ("__draft" in device) {
                                             setDraftDevice(prev =>
-                                                prev.map(d =>
-                                                    d.draft_id === device.dec_id
-                                                        ? { ...d, dec_status: status.value as DeviceChild["dec_status"] }
-                                                        : d
+                                                prev.map(draft =>
+                                                    draft.draft_id === device.dec_id
+                                                        ? { ...draft, dec_status: status.value as DeviceChild["dec_status"] }
+                                                        : draft
                                                 )
                                             );
                                         } else {

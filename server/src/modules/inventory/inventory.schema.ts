@@ -336,7 +336,7 @@ export const uploadFileDeviceChildPayload = z.object({
 
 /** ข้อมูลหลังจาก insert ข้อมูลจากไฟล์ */
 export const uploadFileDeviceChildSchema = z.object({
-  inserted: z.number().openapi({ description: "จำนวนรายการที่เพิ่มสำเร็จ" }),
+  message: z.string()
 });
 
 // ข้อมูลที่ส่งเข้ามาตอนลบอุปกรณ์ลูก
@@ -452,8 +452,12 @@ export const updateDevicePayload = z.object({
 });
 
 export const getLastAssetCodeResponse = z.object({
-  dec_asset_code: z.string()
+  decAssetCode: z.string()
 }).nullable();
+
+export const getDeviceChildStatus = z.array(
+  z.nativeEnum($Enums.DEVICE_CHILD_STATUS)
+);
 
 export type InventorySchema = z.infer<typeof inventorySchema>;
 
@@ -503,3 +507,5 @@ export type DeleteDeviceChildPayload = z.infer<typeof deleteDeviceChildPayload>;
 export type UpdateDevicePayload = z.infer<typeof updateDevicePayload>;
 
 export type GetLastAssetCodeResponse = z.infer<typeof getLastAssetCodeResponse>;
+
+export type GetDeviceChildStatus = z.infer<typeof getDeviceChildStatus>;

@@ -123,7 +123,8 @@ export type HistoryBorrowTicketItem = {
     userId: number;
     fullName: string;
     employeeCode: string | null;
-
+     borrowName: string | null;
+      borrowPhone: string | null;
     /**
      * Description: ชื่อหน่วยงานของผู้ร้องขอ (ใส่มาเพื่อให้ UI list แสดงได้)
      * Input : requester.department_name / requester.section_name จาก backend

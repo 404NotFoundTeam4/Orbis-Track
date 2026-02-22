@@ -25,6 +25,9 @@ type TicketWithRelations = Prisma.borrow_return_ticketsGetPayload<{
               include: {
                 category: true;
                 section: { include: { department: true } };
+                _count: {
+                  select: { accessories: true };
+                };
               };
             };
           };
@@ -202,7 +205,7 @@ async function getRecentTickets(userId: number) {
         description: mainDevice?.de_description || null,
         accessories: mainDevice?._count?.accessories ?? 0,
         image: mainDevice?.de_images || null,
-        maxBorrowDays: mainDevice?.de_max_borrow_days || 0,
+        max_borrow_days: mainDevice?.de_max_borrow_days || 0,
       },
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,

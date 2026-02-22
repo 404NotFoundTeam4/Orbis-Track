@@ -98,6 +98,25 @@ const formatTime = (dateStr: string | null): string => {
 };
 
 /**
+ * Description: แปลงเวลาเป็นรูปแบบ HH:MM:YYYY
+ * Input : dateStr - date string หรือ null
+ * Output : string (รูปแบบเวลา) 20 ม.ค. 2568
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+const formatTimeThai = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+
+  const date = new Date(dateStr);
+
+  const day = date.getDate();
+  const month = date.toLocaleString("th-TH", { month: "short" });
+  const year = date.getFullYear() + 543;
+
+  return `${day} / ${month} / ${year}`;
+};
+
+
+/**
  * Description: แปลงวันที่เวลาแบบเต็ม (D / MMM / YYYY | HH:MM น.)
  * Input : dateStr - date string หรือ null
  * Output : string (รูปแบบวันที่เวลาเต็ม)
@@ -155,7 +174,7 @@ const RequestItemHome = ({
   const getStepTicket = () => {
     return ticketDetail?.status;
   };
-
+  console.log(ticket  )
   const toggleExpand = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
@@ -164,7 +183,7 @@ const RequestItemHome = ({
       onExpand(ticket.id, true);
     }
   };
-
+ 
   // Handle external force expansion (e.g. from notification navigation)
   useEffect(() => {
     if (forceExpand) {
@@ -184,8 +203,8 @@ const RequestItemHome = ({
       ticket.device_summary.section
       ? ticket.device_summary.section
       : ticket.device_summary.section || "-";
-
-  const startDate = ticket.dates?.start || ticket.request_date;
+  console.log( ticket.request_date)
+  const startDate = ticket.request_date || ticket.dates?.start  
   const endDate =
     ticket.dates?.return || ticket.dates?.end || ticket.return_date;
   return (
@@ -220,7 +239,7 @@ const RequestItemHome = ({
         {/* Date & Time (Start) */}
         <div className="flex flex-col">
           <span className="text-[#000000]">
-            {formatDate(startDate ?? null)}
+            {formatTimeThai(startDate ?? null)}
           </span>
           <span className="text-[#7BACFF]">
             เวลา : {formatTime(startDate ?? null)}
@@ -229,7 +248,7 @@ const RequestItemHome = ({
 
         {/* Date & Time (Return) */}
         <div className="flex flex-col">
-          <span className="text-[#000000]">{formatDate(endDate ?? null)}</span>
+          <span className="text-[#000000]">{formatTimeThai(endDate ?? null)}</span>
           <span className="text-[#7BACFF] text-sm">
             เวลา : {formatTime(endDate ?? null)}
           </span>
@@ -703,7 +722,7 @@ const RequestItemHome = ({
                   <div className="grid grid-cols-[140px_1fr] items-baseline">
                     <span className="text-[#000000] text-sm">ผู้ส่งคำร้อง</span>
                     <span className="text-[#636363] text-sm">
-                      {ticket.requester.fullname}
+                      {ticket.requester.borrow_user}
                     </span>
                   </div>
                   <div className="grid grid-cols-[140px_1fr] items-baseline">
@@ -807,8 +826,8 @@ const RequestItemHome = ({
                       เบอร์โทรศัพท์ผู้ยืม
                     </span>
                     <span className="text-[#636363] text-sm">
-                      {ticketDetail?.requester?.us_phone
-                        ? ticketDetail.requester.us_phone.replace(
+                      {ticketDetail?.requester?.borrow_phone  
+                        ? ticketDetail.requester.borrow_phone.replace(
                           /(\d{3})(\d{3})(\d{4})/,
                           "$1-$2-$3"
                         )

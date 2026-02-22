@@ -367,16 +367,16 @@ async function mapTicketToDetail(
 
       approver: approverUser
         ? {
-            userId: approverUser.us_id,
-            fullName: buildFullName(
-              approverUser.us_firstname,
-              approverUser.us_lastname
-            ),
-            employeeCode: approverUser.us_emp_code ?? null,
-            role: approverUser.us_role,
-            departmentName: approverDepartmentName,
-            sectionName: approverSectionName,
-          }
+          userId: approverUser.us_id,
+          fullName: buildFullName(
+            approverUser.us_firstname,
+            approverUser.us_lastname
+          ),
+          employeeCode: approverUser.us_emp_code ?? null,
+          role: approverUser.us_role,
+          departmentName: approverDepartmentName,
+          sectionName: approverSectionName,
+        }
         : null,
 
       /**
@@ -600,7 +600,8 @@ async function getHistoryBorrowTickets(
         brt_id: true,
         brt_status: true,
         created_at: true,
-
+        brt_user: true,
+        brt_phone: true,
         requester: {
           select: {
             us_id: true,
@@ -616,7 +617,7 @@ async function getHistoryBorrowTickets(
           where: { deleted_at: null },
           select: {
             td_id: true,
-            td_origin_cti_id: true, 
+            td_origin_cti_id: true,
             child: {
               select: {
                 dec_id: true,
@@ -714,7 +715,8 @@ async function getHistoryBorrowTickets(
           brt_id: true,
           brt_status: true,
           created_at: true,
-
+          brt_user: true,
+          brt_phone: true,
           requester: {
             select: {
               us_id: true,
@@ -730,7 +732,7 @@ async function getHistoryBorrowTickets(
             where: { deleted_at: null },
             select: {
               td_id: true,
-              td_origin_cti_id: true, 
+              td_origin_cti_id: true,
               child: {
                 select: {
                   dec_id: true,
@@ -766,6 +768,8 @@ async function getHistoryBorrowTickets(
           ...requesterBaseline,
           fullName:
             cartName && cartName.length > 0 ? cartName : requesterBaseline.fullName,
+          borrowName: ticketRecordItem.brt_user,
+          borrowPhone: ticketRecordItem.brt_phone,
         },
       };
     });
@@ -930,7 +934,7 @@ async function getHistoryBorrowTicketDetail(
         where: { deleted_at: null },
         select: {
           td_id: true,
-          td_origin_cti_id: true, 
+          td_origin_cti_id: true,
           child: {
             select: {
               dec_id: true,
@@ -1045,22 +1049,21 @@ async function getHistoryBorrowTicketDetail(
   const detail = await mapTicketToDetail(ticketRecord);
 
   // fallback จาก users 
-  const requesterFullNameFromUser = `${ticketRecord.requester?.us_firstname ?? ""} ${
-    ticketRecord.requester?.us_lastname ?? ""
-  }`.trim();
+  const requesterFullNameFromUser = `${ticketRecord.requester?.us_firstname ?? ""} ${ticketRecord.requester?.us_lastname ?? ""
+    }`.trim();
 
   return {
     ...detail,
     requester: {
       ...detail.requester,
-    userId: ticketRecord.requester?.us_id,
-    // ไม่มี cart -> ให้เป็น "" 
-    fullName: cartName && cartName.length > 0 ? cartName : "",
-    employeeCode: ticketRecord.requester?.us_emp_code ?? null,
-    // ไม่มี cart -> ให้เป็น null 
-    phoneNumber: cartPhone && cartPhone.length > 0 ? cartPhone : null,
-    department_name: ticketRecord.requester?.department?.dept_name ?? null,
-    section_name: ticketRecord.requester?.section?.sec_name ?? null,
+      userId: ticketRecord.requester?.us_id,
+      // ไม่มี cart -> ให้เป็น "" 
+      fullName: cartName && cartName.length > 0 ? cartName : "",
+      employeeCode: ticketRecord.requester?.us_emp_code ?? null,
+      // ไม่มี cart -> ให้เป็น null 
+      phoneNumber: cartPhone && cartPhone.length > 0 ? cartPhone : null,
+      department_name: ticketRecord.requester?.department?.dept_name ?? null,
+      section_name: ticketRecord.requester?.section?.sec_name ?? null,
     },
   };
 }

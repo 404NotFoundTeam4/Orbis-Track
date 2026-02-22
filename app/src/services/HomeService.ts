@@ -13,6 +13,8 @@ export interface TicketRequester {
   image: string | null;
   department: string | null;
   us_phone?: string | null;
+  borrow_user: string,
+  borrow_phone: string
 }
 // Interface สำหรับสรุปอุปกรณ์ในคำร้อง
 export interface TicketDeviceSummary {
@@ -40,9 +42,9 @@ export interface TicketDates {
 export interface TicketHomeItem {
   id: number;
   status: string;
-  request_date?: string; 
-  return_date?: string; 
-  dates: TicketDates;    
+  request_date?: string;
+  return_date?: string;
+  dates: TicketDates;
   device_summary: TicketDeviceSummary;
   requester: TicketRequester;
 }
@@ -90,7 +92,7 @@ export interface TicketDetail {
   details: TicketDetailData;
   timeline: TicketTimeline[];
   devices: TicketDeviceChild[];
-  accessories?: TicketAccessory[]; 
+  accessories?: TicketAccessory[];
   requester?: TicketRequester;
 }
 // Interface สำหรับสถิติหน้า Home
@@ -117,7 +119,7 @@ export const homeService = {
    */
   getHomeStats: async () => {
     const response = await api.get("/home/stats");
-    return response.data; 
+    return response.data;
   },
 
   /**

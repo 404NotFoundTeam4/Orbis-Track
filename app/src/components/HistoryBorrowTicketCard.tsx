@@ -8,7 +8,7 @@
  * Author: Chanwit Muangma (Boom) 66160224
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "@iconify/react";
@@ -421,11 +421,39 @@ export default function HistoryBorrowTicket({
    * Output : statusConfig ที่ใช้ render label/class และ string สถานะล่าสุด
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  const status = statusConfig[String(item.status)] || statusConfig.PENDING;
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 5000); // 30 วิ
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const toMinute = (d: Date) =>
+    new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      d.getHours(),
+      d.getMinutes(),
+    );
+
+  const endDateRaw = detail?.borrowDateRange?.endDateTime;
+
+  const isOverdate =
+    endDateRaw &&
+    toMinute(new Date(endDateRaw)).getTime() <= toMinute(now).getTime();
+
+  const statusKey = isOverdate ? "OVERDUE" : String(item.status);
+
+  const status = statusConfig[statusKey] || statusConfig.PENDING;
+
   const effectiveTicketStatus = String(detail?.status ?? item.status)
     .toUpperCase()
     .trim();
-
+  console.log(status);
   /**
    * Description: หาเวลา "อนุมัติ/ปฏิเสธ" จาก timeline
    * - เลือก stage ที่มี approver และ status เป็น APPROVED หรือ REJECTED
@@ -476,7 +504,7 @@ export default function HistoryBorrowTicket({
   const deviceImageUrl = detail?.device?.imageUrl ?? null;
   const sectionName = detail?.device?.sectionName ?? "-";
   const departmentName = detail?.device?.departmentName ?? "-";
-
+  console.log(detail);
   /**
    * Description: หา step ใน timeline ที่ถูกปฏิเสธ (ไว้แสดง banner ปฏิเสธ)
    * Input : detail.timeline
@@ -577,7 +605,7 @@ export default function HistoryBorrowTicket({
           : "text-[#9E9E9E]";
 
   return (
-    <div className="bg-white mb-2 overflow-hidden transition-all duration-300 rounded-[16px]">
+    <div className="bg-white mb-2 overflow-hidden transition-all duration-300 rounded-[16px] ">
       <div
         className="grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_70px] items-center p-4 pl-6 cursor-pointer"
         onClick={onToggle}
@@ -597,7 +625,7 @@ export default function HistoryBorrowTicket({
 
         <div className="flex flex-col">
           <span className="text-[#000000]">
-            {detail?.requester?.fullName || "-"}
+            {item?.requester?.borrowName || "-"}
           </span>
           {/**
           <span className="text-[#8C8C8C]">
@@ -987,7 +1015,7 @@ export default function HistoryBorrowTicket({
                 <div className="flex flex-col gap-2 flex-1">
                   <FieldRow
                     label="ชื่อผู้ร้องขอ"
-                    value={detail?.requester?.fullName || "-"}
+                    value={item?.requester?.borrowName || "-"}
                   />
                   <FieldRow
                     label="ชื่ออุปกรณ์"
@@ -1027,32 +1055,31 @@ export default function HistoryBorrowTicket({
                           </span>
                         ))}
 
-                      {detail?.deviceChildren &&
-                        detail.deviceChildren.length > 8 && (
-                          /**
-                           * Description: ปุ่ม "..." สำหรับเปิด Modal แสดงรายการอุปกรณ์ลูกทั้งหมด
-                           * - ใช้ e.stopPropagation() เพื่อไม่ให้ไป trigger การพับ/ขยาย card (onToggle)
-                           *
-                           * Input : click event
-                           * Output : เปิด DeviceListModal (setDeviceListModalOpen(true))
-                           * Author: Chanwit Muangma (Boom) 66160224
-                           */
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeviceListModalOpen(true);
-                            }}
-                            className="bg-[#FFFFFF] border border-[#BFBFBF] rounded-full flex justify-center items-center w-10 h-[22px] text-[#595959] hover:bg-neutral-50"
-                            title="ดูรายการอุปกรณ์ทั้งหมด"
-                          >
-                            <Icon
-                              icon="ph:dots-three-bold"
-                              width="18"
-                              height="18"
-                            />
-                          </button>
-                        )}
+                      {detail?.deviceChildren && (
+                        /**
+                         * Description: ปุ่ม "..." สำหรับเปิด Modal แสดงรายการอุปกรณ์ลูกทั้งหมด
+                         * - ใช้ e.stopPropagation() เพื่อไม่ให้ไป trigger การพับ/ขยาย card (onToggle)
+                         *
+                         * Input : click event
+                         * Output : เปิด DeviceListModal (setDeviceListModalOpen(true))
+                         * Author: Chanwit Muangma (Boom) 66160224
+                         */
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeviceListModalOpen(true);
+                          }}
+                          className="bg-[#FFFFFF] border border-[#BFBFBF] rounded-full flex justify-center items-center w-10 h-[22px] text-[#595959] hover:bg-neutral-50"
+                          title="ดูรายการอุปกรณ์ทั้งหมด"
+                        >
+                          <Icon
+                            icon="ph:dots-three-bold"
+                            width="18"
+                            height="18"
+                          />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1085,7 +1112,14 @@ export default function HistoryBorrowTicket({
                   />
                   <FieldRow
                     label="เบอร์โทรศัพท์ผู้ยืม"
-                    value={detail?.requester?.phoneNumber || "-"}
+                    value={
+                      item?.requester?.borrowPhone
+                        ? item?.requester?.borrowPhone.replace(
+                            /(\d{3})(\d{3})(\d{4})/,
+                            "$1-$2-$3",
+                          )
+                        : "000-000-0000"
+                    }
                   />
 
                   <div className="grid grid-cols-[150px_1fr] items-baseline">

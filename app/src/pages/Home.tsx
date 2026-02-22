@@ -43,8 +43,10 @@ export const Home = () => {
     waiting: 0,
     report: 0,
   });
+  console.log(stats)
   const [tickets, setTickets] = useState<TicketHomeItem[]>([]);
 
+  console.log(tickets)
   // --- UI States ---
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);

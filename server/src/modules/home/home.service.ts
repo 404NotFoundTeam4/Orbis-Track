@@ -83,13 +83,13 @@ async function getHomeStats(userId: number) {
   const next3Days = addDays(now, 3);
 
   const myFilter = {
-      brt_user_id: userId, 
-      deleted_at: null,
-    };
+    brt_user_id: userId,
+    deleted_at: null,
+  };
 
   // นับจำนวนคำร้องในแต่ละสถานะ
   const borrowedCount = await prisma.borrow_return_tickets.count({
-    where: {...myFilter, brt_status: "IN_USE", deleted_at: null },
+    where: { ...myFilter, brt_status: "IN_USE", deleted_at: null },
   });
 
   // คำร้องที่ใกล้ถึงวันคืน (ภายใน 3 วันข้างหน้า)
@@ -104,17 +104,18 @@ async function getHomeStats(userId: number) {
 
   // คำร้องที่รอการอนุมัติ
   const waitingCount = await prisma.borrow_return_tickets.count({
-    where: {...myFilter, brt_status: "PENDING", deleted_at: null },
+    where: { ...myFilter, brt_status: "PENDING", deleted_at: null },
   });
 
   // คำร้องแจ้งซ่อมที่ยังไม่เสร็จสิ้น
   const reportCount = await prisma.ticket_issues.count({
-    where: { ti_status: { not: "COMPLETED" }, 
-    deleted_at: null,
-    ticket: {
-          brt_user_id: userId, // เช็คว่าเป็น Ticket ของเรา
-        }, 
-  },
+    where: {
+      ti_status: { not: "COMPLETED" },
+      deleted_at: null,
+      ticket: {
+        brt_user_id: userId, // เช็คว่าเป็น Ticket ของเรา
+      },
+    },
   });
 
   return {
@@ -136,9 +137,10 @@ async function getRecentTickets(userId: number) {
     await prisma.borrow_return_tickets.findMany({
       take: 5,
       orderBy: { created_at: "desc" },
-      where: { deleted_at: null
+      where: {
+        deleted_at: null
         , brt_user_id: userId,
-       },
+      },
       include: {
         requester: true,
         ticket_devices: {
@@ -149,6 +151,9 @@ async function getRecentTickets(userId: number) {
                   include: {
                     category: true,
                     section: { include: { department: true } },
+                    _count: {
+                      select: { accessories: true }
+                    }
                   },
                 },
               },
@@ -173,6 +178,7 @@ async function getRecentTickets(userId: number) {
 
     return {
       id: ticket.brt_id,
+      request_date: ticket.created_at?.toISOString() || null,
       status: ticket.brt_status,
       dates: {
         start: ticket.brt_start_date.toISOString(),
@@ -194,12 +200,15 @@ async function getRecentTickets(userId: number) {
         department: cleanDept || "-",
         section: cleanSection || "-",
         description: mainDevice?.de_description || null,
+        accessories: mainDevice?._count?.accessories ?? 0,
         image: mainDevice?.de_images || null,
-        max_borrow_days: mainDevice?.de_max_borrow_days || 0,
+        maxBorrowDays: mainDevice?.de_max_borrow_days || 0,
       },
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
         empcode: ticket.requester.us_emp_code,
+        borrow_user: ticket.brt_user,
+        borrow_phone: ticket.brt_phone
       },
     };
   });
@@ -317,12 +326,12 @@ async function getTicketDetailById(id: number) {
     accessories:
       firstDevice?.accessories && firstDevice.accessories.length > 0
         ? [
-            {
-              acc_id: firstDevice.accessories[0].acc_id,
-              acc_name: firstDevice.accessories[0].acc_name,
-              acc_quantity: firstDevice.accessories[0].acc_quantity,
-            },
-          ]
+          {
+            acc_id: firstDevice.accessories[0].acc_id,
+            acc_name: firstDevice.accessories[0].acc_name,
+            acc_quantity: firstDevice.accessories[0].acc_quantity,
+          },
+        ]
         : [],
     requester: {
       id: ticket.requester.us_id,
@@ -331,6 +340,8 @@ async function getTicketDetailById(id: number) {
       image: ticket.requester.us_images,
       department: ticket.requester.department?.dept_name || "-",
       us_phone: ticket.requester.us_phone,
+      borrow_user: ticket.brt_user,
+      borrow_phone: ticket.brt_phone
     },
   };
 }

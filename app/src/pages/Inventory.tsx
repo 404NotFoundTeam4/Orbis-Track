@@ -19,9 +19,6 @@ import { AlertDialog } from "../components/AlertDialog.js";
 import api from "../api/axios.js";
 import getImageUrl from "../services/GetImage";
 
-
-
-
 // type อุปกรณ์ย่อย
 type DeviceChild = {
   dec_id: number;
@@ -63,12 +60,12 @@ type DropdownOption = {
  */
 const extractOptions = (
   data: Equipment[],
-  key: keyof Equipment
+  key: keyof Equipment,
 ): DropdownOption[] => {
   const uniqueValues = Array.from(
     new Set(
-      data.map((item) => String(item[key] || "")).filter((val) => val !== "")
-    )
+      data.map((item) => String(item[key] || "")).filter((val) => val !== ""),
+    ),
   );
   return [
     { id: "all", label: "ทั้งหมด", value: "" },
@@ -108,7 +105,7 @@ export const Inventory = () => {
   const [searchFilter, setSearchFilters] = useState({ search: "" });
 
   const [sortField, setSortField] = useState<keyof Equipment | "status_text">(
-    "created_at"
+    "created_at",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -122,24 +119,24 @@ export const Inventory = () => {
   //Handler: Modal Actions
   const handleOpenAddModal = () => {
     // ดึงชื่อรายการอุปกรณ์ทั้งหมด
-    const existingDeviceNames = items.map(item => item.name);
+    const existingDeviceNames = items.map((item) => item.name);
     // รหัสอุปกรณ์ทั้งหมด
-    const existingDeviceCodes = items.map(items => items.serial_number);
+    const existingDeviceCodes = items.map((items) => items.serial_number);
 
     // เก็บชื่ออุปกรณ์ทั้งหมดไว้ใน sessionStorage
     sessionStorage.setItem(
       "existingDeviceNames",
-      JSON.stringify(existingDeviceNames)
-    )
+      JSON.stringify(existingDeviceNames),
+    );
 
     // เก็บรหัสอุปกรณ์ทั้งหมดไว้ใน sessionStorage
     sessionStorage.setItem(
       "existingDeviceCodes",
-      JSON.stringify(existingDeviceCodes)
-    )
+      JSON.stringify(existingDeviceCodes),
+    );
 
     navigate("/inventory/add");
-  }
+  };
 
   const handleOpenEditModal = (item: Equipment) => {
     navigate(`/inventory/edit/${item.id}`, {
@@ -147,7 +144,6 @@ export const Inventory = () => {
         device: item,
       },
     });
-
   };
 
   //Handlers: Delete Logic
@@ -162,7 +158,7 @@ export const Inventory = () => {
     const idsToDelete = deleteId ? [deleteId] : selectedItems;
     try {
       await Promise.all(
-        idsToDelete.map((id) => api.delete(`/inventory/${id}`))
+        idsToDelete.map((id) => api.delete(`/inventory/${id}`)),
       );
       toast.push({ message: "ลบอุปกรณ์เสร็จสิ้น!", tone: "danger" });
       setSelectedItems([]);
@@ -298,7 +294,7 @@ export const Inventory = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageRows = useMemo(
     () => filtered.slice((page - 1) * pageSize, page * pageSize),
-    [filtered, page, pageSize]
+    [filtered, page, pageSize],
   );
 
   // Reset หน้าและ Selection เมื่อมีการเปลี่ยน Filter
@@ -321,12 +317,14 @@ export const Inventory = () => {
   };
   const handleSelectItem = (id: number) => {
     setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((prevId) => prevId !== id) : [...prev, id]
+      prev.includes(id)
+        ? prev.filter((prevId) => prevId !== id)
+        : [...prev, id],
     );
   };
   // จำนวนรายการที่สามารถเลือกได้
   const selectableItemsCount = filtered.filter(
-    (item) => item.status_type !== "BORROWED"
+    (item) => item.status_type !== "BORROWED",
   ).length;
   const isAllSelected =
     selectableItemsCount > 0 && selectedItems.length === selectableItemsCount;
@@ -334,7 +332,7 @@ export const Inventory = () => {
   const gridCols = "1.8fr 1fr 1fr 1fr 0.7fr 1fr 1fr";
 
   return (
-    <div className="w-full flex flex-col p-4">
+    <div className="w-full flex flex-col p-4 h-[80%] ">
       <div className="flex-1">
         {/* Breadcrumbs */}
         <div className="mb-[8px] space-x-[9px]">
@@ -345,7 +343,7 @@ export const Inventory = () => {
 
         {/* Title */}
         <div className="flex items-center gap-[14px] mb-[21px]">
-          <h1 className="text-2xl font-semibold">จัดการคลังอุปกรณ์</h1>
+          <h1 className="text-[42px] font-semibold">จัดการคลังอุปกรณ์</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             อุปกรณ์ทั้งหมด {items.length}
           </div>
@@ -389,7 +387,7 @@ export const Inventory = () => {
         </div>
 
         {/* TABLE SECTION */}
-        <div className="w-auto">
+        <div className="w-auto h-full">
           {/* 1. Header (แยกออกมา) */}
           <div
             className="grid bg-[#FFFFFF] border border-[#D9D9D9] font-semibold text-gray-700 rounded-[16px] mb-[16px] h-[61px] items-center"
@@ -525,7 +523,7 @@ export const Inventory = () => {
           </div>
 
           {/* 2. Body (ตารางข้อมูล) */}
-          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] min-h-[679px] flex flex-col">
+          <div className="border bg-[#FFFFFF] border-[#D9D9D9] rounded-[16px] min-h-[calc(100vh-420px)] flex flex-col">
             <div className="flex-1 overflow-auto">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -561,10 +559,7 @@ export const Inventory = () => {
                         onChange={() => handleSelectItem(item.id)}
                         disabled={item.status_type === "BORROWED"}
                       />
-                      <div
-                        className=" text-black truncate"
-                        title={item.name}
-                      >
+                      <div className=" text-black truncate" title={item.name}>
                         {item.name}
                       </div>
                     </div>
@@ -658,10 +653,11 @@ export const Inventory = () => {
                 <button
                   type="button"
                   onClick={() => setPage(1)}
-                  className={`h-8 min-w-8 px-2 rounded border text-sm ${page === 1
-                    ? "border-[#000000] text-[#000000]"
-                    : "border-[#D9D9D9]"
-                    }`}
+                  className={`h-8 min-w-8 px-2 rounded border text-sm ${
+                    page === 1
+                      ? "border-[#000000] text-[#000000]"
+                      : "border-[#D9D9D9]"
+                  }`}
                 >
                   1
                 </button>
@@ -683,10 +679,11 @@ export const Inventory = () => {
                   <button
                     type="button"
                     onClick={() => setPage(totalPages)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${page === totalPages
-                      ? "border-[#000000] text-[#000000]"
-                      : "border-[#D9D9D9]"
-                      }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
+                      page === totalPages
+                        ? "border-[#000000] text-[#000000]"
+                        : "border-[#D9D9D9]"
+                    }`}
                   >
                     {totalPages}
                   </button>
@@ -753,4 +750,4 @@ export const Inventory = () => {
   );
 };
 
-export default Inventory
+export default Inventory;

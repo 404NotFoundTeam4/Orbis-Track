@@ -565,7 +565,7 @@ export default function History() {
       isCancelled = true;
     };
   }, [activeTabKey, queryParams]);
-
+  
   /**
    * Description: Auto-expand ticket เมื่อเข้าหน้าโดยมี expandId (จาก notification/link)
    * - ถ้า ticket อยู่ใน list: expand + โหลด detail ถ้ายังไม่มี
@@ -645,6 +645,7 @@ export default function History() {
               employeeCode: detail.requester.employeeCode,
               department_name: detail.requester.department_name,
               section_name: detail.requester.section_name,
+              
             },
             deviceSummary: {
               deviceId: detail.device.deviceId,

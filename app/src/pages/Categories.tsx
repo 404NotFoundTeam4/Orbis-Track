@@ -142,9 +142,9 @@ export const Categories = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   return (
-   <div className="w-full h-screen overflow-hidden flex flex-col p-[20px]">
+    <div className="w-full h-screen overflow-hidden flex flex-col p-[20px]">
       <div className="flex-1 overflow-hidden ">
-         <div className="mb-[22px] space-x-[9px]">
+        <div className="mb-[22px] space-x-[9px]">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">หมวดหมู่อุปกรณ์</span>
@@ -158,7 +158,7 @@ export const Categories = () => {
           </div>
         </div>
 
-       <div className="w-full mb-[20px]">
+        <div className="w-full mb-[20px]">
           <div className="flex flex-wrap justify-between items-center gap-3">
             {/* ช่องค้นหา */}
             <div className="w-[420px] max-w-full">
@@ -221,7 +221,7 @@ export const Categories = () => {
                       onClick={() => {
                         (setIsEditCategory(true), setEditingCategory(c));
                       }}
-                      className="group w-[35px] h-[35px]] flex items-center justify-center rounded-[12px]
+                      className="group w-[34px] h-[34px] flex items-center justify-center rounded-[12px]
   text-[#1890FF]   transition-colors duration-150
   hover:bg-[#40A9FF] hover:text-white"
                       title="แก้ไข"
@@ -229,23 +229,13 @@ export const Categories = () => {
                       <Icon icon="prime:pen-to-square" width="22" height="22" />
                     </button>
 
-                    {/* ถ้ากำลังแก้ไขให้แสดง category modal */}
-                    {isEditCategory && (
-                      <CategoryModal
-                        open={isEditCategory}
-                        mode="edit-category"
-                        initialCategory={editingCategory}
-                        onOpenChange={() => setIsEditCategory(false)}
-                        onSuccess={() => setRefreshTrigger((p) => p + 1)}
-                      />
-                    )}
                     {/* delete */}
                     {!c.deleted_at && (
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(c)}
                         title="ลบ"
-                        className="group w-[35px] h-[35px]] flex items-center justify-center rounded-[12px]
+                        className="group w-[34px] h-[34px] flex items-center justify-center rounded-[12px]
                                                 text-[#FF4D4F] transition-colors duration-150
                                                 hover:bg-[#FF7875] hover:text-white"
                       >
@@ -347,7 +337,7 @@ export const Categories = () => {
         </div>
       </div>
       <AlertDialog
-       width={786}
+        width={800}
         open={!!deleteTarget}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
@@ -389,6 +379,13 @@ export const Categories = () => {
         onSuccess={() => {
           setRefreshTrigger((p) => p + 1);
         }}
+      />
+      <CategoryModal
+        open={isEditCategory}
+        mode="edit-category"
+        initialCategory={editingCategory}
+        onOpenChange={() => setIsEditCategory(false)}
+        onSuccess={() => setRefreshTrigger((p) => p + 1)}
       />
     </div>
   );

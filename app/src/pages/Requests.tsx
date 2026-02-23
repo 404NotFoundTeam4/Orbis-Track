@@ -28,6 +28,7 @@ import { AlertDialog } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { socketService } from "../services/SocketService";
 import type { DeviceReturnStatus } from "../components/DeviceReturnModals";
+import { metaService, type DropdownOption } from "../services/MetaService";
 
 const Requests = () => {
   const [searchFilter, setSearchFilter] = useState({ search: "" });
@@ -98,24 +99,18 @@ const Requests = () => {
   const [rejectTicketId, setRejectTicketId] = useState<number | null>(null);
   const [rejectLoading, setRejectLoading] = useState(false);
 
-  let statusOptions;
+  // โหลด dropdown options จาก API ตาม role
+  const [statusOptions, setStatusOptions] = useState<DropdownOption[]>([]);
 
-  if (user.us_role === "STAFF") {
-    statusOptions = [
-      { id: "all", label: "ทั้งหมด", value: "" },
-      { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
-      { id: "APPROVED", label: "อนุมัติแล้ว", value: "APPROVED" },
-      { id: "IN_USE", label: "กำลังใช้งาน", value: "IN_USE" },
-      // { id: "REJECTED", label: "ปฏิเสธ", value: "REJECTED" },
-      // { id: "COMPLETED", label: "คืนแล้ว", value: "COMPLETED" },
-      { id: "OVERDUE", label: "เลยกำหนด", value: "OVERDUE" },
-    ];
-  } else {
-    statusOptions = [
-      { id: "all", label: "ทั้งหมด", value: "" },
-      { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
-    ];
-  }
+  useEffect(() => {
+    metaService.getDropdownOptions().then((options) => {
+      if (user?.us_role === "STAFF") {
+        setStatusOptions([...options.borrowStatusesStaff]);
+      } else {
+        setStatusOptions([...options.borrowStatusesApprover]);
+      }
+    });
+  }, [user?.us_role]);
 
   /**
    * Description: จัดการการคลิก sort บน header

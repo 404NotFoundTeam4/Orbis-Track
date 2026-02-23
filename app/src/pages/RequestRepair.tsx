@@ -395,7 +395,7 @@ function TabButton({
   onClick,
   children,
 }: {
-  active: boolean;
+  isActive: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {

@@ -24,11 +24,11 @@ interface RequestItemRepairProps {
   ticket: RepairTicketItem;
   ticketDetail?: RepairTicketDetail | null;
   isLoadingDetail?: boolean;
-  onExpand: (ticketId: number, expandUI: boolean) => void;
+  onExpand: (ticketId: number, isExpandUI: boolean) => void;
   onApprove?: (ticketId: number) => Promise<void>;
   currentUserId?: number;
   currentUserName?: string;
-  forceExpand?: boolean;
+  isForceExpand?: boolean;
   expandTrigger?: unknown;
 }
 
@@ -107,17 +107,37 @@ export default function RequestItemRepair({
     }
   }, [ticket.status, ticket.approver]);
   
+  
+  /**
+ * Description: ฟังก์ชันสำหรับจัดการการกดขยาย (Expand) โดยจะสลับสถานะ isExpanded และเรียก onExpand เพื่อแจ้งพ่อแม่ให้โหลดข้อมูลรายละเอียดถ้ายังไม่มี
+ * Input : - ticketId (ID ของ ticket ที่จะขยาย)
+ *         - isExpandUI (สถานะใหม่ของการขยาย ว่าขยายหรือไม่)
+ * Output : เปลี่ยนสถานะภายในและแจ้งพ่อแม่ผ่าน onExpand
+ * Author : Worrawat Namwat (Wave) 66160372
+ */
   const handleExpandClick = () => {
     const newExpandState = !isExpanded;
     setIsExpanded(newExpandState);
     onExpand(ticket.id, newExpandState);
   };
 
+/**
+ * Description: ฟังก์ชันสำหรับจัดการการกดปุ่มอนุมัติ โดยจะเปิด AlertDialog เพื่อยืนยันการรับงาน และถ้าผู้ใช้ยืนยัน จะเรียก onApprove เพื่ออัปเดตสถานะในระบบ และอัปเดตสถานะภายในของ component พร้อมแสดง Toast แจ้งผลลัพธ์
+ * Input : - e (เหตุการณ์การคลิกปุ่มอนุมัติ)
+ * Output : เปิด AlertDialog และถ้าผู้ใช้ยืนยัน จะอัปเดตสถานะและแสดง Toast
+ * Author : Worrawat Namwat (Wave) 66160372
+ */
   const handleApproveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsAlertOpen(true); 
   };
 
+  /**
+ * Description: ฟังก์ชันสำหรับจัดการการยืนยันรับงานจาก AlertDialog โดยจะเรียก onApprove เพื่ออัปเดตสถานะในระบบ และอัปเดตสถานะภายในของ component พร้อมแสดง Toast แจ้งผลลัพธ์
+ * Input : - e (เหตุการณ์การคลิกปุ่มยืนยันใน AlertDialog)
+ * Output : ปิด AlertDialog และถ้าการอัปเดตสถานะสำเร็จ จะอัปเดตสถานะภายในและแสดง Toast แจ้งความสำเร็จ ถ้าล้มเหลว จะจับข้อผิดพลาดและแสดง Toast แจ้งความล้มเหลว
+ * Author : Worrawat Namwat (Wave) 66160372
+ */
   const handleConfirmApprove = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault(); // ป้องกันไม่ให้ปุ่มมันเผลอรีเฟรชหน้าเว็บ

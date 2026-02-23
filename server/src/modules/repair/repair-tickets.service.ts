@@ -51,7 +51,10 @@ export const repairTicketsService = {
       })
     ]);
 
-    const formattedData: RepairTicketItem[] = tickets.map((t) => {
+    type TicketType = typeof tickets[number];
+    type IssueDeviceType = NonNullable<TicketType["issue_devices"]>[number];
+
+    const formattedData: RepairTicketItem[] = tickets.map((t: TicketType) => {
       const childDevice = t.issue_devices?.[0]?.device_child;
       const assetCode = childDevice?.dec_asset_code 
                      || childDevice?.dec_serial_number 
@@ -70,7 +73,7 @@ export const repairTicketsService = {
       // "แผนก มีเดีย ฝ่ายย่อย " ให้เหลือแค่ตัวอักษรท้ายจาก rawSection
       const cleanSection = rawSection.replace(/^.*ฝ่ายย่อย\s*/i, "").trim();
 
-      const reportedDevices = t.issue_devices?.map(id => ({
+      const reportedDevices = t.issue_devices?.map((id: IssueDeviceType) => ({
         asset_code: id.device_child?.dec_asset_code || id.device_child?.dec_serial_number || "-",
         serial_number: id.device_child?.dec_serial_number || null
       })) || [];
@@ -115,46 +118,45 @@ export const repairTicketsService = {
       pagination: {
         page,
         limit,
-        total_items: totalItems,
-        total_pages: Math.ceil(totalItems / limit) || 1,
+        total_Items: totalItems,
+        total_Pages: Math.ceil(totalItems / limit) || 1,
       }
     };
   },
   
-
   async approveTicket(ticketId: number, approverId: number): Promise<ticket_issues> {
 
-  console.log("approveTicket called:", { ticketId, approverId });
+    console.log("approveTicket called:", { ticketId, approverId });
 
-  // ตรวจสอบ ticket มีจริงไหม
-  const existingTicket = await prisma.ticket_issues.findUnique({
-    where: { ti_id: ticketId }
-  });
+    // ตรวจสอบ ticket มีจริงไหม
+    const existingTicket = await prisma.ticket_issues.findUnique({
+      where: { ti_id: ticketId }
+    });
 
-  if (!existingTicket) {
-    throw new Error("ไม่พบ ticket นี้");
-  }
-
-  // ตรวจสอบ user มีจริงไหม
-  const existingUser = await prisma.users.findUnique({
-    where: { us_id: approverId }
-  });
-
-  if (!existingUser) {
-    throw new Error("ไม่พบ user นี้");
-  }
-
-  // update
-  const updatedTicket = await prisma.ticket_issues.update({
-    where: { ti_id: ticketId },
-    data: {
-      ti_status: TI_STATUS.IN_PROGRESS,
-      ti_assigned_to: approverId
+    if (!existingTicket) {
+      throw new Error("ไม่พบ ticket นี้");
     }
-  });
 
-  console.log("update success");
+    // ตรวจสอบ user มีจริงไหม
+    const existingUser = await prisma.users.findUnique({
+      where: { us_id: approverId }
+    });
 
-  return updatedTicket;
-}
+    if (!existingUser) {
+      throw new Error("ไม่พบ user นี้");
+    }
+
+    // update
+    const updatedTicket = await prisma.ticket_issues.update({
+      where: { ti_id: ticketId },
+      data: {
+        ti_status: TI_STATUS.IN_PROGRESS,
+        ti_assigned_to: approverId
+      }
+    });
+
+    console.log("update success");
+
+    return updatedTicket;
+  }
 };

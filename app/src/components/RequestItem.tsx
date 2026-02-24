@@ -70,11 +70,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     label: "เลยกำหนด",
     className: "border-[#FF4D4F] text-[#FF4D4F]",
   },
-
-  // COMPLETED: {
-  //   label: "คืนแล้ว",
-  //   className: "border-gray-400 text-gray-600 bg-gray-50",
-  // },
+  COMPLETED: {
+    label: "คืนแล้ว",
+    className: "border-gray-400 text-gray-600 bg-gray-50",
+  },
 };
 
 /**

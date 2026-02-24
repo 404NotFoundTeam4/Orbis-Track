@@ -64,6 +64,13 @@ export class BorrowReturnRepository {
         case "quantity":
           orderBy = { brt_quantity: direction };
           break;
+        case "category":
+          orderBy = {
+            ticket_devices: {
+              _count: direction,
+            },
+          };
+          break;
         case "requester":
           orderBy = { requester: { us_firstname: direction } };
           break;
@@ -81,8 +88,8 @@ export class BorrowReturnRepository {
       brt_status: status
         ? status
         : {
-            in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
-          },
+          in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
+        },
     };
 
     if (search) {
@@ -950,9 +957,9 @@ export class BorrowReturnRepository {
         ...(role === US_ROLE.HOD
           ? { us_dept_id: deptId }
           : {
-              us_dept_id: deptId,
-              us_sec_id: secId,
-            }),
+            us_dept_id: deptId,
+            us_sec_id: secId,
+          }),
       },
       select: { us_firstname: true, us_lastname: true },
     });

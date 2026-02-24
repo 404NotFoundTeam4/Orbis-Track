@@ -124,7 +124,7 @@ export class BorrowReturnService {
     const ticket = await this.repository.getById(id);
 
     if (!ticket) {
-      throw new Error("Ticket not found");
+      throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
     }
 
     return {
@@ -308,7 +308,7 @@ export class BorrowReturnService {
 
       // ปิดการแจ้งเตือนสำหรับผู้อนุมัติคนอื่นๆ ในขั้นตอนปัจจุบัน (ถ้ามีหลายคน)
       try {
-        notificationsService.dismissNotificationsByTicket({
+        await notificationsService.dismissNotificationsByTicket({
           approvalUser: approvalUser.sub,
           brtId: ticketId,
           event: "APPROVAL_REQUESTED",
@@ -545,7 +545,7 @@ export class BorrowReturnService {
     // Query หา requester ของ ticket
     const ticket = await this.repository.getById(ticketId);
     if (!ticket) {
-      throw new Error("Ticket not found");
+      throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
     }
     const requesterId = ticket?.requester?.us_id;
 

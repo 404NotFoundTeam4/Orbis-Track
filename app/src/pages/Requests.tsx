@@ -90,7 +90,7 @@ const Requests = () => {
   }>({
     title: "",
     description: "",
-    onConfirm: async () => { },
+    onConfirm: async () => {},
     tone: "success",
   });
 
@@ -147,48 +147,51 @@ const Requests = () => {
    * Output : void (อัปเดต tickets state)
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
-  const fetchTickets = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      const params: GetTicketsParams = {
-        page,
-        limit: pageSize,
-      };
+  const fetchTickets = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const params: GetTicketsParams = {
+          page,
+          limit: pageSize,
+        };
 
-      if (statusFilter?.value) {
-        params.status = statusFilter.value as TicketStatus;
+        if (statusFilter?.value) {
+          params.status = statusFilter.value as TicketStatus;
+        }
+
+        if (searchFilter.search) {
+          params.search = searchFilter.search;
+        }
+
+        if (sortField) {
+          params.sortField = sortField;
+          params.sortDirection = sortDirection;
+        }
+
+        const result = await ticketsService.getTickets(params);
+        console.log(result);
+        setTickets(result.data);
+        // ใช้ maxPage จาก backend โดยตรง
+        setTotalPages(result.maxPage || 1);
+        // console.log("DEBUG Pagination:", { totalNum: result.totalNum, maxPage: result.maxPage, data: result.data.length });
+      } catch (err) {
+        console.error("Failed to fetch tickets:", err);
+        setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+      } finally {
+        if (!silent) setLoading(false);
       }
-
-      if (searchFilter.search) {
-        params.search = searchFilter.search;
-      }
-
-      if (sortField) {
-        params.sortField = sortField;
-        params.sortDirection = sortDirection;
-      }
-
-      const result = await ticketsService.getTickets(params);
-      console.log(result);
-      setTickets(result.data);
-      // ใช้ maxPage จาก backend โดยตรง
-      setTotalPages(result.maxPage || 1);
-      // console.log("DEBUG Pagination:", { totalNum: result.totalNum, maxPage: result.maxPage, data: result.data.length });
-    } catch (err) {
-      console.error("Failed to fetch tickets:", err);
-      setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [
-    statusFilter?.value,
-    searchFilter.search,
-    page,
-    pageSize,
-    sortField,
-    sortDirection,
-  ]);
+    },
+    [
+      statusFilter?.value,
+      searchFilter.search,
+      page,
+      pageSize,
+      sortField,
+      sortDirection,
+    ],
+  );
 
   /**
    * Description: ดึงรายละเอียด ticket เมื่อ expand
@@ -352,7 +355,11 @@ const Requests = () => {
             });
 
             // รีเฟรชรายการและรายละเอียด
-            delete ticketDetails[id];
+            setTicketDetails((prev) => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
             fetchTickets();
           } catch (err) {
             console.error("Failed to approve ticket:", err);
@@ -383,7 +390,7 @@ const Requests = () => {
    */
   const handleReturn = async (
     ticketId: number,
-    devices: DeviceReturnStatus[]
+    devices: DeviceReturnStatus[],
   ) => {
     try {
       await ticketsService.returnTicket(ticketId, devices);
@@ -392,7 +399,11 @@ const Requests = () => {
         message: "รับคืนอุปกรณ์แล้ว",
       });
       // รีเฟรช
-      delete ticketDetails[ticketId];
+      setTicketDetails((prev) => {
+        const next = { ...prev };
+        delete next[ticketId];
+        return next;
+      });
       fetchTickets();
     } catch (err) {
       console.error("Failed to return ticket:", err);
@@ -471,7 +482,11 @@ const Requests = () => {
       setRejectTicketId(null);
 
       // ลบ cache และ refresh
-      delete ticketDetails[ticketId];
+      setTicketDetails((prev) => {
+        const next = { ...prev };
+        delete next[ticketId];
+        return next;
+      });
       fetchTickets();
     } catch (err) {
       console.error("Failed to reject ticket:", err);

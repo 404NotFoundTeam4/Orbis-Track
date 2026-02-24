@@ -13,7 +13,7 @@ services:
       - pgdbdata:/var/lib/postgresql/data
       - ./docker/db-init:/docker-entrypoint-initdb.d:ro # มีสคริปต์ init/extension อยู่แล้ว
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -34,7 +34,7 @@ services:
     volumes:
       - caching_data:/data
     healthcheck:
-      test: [ "CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG" ]
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -84,6 +84,8 @@ services:
       - "4144:5173"
     depends_on:
       - backend
+    networks:
+      - orbis_prod_network
     restart: unless-stopped
     # โปรดักชันไม่ต้อง mount volumes
 

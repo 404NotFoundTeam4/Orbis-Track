@@ -183,3 +183,4 @@ export type VerifyOtpPayload = z.infer<typeof verifyOtpPayload>;
 export type OtpSchema = z.infer<typeof otpSchema>;
 export type ForgotPasswordPayload = z.infer<typeof forgotPasswordPayload>;
 export type ResetPasswordPayload = z.infer<typeof resetPasswordPayload>;
+export type SessionResponse = z.infer<typeof sessionResponse>;

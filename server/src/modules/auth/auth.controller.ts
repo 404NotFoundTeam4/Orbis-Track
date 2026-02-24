@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { sendOtpPayload, loginPayload, TokenDto, verifyOtpPayload, forgotPasswordPayload, AuthRequest, accessTokenPayload, MeDto, resetPasswordPayload, sessionResponse } from "./auth.schema.js";
+import { sendOtpPayload, loginPayload, TokenDto, verifyOtpPayload, forgotPasswordPayload, AuthRequest, accessTokenPayload, MeDto, resetPasswordPayload, sessionResponse, SessionResponse } from "./auth.schema.js";
 import { authService } from "./auth.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
@@ -122,7 +122,7 @@ export class AuthController extends BaseController {
      * Note      : ใช้โดย Chatbot เพื่อตรวจสอบสถานะการเข้าสู่ระบบ
      * Author    : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async getSession(req: AuthRequest, _res: Response, _next: NextFunction): Promise<BaseResponse<typeof sessionResponse.type>> {
+    async getSession(req: AuthRequest, _res: Response, _next: NextFunction): Promise<BaseResponse<SessionResponse>> {
         const user = req.user;
         if (!user) {
             throw new HttpError(HttpStatus.UNAUTHORIZED, "Not authenticated");

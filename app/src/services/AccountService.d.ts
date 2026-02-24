@@ -23,3 +23,5 @@ export function ForgotPassword(
     newPassword: string,
     confirmNewPassword: string
 ): Promise<{ data: unknown; message: string }>;
+
+export function Logout(token: string): Promise<{ message: string }>;

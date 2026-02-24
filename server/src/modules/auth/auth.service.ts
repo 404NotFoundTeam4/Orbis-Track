@@ -313,4 +313,56 @@ async function resetPassword(payload: ResetPasswordPayload) {
     };
 }
 
-export const authService = { checkLogin, logout, sendOtp, verifyOtp, forgotPassword, fetchMe, resetPassword };
+/**
+ * Description: Login สำหรับ cookie-based authentication (SSO with Chatbot)
+ * Input : LoginPayload { username, passwords, isRemember }
+ * Output : { token: string, maxAge: number } - token และอายุ cookie (milliseconds)
+ * Author : Pakkapon Chomchoey (Tonnam) 66160080
+ */
+async function checkLoginWithCookie(payload: LoginPayload): Promise<{ token: string; maxAge: number }> {
+    const { username, passwords, isRemember } = payload;
+
+    if (!username || !passwords) {
+        throw new ValidationError("Missing required fields: username, passwords");
+    }
+
+    const result = await prisma.users.findUnique({
+        where: { us_username: username },
+        select: {
+            us_id: true,
+            us_password: true,
+            us_role: true,
+            us_is_active: true,
+            us_dept_id: true,
+            us_sec_id: true,
+        },
+    });
+
+    if (!result?.us_is_active) {
+        throw new ValidationError("Invalid username or password");
+    }
+
+    const isPasswordCorrect = await verifyPassword(result.us_password, passwords);
+    if (!isPasswordCorrect) {
+        throw new ValidationError("Invalid password");
+    }
+
+    // ออก token พร้อม payload ที่ต้องใช้ต่อฝั่ง server
+    const exp = isRemember ? "30d" : env.JWT_EXPIRES_IN as SignOptions["expiresIn"];
+    const token = signToken({
+        sub: result.us_id,
+        role: result.us_role,
+        dept: result.us_dept_id,
+        sec: result.us_sec_id
+    }, exp);
+
+    // คำนวณ maxAge เป็น milliseconds
+    const maxAgeDays = isRemember ? 30 : 2; // default 2 hours = 2/24 days
+    const maxAge = isRemember
+        ? 30 * 24 * 60 * 60 * 1000  // 30 days in ms
+        : 2 * 60 * 60 * 1000;       // 2 hours in ms
+
+    return { token, maxAge };
+}
+
+export const authService = { checkLogin, logout, sendOtp, verifyOtp, forgotPassword, fetchMe, resetPassword, checkLoginWithCookie };

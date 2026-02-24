@@ -26,7 +26,8 @@ export const loginPayload = z.object({
     }),
 }).strict().openapi("LoginPayload");
 
-// JWT payload schema ข้อมูลผู้ใช้ + iat/exp (Unix seconds)
+// JWT payload schema ข้อมูลผู้ใช้ + iat/exp/iss/aud (Unix seconds)
+// Standard claims for SSO with Chatbot (iss=orbistrack, aud=orbistrack-web)
 export const accessTokenPayload = z.object({
     sub: z.coerce.number().int().positive().openapi({ description: "User ID" }), // user_id
     role: z.enum(Object.values(UserRole) as [string, ...string[]]).openapi({ description: "บทบาทของผู้ใช้" }),
@@ -34,7 +35,21 @@ export const accessTokenPayload = z.object({
     sec: z.coerce.number().int().positive().nullable().openapi({ description: "Section ID" }),
     iat: z.number().optional().openapi({ description: "Issued At (Unix timestamp)" }),
     exp: z.number().optional().openapi({ description: "Expiration Time (Unix timestamp)" }),
+    iss: z.string().optional().openapi({ description: "Issuer (orbistrack)" }),
+    aud: z.string().optional().openapi({ description: "Audience (orbistrack-web)" }),
 }).strict().openapi("AccessTokenPayload");
+
+// Session response schema for Chatbot SSO verification
+export const sessionResponse = z.object({
+    user: z.object({
+        sub: z.number().openapi({ description: "User ID" }),
+        role: z.string().openapi({ description: "User role" }),
+        dept: z.number().nullable().openapi({ description: "Department ID" }),
+        sec: z.number().nullable().openapi({ description: "Section ID" }),
+    }),
+    roles: z.array(z.string()).openapi({ description: "User roles array" }),
+    exp: z.number().openapi({ description: "Token expiration timestamp" }),
+}).strict().openapi("SessionResponse");
 
 // Token DTO หลัง login ส่ง accessToken ตัวเดียว
 export const tokenDto = z.object({
@@ -65,6 +80,7 @@ export const meDto = z.object({
 // เพิ่ม user payload จาก token ลงใน Express Request (ใช้ใน auth middleware)
 export interface AuthRequest extends Request {
     user?: AccessTokenPayload;
+    token?: string; // Raw token for logout/blacklist operations
 }
 
 // ==================== OTP Schemas ====================

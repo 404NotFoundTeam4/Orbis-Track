@@ -89,6 +89,9 @@ const Env = z.object({
   SUPPORT_EMAIL: z.string().default("support@orbistrack.com"),
   FRONTEND_URL: z.string().default("http://localhost:4042"),
 
+  // Cookie domain for SSO (optional - set to .yourdomain.com for subdomain sharing)
+  COOKIE_DOMAIN: z.string().optional(),
+
   // token/crypto
   EXPIRE_TOKEN: z.string(),
 });

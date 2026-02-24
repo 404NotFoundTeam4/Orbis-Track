@@ -1,7 +1,8 @@
 import { Router, type Express } from "express";
 
 import { authRouter, fetchMeRouter } from "./modules/auth/index.js";
-import { authMiddleware } from "./middlewares/auth.middleware.js";
+import { authMiddleware, optionalAuthMiddleware } from "./middlewares/auth.middleware.js";
+import { prisma } from "./infrastructure/database/client.js";
 import { accountsRouter } from "./modules/accounts/index.js";
 import { departmentRouter } from "./modules/departments/index.js";
 import { roleRouter } from "./modules/roles/index.js";
@@ -43,7 +44,37 @@ export function routes(app: Express) {
     departmentRouter,
   );
 
+  // Legacy health check (keep for backward compatibility)
   api.get("/health", (_req, res) => res.json({ ok: true }));
+
+  // Kubernetes/Docker health endpoints
+  // Liveness probe - check if app is running
+  api.get("/healthz", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Readiness probe - check if app is ready to serve (DB connection OK)
+  api.get("/readyz", async (_req, res) => {
+    try {
+      // Check database connection
+      await prisma.$queryRaw`SELECT 1`;
+      res.status(200).json({
+        status: "ready",
+        checks: {
+          database: "ok",
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(503).json({
+        status: "not_ready",
+        checks: {
+          database: "error",
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
 
   api.use(
     "/accounts",

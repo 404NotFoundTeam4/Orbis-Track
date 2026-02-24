@@ -1,7 +1,8 @@
 import { Router } from "../../core/router.js";
 import { RateLimitMiddleware } from "../../middlewares/rate-limit.middleware.js";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { AuthController } from './auth.controller.js';
-import { sendOtpPayload, loginPayload, meDto, tokenDto, verifyOtpPayload, forgotPasswordPayload, resetPasswordPayload } from "./auth.schema.js";
+import { sendOtpPayload, loginPayload, meDto, tokenDto, verifyOtpPayload, forgotPasswordPayload, resetPasswordPayload, sessionResponse } from "./auth.schema.js";
 
 const authController = new AuthController();
 const router = new Router();
@@ -49,6 +50,31 @@ router.postDoc("/reset-password", {
     body: resetPasswordPayload
 }, authController.resetPassword);
 
+// Session endpoint for Chatbot SSO verification
+router.getDoc("/session", {
+    tag: "Auth",
+    summary: "ตรวจสอบ Session (สำหรับ Chatbot)",
+    description: "คืนข้อมูล user, roles, exp สำหรับตรวจสอบสถานะการเข้าสู่ระบบจาก Chatbot",
+    auth: true,
+    res: sessionResponse
+}, authMiddleware, authController.getSession);
+
+// Cookie-based login for SSO
+router.postDoc("/login/cookie", {
+    tag: "Auth",
+    summary: "เข้าสู่ระบบด้วย Cookie (SSO)",
+    description: "เข้าสู่ระบบและตั้งค่า HttpOnly Cookie สำหรับ SSO กับ Chatbot",
+    body: loginPayload
+}, RateLimitMiddleware.getOtpLimit, authController.loginWithCookie);
+
+// Cookie-based logout for SSO
+router.postDoc("/logout/cookie", {
+    tag: "Auth",
+    summary: "ออกจากระบบและลบ Cookie",
+    description: "ออกจากระบบ ลบ token จาก blacklist และ clear cookie",
+    auth: true
+}, authMiddleware, authController.logoutWithCookie);
+
 const fetchMe = new Router(undefined, "/auth");
 fetchMe.getDoc("/fetch-me", {
     tag: "Auth",
@@ -59,4 +85,5 @@ fetchMe.getDoc("/fetch-me", {
 }, authController.fetchMe);
 
 export const fetchMeRouter = fetchMe.instance;
+export const authRouter = router.instance;
 export default router.instance;

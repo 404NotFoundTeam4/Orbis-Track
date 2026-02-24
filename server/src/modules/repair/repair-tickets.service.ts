@@ -118,8 +118,8 @@ export const repairTicketsService = {
       pagination: {
         page,
         limit,
-        total_Items: totalItems,
-        total_Pages: Math.ceil(totalItems / limit) || 1,
+        totalItems: totalItems,
+        totalPages: Math.ceil(totalItems / limit) || 1,
       }
     };
   },

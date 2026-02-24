@@ -122,7 +122,7 @@ export class AuthController extends BaseController {
      * Note      : ใช้โดย Chatbot เพื่อตรวจสอบสถานะการเข้าสู่ระบบ
      * Author    : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async getSession(req: AuthRequest, _res: Response, _next: NextFunction): Promise<BaseResponse<typeof sessionResponse._type>> {
+    async getSession(req: AuthRequest, _res: Response, _next: NextFunction): Promise<BaseResponse<typeof sessionResponse.type>> {
         const user = req.user;
         if (!user) {
             throw new HttpError(HttpStatus.UNAUTHORIZED, "Not authenticated");

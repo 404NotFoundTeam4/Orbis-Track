@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import RequestItemRepair from "../components/RequestItemRepair";
 import {
   repairTicketsService,
-  RepairTicketStatus,
+  type RepairTicketStatus,
 } from "../services/RepairService";
 import type { 
   RepairTicketItem, 
@@ -28,13 +28,13 @@ type SortDirection = "asc" | "desc";
 
 const statusOptions = [
   { id: "all", label: "ทั้งหมด", value: "ALL" },
-  { id: "pending", label: "รอดำเนินการ", value: RepairTicketStatus.PENDING },
+  { id: "pending", label: "รอดำเนินการ", value: "PENDING" },
   {
     id: "in_progress",
     label: "กำลังดำเนินการ",
-    value: RepairTicketStatus.IN_PROGRESS,
+    value: "IN_PROGRESS",
   },
-  { id: "completed", label: "เสร็จสิ้น", value: RepairTicketStatus.COMPLETED },
+  { id: "completed", label: "เสร็จสิ้น", value: "COMPLETED" },
 ];
 
 /**
@@ -141,7 +141,7 @@ const RequestsRepair = () => {
 
       // response.data จาก Axios มักจะมีรูปแบบซ้อนกัน ขึ้นอยู่กับ Interface ของ API Service
       setTickets(response.data.data || response.data); 
-      setTotalPages(response.data.pagination?.total_pages || 1);
+      setTotalPages(response.data.pagination?.totalPages || 1);
     } catch (err: unknown) {
       const errorResponse = err as { response?: { data?: { message?: string } } };
       setError(errorResponse?.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูล");
@@ -212,14 +212,14 @@ const RequestsRepair = () => {
 
         <div className="mb-4 flex flex-wrap gap-3">
           <TabButton
-            active={activeTabKey === "all"}
+            isActive={activeTabKey === "all"}
             onClick={() => setActiveTabKey("all")}
           >
             ทั้งหมด
           </TabButton>
 
           <TabButton
-            active={activeTabKey === "mine"}
+            isActive={activeTabKey === "mine"}
             onClick={() => setActiveTabKey("mine")}
           >
             ของฉัน
@@ -242,7 +242,7 @@ const RequestsRepair = () => {
         </div>
 
         {/* Table Header */}
-        <div className="w-full bg-white border border-[#D9D9D9] font-medium text-[#000000] rounded-[16px] mb-[16px] h-[61px] grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_1fr_70px] items-center px-4 pl-6">
+        <div className="w-full bg-white border border-[#D9D9D9] font-medium text-[#000000] rounded-[16px] mb-[16px] h-[61px] grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_1fr_70px] items-center px-4 pl-8 ">
           <div className="flex items-center">
             อุปกรณ์
             <button type="button" onClick={() => handleSort("device_name")}>
@@ -351,7 +351,7 @@ const RequestsRepair = () => {
                   onExpand={handleExpand}
                   currentUserId={user?.us_id}
                   currentUserName={loggedInUserName}
-                  forceExpand={expandedId === ticket.id}
+                  isForceExpand={expandedId === ticket.id}
                   onApprove={handleApproveAction}
                 />
               ))}
@@ -386,12 +386,12 @@ const RequestsRepair = () => {
 
 /**
  * Description: Component ปุ่ม Tab สำหรับสลับมุมมอง (เช่น ทั้งหมด / ของฉัน)
- * Input : { active: boolean, onClick: function, children: ReactNode }
+ * Input : { isActive: boolean, onClick: function, children: ReactNode }
  * Output : React Component (ปุ่ม Tab)
  * Author : Worrawat Namwat (Wave) 66160372
  */
 function TabButton({
-  active,
+  isActive,
   onClick,
   children,
 }: {
@@ -404,7 +404,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`h-10 rounded-full border px-5 text-sm font-semibold transition-colors ${
-        active
+        isActive
           ? "border-sky-300 bg-[#1890FF] text-neutral-50"
           : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
       }`}

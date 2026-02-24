@@ -14,7 +14,7 @@ import { useToast } from "./Toast";
 import { AlertDialog } from "./AlertDialog";
 import getImageUrl from "../services/GetImage";
 import {
-  RepairTicketStatus,
+  type RepairTicketStatus,
   type RepairTicketItem,
   type RepairTicketDetail,
 } from "../services/RepairService";
@@ -33,16 +33,19 @@ interface RequestItemRepairProps {
 }
 
 // Config สำหรับตั้งค่าสีและข้อความของแต่ละ Status
-const statusConfig: Record<string, { label: string; className: string }> = {
-  [RepairTicketStatus.PENDING]: {
-    label: "รอดำเนินการ",
+const statusConfig: Record<
+  RepairTicketStatus,
+  { label: string; className: string }
+> = {
+  PENDING: {
+    label: "รออนุมัติ",
     className: "bg-white text-[#FBBF24] border border-[#FBBF24]",
   },
-  [RepairTicketStatus.IN_PROGRESS]: {
-    label: "กำลังดำเนินการ",
+  IN_PROGRESS: {
+    label: "กำลังซ่อม",
     className: "bg-white text-[#40A9FF] border border-[#40A9FF]",
   },
-  [RepairTicketStatus.COMPLETED]: {
+  COMPLETED: {
     label: "เสร็จสิ้น",
     className: "bg-green-100 text-green-800 border border-green-200",
   },
@@ -85,11 +88,11 @@ export default function RequestItemRepair({
   isLoadingDetail,
   onExpand,
   onApprove,
-  forceExpand,
+  isForceExpand,
   currentUserId,
   currentUserName,
 }: RequestItemRepairProps) {
-  const [isExpanded, setIsExpanded] = useState(forceExpand || false);
+  const [isExpanded, setIsExpanded] = useState(isForceExpand || false);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { push } = useToast();
@@ -97,10 +100,10 @@ export default function RequestItemRepair({
   const [localApprover, setLocalApprover] = useState<string | null>(
     ticket.approver?.fullname || null
   );
-  const [localStatus, setLocalStatus] = useState<string>(ticket.status as string);
+ const [localStatus, setLocalStatus] = useState<RepairTicketStatus>(ticket.status);
 
   useEffect(() => {
-    setLocalStatus(ticket.status as string);
+    setLocalStatus(ticket.status);
     // ถ้าไม่ส่งมา (เป็น null) จะไม่เอา null ไปทับชื่อที่เพิ่งเซ็ตไว้ตอนกดรับงาน
     if (ticket.approver?.fullname) {
       setLocalApprover(ticket.approver.fullname);
@@ -151,10 +154,10 @@ export default function RequestItemRepair({
         await onApprove(ticket.id);
 
         setLocalApprover(currentUserName || "ผู้รับเรื่อง"); 
-        setLocalStatus(RepairTicketStatus.IN_PROGRESS);
+        setLocalStatus("IN_PROGRESS");
 
         push({
-          message: "รับคำร้องสำเร็จ",
+          message: "รับคำร้องสำเร็จ!",
           tone: "success",
           duration: 3000,
         });
@@ -170,22 +173,18 @@ export default function RequestItemRepair({
     }
   };
 
-  const currentStatus = statusConfig[localStatus] || {
-    label: localStatus,
-    className: "bg-gray-100 text-gray-800 border border-gray-200",
-  };
-
+  const currentStatus = statusConfig[localStatus];
   const startDate = ticket.dates.created;
   const deviceImage = ticket.device_info.image;
 
   return (
     <div className="w-full bg-white overflow-hidden transition-all duration-300">
       <div
-        className="w-full bg-white font-medium text-[#000000] h-[61px] grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_1fr_70px] items-center"
+        className="w-full bg-white font-medium text-[#000000] h-[61px] grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_1fr_70px] items-center pl-4"
         onClick={handleExpandClick}
       >
         {/* Device Name & Asset Code */}
-        <div className="flex flex-col pl-2 overflow-hidden pr-2">
+        <div className="flex flex-col pl-2 overflow-hidden pr-2 ml-1">
           <span className="text-[#000000] font-medium truncate" title={ticket.device_info.name}>
             {ticket.device_info.name}
           </span>
@@ -195,25 +194,25 @@ export default function RequestItemRepair({
         </div>
 
         {/* Quantity */}
-        <div className="text-[#000000] ml-2">{ticket.device_info.quantity} ชิ้น</div>
+        <div className="text-[#000000] ml-1">{ticket.device_info.quantity} ชิ้น</div>
 
         {/* Category */}
-        <div className="text-[#000000] truncate ml-2" title={ticket.device_info.category || "-"}>
+        <div className="text-[#000000] truncate ml-1" title={ticket.device_info.category || "-"}>
           {ticket.device_info.category || "-"}
         </div>
 
         {/* Requester & Emp Code */}
-        <div className="flex flex-col overflow-hidden pr-2 ml-2">
+        <div className="flex flex-col overflow-hidden pr-2 ml-1">
           <span className="text-[#000000] truncate" title={ticket.requester.fullname}>
             {ticket.requester.fullname}
           </span>
           <span className="text-[#9E9E9E] text-xs truncate" title={ticket.requester.emp_code || "-"}>
-            รหัส: {ticket.requester.emp_code || "-"}
+            {ticket.requester.emp_code || "-"}
           </span>
         </div>
 
         {/* Date & Time */}
-        <div className="flex flex-col ml-2">
+        <div className="flex flex-col ml-1">
           <span className="text-[#000000] text-sm">{formatDate(startDate ?? null)}</span>
           <span className="text-[#7BACFF] text-xs">เวลา : {formatTime(startDate ?? null)}</span>
         </div>
@@ -226,19 +225,19 @@ export default function RequestItemRepair({
         </div>
 
         {/* ช่องจัดการ (ปุ่มอนุมัติ หรือ ผู้ที่อนุมัติ) */}
-        <div className="flex ml-2">
+        <div className="flex">
           {localApprover ? (
             <div className="flex flex-col text-center">
               <span className="text-[11px] text-gray-500"></span>
               
               <span 
-                className="bg-white border border-[#73D13D] text-[#73D13D] rounded-full flex items-center justify-center px-3 py-1 text-[13px] truncate max-w-[105px]" 
+                className="  text-[#73D13D]  flex items-start justify-start px-3 py-1 text-[16px] truncate max-w-[120px] -ml-3" 
                 title={localApprover}
               >
                 {localApprover}
               </span>
             </div>
-          ) : localStatus === RepairTicketStatus.PENDING ? (
+          ) : localStatus === "PENDING" ? (
             <button
               onClick={handleApproveClick}
               className="bg-[#73D13D] border border-[#73D13D] text-white w-[105px] h-[44px] rounded-full flex items-center justify-center hover:bg-[#E6F4EA] transition-colors"
@@ -359,13 +358,14 @@ export default function RequestItemRepair({
       <AlertDialog
         open={isAlertOpen}
         onOpenChange={setIsAlertOpen}
-        title="ยืนยันรับคำร้องแจ้งซ่อม"
-        description="คุณต้องการรับงานแจ้งซ่อมนี้ใช่หรือไม่?"
-        tone="success" 
+        title="คุณแน่ใจหรือไม่ว่าต้องการรับคำร้อง?"
+        description="การดำเนินการนี้ไม่สามารถกู้คืนได้"
+        tone="warning" 
         actionsMode="double" 
         confirmText="ยืนยัน"
         cancelText="ยกเลิก"
         onConfirm={handleConfirmApprove}
+        padX={30}
       />
     </div>
   );

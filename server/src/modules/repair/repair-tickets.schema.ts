@@ -55,8 +55,8 @@ export const getRepairTicketsResponseSchema = z.object({
   pagination: z.object({
     page: z.number(),
     limit: z.number(),
-    total_items: z.number(),
-    total_pages: z.number(),
+    totalItems: z.number(),
+    totalPages: z.number(),
   }),
 });
 

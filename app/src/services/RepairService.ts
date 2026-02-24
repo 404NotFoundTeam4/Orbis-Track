@@ -1,13 +1,9 @@
 import api from "../api/axios";
 
-export const RepairTicketStatus = {
-  PENDING: "PENDING",
-  IN_PROGRESS: "IN_PROGRESS",
-  COMPLETED: "COMPLETED",
-} as const;
-
 export type RepairTicketStatus =
-  (typeof RepairTicketStatus)[keyof typeof RepairTicketStatus];
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED";
 
 export interface RepairTicketReportedDevice {
   asset_code: string | null;
@@ -40,7 +36,7 @@ export interface RepairTicketRequester {
 export interface RepairTicketItem {
   id: number;
   ticket_no: string;
-  status: RepairTicketStatus | string;
+  status: RepairTicketStatus;
   dates: {
     created: string;
     updated: string | null;
@@ -65,8 +61,8 @@ export interface RepairTicketDetail {
 export interface RepairTicketsPagination {
   page: number;
   limit: number;
-  total_items: number;
-  total_pages: number;
+  totalItems: number;
+  totalPages: number;
 }
 
 export interface GetRepairTicketsResponse {
@@ -81,7 +77,7 @@ export interface GetRepairTicketsQuery {
   page?: number;
   limit?: number;
   search?: string;
-  status?: RepairTicketStatus | string;
+  status?: RepairTicketStatus;
   start_date?: string;
   end_date?: string;
 }

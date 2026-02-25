@@ -17,15 +17,15 @@ BEGIN
     IF TG_TABLE_NAME = 'devices' THEN
         pk_value := NEW.de_id::text;
         -- For devices, watch: name, description, location, category, section
-        IF TG_OP = 'INSERT' OR (
-            TG_OP = 'UPDATE' AND (
-                OLD.de_name IS DISTINCT FROM NEW.de_name OR
-                OLD.de_description IS DISTINCT FROM NEW.de_description OR
-                OLD.de_location IS DISTINCT FROM NEW.de_location OR
-                OLD.de_ca_id IS DISTINCT FROM NEW.de_ca_id OR
-                OLD.de_sec_id IS DISTINCT FROM NEW.de_sec_id OR
-                OLD.de_af_id IS DISTINCT FROM NEW.de_af_id
-            )
+        IF TG_OP = 'INSERT' THEN
+            meaningful_change := TRUE;
+        ELSIF TG_OP = 'UPDATE' AND (
+            OLD.de_name IS DISTINCT FROM NEW.de_name OR
+            OLD.de_description IS DISTINCT FROM NEW.de_description OR
+            OLD.de_location IS DISTINCT FROM NEW.de_location OR
+            OLD.de_ca_id IS DISTINCT FROM NEW.de_ca_id OR
+            OLD.de_sec_id IS DISTINCT FROM NEW.de_sec_id OR
+            OLD.de_af_id IS DISTINCT FROM NEW.de_af_id
         ) THEN
             meaningful_change := TRUE;
         END IF;
@@ -33,13 +33,13 @@ BEGIN
     ELSIF TG_TABLE_NAME = 'device_childs' THEN
         pk_value := NEW.dec_id::text;
         -- For device_childs, watch: asset_code, serial_number, status
-        IF TG_OP = 'INSERT' OR (
-            TG_OP = 'UPDATE' AND (
-                OLD.dec_asset_code IS DISTINCT FROM NEW.dec_asset_code OR
-                OLD.dec_serial_number IS DISTINCT FROM NEW.dec_serial_number OR
-                OLD.dec_status IS DISTINCT FROM NEW.dec_status OR
-                OLD.dec_de_id IS DISTINCT FROM NEW.dec_de_id
-            )
+        IF TG_OP = 'INSERT' THEN
+            meaningful_change := TRUE;
+        ELSIF TG_OP = 'UPDATE' AND (
+            OLD.dec_asset_code IS DISTINCT FROM NEW.dec_asset_code OR
+            OLD.dec_serial_number IS DISTINCT FROM NEW.dec_serial_number OR
+            OLD.dec_status IS DISTINCT FROM NEW.dec_status OR
+            OLD.dec_de_id IS DISTINCT FROM NEW.dec_de_id
         ) THEN
             meaningful_change := TRUE;
         END IF;
@@ -47,23 +47,23 @@ BEGIN
     ELSIF TG_TABLE_NAME = 'categories' THEN
         pk_value := NEW.ca_id::text;
         -- For categories, watch: name
-        IF TG_OP = 'INSERT' OR (
-            TG_OP = 'UPDATE' AND OLD.ca_name IS DISTINCT FROM NEW.ca_name
-        ) THEN
+        IF TG_OP = 'INSERT' THEN
+            meaningful_change := TRUE;
+        ELSIF TG_OP = 'UPDATE' AND OLD.ca_name IS DISTINCT FROM NEW.ca_name THEN
             meaningful_change := TRUE;
         END IF;
 
     ELSIF TG_TABLE_NAME = 'borrow_return_tickets' THEN
         pk_value := NEW.brt_id::text;
         -- For borrow_return_tickets, watch: status, dates, user
-        IF TG_OP = 'INSERT' OR (
-            TG_OP = 'UPDATE' AND (
-                OLD.brt_status IS DISTINCT FROM NEW.brt_status OR
-                OLD.brt_user_id IS DISTINCT FROM NEW.brt_user_id OR
-                OLD.brt_start_date IS DISTINCT FROM NEW.brt_start_date OR
-                OLD.brt_end_date IS DISTINCT FROM NEW.brt_end_date OR
-                OLD.brt_af_id IS DISTINCT FROM NEW.brt_af_id
-            )
+        IF TG_OP = 'INSERT' THEN
+            meaningful_change := TRUE;
+        ELSIF TG_OP = 'UPDATE' AND (
+            OLD.brt_status IS DISTINCT FROM NEW.brt_status OR
+            OLD.brt_user_id IS DISTINCT FROM NEW.brt_user_id OR
+            OLD.brt_start_date IS DISTINCT FROM NEW.brt_start_date OR
+            OLD.brt_end_date IS DISTINCT FROM NEW.brt_end_date OR
+            OLD.brt_af_id IS DISTINCT FROM NEW.brt_af_id
         ) THEN
             meaningful_change := TRUE;
         END IF;
@@ -71,16 +71,16 @@ BEGIN
     ELSIF TG_TABLE_NAME = 'ticket_issues' THEN
         pk_value := NEW.ti_id::text;
         -- For ticket_issues, watch: title, description, status, result, resolution
-        IF TG_OP = 'INSERT' OR (
-            TG_OP = 'UPDATE' AND (
-                OLD.ti_title IS DISTINCT FROM NEW.ti_title OR
-                OLD.ti_description IS DISTINCT FROM NEW.ti_description OR
-                OLD.ti_status IS DISTINCT FROM NEW.ti_status OR
-                OLD.ti_result IS DISTINCT FROM NEW.ti_result OR
-                OLD.ti_resolved_note IS DISTINCT FROM NEW.ti_resolved_note OR
-                OLD.ti_de_id IS DISTINCT FROM NEW.ti_de_id OR
-                OLD.ti_brt_id IS DISTINCT FROM NEW.ti_brt_id
-            )
+        IF TG_OP = 'INSERT' THEN
+            meaningful_change := TRUE;
+        ELSIF TG_OP = 'UPDATE' AND (
+            OLD.ti_title IS DISTINCT FROM NEW.ti_title OR
+            OLD.ti_description IS DISTINCT FROM NEW.ti_description OR
+            OLD.ti_status IS DISTINCT FROM NEW.ti_status OR
+            OLD.ti_result IS DISTINCT FROM NEW.ti_result OR
+            OLD.ti_resolved_note IS DISTINCT FROM NEW.ti_resolved_note OR
+            OLD.ti_de_id IS DISTINCT FROM NEW.ti_de_id OR
+            OLD.ti_brt_id IS DISTINCT FROM NEW.ti_brt_id
         ) THEN
             meaningful_change := TRUE;
         END IF;

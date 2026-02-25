@@ -375,7 +375,10 @@ const Navbar = () => {
           <div className="px-7.5">
             <img src={Images["LOGO"]} alt="" className=" w-[264px] h-[67px]" />
           </div>
-          <div className="flex border gap-[15px] px-5 text-[#40A9FF] items-center rounded-[12px]">
+          <div
+            onClick={() => window.location.assign("/chat")}
+            className="flex border cursor-pointer gap-[15px] px-5 text-[#40A9FF] items-center rounded-[12px]"
+          >
             <img
               src={Images["LOGO_GIGA"]}
               alt=""

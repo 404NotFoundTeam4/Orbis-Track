@@ -12,6 +12,18 @@ export const Login = async (username, passwords, isRemember) => {
   const res = await api.post("/login", { username, passwords, isRemember });
   return res.data;
 };
+
+/**
+ * Function: LoginWithCookie
+ * Features:
+ *  - เข้าสู่ระบบแบบตั้ง HttpOnly cookie เพื่อรองรับ SSO กับ Chatbot
+ *
+ * Author: GitHub Copilot
+ */
+export const LoginWithCookie = async (username, passwords, isRemember) => {
+  const res = await api.post("/login/cookie", { username, passwords, isRemember });
+  return res.data;
+};
 /**
  * Function: UserData
  * Features:

@@ -24,10 +24,14 @@ export class AuthController extends BaseController {
      * Output : { message: "Login successful", data: { accessToken } }
      * Author : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async login(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<TokenDto>> {
+    async login(req: Request, res: Response, _next: NextFunction): Promise<BaseResponse<TokenDto>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = loginPayload.parse(req.body);
         const result = await authService.checkLogin(payload);
+
+        // ตั้ง HttpOnly cookie สำหรับ SSO กับ Chatbot ด้วย
+        setJwtCookie(res, result);
+
         return { message: "Login successful", data: { accessToken: result } };
     }
 

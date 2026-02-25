@@ -65,7 +65,7 @@ router.postDoc("/login/cookie", {
     summary: "เข้าสู่ระบบด้วย Cookie (SSO)",
     description: "เข้าสู่ระบบและตั้งค่า HttpOnly Cookie สำหรับ SSO กับ Chatbot",
     body: loginPayload
-}, RateLimitMiddleware.getOtpLimit, authController.loginWithCookie);
+}, authController.loginWithCookie);
 
 // Cookie-based logout for SSO
 router.postDoc("/logout/cookie", {

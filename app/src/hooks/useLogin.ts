@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/userStore";
-import { Login, UserData } from "../services/AccountService.js";
+import { Login, LoginWithCookie, UserData } from "../services/AccountService.js";
 import { SaveToken, GetValidToken, ClearToken } from "../services/Remember.js";
 
 /**
@@ -23,20 +23,28 @@ export const useLogin = () => {
     username: string,
     password: string,
     isRemember: boolean,
-  ) => {
+  ): Promise<boolean> => {
     try {
       const res = await Login(username, password, isRemember);
 
-      if (res?.success && res?.data?.accessToken) {
+      if (res?.data?.accessToken) {
         const token = res.data.accessToken;
+
+        // best-effort: ตั้ง SSO cookie สำหรับ chatbot
+        try {
+          await LoginWithCookie(username, password, isRemember);
+        } catch {
+          // ไม่ block login หลัก ถ้า SSO cookie ตั้งไม่สำเร็จ
+        }
 
         SaveToken(token, isRemember);
 
         // ถ้า token หมดอายุ saveToken จะเคลียร์ให้ เราเช็คอีกรอบ
         const validToken = GetValidToken();
         if (!validToken) {
-          return;
+          return false;
         }
+
         const User = await UserData(validToken);
         setUser(User); // เก็บ user ลงใน store เพื่อให้หน้าอื่นใช้งานได้
 
@@ -49,8 +57,10 @@ export const useLogin = () => {
         }
 
         navigate("/home");
-        return res?.success;
+        return true;
       }
+
+      return false;
     } catch {
       return false;
     }

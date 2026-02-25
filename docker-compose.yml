@@ -52,6 +52,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       PRISMA_GENERATE: "false" # generate ตอน build แล้ว
       RUN_MIGRATIONS: "true" # ให้ entrypoint รัน Prisma
       PRISMA_STRATEGY: migrate-deploy # ใช้ migrations แบบ production
@@ -93,6 +94,8 @@ services:
     image: nginx:1.27-alpine # ใช้ image Nginx (alpine-slim)
     ports:
       - "4140:80" # นี่คือ port เดียวที่จะเปิดสู่ภายนอก (คุณเปลี่ยนเป็น 4140:80 ก็ได้)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Mount config Nginx ที่เราจะสร้างขึ้น
       - ./nginx.conf:/etc/nginx/nginx.conf:ro

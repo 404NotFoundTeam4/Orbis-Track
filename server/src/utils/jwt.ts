@@ -12,10 +12,18 @@ export const JWT_ISSUER = "orbistrack";
 export const JWT_AUDIENCE = "orbistrack-web";
 export const COOKIE_NAME = "orbistrack_jwt";
 
+// Local Docker integration often runs on plain HTTP (localhost).
+// Allow explicit override via COOKIE_SECURE=true|false.
+const cookieSecureFromEnv = process.env.COOKIE_SECURE;
+const shouldUseSecureCookie =
+    typeof cookieSecureFromEnv === "string"
+        ? cookieSecureFromEnv === "true"
+        : env.NODE_ENV === "production" && Boolean(env.COOKIE_DOMAIN);
+
 // Cookie configuration for SSO (shared between Main App and Chatbot)
 export const cookieConfig: CookieOptions = {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
+    secure: shouldUseSecureCookie,
     sameSite: "lax",
     path: "/",
     // Domain can be set via env for subdomain sharing: .yourdomain.com

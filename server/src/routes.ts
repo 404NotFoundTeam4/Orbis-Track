@@ -17,6 +17,7 @@ import { homeRouter } from "./modules/home/index.js";
 import { borrowRouter } from "./modules/borrows/index.js";
 import { usersRouter } from "./modules/users/index.js";
 import { historyApprovalRouter } from "./modules/history-approval/index.js";
+import { repairTicketsRouter } from "./modules/repair/index.js";
 import { historyIssueRouter } from "./modules/history-issue/index.js";
 
 /**
@@ -90,6 +91,8 @@ export function routes(app: Express) {
   api.use("/history-issue", authMiddleware, historyIssueRouter);
 
   api.use("/history-borrow", authMiddleware, historyBorrowRouter);
+
+  api.use("/repair-tickets", authMiddleware, repairTicketsRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

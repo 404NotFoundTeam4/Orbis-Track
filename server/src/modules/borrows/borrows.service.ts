@@ -246,6 +246,15 @@ async function createBorrowTicket(
     payload;
 
   const result = await prisma.$transaction(async (tx) => {
+    // ดึงข้อมูลผู้ใช้เพื่อใช้สร้างใบคำร้อง
+    const user = await tx.users.findUnique({
+      where: { us_id: userId },
+      select: { us_firstname: true, us_lastname: true, us_phone: true },
+    });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     // ค้นหารหัส Preset ของอุปกรณ์แม่
     const device = await tx.devices.findFirst({
       where: {
@@ -261,6 +270,8 @@ async function createBorrowTicket(
     const ticket = await tx.borrow_return_tickets.create({
       data: {
         brt_user_id: userId,
+        brt_user: `${user.us_firstname} ${user.us_lastname}`,
+        brt_phone: user.us_phone,
         brt_borrow_purpose: reason,
         brt_usage_location: placeOfUse,
         brt_start_date: borrowStart,
@@ -414,20 +425,7 @@ async function createBorrowTicket(
       })),
     });
 
-    // ดึงข้อมูลชื่อและนามสกุลของผู้ใช้จาก userId
-    const user = await tx.users.findUnique({
-      where: {
-        us_id: userId,
-      },
-      select: {
-        us_firstname: true,
-        us_lastname: true,
-      },
-    });
 
-    if (!user) {
-      throw new Error("User not found");
-    }
 
     // สร้าง log borrow return
     await tx.log_borrow_returns.create({
@@ -513,27 +511,32 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
       });
     }
 
-    // ถ้ามีอุปกรณ์แม่เดิมอยู่ในรถเข็น -> update, ถ้ายังไม่มี -> create
-    const cartItem = await tx.cart_items.upsert({
+    // หา cartItem เดิมทั้งหมดของ (cart เดียวกัน + device เดียวกัน) ไม่สน deleted_at
+    const dupItems = await tx.cart_items.findMany({
       where: {
-        cti_ct_id_cti_de_id: {
-          cti_ct_id: cart.ct_id,
-          cti_de_id: deviceId,
-        },
+        cti_ct_id: cart.ct_id,
+        cti_de_id: deviceId,
       },
-      update: {
-        cti_us_name: borrower,
-        cti_phone: phone,
-        cti_note: reason,
-        cti_usage_location: placeOfUse,
-        cti_quantity: quantity,
-        cti_start_date: borrowStart,
-        cti_end_date: borrowEnd,
-        created_at: new Date(),
-        updated_at: new Date(),
-        deleted_at: null,
-      },
-      create: {
+      select: { cti_id: true },
+    });
+
+    if (dupItems.length > 0) {
+      const dupIds = dupItems.map((item) => item.cti_id);
+
+      // ลบลูกก่อน (กัน FK พัง)
+      await tx.cart_device_childs.deleteMany({
+        where: { cdc_cti_id: { in: dupIds } },
+      });
+
+      // hard delete ตัวแม่
+      await tx.cart_items.deleteMany({
+        where: { cti_id: { in: dupIds } },
+      });
+    }
+
+    // สร้าง cartItem ใหม่
+    const cartItem = await tx.cart_items.create({
+      data: {
         cti_us_name: borrower,
         cti_phone: phone,
         cti_note: reason,
@@ -544,22 +547,14 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
         cti_ct_id: cart.ct_id,
         cti_de_id: deviceId,
         created_at: new Date(),
+        updated_at: new Date(), // ใส่ไว้กันกรณี updated_at เป็น not null
+        deleted_at: null,
       },
     });
 
     // ถ้ามีอุปกรณ์ลูก
-    // if (deviceChilds.length) {
     if (Array.isArray(deviceChilds) && deviceChilds.length > 0) {
-      // ลบรายการเดิมออก ป้องกันอุปกรณ์ซ้ำ หรือจองเกินจำนวน
-      await tx.cart_device_childs.deleteMany({
-        where: {
-          cdc_cti_id: cartItem.cti_id,
-        },
-      });
-
-      // เพิ่มรายการอุปกรณ์ลูก
       await tx.cart_device_childs.createMany({
-        // วนลูปสร้างรายการอุปกรณ์ลูก
         data: deviceChilds.map((decId: number) => ({
           cdc_cti_id: cartItem.cti_id,
           cdc_dec_id: decId,

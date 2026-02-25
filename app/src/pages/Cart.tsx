@@ -5,6 +5,8 @@ import { useToast } from "../components/Toast";
 import { Link } from "react-router-dom";
 import CartService from "../services/CartService";
 import axios from "axios";
+import getImageUrl from "../services/GetImage.js";
+import { setSeenCartSnapshot } from "../utils/cartSeenStorage";
 
 /**
  * Description : หน้า Cart สำหรับจัดการรายการอุปกรณ์ที่ผู้ใช้เลือกยืม
@@ -87,6 +89,7 @@ export const Cart = () => {
       }));
 
       setItems(mapped);
+      if (userId) markCartSeenAfterLoad(userId, res.itemData);
     } catch (err) {
       console.error("โหลดรถเข็นผิดพลาด:", err);
     }
@@ -101,6 +104,38 @@ export const Cart = () => {
   useEffect(() => {
     loadCart();
   }, [loadCart]);
+
+  /**
+   * Description: Hook สำหรับล็อกการ scroll ของทั้งหน้า (document.body) ให้เลื่อนได้เฉพาะในพื้นที่ที่กำหนด (เช่น กล่องรายการในวงแดง)
+   * - เมื่อเข้าหน้านี้จะตั้งค่า body overflow เป็น "hidden" เพื่อปิด scrollbar ของหน้าเว็บ
+   * - เมื่อออกจากหน้านี้ (unmount) จะคืนค่า overflow เดิมกลับ เพื่อไม่กระทบหน้าหรือ route อื่น
+   * Input : - (ทำงานครั้งเดียวตอน mount เพราะ dependency เป็น [])
+   * Output : - (เปลี่ยนค่า CSS overflow ของ document.body และคืนค่าเดิมผ่าน cleanup)
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  /**
+   * Description: mark cart snapshot ว่า "เห็นแล้ว" หลังโหลด cart สำเร็จ (ลดการยิงซ้ำจาก Navbar)
+   * Input : userId (number), res.itemData
+   * Output : void
+   * Author : Nontapat Sinhum (Guitar) 66160104
+   **/
+  const markCartSeenAfterLoad = (userId: number, itemData: any[]) => {
+    const normalized = (itemData ?? []).map((i: any) => ({
+      id: i.cti_id,
+      updatedAt: i.updated_at ?? i.cti_updated_at ?? null,
+      createdAt: i.created_at ?? i.cti_created_at ?? null,
+    }));
+    setSeenCartSnapshot(userId, normalized);
+    window.dispatchEvent(new Event("cart:changed")); // ให้ Navbar รีเช็ค/เคลียร์ badge
+  };
 
   /** State สำหรับจัดการการเลือกอุปกรณ์ */
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -331,7 +366,7 @@ export const Cart = () => {
   }
 
   /**
-   * Description: ฟังก์ชันแปลง ISO Date string เป็นรูปแบบ วัน/เดือน/ปี พ.ศ. + เวลา
+   * Description: ฟังก์ชันแปลง ISO Date string เป็นรูปแบบ วัน / เดือน(ไทย) / ปี พ.ศ. + เวลา
    * Input : isoDate (string | null)
    * Output : string (รูปแบบวันที่ภาษาไทย)
    * Author : Nontapat Sinhum (Guitar) 66160104
@@ -341,72 +376,88 @@ export const Cart = () => {
 
     const date = new Date(isoDate);
 
+    const thaiMonths = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
+
     const day = date.getDate().toString().padStart(2, "0");
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const month = thaiMonths[date.getMonth()];
     const year = (date.getFullYear() + 543).toString(); // แปลงเป็น พ.ศ.
 
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
 
-    return `${day}/${month}/${year}   เวลา : ${hours}:${minutes}`;
+    return `${day} / ${month} / ${year}   เวลา : ${hours}:${minutes}`;
   };
 
   return (
-    // <div className="h-[calc(100vh-126px)] overflow-hidden">
-    <div className="w-full h-full min-h-0 flex flex-row p-4 gap-6 overflow-hidden">
-      {/* LEFT SIDE: Cart Items */}
-      <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
-        <div className="shrink-0">
-          {/* แถบนำทาง */}
-          <div className="mb-[24px] space-x-[9px] text-sm">
-            <Link to="/list-devices" className="text-[#858585]">
-              รายการอุปกรณ์
-            </Link>
-            {/* <span className="text-[#858585]">รายการอุปกรณ์</span> */}
-            <span className="text-[#858585]">&gt;</span>
-            <span className="text-[#000000] font-medium">รถเข็น</span>
-          </div>
-          <h1 className="text-2xl font-semibold mb-[24px]">รถเข็น</h1>
+    <div className="h-[calc(100vh-126px)] overflow-hidden">
+      <div className="w-full h-full min-h-0 flex flex-row p-4 gap-6 overflow-hidden">
+        {/* LEFT SIDE: Cart Items */}
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
+          <div className="shrink-0">
+            {/* แถบนำทาง */}
+            <div className="mb-[8px] space-x-[9px]">
+              <Link to="/list-devices" className="text-[#858585]">
+                รายการอุปกรณ์
+              </Link>
+              <span className="text-[#858585]">&gt;</span>
+              <span className="text-[#000000]">รถเข็น</span>
+            </div>
 
-          {/* Select all */}
-          <div className="flex items-center gap-2 mb-[24px]">
-            <label className="inline-flex items-center cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={allSelectableSelected}
-                onChange={toggleSelectAll}
-                className="peer sr-only"
-              />
+            {/* Page Title */}
+            <div className="flex items-center gap-[14px] mb-[21px]">
+              <h1 className="text-2xl font-semibold">รถเข็น</h1>
+            </div>
 
-              <span
-                className="w-[29px] h-[29px] rounded-[8px] border border-[#BFBFBF] bg-white flex items-center justify-center
-                        transition-colors peer-checked:bg-[#000000] peer-checked:border-[#000000] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
-              >
-                <Icon
-                  icon="rivet-icons:check"
-                  width="25"
-                  height="25"
-                  className="inline-block text-white peer-checked:opacity-100 transition-opacity"
+            {/* Select all */}
+            <div className="flex items-center gap-2 mb-[24px]">
+              <label className="inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={allSelectableSelected}
+                  onChange={toggleSelectAll}
+                  className="peer sr-only"
                 />
-              </span>
-            </label>
-            <span className="text-black text-sm">
-              เลือกรายการอุปกรณ์ทั้งหมด ({selectedItemCount})
-            </span>
-            {selectedItemCount > 0 && (
-              <button
-                onClick={handleSelectDelete}
-                className="px-[15px] py-[6.4px] w-[167px] h-[46px] bg-[#FF4D4F] text-white rounded-full text-[18px] font-semibold hover:bg-[#D9363E] transition-colors"
-              >
-                ลบคำขอยืม
-              </button>
-            )}
-          </div>
-        </div>
 
-        <div className="flex-1 min-h-0">
-          {/* <div className="h-full min-h-0 overflow-y-auto overflow-x-hidden space-y-4 pr-1"> */}
-          <div className="max-h-[calc(100vh-110px-220px)] overflow-y-auto overflow-x-hidden space-y-4 pr-1">
+                <span
+                  className="w-[29px] h-[29px] rounded-[8px] border border-[#BFBFBF] bg-white flex items-center justify-center
+                        transition-colors peer-checked:bg-[#000000] peer-checked:border-[#000000] peer-focus-visible:ring-2 peer-focus-visible:ring-[#0072FF]/30"
+                >
+                  <Icon
+                    icon="rivet-icons:check"
+                    width="25"
+                    height="25"
+                    className="inline-block text-white peer-checked:opacity-100 transition-opacity"
+                  />
+                </span>
+              </label>
+              <span className="text-black text-sm">
+                เลือกรายการอุปกรณ์ทั้งหมด ({selectedItemCount})
+              </span>
+              {selectedItemCount > 0 && (
+                <button
+                  onClick={handleSelectDelete}
+                  className="px-[15px] py-[6.4px] w-[167px] h-[46px] bg-[#FF4D4F] text-white rounded-full text-[18px] font-semibold hover:bg-[#D9363E] transition-colors"
+                >
+                  ลบคำขอยืม
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-4 pr-1">
             {items.length === 0 ? (
               <div className="text-center text-lg text-[#858585] py-10 border rounded-xl bg-white">
                 ไม่มีรายการอุปกรณ์ในรถเข็น
@@ -440,7 +491,7 @@ export const Cart = () => {
                       </span>
                     </label>
                     <img
-                      src={item.image}
+                      src={getImageUrl(item.image)}
                       alt={item.name}
                       className="w-[143px] h-[153px] rounded-lg object-cover border border-gray-100"
                     />
@@ -514,58 +565,57 @@ export const Cart = () => {
             )}
           </div>
         </div>
-      </div>
 
-      {/* RIGHT SIDE: Summary (Sidebar) */}
-      <div className="w-[400px] h-full shrink-0">
-        <div className="fixed top-[126px] right-4 w-[400px] h-[calc(100vh-142px)] z-20">
-          <div className="bg-white rounded-xl shadow-md p-5 flex flex-col h-full">
-            <h2 className="font-bold text-xl mb-4 flex items-center justify-center">
-              สรุปรายการยืมอุปกรณ์
-            </h2>
+        {/* RIGHT SIDE: Summary (Sidebar) */}
+        <div className="w-[400px] h-full shrink-0">
+          <div className="fixed top-[126px] right-4 w-[400px] h-[calc(100vh-142px)] z-20">
+            <div className="bg-white rounded-xl shadow-md p-5 flex flex-col h-full">
+              <h2 className="font-bold text-xl mb-4 flex items-center justify-center">
+                สรุปรายการยืมอุปกรณ์
+              </h2>
 
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 text-lg">
-              {items
-                .filter((item) => selectedItems.includes(item.id))
-                .map((item) => (
-                  <div key={item.id} className="flex justify-between">
-                    <span className="text-gray-600 truncate mr-2">
-                      {item.name}
-                    </span>
-                    <span className="font-medium text-black whitespace-nowrap">
-                      {item.qty}
-                    </span>
-                  </div>
-                ))}
-            </div>
-
-            <div className="pt-3 mt-3 shrink-0">
-              <div className="font-semibold flex justify-between text-lg mb-4 border-t border-gray-200 pt-3">
-                <span className="text-[#000000]">รวม :</span>
-                <span className="text-[#000000]">{totalItems} ชิ้น</span>
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 text-lg">
+                {items
+                  .filter((item) => selectedItems.includes(item.id))
+                  .map((item) => (
+                    <div key={item.id} className="flex justify-between">
+                      <span className="text-gray-600 truncate mr-2">
+                        {item.name}
+                      </span>
+                      <span className="font-medium text-black whitespace-nowrap">
+                        {item.qty}
+                      </span>
+                    </div>
+                  ))}
               </div>
 
-              <button
-                onClick={openSubmitModal}
-                className="w-full bg-[#40A9FF] text-white py-3 rounded-full text-center text-base font-semibold hover:bg-[#0050B3] transition-colors disabled:bg-gray-400"
-                disabled={selectedItemCount === 0}
-              >
-                ส่งคำร้อง
-              </button>
+              <div className="pt-3 mt-3 shrink-0">
+                <div className="font-semibold flex justify-between text-lg mb-4 border-t border-gray-200 pt-3">
+                  <span className="text-[#000000]">รวม :</span>
+                  <span className="text-[#000000]">{totalItems} ชิ้น</span>
+                </div>
+
+                <button
+                  onClick={openSubmitModal}
+                  className="w-full bg-[#40A9FF] text-white py-3 rounded-full text-center text-base font-semibold hover:bg-[#0050B3] transition-colors disabled:bg-gray-400"
+                  disabled={selectedItemCount === 0}
+                >
+                  ส่งคำร้อง
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* MODAL */}
-      {modalProps && (
-        <AlertDialog
-          open={modalType !== null}
-          onOpenChange={closeModal}
-          {...modalProps}
-        />
-      )}
+        {/* MODAL */}
+        {modalProps && (
+          <AlertDialog
+            open={modalType !== null}
+            onOpenChange={closeModal}
+            {...modalProps}
+          />
+        )}
+      </div>
     </div>
-    // </div>
   );
 };

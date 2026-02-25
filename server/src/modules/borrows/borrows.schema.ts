@@ -60,7 +60,7 @@ export const getAvailableSchema = z.array(
         dec_id: z.number().openapi({ description: "ID อุปกรณ์ลูก" }),
         dec_serial_number: z.string().nullable().openapi({ description: "Serial Number อุปกรณ์ลูก" }),
         dec_asset_code: z.string().openapi({ description: "Asset Code" }),
-        dec_status: z.enum(["READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]).openapi({ description: "สถานะอุปกรณ์" }),
+        dec_status: z.enum(["UNAVAILABLE", "READY", "BORROWED", "REPAIRING", "DAMAGED", "LOST"]).openapi({ description: "สถานะอุปกรณ์" }),
         activeBorrow: z.array(
             z.object({
                 da_start: z.coerce.date().openapi({ description: "วันเริ่มยืม" }),

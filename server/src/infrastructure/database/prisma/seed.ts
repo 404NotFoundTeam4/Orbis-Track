@@ -581,6 +581,8 @@ async function main() {
         brt_end_date: params.endDate,
         brt_quantity: 1,
         brt_user_id: params.userId,
+        brt_user: "Seed User",
+        brt_phone: "0123456789",
         brt_af_id: params.flowId,
         brt_current_stage: params.currentStage,
         created_at: daysAgo(5),

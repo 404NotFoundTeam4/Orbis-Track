@@ -234,6 +234,7 @@ const RequestItemHome = ({
         {/* Requester */}
         <div className="flex flex-col">
           <span className="text-[#000000]">{ticket.requester.fullname}</span>
+          <span className="text-black">{ticket.requester.empcode}</span>
         </div>
 
         {/* Date & Time (Start) */}
@@ -249,7 +250,7 @@ const RequestItemHome = ({
         {/* Date & Time (Return) */}
         <div className="flex flex-col">
           <span className="text-[#000000]">{formatTimeThai(endDate ?? null)}</span>
-          <span className="text-[#7BACFF] text-sm">
+          <span className="text-[#7BACFF]   ">
             เวลา : {formatTime(endDate ?? null)}
           </span>
         </div>

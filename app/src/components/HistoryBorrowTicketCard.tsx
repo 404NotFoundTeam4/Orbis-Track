@@ -604,6 +604,24 @@ export default function HistoryBorrowTicket({
           ? "text-[#4CAF50]"
           : "text-[#9E9E9E]";
 
+
+          /**
+ * Description: แปลงเวลาเป็นรูปแบบ HH:MM:YYYY
+ * Input : dateStr - date string หรือ null
+ * Output : string (รูปแบบเวลา) 20 ม.ค. 2568
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+const formatTimeThai = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+
+  const date = new Date(dateStr);
+
+  const day = date.getDate();
+  const month = date.toLocaleString("th-TH", { month: "short" });
+  const year = date.getFullYear() + 543;
+
+  return `${day} / ${month} / ${year}`;
+};
   return (
     <div className="bg-white mb-2 overflow-hidden transition-all duration-300 rounded-[16px] ">
       <div
@@ -636,7 +654,7 @@ export default function HistoryBorrowTicket({
 
         <div className="flex flex-col">
           <span className="text-[#000000]">
-            {formatDate(item.requestDateTime)}
+            {formatTimeThai (item.requestDateTime)}
           </span>
           <span className="text-[#7BACFF]">
             เวลา : {formatTime(item.requestDateTime)}

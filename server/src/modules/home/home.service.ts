@@ -319,6 +319,7 @@ async function getTicketDetailById(id: number) {
       name: td.child.device.de_name,
       image: td.child.device.de_images,
       current_status: td.child.dec_status,
+      
       has_serial_number: Boolean(
         td.child.dec_serial_number && td.child.dec_serial_number !== "-"
       ),

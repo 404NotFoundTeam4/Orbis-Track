@@ -129,6 +129,8 @@ services:
       # - VITE_HMR_PORT=5173
     depends_on:
       - server # ไม่บังคับ แต่อาจอยากให้ backend ขึ้นก่อนสำหรับ API
+    networks:
+      - orbis_dev_network
 
 networks:
   orbis_dev_network:

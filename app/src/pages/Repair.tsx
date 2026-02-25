@@ -50,7 +50,7 @@ export default function Repair() {
   // Derive categories from repair items (same technique as ListDevices)
   const categoryOptions = useMemo(() => {
     return [
-      { id: "", label: "ทุกหมวดหมู่", value: "" },
+      { id: "", label: "ทั้งหมด", value: "" },
       ...Array.from(new Set(allItems.map((item) => item.category)))
         .filter(Boolean)
         .map((category, index) => ({

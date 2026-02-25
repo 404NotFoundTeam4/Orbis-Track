@@ -1,4 +1,4 @@
-import { TI_STATUS } from "@prisma/client";
+import { Prisma, TI_STATUS } from "@prisma/client";
 import { HttpStatus } from "../../../core/http-status.enum.js";
 import type { PaginatedResult } from "../../../core/paginated-result.interface.js";
 import { HttpError } from "../../../errors/errors.js";
@@ -22,16 +22,68 @@ type SortField =
   | "status";
 type SortDirection = "asc" | "desc";
 
-const SORT_SQL_MAP: Record<SortField, string> = {
-  device_name: `"device_name"`,
-  quantity: `"quantity"`,
-  category: `"category"`,
-  requester: `"requester_name"`,
-  request_date: `"request_date"`,
-  status: `"status"`,
-};
-
 export class RepairService {
+  private buildWhere(query: GetRepairQuery): Prisma.ticket_issuesWhereInput {
+    const where: Prisma.ticket_issuesWhereInput = {
+      deleted_at: null,
+    };
+
+    if (query.status) {
+      where.ti_status = query.status as TI_STATUS;
+    }
+
+    return where;
+  }
+
+  private buildOrderBy(
+    sortField: SortField,
+    sortDirection: SortDirection,
+  ): (a: any, b: any) => number {
+    const factor = sortDirection === "asc" ? 1 : -1;
+
+    return (a: any, b: any) => {
+      const aValue =
+        sortField === "device_name"
+          ? a.device?.de_name ?? ""
+          : sortField === "quantity"
+            ? Math.max(a.issue_devices?.length ?? 0, 1)
+            : sortField === "category"
+              ? a.device?.category?.ca_name ?? ""
+              : sortField === "requester"
+                ? `${a.reporter?.us_firstname ?? ""} ${a.reporter?.us_lastname ?? ""}`.trim()
+                : sortField === "request_date"
+                  ? new Date(a.created_at).getTime()
+                  : sortField === "status"
+                    ? a.ti_status ?? ""
+                    : "";
+
+      const bValue =
+        sortField === "device_name"
+          ? b.device?.de_name ?? ""
+          : sortField === "quantity"
+            ? Math.max(b.issue_devices?.length ?? 0, 1)
+            : sortField === "category"
+              ? b.device?.category?.ca_name ?? ""
+              : sortField === "requester"
+                ? `${b.reporter?.us_firstname ?? ""} ${b.reporter?.us_lastname ?? ""}`.trim()
+                : sortField === "request_date"
+                  ? new Date(b.created_at).getTime()
+                  : sortField === "status"
+                    ? b.ti_status ?? ""
+                    : "";
+
+      if (aValue === bValue) {
+        return b.ti_id - a.ti_id;
+      }
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return (aValue - bValue) * factor;
+      }
+
+      return String(aValue).localeCompare(String(bValue), "th") * factor;
+    };
+  }
+
   /**
    * Description: ดึงรายการงานแจ้งซ่อมแบบแบ่งหน้า พร้อมค้นหา/กรอง/เรียงลำดับ
    */
@@ -41,113 +93,113 @@ export class RepairService {
   ): Promise<PaginatedResult<RepairItemDto>> {
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.max(1, query.limit ?? 10);
-    const search = query.search?.trim();
     const sortDirection: SortDirection = query.sortDirection ?? "desc";
     const sortField: SortField = query.sortField ?? "request_date";
+    const search = query.search?.trim().toLowerCase();
+    const where = this.buildWhere(query);
+    const skip = (page - 1) * limit;
 
-    const orderBySql = SORT_SQL_MAP[sortField];
-    if (!orderBySql) {
-      throw new HttpError(HttpStatus.BAD_REQUEST, "Invalid sort field");
-    }
+    const issues = await prisma.ticket_issues.findMany({
+      where,
+      select: {
+        ti_id: true,
+        ti_title: true,
+        ti_description: true,
+        ti_de_id: true,
+        ti_reported_by: true,
+        created_at: true,
+        ti_status: true,
+      },
+      orderBy: [{ ti_id: "desc" }],
+    });
 
-    const params: Array<string | number> = [];
-    const whereParts: string[] = [`ti.deleted_at IS NULL`];
+    const deviceIds = Array.from(new Set(issues.map((item) => item.ti_de_id)));
+    const userIds = Array.from(new Set(issues.map((item) => item.ti_reported_by)));
 
-    if (query.status) {
-      params.push(query.status as TI_STATUS);
-      whereParts.push(`ti.ti_status = $${params.length}::"TI_STATUS"`);
-    }
+    const [devices, users] = await Promise.all([
+      prisma.devices.findMany({
+        where: { de_id: { in: deviceIds }, deleted_at: null },
+        select: {
+          de_id: true,
+          de_name: true,
+          de_ca_id: true,
+        },
+      }),
+      prisma.users.findMany({
+        where: { us_id: { in: userIds } },
+        select: {
+          us_id: true,
+          us_firstname: true,
+          us_lastname: true,
+          us_emp_code: true,
+        },
+      }),
+    ]);
+
+    const categoryIds = Array.from(
+      new Set(devices.map((device) => device.de_ca_id).filter(Boolean)),
+    );
+    const categories = await prisma.categories.findMany({
+      where: { ca_id: { in: categoryIds as number[] } },
+      select: { ca_id: true, ca_name: true },
+    });
+
+    const deviceMap = new Map(devices.map((device) => [device.de_id, device]));
+    const userMap = new Map(users.map((user) => [user.us_id, user]));
+    const categoryMap = new Map(categories.map((category) => [category.ca_id, category.ca_name]));
+
+    let enriched = issues.map((issue) => {
+      const device = deviceMap.get(issue.ti_de_id);
+      const reporter = userMap.get(issue.ti_reported_by);
+      const categoryName =
+        (device?.de_ca_id ? categoryMap.get(device.de_ca_id) : undefined) ?? "-";
+
+      return {
+        ...issue,
+        device_name: device?.de_name ?? "-",
+        category: categoryName,
+        requester_name: `${reporter?.us_firstname ?? ""} ${reporter?.us_lastname ?? ""}`.trim(),
+        requester_emp_code: reporter?.us_emp_code ?? null,
+        quantity: 1,
+      };
+    });
 
     if (query.categoryId) {
-      params.push(query.categoryId);
-      whereParts.push(`d.de_ca_id = $${params.length}`);
+      enriched = enriched.filter((item) => {
+        const device = deviceMap.get(item.ti_de_id);
+        return device?.de_ca_id === query.categoryId;
+      });
     }
 
     if (search) {
-      params.push(`%${search}%`);
-      const idx = params.length;
-      whereParts.push(`(
-        ti.ti_title ILIKE $${idx}
-        OR ti.ti_description ILIKE $${idx}
-        OR d.de_name ILIKE $${idx}
-        OR u.us_firstname ILIKE $${idx}
-        OR u.us_lastname ILIKE $${idx}
-        OR COALESCE(u.us_emp_code, '') ILIKE $${idx}
-      )`);
+      enriched = enriched.filter((item) => {
+        return (
+          item.ti_title.toLowerCase().includes(search) ||
+          (item.ti_description ?? "").toLowerCase().includes(search) ||
+          item.device_name.toLowerCase().includes(search) ||
+          item.category.toLowerCase().includes(search) ||
+          item.requester_name.toLowerCase().includes(search) ||
+          (item.requester_emp_code ?? "").toLowerCase().includes(search)
+        );
+      });
     }
 
-    const whereSql = whereParts.join(" AND ");
+    enriched.sort(this.buildOrderBy(sortField, sortDirection));
 
-    params.push(limit, (page - 1) * limit);
-    const limitIdx = params.length - 1;
-    const offsetIdx = params.length;
+    const total = enriched.length;
+    const paginatedIssues = enriched.slice(skip, skip + limit);
 
-    const [countRows, rows] = await Promise.all([
-      prisma.$queryRawUnsafe<Array<{ total: bigint | number }>>(
-        `
-          SELECT COUNT(*)::bigint AS total
-          FROM ticket_issues ti
-          JOIN devices d ON d.de_id = ti.ti_de_id
-          JOIN users u ON u.us_id = ti.ti_reported_by
-          LEFT JOIN categories c ON c.ca_id = d.de_ca_id
-          WHERE ${whereSql}
-        `,
-        ...params.slice(0, params.length - 2),
-      ),
-      prisma.$queryRawUnsafe<
-        Array<{
-          id: number;
-          title: string;
-          description: string | null;
-          device_name: string;
-          quantity: number;
-          category: string;
-          requester_name: string;
-          requester_emp_code: string | null;
-          request_date: Date;
-          status: TI_STATUS;
-        }>
-      >(
-        `
-          SELECT
-            ti.ti_id AS id,
-            ti.ti_title AS title,
-            ti.ti_description AS description,
-            d.de_name AS device_name,
-            GREATEST(COUNT(idv.id_id), 1)::int AS quantity,
-            COALESCE(c.ca_name, '-') AS category,
-            TRIM(CONCAT(u.us_firstname, ' ', u.us_lastname)) AS requester_name,
-            u.us_emp_code AS requester_emp_code,
-            ti.created_at AS request_date,
-            ti.ti_status AS status
-          FROM ticket_issues ti
-          JOIN devices d ON d.de_id = ti.ti_de_id
-          JOIN users u ON u.us_id = ti.ti_reported_by
-          LEFT JOIN categories c ON c.ca_id = d.de_ca_id
-          LEFT JOIN issue_devices idv ON idv.id_ti_id = ti.ti_id AND idv.deleted_at IS NULL
-          WHERE ${whereSql}
-          GROUP BY ti.ti_id, d.de_name, c.ca_name, u.us_firstname, u.us_lastname, u.us_emp_code, ti.created_at, ti.ti_status
-          ORDER BY ${orderBySql} ${sortDirection.toUpperCase()}, ti.ti_id DESC
-          LIMIT $${limitIdx} OFFSET $${offsetIdx}
-        `,
-        ...params,
-      ),
-    ]);
-
-    const totalRaw = countRows[0]?.total ?? 0;
-    const total = typeof totalRaw === "bigint" ? Number(totalRaw) : Number(totalRaw || 0);
-
-    const data: RepairItemDto[] = rows.map((issue) => ({
-      id: issue.id,
-      title: issue.title,
-      description: issue.description,
+    const data: RepairItemDto[] = paginatedIssues.map((issue) => ({
+      id: issue.ti_id,
+      title: issue.ti_title,
+      description: issue.ti_description,
       device_name: issue.device_name,
       quantity: issue.quantity,
       category: issue.category,
       requester_name: issue.requester_name,
       requester_emp_code: issue.requester_emp_code,
-      request_date: issue.request_date,
-      status: issue.status,
+      request_date: issue.created_at,
+      status: issue.ti_status,
     }));
 
     return {

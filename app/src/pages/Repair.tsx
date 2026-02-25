@@ -53,10 +53,10 @@ export default function Repair() {
       { id: "", label: "ทุกหมวดหมู่", value: "" },
       ...Array.from(new Set(allItems.map((item) => item.category)))
         .filter(Boolean)
-        .map((c, i) => ({
-          id: i,
-          label: c!,
-          value: c!,
+        .map((category, index) => ({
+          id: index,
+          label: category!,
+          value: category!,
         })),
     ];
   }, [allItems]);

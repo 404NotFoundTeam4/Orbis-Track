@@ -228,7 +228,7 @@ function shouldShowMainStepTime(params: {
 
   return false;
 }
-
+ 
 /**
  * Description: แปลงชื่อแผนกให้เป็นรูปแบบสำหรับแสดงผลใน UI
  * - ถ้าค่า departmentName เป็น null/undefined/ว่าง ให้คืนค่า "-" แทน
@@ -385,7 +385,7 @@ export default function HistoryBorrowTicket({
    * Author: Chanwit Muangma (Boom) 66160224
    */
   const [isDeviceListModalOpen, setDeviceListModalOpen] = useState(false);
-
+ 
   /**
    * Description: แปลง deviceChildren ของ history-borrow ให้เป็นรูปแบบ TicketDevice[] เพื่อส่งให้ DeviceListModal
    * - DeviceListModal ถูกออกแบบให้ใช้ TicketDevice จาก TicketsService
@@ -411,7 +411,7 @@ export default function HistoryBorrowTicket({
 
     return ticketDeviceList as unknown as TicketDevice[];
   }, [detail?.deviceChildren]);
-
+  
   /**
    * Description: สถานะของ Ticket ที่ใช้แสดงใน UI
    * - status: เอาไว้ render pill ใน summary (ใช้ item.status เป็นหลัก)
@@ -423,13 +423,7 @@ export default function HistoryBorrowTicket({
    */
   const [now, setNow] = useState(new Date());
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date());
-    }, 5000); // 30 วิ
-
-    return () => clearInterval(timer);
-  }, []);
+  
 
   const toMinute = (d: Date) =>
     new Date(
@@ -453,7 +447,7 @@ export default function HistoryBorrowTicket({
   const effectiveTicketStatus = String(detail?.status ?? item.status)
     .toUpperCase()
     .trim();
-  console.log(status);
+
   /**
    * Description: หาเวลา "อนุมัติ/ปฏิเสธ" จาก timeline
    * - เลือก stage ที่มี approver และ status เป็น APPROVED หรือ REJECTED
@@ -495,6 +489,8 @@ export default function HistoryBorrowTicket({
     detail?.inUseDateTime,
     detail?.fulfillmentDateTimes?.returnDateTime,
   ]);
+  console.log(item)
+
   /**
    * Description: ข้อมูลอุปกรณ์ที่ใช้ render ในส่วน Expanded (รูป + แผนก/ฝ่ายย่อย)
    * Input : detail.device
@@ -504,7 +500,7 @@ export default function HistoryBorrowTicket({
   const deviceImageUrl = detail?.device?.imageUrl ?? null;
   const sectionName = detail?.device?.sectionName ?? "-";
   const departmentName = detail?.device?.departmentName ?? "-";
-  console.log(detail);
+  
   /**
    * Description: หา step ใน timeline ที่ถูกปฏิเสธ (ไว้แสดง banner ปฏิเสธ)
    * Input : detail.timeline
@@ -622,6 +618,7 @@ const formatTimeThai = (dateStr: string | null): string => {
 
   return `${day} / ${month} / ${year}`;
 };
+
   return (
     <div className="bg-white mb-2 overflow-hidden transition-all duration-300 rounded-[16px] ">
       <div
@@ -644,12 +641,11 @@ const formatTimeThai = (dateStr: string | null): string => {
         <div className="flex flex-col">
           <span className="text-[#000000]">
             {item?.requester?.borrowName || "-"}
-          </span>
-          {/**
-          <span className="text-[#8C8C8C]">
+          </span> 
+          <span className="text-black">
             {item.requester.employeeCode || "-"}
           </span>
-          */}
+         
         </div>
 
         <div className="flex flex-col">
@@ -804,7 +800,7 @@ const formatTimeThai = (dateStr: string | null): string => {
                           </div>
                         </div>
 
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col">
                           {detail.timeline.map((stage, index) => {
                             const timeline = detail.timeline;
 
@@ -872,7 +868,7 @@ const formatTimeThai = (dateStr: string | null): string => {
                                   {index !== timeline.length - 1 && (
                                     <div
                                       className={[
-                                        "mt-1 h-8 w-px",
+                                        " h-8 w-px",
                                         classNames.line,
                                       ].join(" ")}
                                     />

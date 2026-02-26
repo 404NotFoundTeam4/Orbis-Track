@@ -180,7 +180,7 @@ const RequestItem = ({
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
-
+  console.log(ticket);
   /**
    * Description: ดึงสถานะปัจจุบันของ ticket (สำหรับ Timeline)
    * Input      : void
@@ -270,7 +270,23 @@ const RequestItem = ({
     // We only want to trigger this when forceExpand prop changes to true.
     // Removing isExpanded from dependencies allows user to collapse it manually.
   }, [forceExpand, ticket.id, onExpand, expandTrigger]);
+  /**
+   * Description: แปลงเวลาเป็นรูปแบบ HH:MM:YYYY
+   * Input : dateStr - date string หรือ null
+   * Output : string (รูปแบบเวลา) 20 ม.ค. 2568
+   * Author: Panyapon Phollert (Ton) 66160086
+   */
+  const formatTimeThai = (dateStr: string | null): string => {
+    if (!dateStr) return "-";
 
+    const date = new Date(dateStr);
+
+    const day = date.getDate();
+    const month = date.toLocaleString("th-TH", { month: "short" });
+    const year = date.getFullYear() + 543;
+
+    return `${day} / ${month} / ${year}`;
+  };
   const status = statusConfig[ticket.status] || statusConfig.PENDING;
   const deviceImage =
     ticket.device_summary.image ||
@@ -315,10 +331,10 @@ const RequestItem = ({
         {/* Date & Time */}
         <div className="flex flex-col">
           <span className="text-[#000000]">
-            {formatDate(ticket.request_date)}
+            {formatTimeThai(ticket.created_at)}
           </span>
           <span className="text-[#7BACFF]">
-            เวลา : {formatTime(ticket.request_date)}
+            เวลา : {formatTime(ticket.created_at)}
           </span>
         </div>
 
@@ -459,7 +475,7 @@ const RequestItem = ({
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
+                      className={`h-9 w-9 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
                         getStepTicket() === "PENDING"
                           ? "border-[#4CAF50] text-[#4CAF50]"
                           : getStepTicket() === "APPROVED"
@@ -515,6 +531,9 @@ const RequestItem = ({
                     >
                       ส่งคำร้อง
                     </span>
+                     <div className="text-xs text-neutral-500 mt-0.5">
+                        {formatUpdateByDateTime(ticket.created_at)}
+                      </div>
                   </div>
                 </div>
 
@@ -543,7 +562,7 @@ const RequestItem = ({
                           height="20"
                         />
                       ) : (
-                        <Icon icon="mdi:close" width="20" height="20" />
+                        <Icon icon="mdi:close" className="text-lg" />
                       )}
                     </div>
                     <div
@@ -578,6 +597,7 @@ const RequestItem = ({
                     >
                       อนุมัติ
                     </span>
+                    
                   </div>
 
                   {/* Tooltip - Approval Hierarchy with Timeline Style */}
@@ -602,7 +622,7 @@ const RequestItem = ({
                                   {/* Icon & Line */}
                                   <div className="flex flex-col items-center">
                                     <div
-                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
+                                      className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${
                                         stage.status === "APPROVED"
                                           ? "border-[#4CAF50] text-[#4CAF50]"
                                           : stage.status === "REJECTED"

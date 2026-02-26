@@ -93,7 +93,7 @@ export class BorrowReturnService {
           image: mainDevice ? mainDevice.de_images : null,
           category: mainDevice ? mainDevice.category.ca_name : "-",
           section:
-            mainDevice?.section?.sec_name.replace(dept, "").trim() ?? "-",
+            mainDevice?.section?.sec_name.replace(dept, "").replace("ฝ่ายย่อย", "").trim() ?? "-",
           department: dept.replace(/แผนก/g, "").trim() ?? "-",
           total_quantity: deviceCount,
         },

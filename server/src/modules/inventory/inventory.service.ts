@@ -437,6 +437,9 @@ async function getAllDevices() {
     approval_flow_steps,
   ] = await Promise.all([
     prisma.users.findMany({
+       where: {
+        deleted_at: null,
+      },
       select: {
         us_id: true,
         us_firstname: true,
@@ -703,7 +706,7 @@ async function getAllApproves() {
         us_name: string;
       }[];
     }[]
-  >((acc, sec) => {
+  >((acc: { st_sec_id: any; st_dept_id: any; st_name: string; users: any; }[], sec: { sec_name: string; sec_id: any; sec_dept_id: any; }) => {
     const deptMatch = sec.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
     const deptName = deptMatch?.[1]?.trim();
 

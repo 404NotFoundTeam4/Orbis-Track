@@ -175,10 +175,22 @@ const Profile: React.FC = () => {
    * Output      : อัปเดตสถานะ passwordForm ตามชื่อฟิลด์และค่าที่ผู้ใช้กรอก
    * Author      : Niyada Butchan (Da) 66160361
    */
+  const [passwordError, setPasswordError] = useState({
+  old_password: "",
+  confirm_password: "",
+});
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswordForm((prev) => ({ ...prev, [name]: value }));
-  };
+  const { name, value } = e.target;
+
+
+  setPasswordForm((prev) => ({ ...prev, [name]: value }));
+
+  // ลบ error ของช่องที่กำลังพิมพ์
+  setPasswordError((prev) => ({
+    ...prev,
+    [name]: "",
+  }));
+};
 
   /**
    * handleFileChange
@@ -272,36 +284,61 @@ const Profile: React.FC = () => {
    * Output     : การแจ้งเตือนบนหน้าจอ (Toast/Push Notification)
    * Author     : Niyada Butchan (Da) 66160361
    */
-  const handleUpdatePassword = async () => {
-    try {
-      //  Map คีย์ให้ตรงกับ Backend (oldPassword, newPassword, confirmPassword)
-      const payload = {
-        oldPassword: passwordForm.old_password, // ส่งค่าจาก old_password ไปยังคีย์ oldPassword
-        newPassword: passwordForm.new_password, // ส่งค่าจาก new_password ไปยังคีย์ newPassword
-        confirmPassword: passwordForm.confirm_password,
-      };
+ const handleUpdatePassword = async () => {
+  try {
+    // reset error ก่อนยิง API
+    setPasswordError({
+      old_password: "",
+      confirm_password: "",
+    });
 
-      await usersService.updatePassword(payload);
-      push({ tone: "success", message: "เปลี่ยนรหัสผ่านสำเร็จ!" });
-      setPasswordForm({
-        old_password: "",
-        new_password: "",
-        confirm_password: "",
-      });
+    const payload = {
+      oldPassword: passwordForm.old_password,
+      newPassword: passwordForm.new_password,
+      confirmPassword: passwordForm.confirm_password,
+    };
 
-      await fetchProfile();
-    } catch (err: any) {
-  const errorMessage =
-    err?.response?.data?.message ||   // กรณี axios error
-    err?.message ||                   // กรณี throw Error ปกติ
-    "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+    await usersService.updatePassword(payload);
 
-  push({
-    tone: "danger",
-    message: errorMessage,
-  });
-}
-  };
+    push({ tone: "success", message: "เปลี่ยนรหัสผ่านสำเร็จ!" });
+
+    setPasswordForm({
+      old_password: "",
+      new_password: "",
+      confirm_password: "",
+    });
+
+  } catch (err: any) {
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      "";
+
+    // 🎯 รหัสผ่านเดิมผิด
+    if (message.includes("รหัสผ่านเดิม")) {
+      setPasswordError((prev) => ({
+        ...prev,
+        old_password: "รหัสผ่านเดิมไม่ถูกต้อง",
+      }));
+      return;
+    }
+
+    // 🎯 ยืนยันรหัสไม่ตรง
+    if (message.includes("ยืนยันรหัสผ่าน")) {
+      setPasswordError((prev) => ({
+        ...prev,
+        confirm_password: "รหัสผ่านใหม่และยืนยันไม่ตรงกัน",
+      }));
+      return;
+    }
+
+    // กรณีอื่น
+    push({
+      tone: "danger",
+      message: "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน",
+    });
+  }
+};
 
   const isProfileChanged =
     profile &&
@@ -488,6 +525,7 @@ const Profile: React.FC = () => {
                     type="text"
                     onChange={handlePasswordChange}
                     value={passwordForm.old_password}
+                    error={passwordError.old_password}
                     width="w-full lg:w-[533px]"
                     icon={<Icon icon="solar:key-bold" width={24} height={24} />}
                   />

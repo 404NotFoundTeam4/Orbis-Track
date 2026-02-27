@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { homeService } from "./home.service.js";
-import { metaService } from "./meta.service.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { BaseController } from "../../core/base.controller.js";
-import { HomeStats, TicketHomeItem, TicketDetailResponse } from "./home.schema.js";
+import { HomeStats,TicketHomeItem,TicketDetailResponse } from "./home.schema.js";
 import { AuthRequest } from "../auth/auth.schema.js";
 
 
@@ -17,12 +16,12 @@ export class HomeController extends BaseController {
    * Output    : { data: Stats }
    * Author    : Worrawat Namwat (Wave) 66160372
    */
-  async getStats(
-    req: AuthRequest,
-    res: Response,
+ async getStats(
+    req: AuthRequest, 
+    res: Response, 
     next: NextFunction
   ): Promise<BaseResponse<HomeStats>> {
-    const userId = req.user?.sub;
+    const userId = req.user?.sub; 
     if (!userId) {
       throw new Error("User ID not found in token");
     }
@@ -38,8 +37,8 @@ export class HomeController extends BaseController {
    * Author    : Worrawat Namwat (Wave) 66160372
    */
   async getRecentTickets(
-    req: AuthRequest,
-    res: Response,
+    req: AuthRequest, 
+    res: Response, 
     next: NextFunction
   ): Promise<BaseResponse<TicketHomeItem[]>> {
     const userId = req.user?.sub;
@@ -58,27 +57,12 @@ export class HomeController extends BaseController {
    * Author    : Worrawat Namwat (Wave) 66160372
    */
   async getTicketDetail(
-    req: Request,
-    res: Response,
-    next: NextFunction,
+    req: Request, 
+    res: Response, 
+    next: NextFunction
   ): Promise<BaseResponse<TicketDetailResponse>> {
     const { id } = req.params;
     const detail = await homeService.getTicketDetailById(Number(id));
     return { data: detail };
-  }
-
-  /**
-   * Description: ดึง dropdown options สำหรับ filter ต่างๆ (borrow status, repair status)
-   * Input     : -
-   * Output    : { data: { borrowStatuses, borrowStatusesStaff, borrowStatusesApprover, repairStatuses } }
-   * Author    : 66160080 Pakkapon Chomchoey (Tonnam)
-   */
-  async getDropdownOptions(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<BaseResponse<ReturnType<typeof metaService.getDropdownOptions>>> {
-    const options = metaService.getDropdownOptions();
-    return { data: options };
   }
 }

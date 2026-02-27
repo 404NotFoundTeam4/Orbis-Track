@@ -94,12 +94,7 @@ export default function BorrowModal({
 
   // console.log(dateDefault)
 
-   /**
-   * Description: เช็คอุปกรณ์ว่างตามช่วงเวลา
-   * Input : start, end, timeStart, timeEnd, activeBorrow - วันที่เริ่ม, วันที่สิ้นสุด, เวลาที่เริ่ม, เวลาที่สิ้นสุด, สถานะของอุปกรณ์
-   * Output : true - สามารถยืมได้, false - ไม่สามารถยืมได้
-   * Author: Panyapon Phollert (Ton) 66160086
-   **/
+  // เช็คอุปกรณ์ว่างตามช่วงเวลา
   const isBorrowAvailable = (
     start: Date | null,
     end: Date | null,
@@ -112,12 +107,7 @@ export default function BorrowModal({
     // อุปกรณ์ไม่มีประวัติการยืม
     if (!activeBorrow || activeBorrow.length === 0) return true;
 
-    /**
-    * Description: รวมวันเวลา ให้กลายเป็น Date
-    * Input : date - วันที่, time - เวลา
-    * Output : Date object ที่รวมวัน + เวลา
-    * Author: Panyapon Phollert (Ton) 66160086
-    **/
+    // รวมวันเวลา ให้กลายเป็น Date
     const combineDateTime = (date: Date, time: string) => {
       const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
       const dateTime = new Date(date);
@@ -215,12 +205,7 @@ export default function BorrowModal({
   // ตรวจสอบว่าผู้ใช้เลือกวันและเวลาครบแล้วหรือยัง
   const hasSelectedDateTime = start && end && timeStart && timeEnd;
 
-  /**
-  * Description: หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก
-  * Input : defaultBorrow - รายการอุปกรณ์ทั้งหมด
-  * Output : รายการอุปกรณ์ที่สามารถแสดงให้ผู้ใช้เลือกยืมได้
-  * Author: Thakdanai Makmi (Ryu) 66160355
-  **/
+  // หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก
   const readyDevices = (defaultBorrow ?? [])
     .filter((devices) => devices.dec_status === "READY")
     .filter((device) =>
@@ -229,12 +214,6 @@ export default function BorrowModal({
         : true,
     );
 
-  /**
-  * Description: คัดกรองอุปกรณ์ที่มีสถานะ "READY" ที่มีการยืมทับซ้อนอยู่แล้ว
-  * Input : defaultBorrow - รายการอุปกรณ์ทั้งหมด
-  * Output : รายการอุปกรณ์ที่ไม่สามารถยืมได้ในช่วงเวลาที่เลือก
-  * Author: Thakdanai Makmi (Ryu) 66160355
-  **/
   const borrowDevices = (defaultBorrow ?? [])
     // เอาเฉพาะสถานะ READY
     .filter((devices) => devices.dec_status === "READY")
@@ -245,18 +224,11 @@ export default function BorrowModal({
     );
 
   /* ========================================== */
-  /**
-  * Description: แปลงเวลาในรูปแบบ "HH:mm"
-  * Input : time - เวลาในรูปแบบ "HH:mm"
-  * Output : จำนวนนาทีรวม
-  * Author: Panyapon Phollert (Ton) 66160086
-  **/
   const timeToMinutes = (time?: string): number | null => {
     if (!time) return null;
     const [h, m] = time.split(":").map(Number);
     return h * 60 + m;
   };
-
   const isValidBorrowTime = (
     start: Date | null,
     end: Date | null,
@@ -448,13 +420,6 @@ export default function BorrowModal({
 
       return true;
     })();
-
-  /**
-  * Description: แปลง Date object ให้แสดงผลในรูปแบบวันที่ภาษาไทย
-  * Input : date - วันที่ Date Object
-  * Output : วันที่ในรูปแบบภาษาไทย
-  * Author: Panyapon Phollert (Ton) 66160086
-  **/
   const formatThaiDate = (date: Date) => {
     const months = [
       "ม.ค.",

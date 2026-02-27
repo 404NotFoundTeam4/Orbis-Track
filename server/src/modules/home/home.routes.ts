@@ -1,9 +1,9 @@
 import { Router } from "../../core/router.js";
 import { HomeController } from "./home.controller.js";
-import { getStatsResponseSchema, getRecentTicketsResponseSchema, getTicketDetailResponseSchema } from "./home.schema.js";
+import { getStatsResponseSchema, getRecentTicketsResponseSchema,getTicketDetailResponseSchema } from "./home.schema.js";
 
-const homeController = new HomeController();
-const router = new Router(undefined, '/home');
+const homeController = new HomeController(); 
+const router = new Router(undefined, '/home'); 
 
 /**
  * Route: GET /home/stats
@@ -12,10 +12,10 @@ const router = new Router(undefined, '/home');
  * Output    : { data: HomeStats }
  * Author    : Worrawat Namwat (Wave) 66160372
  */
-router.getDoc("/stats", {
-  tag: "Home",
-  res: getStatsResponseSchema,
-  auth: true
+router.getDoc("/stats", { 
+  tag: "Home", 
+  res: getStatsResponseSchema, 
+  auth: true 
 }, homeController.getStats);
 
 /**
@@ -25,10 +25,10 @@ router.getDoc("/stats", {
  * Output    : { data: RecentTicket[] }
  * Author    : Worrawat Namwat (Wave) 66160372
  */
-router.getDoc("/tickets", {
-  tag: "Home",
-  res: getRecentTicketsResponseSchema,
-  auth: true
+router.getDoc("/tickets", { 
+  tag: "Home", 
+  res: getRecentTicketsResponseSchema, 
+  auth: true 
 }, homeController.getRecentTickets);
 
 /**
@@ -44,24 +44,6 @@ router.getDoc(
     tag: "Home",
     res: getTicketDetailResponseSchema,
     auth: true,
-  },
-  homeController.getTicketDetail,
-);
-
-/**
- * Route: GET /home/meta/options
- * Description: API ดึง dropdown options สำหรับ filter ต่างๆ (borrow status, repair status)
- * Input     : -
- * Output    : { data: { borrowStatuses, borrowStatusesStaff, borrowStatusesApprover, repairStatuses } }
- * Author    : 66160080 Pakkapon Chomchoey (Tonnam)
- */
-router.getDoc(
-  "/meta/options",
-  {
-    tag: "Home",
-    auth: true,
-  },
-  homeController.getDropdownOptions,
-);
+  },homeController.getTicketDetail);
 
 export default router.instance;

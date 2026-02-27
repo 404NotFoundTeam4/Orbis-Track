@@ -13,7 +13,6 @@ import {
   updateCartDeviceDetailDataSchema,
   deleteCartItemPayload,
   deviceAvailabilitiesSchema,
-  getBorrowUsersSchema,
 } from "./cart.schema.js";
 
 const cartsController = new CartController();
@@ -50,6 +49,5 @@ router.patchDoc(
 router.getDoc("/", { tag: "Carts", res: cartItemListResponseSchema, auth: true }, cartsController.getCartItemList);
 router.deleteDoc("/", { tag: "Carts", res: cartItemSchema, body: deleteCartItemPayload, auth: true }, cartsController.deleteCartItem);
 router.postDoc("/", { tag: "Carts", body: createBorrowTicketPayload, auth: true }, cartsController.createTicket);
-router.getDoc("/users", { tag: "Borrow", res: getBorrowUsersSchema, auth: true }, cartsController.getBorrowUsers);
 
 export default router.instance;

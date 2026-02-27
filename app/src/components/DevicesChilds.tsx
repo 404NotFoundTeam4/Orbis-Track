@@ -6,8 +6,7 @@ import DropDown from "./DropDown"
 import { useEffect, useState } from "react"
 import { AlertDialog } from "./AlertDialog"
 import { useMemo } from "react"
-import type { DeviceChild, UpdateDevices } from "../services/InventoryService"
-import UploadFileDeviceChild from "./UploadFileDeviceChild"
+import type { DeviceChild } from "../services/InventoryService"
 
 // อุปกรณ์ลูกจริง
 type RealDeviceRow = DeviceChild & {
@@ -41,16 +40,18 @@ export type StatusItem = {
 // โครงสร้าง props ที่ต้องส่งมาเรียกใช้งาน
 interface DevicesChildsProps {
     devicesChilds: DeviceChild[]; // ข้อมูลอุปกรณ์ลูก
+    onSaveDraft: (drafts: DraftDevice[]) => Promise<void>;
     onUpload?: (file: File | undefined) => void; // ฟังก์ชันเพิ่มอุปกรณ์ลูกแบบอัปโหลดไฟล์ (CSV / Excel)
     onDelete: (ids: number[]) => Promise<void>; // ฟังก์ชันลบอุปกรณ์ลูก
-    onSaveAll: (drafts: DraftDevice[], updates: UpdateDevices[]) => Promise<void>;
+    onChangeStatus: (id: number, status: DeviceChild["dec_status"]) => void; // ฟังก์ชันเปลี่ยนสถานะอุปกรณ์ลูก
     lastAssetCode: string | null; // รหัส asset code ล่าสุด
+    isValidateDraft: (drafts: DraftDevice[]) => boolean
     statusItems: StatusItem[]; // status ทั้งหมดของอุปกรณ์ลูก
 }
 
-const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAssetCode, statusItems }: DevicesChildsProps) => {
-    // กดปุ่มบันทึก
-    const [isSaveAlertOpen, setIsSaveAlertOpen] = useState<boolean>(false);
+const DevicesChilds = ({ devicesChilds, onSaveDraft, onUpload, onDelete, onChangeStatus, lastAssetCode, isValidateDraft, statusItems }: DevicesChildsProps) => {
+    // กดปุ่มเพิ่มอุปกรณ์ลูก
+    const [isAddAletOpen, setIsAddAletOpen] = useState<boolean>(false);
     // กดปุ่มลบอุปกรณ์ลูก
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState<boolean>(false);
     // จำนวนอุปกรณ์ลูกที่ต้องการเพิ่ม
@@ -65,10 +66,6 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
     const [draftDevice, setDraftDevice] = useState<DraftDevice[]>([]);
     // เก็บรายการอุปกรณ์ลูก (draft) ที่ต้องการลบ
     const [selectedDraft, setSelectedDraft] = useState<number[]>([]);
-    // เก็บรายการอุปกรณ์ที่มีการแก้ไข
-    const [updateDevices, setUpdateDevices] = useState<UpdateDevices[]>([]);
-    // เก็บข้อความ error ของ serial number
-    const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
 
     /**
     * Description: ฟังก์ชันสำหรับเลือกหรือยกเลิกการเลือกอุปกรณ์ลูก
@@ -110,6 +107,25 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
     }
 
     /**
+    * Description: ฟังก์ชันสำหรับบันทึกอุปกรณ์ลูกที่อยู่ในสถานะ draft
+    * Input     : -
+    * Output    :
+    *             - ส่งข้อมูลไปให้ parent
+    *             - ล้างข้อมูล draft ออกจาก state
+    *             - รีเซ็ตจำนวนอุปกรณ์ที่กรอก
+    *             - ปิด dialog การบันทึก
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    const handleSaveDraft = async () => {
+        if (draftDevice.length === 0) return; // ถ้าไม่มี draft ไม่ต้องทำอะไร
+
+        await onSaveDraft(draftDevice);   // ส่ง draft ไปให้ parent
+        setDraftDevice([]);         // ล้าง draft
+        setQuantity(null);          // reset จำนวน
+        setIsAddAletOpen(false);    // ปิด dialog
+    }
+
+    /**
     * Description: ฟังก์ชันสำหรับลบอุปกรณ์ลูกที่ถูกเลือก
     * Input     : -
     * Output    :
@@ -143,97 +159,14 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
     }
 
     /**
-    * Description: ฟังก์ชันจัดการเปลี่ยนสถานะของอุปกรณ์ลูก
-    * Input     : payload (id, status) - รหัสอุปกรณ์ลูก, สถานะใหม่
-    * Output    : อัปเดตรายการอุปกรณ์ที่มีการแก้ไข (status)
+    * Description: ฟังก์ชันสำหรับเปลี่ยนสถานะของอุปกรณ์ลูก
+    * Input     : id, status - รหัสอุปกรณ์ลูก, สถานะใหม่
+    * Output    : ให้ parent component อัปเดตสถานะอุปกรณ์ลูก
     * Author    : Thakdanai Makmi (Ryu) 66160355
     */
-    const changeStatusDevice = (payload: UpdateDevices) => {
-        // หาอุปกรณ์ลูกตัวเดิม
-        const original = devicesChilds.find(device => device.dec_id === payload.id);
-
-        setUpdateDevices(prev => {
-            // ถ้าเป็นค่าเดิม (ก่อนเปลี่ยน) ลบออกจาก list
-            if (original && original.dec_status === payload.status) {
-                return prev.filter(item => item.id !== payload.id);
-            }
-            // เช็คว่ามีรายการนี้อยู่ใน update list แล้วหรือยัง
-            const exists = prev.find(item => item.id === payload.id);
-            // ถ้ามีอยู่แล้ว แก้ไขค่า status ในรายการนั้น
-            if (exists) {
-                return prev.map(item =>
-                    item.id === payload.id
-                        ? { ...item, status: payload.status }
-                        : item
-                );
-            }
-            // ถ้ายังไม่เคยถูกแก้ไข เพิ่มเข้า update list
-            return [...prev, payload];
-        });
-    };
-
-    /**
-    * Description: ดึงค่าสถานะปัจจุบันสำหรับแสดงผล
-    * Input     : device - ข้อมูลอุปกรณ์
-    * Output    : status ที่แสดงในหน้าจอ
-    * Author    : Thakdanai Makmi (Ryu) 66160355
-    */
-    const getCurrentStatus = (device: DeviceRow) => {
-        // ถ้าเป็น draft ให้ใช้ status จาก draft
-        if ("__draft" in device) {
-            return device.dec_status;
-        }
-        // ถ้ามีการเปลี่ยนใน updateDevices ให้ใช้ค่านั้น
-        const updated = updateDevices.find(item => item.id === device.dec_id);
-        // ถ้ามีค่าใน updateDevices ใช้ค่าที่ถูกแก้ไข ถ้าไม่มี ใช้ค่าจากข้อมูลเดิม
-        return updated?.status ?? device.dec_status;
-    };
-
-    /**
-    * Description: ฟังก์ชันสำหรับจัดการเปลี่ยน Serial Number ของอุปกรณ์
-    * Input     : id, serial - รหัสอุปกรณ์ลูก, serial number ใหม่
-    * Output    : อัปเดตรายการอุปกรณ์ที่มีการแก้ไข (serial number)
-    * Author    : Thakdanai Makmi (Ryu) 66160355
-    */
-    const changeSerialNumber = (id: number, serial: string) => {
-        // หา Serial เดิม
-        const original = devicesChilds.find(device => device.dec_id === id);
-
-        setUpdateDevices(prev => {
-            // ถ้าเป็น serial ค่าเดิม ลบออกจาก update list
-            if (original?.dec_serial_number === serial) {
-                return prev.filter(item => item.id !== id);
-            }
-            // เช็คว่ามีรายการนี้อยู่ใน update list แล้วหรือยัง
-            const exists = prev.find(item => item.id === id);
-            // ถ้ามีอยู่แล้ว แก้ไขค่า serial number ในรายการนั้น
-            if (exists) {
-                return prev.map(item =>
-                    item.id === id
-                        ? { ...item, serialNumber: serial }
-                        : item
-                );
-            }
-            // ถ้ายังไม่เคยถูกแก้ไข เพิ่มเข้า update list
-            return [...prev, { id, serialNumber: serial }];
-        });
-    };
-
-    /**
-    * Description: ดึงค่า Serial Number ปัจจุบันกสำหรับแสดงผล
-    * Input     : device - ข้อมูลอุปกรณ์
-    * Output    : serial number ที่แสดงในหน้าจอ
-    * Author    : Thakdanai Makmi (Ryu) 66160355
-    */
-    const getCurrentSerial = (device: DeviceRow) => {
-        if ("__draft" in device) {
-            return device.dec_serial_number;
-        }
-
-        const updated = updateDevices.find(item => item.id === device.dec_id);
-
-        return updated?.serialNumber ?? device.dec_serial_number;
-    };
+    const changeStatusDevice = (id: number, status: DeviceChild["dec_status"]) => {
+        onChangeStatus(id, status);
+    }
 
     /**
     * Description: ฟังก์ชันสำหรับอัปโหลดไฟล์อุปกรณ์ลูก
@@ -392,109 +325,31 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
         setDraftDevice(prev => [...prev, ...draft]);
     };
 
+    // ติดตามค่า quantity สำหรับการแสดงปุ่มบันทึก
+    useEffect(() => {
+        if (!quantity && quantity === 0) {
+            setDraftDevice([]);
+        }
+    }, [quantity]);
+
     const hasSerialNumber = devicesChilds.length > 0 ? devicesChilds[0].dec_has_serial_number : false;
-    // ควบคุมการเปิดปิด Modal Upload File
-    const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
-
-    /**
-    * Description: ฟังก์ชันบันทึกการเปลี่ยนแปลงอุปกรณ์ทั้งหมด
-    * Input     : -
-    * Output    : เรียกใช้งานฟังก์ชันบันทึกการเปลี่ยนแปลง และ reset state
-    * Author    : Thakdanai Makmi (Ryu) 66160355
-    */
-    const handleSaveAll = async () => {
-        await onSaveAll(draftDevice, updateDevices); // เรียกฟังก์ชันจาก parent
-        // reset state
-        setDraftDevice([]);
-        setUpdateDevices([]);
-        setQuantity(null);
-    }
-
-    /**
-    * Description: ฟังก์ชันตรวจสอบความถูกต้องของข้อมูล
-    * Input     : -
-    * Output    : true - ข้อมูลถูกต้อง, false - ข้อมูลไม่ถูกต้อง
-    * Author    : Thakdanai Makmi (Ryu) 66160355
-    */
-    const validateSave = () => {
-        // ตัดช่องว่างด้านหน้าและหลัง
-        const normalize = (value?: string | null) => value?.trim();
-        // เก็บ error
-        const newErrors: Record<number, string> = {};
-        // เช็ค serial number เดิมทั้งหมดในระบบ
-        const existingSet = new Set(
-            devicesChilds
-                .map(device => normalize(device.dec_serial_number)) // ดึง serial แล้วตัดช่องว่าง
-                .filter(Boolean)
-        );
-        // ตรวจ draft ซ้ำกันเอง
-        const draftSet = new Set<string>();
-
-        // ตรวจ draft
-        draftDevice.forEach(draft => {
-            const serial = normalize(draft.dec_serial_number);
-            if (!serial) return;
-            // เช็ค draft ซ้ำกันเอง
-            if (draftSet.has(serial)) {
-                newErrors[draft.draft_id] = "Serial ซ้ำกัน";
-            }
-            // เช็ค draft ซ้ำกับข้อมูลเดิมในระบบ
-            if (existingSet.has(serial)) {
-                newErrors[draft.draft_id] = "Serial ซ้ำกับข้อมูลเดิม";
-            }
-
-            draftSet.add(serial); // ถ้าไม่ซ้ำ เพิ่มเข้า Set
-        });
-
-        // ตรวจ update
-        updateDevices.forEach(update => {
-            const serial = normalize(update.serialNumber); // ดึง serial แล้วตัดช่องว่าง
-            if (!serial) return;
-            // ค่าเดิม
-            const original = devicesChilds.find(device => device.dec_id === update.id);
-            // เช็ค update ซ้ำกับข้อมูลเดิมในระบบ (ยกเว้นตัวเอง)
-            if (existingSet.has(serial) && original?.dec_serial_number !== serial) {
-                newErrors[update.id] = "Serial ซ้ำกับข้อมูลเดิม";
-            }
-        });
-
-        setSerialErrors(newErrors);
-
-        return Object.keys(newErrors).length === 0;
-    };
 
     return (
-        <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[1660px] min-h-[984px] px-[30px] py-[60px] pt-[30px] pb-[30px]">
+        <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[1660px] h-[984px] px-[30px] py-[60px] pt-[30px] pb-[60px]">
             {/* จำนวน / เพิ่ม / อัปโหลดไฟล์ */}
             <div className="flex justify-between">
                 <div className="flex items-center gap-[16px] w-[590px] h-[66px]">
-                    <div className="flex justify-center items-center bg-[#40A9FF]/10 rounded-[100px] min-w-[179px] h-[46px] px-[3px] py-[5px]">
-                        <p className="text-[18px] text-[#40A9FF] font-medium">จำนวนอุปกรณ์ {devicesChilds.length}</p>
+                    <div className="flex justify-center items-center bg-[#D9D9D9] rounded-[100px] min-w-[179px] h-[46px] px-[3px] py-[5px]">
+                        <p className="text-[18px] font-medium">จำนวนอุปกรณ์ {devicesChilds.length}</p>
                     </div>
-                </div>
-                {/* อัปโหลดไฟล์ */}
-                <div className="flex items-center gap-[10px] min-w-[144px] h-[66px] px-[10px] py-[10px]">
-                    <Button
-                        variant="outline"
-                        className="relative flex gap-[5px] !border-[#40A9FF] !text-[#40A9FF] min-w-[124px] overflow-hidden cursor-pointer"
-                        onClick={() => setIsUploadModalOpen(true)}
-                    >
-                        <Icon
-                            icon="ic:baseline-upload"
-                            width="20"
-                            height="20"
-                        />
-                        อัปโหลดไฟล์
-                    </Button>
                     <QuantityInput
                         label=""
                         value={quantity}
-                        width={70}
+                        width={260}
                         onChange={(val) => setQuantity(val)}
-                        rounded="rounded-[16px]"
                     />
                     <Button
-                        className="!bg-[#40A9FF] hover:!bg-[#1890FF] !min-w-[150px]"
+                        className="!bg-[#40A9FF] hover:!bg-[#1890FF] !w-[69px]"
                         onClick={() => {
                             if (quantity === null) {
                                 return
@@ -503,8 +358,49 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
                             }
                         }}
                         disabled={!quantity}>
-                        + เพิ่มอุปกรณ์ย่อย
+                        + เพิ่ม
                     </Button>
+                </div>
+                {/* อัปโหลดไฟล์ */}
+                <div className="flex items-center min-w-[144px] h-[66px] px-[10px] py-[10px]">
+                    <Button
+                        variant="outline"
+                        className="relative flex gap-[5px] !border-[#40A9FF] !text-[#40A9FF] min-w-[124px] overflow-hidden cursor-pointer"
+                    >
+                        <Icon
+                            icon="ic:baseline-upload"
+                            width="20"
+                            height="20"
+                        />
+                        อัปโหลดไฟล์
+                        <input
+                            type="file"
+                            accept=".csv, .xlsx, .xls"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setUploadFile(file);
+                                setIsUploadAlertOpen(true);
+                            }}
+                        />
+                    </Button>
+                    {
+                        draftDevice.length > 0 && (
+                            <div className="flex justify-end px-[10px] py-[10px]">
+                                <Button
+                                    className="!bg-[#40A9FF] hover:!bg-[#1890FF]"
+                                    onClick={() => {
+                                        const isValid = isValidateDraft(draftDevice);
+                                        if (!isValid) return;
+                                        setIsAddAletOpen(true);
+                                    }}
+                                >
+                                    บันทึก
+                                </Button>
+                            </div>
+                        )
+                    }
                 </div>
             </div>
             {/* หัวข้ออุปกรณ์ลูก */}
@@ -523,24 +419,26 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
                     </div>
                     <p className="flex items-center w-[230px] h-full">Asset Code</p>
                     <div className="flex items-center w-[230px] h-full">
-                        <div
-                            className="flex items-center cursor-pointer"
-                            onClick={() => handleSort("dec_serial_number")}
-                        >
-                            <p>Serial Number</p>
-                            <Icon
-                                icon={
-                                    sortField === "dec_serial_number"
-                                        ? sortDirection === "asc"
-                                            ? "bx:sort-down"
-                                            : "bx:sort-up"
-                                        : "bx:sort-down" //default icon
-                                }
-                                width="24"
-                                height="24"
-                                className="ml-1"
-                            />
-                        </div>
+                        {hasSerialNumber && (
+                            <div
+                                className="flex items-center cursor-pointer"
+                                onClick={() => handleSort("dec_serial_number")}
+                            >
+                                <p>Serial Number</p>
+                                <Icon
+                                    icon={
+                                        sortField === "dec_serial_number"
+                                            ? sortDirection === "asc"
+                                                ? "bx:sort-down"
+                                                : "bx:sort-up"
+                                            : "bx:sort-down" //default icon
+                                    }
+                                    width="24"
+                                    height="24"
+                                    className="ml-1"
+                                />
+                            </div>
+                        )}
                     </div>
                     <div
                         className="flex items-center w-[200px] h-full cursor-pointer"
@@ -562,94 +460,93 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
                     </div>
                 </div>
                 {/* รายการอุปกรณ์ */}
-                {pageRows.map((device, index) => {
-                    // id กลางสำหรับทั้ง draft และอุปกรณ์จริง
-                    const rowId = "__draft" in device ? device.draft_id : device.dec_id;
-                    return (
-                        <div key={rowId} className="w-full">
-                            {/* หัวข้อ */}
-                            <div className="flex gap-[270px] items-start min-h-[62px] py-2">
-                                <div className="flex items-center gap-[10px] w-[147px] min-h-[46px]">
-                                    <Checkbox
-                                        className="bg-[#FFFFFF] border border-[#BFBFBF]"
-                                        isChecked={
-                                            "__draft" in device
-                                                ? selectedDraft.includes(device.draft_id)
-                                                : selectedDevices.includes(device.dec_id)
-                                        }
-                                        onClick={() => toggleSelect(device)}
-                                    />
-                                    <p>{(page - 1) * pageSize + (index + 1)}</p>
-                                </div>
-                                <div className="flex items-center w-[230px] min-h-[46px]">
-                                    <p>{device.dec_asset_code}</p>
-                                </div>
-                                <div className="flex flex-col w-[230px]">
-                                    <input
-                                        type="text"
-                                        value={hasSerialNumber ? (getCurrentSerial(device) ?? "") : "-"}
-                                        onChange={(event) => {
-                                            if ("__draft" in device) {
-                                                setDraftDevice(prev =>
-                                                    prev.map(draft =>
-                                                        draft.draft_id === device.draft_id
-                                                            ? { ...draft, dec_serial_number: event.target.value }
-                                                            : draft
-                                                    )
-                                                );
-                                            } else {
-                                                changeSerialNumber(device.dec_id, event.target.value);
-                                            }
-                                        }}
-                                        className={`w-full h-[46px] rounded-[16px] border pl-[20px]
-                                            ${serialErrors[rowId]
-                                                ? "border-red-500"
-                                                : "border-[#D8D8D8]"
-                                            }`}
-                                        disabled={!hasSerialNumber}
-                                    />
-                                    {
-                                        serialErrors[rowId] && (
-                                            <span className="text-red-500 text-sm mt-1">
-                                                {serialErrors[rowId]}
-                                            </span>
-                                        )
+                {pageRows.map((device, index) => (
+                    <div key={device.dec_id} className="w-full">
+                        {/* หัวข้อ */}
+                        <div className="flex gap-[270px] items-center h-[62px]">
+                            <div className="flex gap-[10px] w-[147px]">
+                                <Checkbox
+                                    className="bg-[#FFFFFF] border border-[#BFBFBF]"
+                                    isChecked={
+                                        "__draft" in device
+                                            ? selectedDraft.includes(device.draft_id)
+                                            : selectedDevices.includes(device.dec_id)
                                     }
-                                </div>
-                                <div className="flex items-center w-[200px] min-h-[46px]">
-                                    <DropDown
-                                        className="!w-[160px]"
-                                        items={statusItems}
-                                        value={statusItems.find(
-                                            status => status.value === getCurrentStatus(device)
-                                        )}
-                                        onChange={(status) => {
-                                            if ("__draft" in device) {
-                                                setDraftDevice(prev =>
-                                                    prev.map(draft =>
-                                                        draft.draft_id === device.draft_id
-                                                            ? { ...draft, dec_status: status.value as DeviceChild["dec_status"] }
-                                                            : draft
-                                                    )
-                                                );
-                                            } else {
-                                                changeStatusDevice({
-                                                    id: device.dec_id,
-                                                    status: status.value as DeviceChild["dec_status"]
-                                                });
-                                            }
-                                        }}
-                                        triggerClassName="!border-[#a2a2a2]"
-                                        searchable={false}
-                                    />
-                                </div>
+                                    onClick={() => toggleSelect(device)}
+                                />
+                                <p>{(page - 1) * pageSize + (index + 1)}</p>
+                            </div>
+                            <p className="w-[230px]">{device.dec_asset_code}</p>
+                            <div className="flex w-[230px]">
+                                {
+                                    hasSerialNumber && (
+                                        <input
+                                            type="text"
+                                            value={device.dec_serial_number ?? ""}
+                                            onChange={(event) => {
+                                                if ("__draft" in device) {
+                                                    setDraftDevice(prev =>
+                                                        prev.map(draft =>
+                                                            draft.draft_id === device.dec_id
+                                                                ? { ...draft, dec_serial_number: event.target.value }
+                                                                : draft
+                                                        )
+                                                    );
+                                                }
+                                            }}
+                                            className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
+                                            disabled={!("__draft" in device)}
+                                        />
+                                    )
+                                }
+                            </div>
+                            <div className="flex w-[200px]">
+                                <DropDown
+                                    className="!w-[160px]"
+                                    items={statusItems}
+                                    value={statusItems.find(status => status.value === device.dec_status)}
+                                    onChange={(status) => {
+                                        if ("__draft" in device) {
+                                            setDraftDevice(prev =>
+                                                prev.map(draft =>
+                                                    draft.draft_id === device.dec_id
+                                                        ? { ...draft, dec_status: status.value as DeviceChild["dec_status"] }
+                                                        : draft
+                                                )
+                                            );
+                                        } else {
+                                            changeStatusDevice(device.dec_id, status.value as DeviceChild["dec_status"]);
+                                        }
+                                    }}
+                                    triggerClassName="!border-[#a2a2a2]"
+                                    searchable={false}
+                                />
                             </div>
                         </div>
-                    )
-                })}
+                    </div>
+                ))}
             </div>
             {/* Footer */}
-            <div className="flex items-center justify-end mt-4">
+            <div className={`flex items-center mt-4 ${selectedDevices.length > 0 || selectedDraft.length > 0 ? "justify-between" : "justify-end"}`}>
+                {/* ปุ่มลบ (เลือกอุปกรณ์อย่างน้อย 1 ตัวถึงจะแสดง) */}
+                {
+                    (selectedDevices.length > 0 || selectedDraft.length > 0) && (
+                        <div className="flex items-center gap-[14px]">
+                            <Button
+                                className="flex items-center gap-[5px] bg-[#F5222D] w-[150px] hover:bg-red-600"
+                                onClick={() => setIsDeleteAlertOpen(true)}
+                            >
+                                <Icon
+                                    icon="solar:trash-bin-trash-outline"
+                                    width="22"
+                                    height="22"
+                                />
+                                ลบอุปกรณ์
+                            </Button>
+                            <p className="text-[#F5222D]">เลือกลบอุปกรณ์ ({selectedDevices.length + selectedDraft.length})</p>
+                        </div>
+                    )
+                }
                 {/* ปุ่มหน้า */}
                 {/* ขวา: ตัวแบ่งหน้า */}
                 <div className="flex items-center gap-2 h-[46px]">
@@ -731,97 +628,28 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
                     </form>
                 </div>
             </div>
-
-            <hr className="text-[#D8D8D8]" />
-
-            {/* ปุ่มลบ (เลือกอุปกรณ์อย่างน้อย 1 ตัวถึงจะแสดง) / บันทึก */}
-            <div className="flex justify-between">
-                {/* ฝั่งซ้าย */}
-                <div className="flex items-center gap-[14px]">
-                    {(selectedDevices.length > 0 || selectedDraft.length > 0) && (
-                        <>
-                            <Button
-                                className="flex items-center gap-[5px] bg-[#F5222D] w-[150px] hover:bg-red-600"
-                                onClick={() => setIsDeleteAlertOpen(true)}
-                            >
-                                <Icon
-                                    icon="solar:trash-bin-trash-outline"
-                                    width="22"
-                                    height="22"
-                                />
-                                ลบอุปกรณ์
-                            </Button>
-
-                            <p className="text-[#F5222D]">
-                                เลือกลบอุปกรณ์ ({selectedDevices.length + selectedDraft.length})
-                            </p>
-                        </>
-                    )}
-                </div>
-                {/* ฝั่งขวา */}
-                <div className="flex flex-col items-end gap-[15px]">
-                    {(draftDevice.length > 0 || updateDevices.length > 0) && (
-                        <>
-                            <div className="flex items-center gap-[5px] text-[#E4C600]">
-                                <Icon
-                                    icon="mingcute:warning-line"
-                                    height={24}
-                                    width={24}
-                                />
-                                <p>มีการเปลี่ยนแปลงอุปกรณ์ย่อยที่ยังไม่ได้บันทึก</p>
-                            </div>
-                            <Button
-                                className="!bg-[#40A9FF] hover:!bg-[#1890FF] w-[150px]"
-                                onClick={() => {
-                                    if (!validateSave()) return;
-                                    setIsSaveAlertOpen(true);
-                                }}
-                            >
-                                บันทึก
-                            </Button>
-                        </>
-                    )}
-                </div>
-            </div>
-
             {/* Add Device Child Alert */}
             {
-                isSaveAlertOpen && (
+                isAddAletOpen && (
                     <AlertDialog
-                        open={isSaveAlertOpen}
-                        onOpenChange={(o) => !o && setIsSaveAlertOpen(false)}
+                        open={isAddAletOpen}
+                        onOpenChange={(o) => !o && setIsAddAletOpen(false)}
                         icon={
                             <Icon
                                 className="text-[#52C41A]"
-                                icon="material-symbols-light:box-edit-outline-sharp"
+                                icon="material-symbols-light:box-add-outline-sharp"
                                 width="72"
                                 height="72"
                             />
                         }
                         tone="success"
-                        title="ยืนยันการบันทึกการเปลี่ยนแปลง?"
-                        description="ข้อมูลอุปกรณ์ย่อยที่แก้ไขและเพิ่มใหม่จะถูกบันทึก"
-                        onConfirm={handleSaveAll}
-                        width={615}
+                        title="ต้องการเพิ่มอุปกรณ์นี้ลงในคลัง?"
+                        description="อุปกรณ์นี้จะถูกเพิ่มลงในรายการคลังของคุณ"
+                        onConfirm={handleSaveDraft}
                     />
                 )
             }
             {/* Add Device Child  By File Alert */}
-            {/* Modal Upload File */}
-            {
-                isUploadModalOpen && (
-                    <UploadFileDeviceChild
-                        key={isUploadModalOpen ? "open" : "closed"}
-                        onClose={() => setIsUploadModalOpen(false)}
-                        onConfirm={(file) => {
-                            setUploadFile(file)
-                            setIsUploadModalOpen(false)
-                            setIsUploadAlertOpen(true)
-                        }}
-                    />
-                )
-            }
-            {/* Alert */}
             {
                 isUploadAlertOpen && (
                     <AlertDialog

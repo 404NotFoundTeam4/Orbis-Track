@@ -11,7 +11,6 @@ import {
   IdParamDto,
   UploadFileDeviceChildPayload,
   UpdateDevicePayload,
-  UpdateDeviceChildPayload,
 } from "./inventory.schema.js";
 
 interface UploadDeviceChildRow {
@@ -1073,67 +1072,6 @@ async function getDeviceChildStatus() {
   return Object.values($Enums.DEVICE_CHILD_STATUS)
 }
 
-/**
-* Description: อัปเดตข้อมูลอุปกรณ์ลูก
-* Input     : payload - id พร้อมค่าที่ต้องการแก้ไข
-* Output    : รายการอุปกรณ์ลูกที่ถูกอัปเดตแล้ว (id, serial number, status)
-* Author    : Thakdanai Makmi (Ryu) 66160355
-*/
-async function updateDeviceChild(payload: UpdateDeviceChildPayload) {
-  const ids = payload.map(item => item.id); // ดึง id ทั้งหมด
-  // ตรวจสอบว่ามี device child นั้นจริง
-  const existing = await prisma.device_childs.findMany({
-    where: {
-      dec_id: { in: ids }
-    },
-    select: {
-      dec_id: true
-    }
-  });
-  // ไม่พบบางรายการ
-  if (existing.length !== ids.length) {
-    throw new Error("Some device child not found");
-  }
-  // อัปเดต โดยป้องกันการ rollback หากเกิด error
-  await prisma.$transaction(async (tx) => {
-    // วนลูปข้อมจาก payload
-    for (const item of payload) {
-      await tx.device_childs.update({
-        where: {
-          dec_id: item.id
-        },
-        data: {
-          // อัปเดต serialNumber เฉพาะเมื่อมีการส่งมา
-          ...(item.serialNumber !== undefined && {
-            dec_serial_number: item.serialNumber
-          }),
-          // อัปเดต status เฉพาะเมื่อมีการส่งมา
-          ...(item.status !== undefined && {
-            dec_status: item.status
-          })
-        }
-      });
-    }
-  });
-  // ดึงข้อมูลล่าสุดหลัง update
-  const updatedRecords = await prisma.device_childs.findMany({
-    where: { dec_id: { in: ids } },
-    select: {
-      dec_id: true,
-      dec_serial_number: true,
-      dec_status: true
-    }
-  });
-  // แปลงชื่อ field
-  const result = updatedRecords.map(device => ({
-    id: device.dec_id,
-    serialNumber: device.dec_serial_number,
-    status: device.dec_status
-  }));
-
-  return result;
-}
-
 export const inventoryService = {
   getDeviceWithChilds,
   createDeviceChild,
@@ -1150,6 +1088,5 @@ export const inventoryService = {
   createDevice,
   getDefaultsdata,
   getLastAssetCode,
-  getDeviceChildStatus,
-  updateDeviceChild
+  getDeviceChildStatus
 };

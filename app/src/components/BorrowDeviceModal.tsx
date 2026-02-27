@@ -89,9 +89,9 @@ const BorrowEquipmentModal = ({
 
   // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
   const initialForm: BorrowFormData = {
-    borrowerId: defaultValue?.borrowerId ?? user?.us_id, // ไอดีคนที่จะยืมให้
+    borrowerId: user?.us_id, // ไอดีคนที่จะยืมให้
     borrower: defaultValue?.borrower ?? `${user?.us_firstname ?? ""} ${user?.us_lastname ?? ""}`.trim(),
-    phone: defaultValue?.phone ?? user?.us_phone ?? "",
+    phone: defaultValue?.phone ?? user.us_phone ?? "",
     reason: defaultValue?.reason ?? "",
     placeOfUse: defaultValue?.placeOfUse ?? "",
     quantity: defaultValue?.quantity ?? 1,
@@ -102,54 +102,6 @@ const BorrowEquipmentModal = ({
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
-
-  /**
-  * Description: ซิงค์ข้อมูลผู้ยืมจาก defaultValue เข้า form state
-  * Input : defaultValue.borrowerId - ไอดีผู้ยืม, defaultValue.borrower - ชื่อผู้ยืม, borrowUsers - รายชื่อผู้ใช้ที่สามารถยืมได้
-  * Output : อัปเดต form state
-  * Author : Thakdanai Makmi (Ryu) 66160355
-  **/
-  useEffect(() => {
-    if (!borrowUsers || borrowUsers.length === 0) return;
-    // ถ้ามี borrowerId ให้ใช้ id เป็นหลัก
-    if (defaultValue?.borrowerId) {
-      // ค้นหาผู้ใช้จาก id
-      const matched = borrowUsers.find(
-        (user) => user.us_id === defaultValue.borrowerId
-      );
-      // ถ้าพบผู้ใช้ อัปเดต form state
-      if (matched) {
-        setForm((prev) => ({
-          ...prev, // คงค่าฟิลด์อื่นไว้
-          borrowerId: matched.us_id, // อัปเดต id
-          borrower: `${matched.us_firstname} ${matched.us_lastname}`, // อัปเดตชื่อเต็ม
-          phone: matched.us_phone, // อัปเดตเบอร์โทรศัพท์
-        }));
-      }
-      return;
-    }
-
-    // ถ้าไม่มีชื่อให้ match
-    if (!defaultValue?.borrower) return;
-    // ตัดช่องว่างและเป็นตัวพิมพ์เล็ก
-    const normalizeName = (name: string) => name.trim().toLowerCase();
-    // แปลงชื่อจาก defaultValue ให้อยู่ในรูปแบบเดียวกัน
-    const borrowerName = normalizeName(defaultValue.borrower);
-    // ค้นหาผู้ใช้ที่ชื่อเต็มตรงกัน
-    const matched = borrowUsers.find(
-      (user) =>
-        normalizeName(`${user.us_firstname} ${user.us_lastname}`) === borrowerName
-    );
-    // ถ้าพบผู้ใช้ อัปเดต form state
-    if (matched) {
-      setForm((prev) => ({
-        ...prev,
-        borrowerId: matched.us_id,
-        borrower: `${matched.us_firstname} ${matched.us_lastname}`,
-        phone: matched.us_phone,
-      }));
-    }
-  }, [defaultValue?.borrowerId, defaultValue?.borrower, borrowUsers]);
 
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
@@ -345,12 +297,6 @@ const BorrowEquipmentModal = ({
   //   }
   // }, [form.dateRange, form.borrowTime, form.returnTime]);
 
-  /**
-  * Description: รวมวันที่และเวลา ให้กลายเป็น DateTime และส่งค่า ISO string
-  * Input : form.dateRange, form.borrowTime, form.returnTime
-  * Output : เรียกใช้งาน onDateTimeChange
-  * Author: Nontapat Sinhum (Guitar) 66160104
-  **/
   useEffect(() => {
     const startDate = form.dateRange[0];
     const endDate = form.dateRange[1] ?? form.dateRange[0];
@@ -373,12 +319,6 @@ const BorrowEquipmentModal = ({
     });
   }, [form.dateRange, form.borrowTime, form.returnTime]);
 
-  /**
-  * Description: ดึงรายการอุปกรณ์ที่สถานะว่าง
-  * Input : equipment.deviceId - รหัสอุปกรณ์หลัก
-  * Output : เก็บรายการอุปกรณ์ลงใน state
-  * Author: Panyapon Phollert (Ton) 66160086
-  **/
   const fetchData = async () => {
     try {
       const res = await borrowService.getAvailable(equipment.deviceId);
@@ -392,12 +332,7 @@ const BorrowEquipmentModal = ({
     fetchData();
   }, [equipment.deviceId]);
 
-  /**
-  * Description: เช็คอุปกรณ์ว่างตามช่วงเวลา
-  * Input : start, end, timeStart, timeEnd, activeBorrow - วันที่เริ่ม, วันที่สิ้นสุด, เวลาที่เริ่ม, เวลาที่สิ้นสุด, สถานะของอุปกรณ์
-  * Output : true - สามารถยืมได้, false - ไม่สามารถยืมได้
-  * Author: Panyapon Phollert (Ton) 66160086
-  **/
+  // เช็คอุปกรณ์ว่างตามช่วงเวลา
   const isBorrowAvailable = (
     start: Date | null,
     end: Date | null,
@@ -410,12 +345,7 @@ const BorrowEquipmentModal = ({
     // อุปกรณ์นี้ไม่มีประวัติถูกยืม
     if (!activeBorrow || activeBorrow.length === 0) return true;
 
-    /**
-    * Description: รวมวันเวลา ให้กลายเป็น Date
-    * Input : date - วันที่, time - เวลา
-    * Output : Date object ที่รวมวัน + เวลา
-    * Author: Panyapon Phollert (Ton) 66160086
-    **/
+    // รวมวันเวลา ให้กลายเป็น Date
     const combineDateTime = (date: Date, time: string) => {
       const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
       const dateTime = new Date(date);
@@ -438,12 +368,7 @@ const BorrowEquipmentModal = ({
     });
   };
 
-  /**
-  * Description: หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก (ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด X ชิ้น)
-  * Input : form.dateRange, form.borrowTime, form.returnTime
-  * Output : รายการอุปกรณ์ที่สามารถยืมได้
-  * Author: Thakdanai Makmi (Ryu) 66160355
-  **/
+  // หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก (ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด X ชิ้น)
   const readyDevices =
     form.dateRange[0] && form.dateRange[1] && form.borrowTime && form.returnTime
       ? (availableDevices ?? [])
@@ -752,7 +677,8 @@ const BorrowEquipmentModal = ({
         </div>
         {/* ปุ่ม */}
         <div
-          className="flex gap-[20px] justify-end">
+          className={`flex gap-[20px] ${mode === "edit-detail" ? "justify-end" : ""}`}
+        >
           {
             // ถ้าเป็นยืมอุปกรณ์แสดงเพิ่มไปยังรถเข็น
             mode === "borrow-equipment" && (

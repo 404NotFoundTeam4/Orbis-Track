@@ -115,15 +115,6 @@ function emitCartChanged(): void {
     window.dispatchEvent(new Event("cart:changed"));
 }
 
-export interface BorrowUsers {
-    us_id: number;
-    us_firstname: string;
-    us_lastname: string;
-    us_role: string;
-    us_emp_code: string | null;
-    us_phone: string;
-}
-
 export const CartService = {
     /**
     * Description: ดึงรายการอุปกรณ์ในตะกร้าของผู้ใช้ (backend จะ resolve ผู้ใช้จาก token/session)
@@ -224,17 +215,5 @@ export const CartService = {
             throw error;
         }
     },
-
-    /**
-    * Description: ดึงข้อมูลรายชื่อผู้ใช้สำหรับยืมให้ผู้อื่น
-    * Input     : -
-    * Output    : Promise<BorrowUsers[]> - รายการชื่อผู้ใช้
-    * Endpoint  : GET /api/borrow/users
-    * Author    : Thakdanai Makmi (Ryu) 66160355
-    */
-    getBorrowUsers: async (): Promise<BorrowUsers[]> => {
-        const { data } = await api.get(`/borrow/cart/users`);
-        return data.data;
-    }
 };
 export default CartService;

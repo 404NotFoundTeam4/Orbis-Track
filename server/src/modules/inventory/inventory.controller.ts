@@ -18,9 +18,7 @@ import {
   UploadFileDeviceChildSchema,
   updateDevicePayload,
   GetLastAssetCodeResponse,
-  GetDeviceChildStatus,
-  updateDeviceChildPayload,
-  UpdateDeviceChildResponse
+  GetDeviceChildStatus
 } from "./inventory.schema.js";
 import { ValidationError } from "../../errors/errors.js";
 
@@ -252,19 +250,5 @@ export class InventoryController extends BaseController {
   async getDeviceChildStatus(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<GetDeviceChildStatus>> {
     const data = await inventoryService.getDeviceChildStatus();
     return { data }
-  }
-
-  /**
-  * Description: อัปเดตข้อมูลอุปกรณ์ลูก
-  * Input     : req.body - รายการ id พร้อมกับข้อมูลที่ต้องการแก้ไข
-  * Output    : { data } - result รายการอุปกรณ์ที่อัปเดตแล้ว
-  * Author    : Thakdanai Makmi (Ryu) 66160355
-  */
-  async updateDeviceChild(req: Request, res: Response, next: NextFunction): Promise<BaseResponse<UpdateDeviceChildResponse>> {
-    const payload = updateDeviceChildPayload.parse(req.body);
-
-    const result = await inventoryService.updateDeviceChild(payload);
-
-    return { data: result }
   }
 }

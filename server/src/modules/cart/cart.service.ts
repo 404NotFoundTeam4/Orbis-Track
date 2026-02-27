@@ -922,28 +922,6 @@ async function updateCartDeviceDetail(
   return updated;
 }
 
-/**
- * Description : ดึงรายชื่อผู้ใช้สำหรับยืมให้ผู้อื่น
- * Input : -
- * Output : รายชื่อผู้ใช้ (ไอดี, ชื่อ, นามสกุล, ตำแหน่ง, รหัสพนักงาน, เบอร์โทรศัพท์)
- * Author: Thakdanai Makmi (Ryu) 66160355
- */
-async function getBorrowUsers() {
-  return await prisma.users.findMany({
-    where: {
-      deleted_at: null,
-    },
-    select: {
-      us_id: true,
-      us_firstname: true,
-      us_lastname: true,
-      us_role: true,
-      us_emp_code: true,
-      us_phone: true,
-    },
-  });
-}
-
 export const cartsService = {
   getCartItem,
   deleteCartItemById,
@@ -952,5 +930,4 @@ export const cartsService = {
   updateCartDeviceDetail,
   createTicketDevice,
   createBorrowTicketStages,
-  getBorrowUsers
 };

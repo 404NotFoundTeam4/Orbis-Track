@@ -17,7 +17,6 @@ async function getProfile(userId: number) {
       us_id: true,
       us_firstname: true,
       us_lastname: true,
-      us_username: true,
       us_emp_code: true,
       us_email: true,
       us_phone: true,

@@ -10,7 +10,7 @@ import {
 } from "../services/InventoryService";
 import { useParams } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
-import type { CreateApprovalFlowPayload, UpdateDevices } from "../services/InventoryService";
+import type { CreateApprovalFlowPayload } from "../services/InventoryService";
 
 const EditInventory = () => {
   const { id } = useParams();
@@ -144,6 +144,18 @@ const EditInventory = () => {
     await fetchLastAssetCode(); // ดึง asset ล่าสุดใหม่
   };
 
+  // เปลี่ยนสถานะอุปกรณ์
+  const handleChangeStatus = (
+    id: number,
+    status: DeviceChild["dec_status"]
+  ) => {
+    setDeviceChilds((prev) =>
+      prev.map((device) =>
+        device.dec_id === id ? { ...device, dec_status: status } : device
+      )
+    );
+  };
+
   // อัปโหลดไฟล์อุปกรณ์ลูก
   const handleUploadFile = async (file?: File) => {
     if (!file) return;
@@ -216,52 +228,79 @@ const EditInventory = () => {
     }
   };
 
+  /**
+   * Description: ฟังก์ชันสำหรับบันทึกอุปกรณ์ลูกที่อยู่ในสถานะ draft
+   * Input     : drafts - รายการอุปกรณ์ลูกแบบ draft ที่ผู้ใช้เพิ่ม
+   * Output    : 
+   *             - สร้างอุปกรณ์ลูกในฐานข้อมูล
+   *             - แสดง toast ผลการทำงาน
+   *             - โหลดข้อมูลอุปกรณ์ใหม่
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  const handleSaveDraft = async (drafts: DraftDevice[]) => {
+    // แปลงข้อมูล draft ให้เป็นรูปแบบ payload
+    const payload: CreateDeviceChildPayload[] = drafts.map((draft) => ({
+      dec_de_id: Number(parentId),
+      dec_serial_number: draft.dec_serial_number?.trim() || null,
+      dec_asset_code: draft.dec_asset_code,
+      dec_status: draft.dec_status
+    }));
+
+    try {
+      await DeviceService.createDeviceChild(payload); // เรียกใช้งาน API
+      push({ tone: "success", message: "เพิ่มอุปกรณ์ใหม่ในคลังแล้ว!" }); // แสดง toast
+      await fetchDevice(); // โหลดข้อมูลใหม่
+      await fetchLastAssetCode(); // ดึง asset ล่าสุด
+    } catch (error) {
+      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการเพิ่มอุปกรณ์" })
+    }
+  }
+
+   /**
+   * Description: ฟังก์ชันสำหรับตรวจสอบ serial number ของอุปกรณ์ลูกแบบ draft
+   * Input     : drafts - รายการอุปกรณ์ลูกแบบ draft ที่ผู้ใช้เพิ่ม
+   * Output    : ผลการตรวจสอบ true / false
+   * Author    : Thakdanai Makmi (Ryu) 66160355
+   */
+  const isValidateDraft = (drafts: DraftDevice[]) => {
+    // ตรวจสอบ serial number ที่มีอยู่แล้ว
+    const existingSerials = new Set(
+      deviceChilds
+        .map(device => device.dec_serial_number?.trim())
+        .filter(Boolean)
+    );
+
+    // ตรวจสอบ serial number ใน draft
+    const draftSerials = drafts
+      .map(draft => draft.dec_serial_number?.trim())
+      .filter(Boolean);
+
+    const seen = new Set<string>();
+    
+    // เช็คว่า draft ซ้ำกันเองไหม
+    for (const serial of draftSerials) {
+      if (seen.has(serial!)) {
+        push({ tone: "danger", message: "มีรายการ Serial Number ที่ซ้ำกัน" });
+        return false;
+      }
+      seen.add(serial!);
+    }
+
+    // เช็คว่าซ้ำกับของในระบบ
+    for (const serial of draftSerials) {
+      if (existingSerials.has(serial!)) {
+        push({ tone: "danger", message: "Serial Number ซ้ำกับที่มีอยู่" });
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   // ดึงรหัสอุปกรณ์จาก sessionStorage
   const existingDeviceCodes: string[] = JSON.parse(
     sessionStorage.getItem("existingDeviceCodes") ?? "[]"
   );
-
-  /**
-  * Description: บันทึกการเปลี่ยนแปลงอุปกรณ์ลูก (เพิ่มและแก้ไข)
-  * Input     : drafts  - รายการอุปกรณ์ใหม่, updates - รายการอุปกรณ์ที่มีการแก้ไขข้อมูล
-  * Output    :
-  *             - เพิ่มอุปกรณ์ใหม่ในระบบ
-  *             - อัปเดตข้อมูลอุปกรณ์
-  *             - โหลดข้อมูลใหม่
-  *             - แสดงข้อความแจ้งเตือน
-  * Author    : Thakdanai Makmi (Ryu) 66160355
-  */
-  const handleSaveAll = async (drafts: DraftDevice[], updates: UpdateDevices[]) => {
-    try {
-      // มีอุปกรณ์ที่ต้องการจะเพิ่ม
-      if (drafts.length > 0) {
-        // แปลง payload ให้ตรงตาม backend
-        const payload: CreateDeviceChildPayload[] = drafts.map((draft) => ({
-          dec_de_id: Number(parentId),
-          dec_serial_number: draft.dec_serial_number?.trim() || null,
-          dec_asset_code: draft.dec_asset_code,
-          dec_status: draft.dec_status
-        }));
-        // เรียก API เพิ่มอุปกรณ์
-        await DeviceService.createDeviceChild(payload);
-      }
-
-      // มีรายการอุปกรณ์ที่ถูกแก้ไข
-      if (updates.length > 0) {
-        // เรียก API อัปเดตข้อมูล
-        await DeviceService.updateDeviceChild(updates);
-      }
-
-      // โหลดข้อมูลใหม่
-      await fetchDevice();
-      await fetchLastAssetCode();
-
-      push({ tone: "success", message: "บันทึกการเปลี่ยนแปลงเสร็จสิ้น!" });
-
-    } catch (error) {
-      push({ tone: "danger", message: "เกิดข้อผิดพลาดในการบันทึก" });
-    }
-  };
 
   return (
     <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
@@ -288,10 +327,12 @@ const EditInventory = () => {
       />
       <DevicesChilds
         devicesChilds={deviceChilds}
+        onSaveDraft={handleSaveDraft}
         onUpload={handleUploadFile}
         onDelete={handleDeleteDeviceChild}
-        onSaveAll={handleSaveAll}
+        onChangeStatus={handleChangeStatus}
         lastAssetCode={lastAssetCode}
+        isValidateDraft={isValidateDraft}
         statusItems={statusItems}
       />
     </div>

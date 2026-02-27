@@ -25,9 +25,6 @@ type TicketWithRelations = Prisma.borrow_return_ticketsGetPayload<{
               include: {
                 category: true;
                 section: { include: { department: true } };
-                _count: {
-                  select: { accessories: true };
-                };
               };
             };
           };
@@ -75,15 +72,6 @@ type HomeTicketDetailWithRelations = Prisma.borrow_return_ticketsGetPayload<{
   };
 }>;
 
-// จำนวนวันใกล้ถึงวันคืน (ใช้ใน Dashboard)
-const NEAR_RETURN_DAYS = 3;
-
-// จำนวนรายการล่าสุดที่แสดงใน Recent Tickets
-const RECENT_TICKETS_LIMIT = 5;
-
-// จำนวนสูงสุดของ approvers ที่แสดง
-const MAX_APPROVERS_SHOWN = 5;
-
 /**
  * Description: คำนวณสถิติ Dashboard 4 ช่อง (ยืมอยู่, ใกล้คืน, รออนุมัติ, แจ้งซ่อม)
  * Input     : -
@@ -92,7 +80,7 @@ const MAX_APPROVERS_SHOWN = 5;
  */
 async function getHomeStats(userId: number) {
   const now = new Date();
-  const next3Days = addDays(now, NEAR_RETURN_DAYS);
+  const next3Days = addDays(now, 3);
 
   const myFilter = {
     brt_user_id: userId,
@@ -147,11 +135,11 @@ async function getHomeStats(userId: number) {
 async function getRecentTickets(userId: number) {
   const tickets: TicketWithRelations[] =
     await prisma.borrow_return_tickets.findMany({
-      take: RECENT_TICKETS_LIMIT,
+      take: 5,
       orderBy: { created_at: "desc" },
       where: {
-        deleted_at: null,
-        brt_user_id: userId,
+        deleted_at: null
+        , brt_user_id: userId,
       },
       include: {
         requester: true,
@@ -164,8 +152,8 @@ async function getRecentTickets(userId: number) {
                     category: true,
                     section: { include: { department: true } },
                     _count: {
-                      select: { accessories: true },
-                    },
+                      select: { accessories: true }
+                    }
                   },
                 },
               },
@@ -214,13 +202,13 @@ async function getRecentTickets(userId: number) {
         description: mainDevice?.de_description || null,
         accessories: mainDevice?._count?.accessories ?? 0,
         image: mainDevice?.de_images || null,
-        max_borrow_days: mainDevice?.de_max_borrow_days || 0,
+        maxBorrowDays: mainDevice?.de_max_borrow_days || 0,
       },
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
         empcode: ticket.requester.us_emp_code,
         borrow_user: ticket.brt_user,
-        borrow_phone: ticket.brt_phone,
+        borrow_phone: ticket.brt_phone
       },
     };
   });
@@ -274,10 +262,10 @@ async function getTicketDetailById(id: number) {
             ...(stage.brts_sec_id ? { us_sec_id: stage.brts_sec_id } : {}),
           },
           select: { us_firstname: true, us_lastname: true },
-          take: MAX_APPROVERS_SHOWN,
+          take: 5,
         });
         approvers = potentialApprovers.map(
-          (u) => `${u.us_firstname} ${u.us_lastname}`,
+          (u) => `${u.us_firstname} ${u.us_lastname}`
         );
       }
 
@@ -292,7 +280,7 @@ async function getTicketDetailById(id: number) {
         updated_at: stage.updated_at ? stage.updated_at.toISOString() : null,
         approvers: approvers, // ส่งรายชื่อกลับไปหน้าบ้าน
       };
-    }),
+    })
   );
 
   // หาอุปกรณ์ชิ้นแรกเพื่อดึงข้อมูลอุปกรณ์เสริม (ถ้ามี)
@@ -333,7 +321,7 @@ async function getTicketDetailById(id: number) {
       current_status: td.child.dec_status,
 
       has_serial_number: Boolean(
-        td.child.dec_serial_number && td.child.dec_serial_number !== "-",
+        td.child.dec_serial_number && td.child.dec_serial_number !== "-"
       ),
     })),
     accessories: firstDevice?.accessories?.map(acc => ({
@@ -349,7 +337,7 @@ async function getTicketDetailById(id: number) {
       department: ticket.requester.department?.dept_name || "-",
       us_phone: ticket.requester.us_phone,
       borrow_user: ticket.brt_user,
-      borrow_phone: ticket.brt_phone,
+      borrow_phone: ticket.brt_phone
     },
   };
 }

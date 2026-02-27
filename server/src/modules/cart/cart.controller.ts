@@ -13,8 +13,7 @@ import {
   updateCartDeviceDetailBodySchema,
   updateCartDeviceDetailParamSchema,
   deleteCartItemPayload,
-  DeviceAvailabilitiesSchema,
-  GetBorrowUsersSchema
+  DeviceAvailabilitiesSchema
 } from "./cart.schema.js";
 
 
@@ -157,19 +156,4 @@ export class CartController extends BaseController {
       data: updatedDevice,
     };
   }
-
-    /**
-     * Description: ดึงรายชื่อผู้ใช้สำหรับการยืมให้ผู้อื่น
-     * Input     : -
-     * Output    : { data: users } - รายชื่อผู้ใช้
-     * Author    : Thakdanai Makmi (Ryu) 66160355
-     */
-    async getBorrowUsers(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<BaseResponse<GetBorrowUsersSchema>> {
-      const users = await cartsService.getBorrowUsers();
-      return { data: users };
-    }
 }

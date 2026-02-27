@@ -1,4 +1,4 @@
-import { object, z } from "zod";
+import { z } from "zod";
 import { $Enums } from "@prisma/client";
 import { UserRole } from "../../core/roles.enum.js";
 
@@ -459,24 +459,6 @@ export const getDeviceChildStatus = z.array(
   z.nativeEnum($Enums.DEVICE_CHILD_STATUS)
 );
 
-// โครงสร้างข้อมูลที่รับเข้ามาตอนแก้ไขอุปกรณ์ลูก
-export const updateDeviceChildPayload = z.array(
-  z.object({
-    id: z.number(),
-    serialNumber: z.string().nullable().optional(),
-    status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS).optional(),
-  })
-);
-
-// โครงสร้างข้อมูลที่ตอบกลับตอนแก้ไขอุปกรณ์ลูก
-export const updateDeviceChildResponse = z.array(
-  z.object({
-    id: z.number(),
-    serialNumber: z.string().nullable().optional(),
-    status: z.nativeEnum($Enums.DEVICE_CHILD_STATUS),
-  })
-);
-
 export type InventorySchema = z.infer<typeof inventorySchema>;
 
 export type SoftDeleteResponseSchema = z.infer<typeof softDeleteResponseSchema>;
@@ -527,7 +509,3 @@ export type UpdateDevicePayload = z.infer<typeof updateDevicePayload>;
 export type GetLastAssetCodeResponse = z.infer<typeof getLastAssetCodeResponse>;
 
 export type GetDeviceChildStatus = z.infer<typeof getDeviceChildStatus>;
-
-export type UpdateDeviceChildPayload = z.infer<typeof updateDeviceChildPayload>;
-
-export type UpdateDeviceChildResponse = z.infer<typeof updateDeviceChildResponse>;

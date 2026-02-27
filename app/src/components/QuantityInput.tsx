@@ -16,7 +16,7 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
   // ค่า default
   label = "จำนวน",
   min = 0,
-  max = 99,
+  max = Infinity,
   value,
   width,
   required,

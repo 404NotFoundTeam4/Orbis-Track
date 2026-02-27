@@ -91,11 +91,13 @@ apply_schema_dev() {
 }
 
 apply_schema_prod() {
-  if [ -d "$MIGRATIONS_DIR" ] && [ "$(ls -A "$MIGRATIONS_DIR" 2>/dev/null | wc -l)" -gt 0 ]; then
-    echo "🚀 PROD: applying migrations via migrate deploy..."
+  # เช็คว่ามี migration.sql จริงๆ ไม่ใช่แค่ folder ไม่ว่าง
+  MIGRATION_COUNT="$(find "$MIGRATIONS_DIR" -name "migration.sql" 2>/dev/null | wc -l)"
+  if [ "$MIGRATION_COUNT" -gt 0 ]; then
+    echo "🚀 PROD: applying migrations via migrate deploy ($MIGRATION_COUNT migration(s) found)..."
     npx prisma migrate deploy --schema "$PRISMA_SCHEMA_PATH"
   else
-    echo "⚠️  PROD: no migrations folder or it's empty."
+    echo "⚠️  PROD: no migration.sql files found in $MIGRATIONS_DIR."
     if [ "$ALLOW_DB_PUSH_IN_PROD" = "true" ]; then
       echo "➡️  Fallback enabled (ALLOW_DB_PUSH_IN_PROD=true): running db push..."
       npx prisma db push --schema "$PRISMA_SCHEMA_PATH"

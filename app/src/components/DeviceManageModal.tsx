@@ -27,6 +27,7 @@ interface DeviceManageModalProps {
   devices: TicketDevice[];
   ticketDate?: TicketDetailDates | undefined;
   onConfirm?: (devices: TicketDevice[], changes: DeviceChildChanges) => void;
+  ticketStatus?: string;
 }
 
 interface DeviceChildAddRemove {
@@ -66,6 +67,7 @@ const DeviceManageModal = ({
   devices,
   ticketDate,
   onConfirm,
+  ticketStatus,
 }: DeviceManageModalProps) => {
   const { push } = useToast();
   const [localDevices, setLocalDevices] = useState<TicketDevice[]>([]);
@@ -311,11 +313,13 @@ const DeviceManageModal = ({
       (newDevice) => !addedBackChildIds.has(newDevice.child_id),
     );
 
+    const initialStatus = ticketStatus === "IN_USE" ? "BORROWED" : "";
+
     setLocalDevices((prev) => [
       ...prev,
       ...uniqueNewDevices.map((newDevice) => ({
         ...newDevice,
-        current_status: "BORROWED",
+        current_status: initialStatus,
       })),
     ]);
 
@@ -419,16 +423,24 @@ const DeviceManageModal = ({
           {/* Header */}
           <div className="flex items-center justify-between pb-4">
             <h2 className="text-xl md:text-2xl font-bold text-black">
-              รายการอุปกรณ์
+              จัดการอุปกรณ์ในคำขอ
             </h2>
-            <Button
-              variant="primary"
-              onClick={() => handleAddDevicesButton()}
-              className={"rounded-xl"}
-              style={{ width: 130, height: 46 }}
-            >
-              + เพิ่มอุปกรณ์
-            </Button>
+            <div className="flex items-center justify-between">
+              <Button
+                variant="primary"
+                onClick={() => handleAddDevicesButton()}
+                className={"rounded-2xl"}
+                style={{ width: 130, height: 46 }}
+              >
+                + เพิ่มอุปกรณ์
+              </Button>
+              <button
+                onClick={handleClose}
+                className="w-8 h-8 rounded-full ml-4 border border-black flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <Icon icon="mdi:close" width="20" height="20" />
+              </button>
+            </div>
           </div>
 
           {/* Table */}
@@ -507,11 +519,19 @@ const DeviceManageModal = ({
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end pt-5">
+          <div className="flex justify-end pt-5 gap-2.5">
+            <Button
+              variant="secondary"
+              onClick={handleClose}
+              className={"rounded-2xl"}
+              style={{ width: 105, height: 46 }}
+            >
+              ยกเลิก
+            </Button>
             <Button
               variant="primary"
               onClick={handleConfirm}
-              className={"rounded-xl"}
+              className={"rounded-2xl"}
               style={{ width: 105, height: 46 }}
             >
               ยืนยัน

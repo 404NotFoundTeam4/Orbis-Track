@@ -17,6 +17,10 @@ import { notificationsService } from "../modules/notifications/notifications.ser
 import { BorrowReturnRepository } from "../modules/tickets/borrow-return/borrow-return.repository.js";
 import { jobDispatcher } from "../infrastructure/queue/job.dispatcher.js";
 import { JobType } from "../infrastructure/queue/job.types.js";
+import { env } from "../config/env.js";
+
+// ระยะเวลา 30 นาที ในมิลลิวินาที
+const THIRTY_MINUTES_MS = 30 * 60 * 1000;
 
 // Repository instance สำหรับ query tickets
 const borrowReturnRepository = new BorrowReturnRepository();
@@ -178,7 +182,7 @@ async function handleStatusTransitions() {
  */
 async function handleDueSoonTickets() {
   const now = new Date();
-  const thirtyMinutesLater = new Date(now.getTime() + 30 * 60 * 1000);
+  const thirtyMinutesLater = new Date(now.getTime() + THIRTY_MINUTES_MS);
 
   // แจ้งเตือน Ticket ที่ต้องคืนใน 30 นาทีข้างหน้า (Due Soon)
   const dueSoonTickets = await borrowReturnRepository.findDueSoonTickets(
@@ -203,7 +207,7 @@ async function handleDueSoonTickets() {
       ticketId: ticket.brt_id,
       deviceName: deviceName,
       dueTime: endTime,
-      ticketUrl: `${process.env.FRONTEND_URL}/home/${ticket.brt_id}`,
+      ticketUrl: `${env.FRONTEND_URL}/home/${ticket.brt_id}`,
     });
 
     await notificationsService.createNotification({
@@ -248,7 +252,7 @@ async function handleOverdueTickets() {
       ticketId: ticket.brt_id,
       deviceName: deviceName,
       overdueSince: overdueDuration,
-      ticketUrl: `${process.env.FRONTEND_URL}/home/${ticket.brt_id}`,
+      ticketUrl: `${env.FRONTEND_URL}/home/${ticket.brt_id}`,
     });
 
     await notificationsService.createNotification({

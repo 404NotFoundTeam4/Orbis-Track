@@ -16,7 +16,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BorrowDeviceModal from "../components/BorrowDeviceModal";
-import CartService from "../services/CartService";
+import CartService, { type BorrowUsers } from "../services/CartService";
 import {
   borrowService,
   type DeviceAvailability,
@@ -105,6 +105,7 @@ const EditCart = () => {
   const [enterRemovedSerials, setEnterRemovedSerials] = useState<string[]>([]); //id ที่โดนเอาออกตอนเข้ามา
   const [enterAlertOpen, setEnterAlertOpen] = useState(false); // เปิด alert ตอนเข้ามา
   const didAutoRemoveOnEnterRef = useRef(false); // ให้ทำแค่รอบแรกตอนเข้าหน้า
+  const [availableCount, setAvailableCount] = useState<number>(0); // เก็บจำนวนอุปกรณ์ที่สถานะ READY
 
   //helper เช็คช่วงเวลาซ้อนทับ
   const isOverlap = (
@@ -152,6 +153,32 @@ const EditCart = () => {
       isLive = false;
     };
   }, []);
+
+  // ดึงข้อมูล user จาก sessionStorage หรือ localStorage
+  const userString = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const user = userString ? JSON.parse(userString) : null;
+
+  // role ที่สามารถยืมให้ผู้อื่นได้
+  const isCanBorrowForOthers = user?.us_role === "STAFF" || user?.us_role === "ADMIN";
+  // เก็บรายชื่อผู้ใช้
+  const [borrowUsers, setBorrowUsers] = useState<BorrowUsers[]>([]);
+
+  /**
+  * Description: ฟังก์ชันสำหรับดึงรายชื่อในการยืมให้ผู้อื่น (ดึงข้อมูลก็ต่อเมื่อ role นั้น สามารถยืมให้ผู้อื่นได้)
+  * Input : -
+  * Output : รายชื่อผู้ใช้
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
+  useEffect(() => {
+    if (!isCanBorrowForOthers) return;
+
+    const fetchBorrowUsers = async () => {
+      const res = await borrowService.getBorrowUsers();
+      setBorrowUsers(res);
+    };
+
+    fetchBorrowUsers();
+  }, [isCanBorrowForOthers]);
 
   useEffect(() => {
     if (!ctiId) {
@@ -248,6 +275,7 @@ const EditCart = () => {
 
           setAccessories(accessory);
           setStorageLocation(deviceDetail.de_location ?? "");
+          setAvailableCount(deviceDetail.ready); // เก็บจำนวนอุปกรณ์ (ขณะนี้ว่าง X ชิ้น)
         } catch (err) {
           console.error("ไม่สามารถดึงอุปกรณ์เสริมได้:", err);
           setAccessories([]);
@@ -341,10 +369,10 @@ const EditCart = () => {
     );
   }, [cartItem, availLoaded, initialSelectedIds]);
 
-  const availableCount = useMemo(() => {
-    return (availableDevices ?? []).filter((d) => d.dec_status === "READY")
-      .length;
-  }, [availableDevices]);
+  // const availableCount = useMemo(() => {
+  //   return (availableDevices ?? []).filter((d) => d.dec_status === "READY")
+  //     .length;
+  // }, [availableDevices]);
 
   if (loading) {
     return <div className="p-6 text-center">กำลังโหลดข้อมูล...</div>;
@@ -483,6 +511,7 @@ const EditCart = () => {
         
         <BorrowDeviceModal
           mode="edit-detail"
+          borrowUsers={borrowUsers}
           equipment={{
             deviceId :ctiId,
             name: cartItem.name,

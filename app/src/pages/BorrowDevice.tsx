@@ -76,6 +76,12 @@ const BorrowDevice = () => {
 
   // ดึงข้อมูลอุปกรณ์แม่เมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
+    /**
+    * Description: ดึงข้อมูลอุปกรณ์สำหรับการยืมตาม deId
+    * Input : deId - รหัสอุปกรณ์
+    * Output : เก็บข้อมูลใน state
+    * Author: Nontapat Sinhum (Guitar) 66160104
+    **/
     const fetchDevice = async () => {
       if (!deId) return; // ป้องกันการเรียก API ถ้าไม่มี deId
       const res = await borrowService.getDeviceForBorrow(deId);

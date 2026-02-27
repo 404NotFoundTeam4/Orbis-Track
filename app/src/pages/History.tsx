@@ -41,6 +41,8 @@ import {
   type HistoryIssueStatus,
 } from "../services/HistoryIssueService.ts";
 
+import { metaService, type DropdownOption } from "../services/MetaService";
+
 /**
  * Description: คีย์ของแท็บในหน้า History
  * Input : - (ใช้เป็น union type)
@@ -61,28 +63,10 @@ function classNames(...classNameParts: Array<string | false | undefined | null>)
 
 /**
  * Description: Type ของ option สำหรับ filter สถานะแจ้งซ่อม (DropDown)
- * Input : - (type definition)
- * Output : TypeScript type
+ * ใช้ DropdownOption จาก MetaService แทนการ hardcode
  * Author: Chanwit Muangma (Boom) 66160224
  */
-type RepairStatusOption = {
-  id: "ALL" | HistoryIssueStatus;
-  label: string;
-  value: "" | HistoryIssueStatus;
-};
-
-/**
- * Description: รายการตัวเลือกสถานะแจ้งซ่อม (DropDown) สำหรับแท็บ repair
- * Input : -
- * Output : RepairStatusOption[]
- * Author: Chanwit Muangma (Boom) 66160224
- */
-const repairStatusOptions: readonly RepairStatusOption[] = [
-  { id: "ALL", label: "ทั้งหมด", value: "" },
-  { id: "PENDING", label: "รอรับเรื่อง", value: "PENDING" },
-  { id: "IN_PROGRESS", label: "กำลังซ่อม", value: "IN_PROGRESS" },
-  { id: "COMPLETED", label: "เสร็จสิ้น", value: "COMPLETED" },
-] as const;
+type RepairStatusOption = DropdownOption;
 
 /**
  * Description: ฟิลด์ที่ใช้ sort ในแท็บ "ประวัติการแจ้งซ่อม" (ทำ sort ฝั่งหน้าให้ชัวร์)
@@ -94,15 +78,10 @@ type RepairSortField = "deviceName" | "issueTitle" | "reportedAt" | "assignee" |
 
 /**
  * Description: Type ของ option สำหรับ filter สถานะ (DropDown) ในแท็บ borrow
- * Input : - (type definition)
- * Output : TypeScript type
+ * ใช้ DropdownOption จาก MetaService แทนการ hardcode
  * Author: Chanwit Muangma (Boom) 66160224
  */
-type StatusOption = {
-  id: "ALL" | HistoryBorrowStatus;
-  label: string;
-  value: "" | HistoryBorrowStatus;
-};
+type StatusOption = DropdownOption;
 
 /**
  * Description: รายชื่อ role ที่มีสิทธิ์เห็นแท็บ "ประวัติการอนุมัติ"
@@ -168,22 +147,6 @@ export default function History() {
   };
 
   /**
-   * Description: ตัวเลือกสถานะสำหรับแท็บ borrow
-   * Input : -
-   * Output : StatusOption[]
-   * Author: Chanwit Muangma (Boom) 66160224
-   */
-  const statusOptions: readonly StatusOption[] = [
-    { id: "ALL", label: "ทั้งหมด", value: "" },
-    { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
-    { id: "APPROVED", label: "อนุมัติแล้ว", value: "APPROVED" },
-    { id: "IN_USE", label: "กำลังใช้งาน", value: "IN_USE" },
-    { id: "COMPLETED", label: "คืนแล้ว", value: "COMPLETED" },
-    { id: "OVERDUE", label: "เลยกำหนด", value: "OVERDUE" },
-    { id: "REJECTED", label: "ปฏิเสธ", value: "REJECTED" },
-  ] as const;
-
-  /**
    * Description: state คุมแท็บที่ active
    * Input : - (useState)
    * Output : activeTabKey, setActiveTabKey
@@ -212,12 +175,28 @@ export default function History() {
   const [selectedStatus, setSelectedStatus] = useState<HistoryBorrowStatus | "">("");
 
   /**
+   * Description: ตัวเลือกสถานะสำหรับแท็บ borrow — ดึงจาก API แทนการ hardcode
+   * Input : - (useState + useEffect)
+   * Output : statusOptions (StatusOption[]), repairStatusOptions (RepairStatusOption[])
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
+  const [repairStatusOptions, setRepairStatusOptions] = useState<RepairStatusOption[]>([]);
+
+  useEffect(() => {
+    metaService.getDropdownOptions().then((options) => {
+      setStatusOptions([...options.borrowStatuses]);
+      setRepairStatusOptions([...options.repairStatuses]);
+    });
+  }, []);
+
+  /**
    * Description: state คุม dropdown option ของ status (borrow)
    * Input : - (useState)
    * Output : selectedStatusOption, setSelectedStatusOption
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  const [selectedStatusOption, setSelectedStatusOption] = useState<StatusOption>(statusOptions[0]);
+  const [selectedStatusOption, setSelectedStatusOption] = useState<StatusOption | null>(null);
 
   /**
    * Description: state คุม sort field/direction (borrow)
@@ -565,7 +544,7 @@ export default function History() {
       isCancelled = true;
     };
   }, [activeTabKey, queryParams]);
-  
+
   /**
    * Description: Auto-expand ticket เมื่อเข้าหน้าโดยมี expandId (จาก notification/link)
    * - ถ้า ticket อยู่ใน list: expand + โหลด detail ถ้ายังไม่มี
@@ -645,7 +624,7 @@ export default function History() {
               employeeCode: detail.requester.employeeCode,
               department_name: detail.requester.department_name,
               section_name: detail.requester.section_name,
-              
+
             },
             deviceSummary: {
               deviceId: detail.device.deviceId,
@@ -1466,9 +1445,8 @@ export default function History() {
                   <button
                     type="button"
                     onClick={() => setRepairCurrentPage(1)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      repairCurrentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${repairCurrentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                      }`}
                   >
                     1
                   </button>
@@ -1490,11 +1468,10 @@ export default function History() {
                     <button
                       type="button"
                       onClick={() => setRepairCurrentPage(repairTotalPages)}
-                      className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                        repairCurrentPage === repairTotalPages
-                          ? "border-[#000000] text-[#000000]"
-                          : "border-[#D9D9D9]"
-                      }`}
+                      className={`h-8 min-w-8 px-2 rounded border text-sm ${repairCurrentPage === repairTotalPages
+                        ? "border-[#000000] text-[#000000]"
+                        : "border-[#D9D9D9]"
+                        }`}
                     >
                       {repairTotalPages}
                     </button>
@@ -1811,9 +1788,8 @@ export default function History() {
                   <button
                     type="button"
                     onClick={() => setCurrentPage(1)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                      }`}
                   >
                     1
                   </button>
@@ -1832,9 +1808,8 @@ export default function History() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(totalPages)}
-                      className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                        currentPage === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                      }`}
+                      className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                        }`}
                     >
                       {totalPages}
                     </button>

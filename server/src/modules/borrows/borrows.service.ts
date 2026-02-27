@@ -630,17 +630,17 @@ async function checkCart(userId: number) {
     });
 
     //ถ้าไม่มี cart -> สร้าง cart ใหม่
-    const cart =
-      existingCart ??
-      (await tx.carts.create({
+    if (!existingCart) {
+      await tx.carts.create({
         data: {
           ct_us_id: id,
           created_at: new Date(),
         },
         select: { ct_id: true, ct_us_id: true },
-      }));
+      });
+    }
 
-    return { massage: "success" };
+    return { message: "success" };
   });
 }
 
@@ -653,7 +653,7 @@ async function checkCart(userId: number) {
 async function getBorrowUsers() {
   return await prisma.users.findMany({
     where: {
-      deleted_at: null
+      deleted_at: null,
     },
     select: {
       us_id: true,
@@ -661,9 +661,9 @@ async function getBorrowUsers() {
       us_lastname: true,
       us_role: true,
       us_emp_code: true,
-      us_phone: true
-    }
-  })
+      us_phone: true,
+    },
+  });
 }
 
 export const borrowService = {

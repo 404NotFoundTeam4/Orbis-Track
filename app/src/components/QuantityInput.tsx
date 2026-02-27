@@ -9,18 +9,20 @@ interface QuantityInputProps {
   required?: boolean; // ต้องระบุ (*)
   error?: string;
   onChange?: (value: number) => void; // เปลี่ยนแปลงค่า
+  rounded?: string;
 }
 
 const QuantityInput: React.FC<QuantityInputProps> = ({
   // ค่า default
   label = "จำนวน",
   min = 0,
-  max = 99,
+  max = Infinity,
   value,
-  width = "260",
+  width,
   required,
   error,
   onChange,
+  rounded = "rounded-[8px]"
 }) => {
   // ค่าในช่อง input
   const [localValue, setLocalValue] = useState<number | null>(null);
@@ -75,8 +77,7 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
       </label>
       {/* Input Box */}
       <div
-        className={`flex items-center overflow-hidden border rounded-[8px] h-[46px] py-[8px] ${error ? "border-red-500" : "border-[#A2A2A2]"}`}
-        style={{ width: width }}
+        className={`flex items-center overflow-hidden border ${rounded} h-[46px] py-[8px] ${error ? "border-red-500" : "border-[#A2A2A2]"}`}
       >
         {/* ลดจำนวน */}
         <button
@@ -90,7 +91,8 @@ const QuantityInput: React.FC<QuantityInputProps> = ({
         <input
           type="text"
           value={localValue === null ? "" : localValue}
-          className={`flex-1 text-center text-[16px] ${localValue === null ? "text-[#CDCDCD]" : "text-black"}`}
+          className={`w-[260px] text-center text-[16px] ${localValue === null ? "text-[#CDCDCD]" : "text-black"}`}
+          style={{ width: width }}
           placeholder="จำนวน"
           onChange={inputValue}
         ></input>

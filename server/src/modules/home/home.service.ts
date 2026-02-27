@@ -319,21 +319,16 @@ async function getTicketDetailById(id: number) {
       name: td.child.device.de_name,
       image: td.child.device.de_images,
       current_status: td.child.dec_status,
-      
+
       has_serial_number: Boolean(
         td.child.dec_serial_number && td.child.dec_serial_number !== "-"
       ),
     })),
-    accessories:
-      firstDevice?.accessories && firstDevice.accessories.length > 0
-        ? [
-          {
-            acc_id: firstDevice.accessories[0].acc_id,
-            acc_name: firstDevice.accessories[0].acc_name,
-            acc_quantity: firstDevice.accessories[0].acc_quantity,
-          },
-        ]
-        : [],
+    accessories: firstDevice?.accessories?.map(acc => ({
+      acc_id: acc.acc_id,
+      acc_name: acc.acc_name,
+      acc_quantity: acc.acc_quantity,
+    })) ?? [],
     requester: {
       id: ticket.requester.us_id,
       fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,

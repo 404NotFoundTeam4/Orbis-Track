@@ -642,7 +642,7 @@ const formatTimeThai = (dateStr: string | null): string => {
           <span className="text-[#000000]">
             {item?.requester?.borrowName || "-"}
           </span> 
-          <span className="text-black">
+          <span className="text-[#8C8C8C]">
             {item.requester.employeeCode || "-"}
           </span>
          

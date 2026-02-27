@@ -16,6 +16,8 @@ export interface TicketRequester {
   empcode: string | null;
   image: string | null;
   department: string | null;
+  borrow_user: string | null;
+  borrow_phone: string | null;
 }
 
 export interface TicketDeviceSummary {

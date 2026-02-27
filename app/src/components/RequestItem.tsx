@@ -322,7 +322,7 @@ const RequestItem = ({
 
         {/* Requester */}
         <div className="flex flex-col">
-          <span className="text-[#000000]">{ticket.requester.fullname}</span>
+          <span className="text-[#000000]">{ticket.requester.borrow_user}</span>
           <span className="text-[#8C8C8C]">
             {ticket.requester.empcode || "-"}
           </span>

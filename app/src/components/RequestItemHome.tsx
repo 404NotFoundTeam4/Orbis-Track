@@ -174,7 +174,7 @@ const RequestItemHome = ({
   const getStepTicket = () => {
     return ticketDetail?.status;
   };
-  console.log(ticket  )
+  console.log(ticketDetail  )
   const toggleExpand = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
@@ -233,8 +233,11 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
         onClick={toggleExpand}
       >
         {/* Device Name & ID */}
-        <div className="flex flex-col pl-2">
+        <div className="flex flex-col ">
           <span className="text-[#000000]">{ticket.device_summary.name}</span>
+           <span className="text-[#8C8C8C]">
+            รหัส : {ticket.device_summary.serial_number || ticket.id}
+          </span>
         </div>
 
         {/* Quantity */}
@@ -247,8 +250,8 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
 
         {/* Requester */}
         <div className="flex flex-col">
-          <span className="text-[#000000]">{ticket.requester.fullname}</span>
-          <span className="text-black">{ticket.requester.empcode}</span>
+          <span className="text-[#000000]">{ticket.requester.borrow_user}</span>
+          <span className="text-[#8C8C8C]">{ticket.requester.empcode}</span>
         </div>
 
         {/* Date & Time (Start) */}

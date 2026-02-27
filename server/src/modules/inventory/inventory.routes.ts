@@ -18,7 +18,9 @@ import {
     softDeleteResponseSchema,
     updateDevicePayload,
     getLastAssetCodeResponse,
-    getDeviceChildStatus
+    getDeviceChildStatus,
+    updateDeviceChildPayload,
+    updateDeviceChildResponse
 } from "./inventory.schema.js";
 
 const inventoryController = new InventoryController();
@@ -72,5 +74,6 @@ router.patchDoc("/devices/:id", {
 },upload.single("de_images"), inventoryController.update);
 
 router.getDoc("/:id/last-asset", { tag: "Inventory", params: idParamSchema, res: getLastAssetCodeResponse, auth: true }, inventoryController.getLastAssetCode);
+router.putDoc("/devices-childs", { tag: "Inventory", body: updateDeviceChildPayload, res: updateDeviceChildResponse, auth: true }, inventoryController.updateDeviceChild);
 
 export default router.instance;

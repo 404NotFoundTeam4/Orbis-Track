@@ -184,6 +184,18 @@ export interface GetLastAssetCode {
   decAssetCode: string | null;
 }
 
+export interface UpdateDevices {
+  id: number;
+  serialNumber?: string | null;
+  status?: DeviceChild["dec_status"];
+}
+
+export interface UpdateDevicesResponse {
+  id: number;
+  serialNumber?: string | null;
+  status?: DeviceChild["dec_status"];
+}
+
 export const DeviceService = {
   /**
    * Description: ดึงข้อมูลอุปกรณ์แม่และอุปกรณ์ลูก
@@ -347,6 +359,18 @@ export const DeviceService = {
   getDeviceChildStatus: async (): Promise<DeviceChild["dec_status"][]> => {
     const { data } = await api.get(`/inventory/device-child-status`);
     return data.data;
+  },
+
+  /**
+  * Description: อัปเดตข้อมูลอุปกรณ์ลูกแบบหลายรายการ (serial number กับ status)
+  * Input     : payload - รายการอุปกรณ์ลูกที่ต้องการแก้ไข [{ id, serialNumber?, status? }]
+  * Output    : ข้อมูลอุปกรณ์ลูกที่ถูกอัปเดต
+  * Endpoint  : PUT /api/inventory/device-child
+  * Author    : Thakdanai Makmi (Ryu) 66160355
+  */
+  updateDeviceChild: async (payload: UpdateDevices[]): Promise<UpdateDevicesResponse> => {
+    const { data } = await api.put(`/inventory/devices-childs`, payload);
+    return data;
   }
 };
 

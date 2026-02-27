@@ -49,12 +49,13 @@
     "@iconify/tailwind4": "^1.0.6",
     "@types/multer": "^2.0.0",
     "argon2": "^0.44.0",
-    "axios": "^1.12.2",
+    "axios": "^1.13.5",
     "ioredis": "^5.7.0",
     "multer": "^2.0.2"
   },
   "overrides": {
-    "fast-xml-parser": "5.3.4",
+    "fast-xml-parser": "5.3.7",
+    "qs": "6.15.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

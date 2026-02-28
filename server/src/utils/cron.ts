@@ -198,6 +198,7 @@ async function handleDueSoonTickets() {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
+      timeZone: "Asia/Bangkok",
     });
 
     await jobDispatcher.dispatch(JobType.EMAIL_TICKET_DUE_SOON, {

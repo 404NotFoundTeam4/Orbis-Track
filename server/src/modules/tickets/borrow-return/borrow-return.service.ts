@@ -81,8 +81,8 @@ export class BorrowReturnService {
           empcode: item.requester.us_emp_code,
           image: item.requester.us_images,
           department: item.requester.department?.dept_name || "-",
-          borrow_user: `${item.requester.us_firstname} ${item.requester.us_lastname}`,
-          borrow_phone: item.requester.us_phone
+          borrow_user: item.brt_user,
+          borrow_phone: item.brt_phone
 
         },
 
@@ -155,8 +155,8 @@ export class BorrowReturnService {
       requester: {
         ...ticket.requester,
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
-         borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
-          borrow_phone: ticket.requester.us_phone
+         borrow_user: ticket.brt_user,
+          borrow_phone: ticket.brt_phone
       },
 
       devices: ticket.ticket_devices.map((td: any) => ({

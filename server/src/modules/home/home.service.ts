@@ -207,7 +207,7 @@ async function getRecentTickets(userId: number) {
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
         empcode: ticket.requester.us_emp_code,
-        borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+        borrow_user: ticket.brt_user,
         borrow_phone: ticket.brt_phone
       },
     };
@@ -336,8 +336,8 @@ async function getTicketDetailById(id: number) {
       image: ticket.requester.us_images,
       department: ticket.requester.department?.dept_name || "-",
       us_phone: ticket.requester.us_phone,
-      borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
-      borrow_phone: ticket.requester.us_phone
+      borrow_user: ticket.brt_user,
+      borrow_phone: ticket.brt_phone
     },
   };
 }

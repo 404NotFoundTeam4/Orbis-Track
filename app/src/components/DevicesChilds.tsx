@@ -8,7 +8,6 @@ import { AlertDialog } from "./AlertDialog"
 import { useMemo } from "react"
 import type { DeviceChild, UpdateDevices } from "../services/InventoryService"
 import UploadFileDeviceChild from "./UploadFileDeviceChild"
-import { useToast } from "./Toast"
 
 // อุปกรณ์ลูกจริง
 type RealDeviceRow = DeviceChild & {
@@ -68,6 +67,8 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
     const [selectedDraft, setSelectedDraft] = useState<number[]>([]);
     // เก็บรายการอุปกรณ์ที่มีการแก้ไข
     const [updateDevices, setUpdateDevices] = useState<UpdateDevices[]>([]);
+    // เก็บข้อความ error ของ serial number
+    const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
 
     /**
     * Description: ฟังก์ชันสำหรับเลือกหรือยกเลิกการเลือกอุปกรณ์ลูก
@@ -391,13 +392,6 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
         setDraftDevice(prev => [...prev, ...draft]);
     };
 
-    // ติดตามค่า quantity สำหรับการแสดงปุ่มบันทึก
-    useEffect(() => {
-        if (!quantity && quantity === 0) {
-            setDraftDevice([]);
-        }
-    }, [quantity]);
-
     const hasSerialNumber = devicesChilds.length > 0 ? devicesChilds[0].dec_has_serial_number : false;
     // ควบคุมการเปิดปิด Modal Upload File
     const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
@@ -416,9 +410,6 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
         setQuantity(null);
     }
 
-    // สำหรับการแสดง toast
-    const toast = useToast();
-
     /**
     * Description: ฟังก์ชันตรวจสอบความถูกต้องของข้อมูล
     * Input     : -
@@ -428,69 +419,48 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
     const validateSave = () => {
         // ตัดช่องว่างด้านหน้าและหลัง
         const normalize = (value?: string | null) => value?.trim();
-        // เก็บ id และ serial number เดิม
-        const existingMap = new Map<number, string>();
+        // เก็บ error
+        const newErrors: Record<number, string> = {};
         // เช็ค serial number เดิมทั้งหมดในระบบ
-        const existingSet = new Set<string>();
-        // วนลูปข้อมูลอุปกรณ์เดิมทั้งหมด
-        devicesChilds.forEach(device => {
-            const serial = normalize(device.dec_serial_number); // ดึง serial แล้วตัดช่องว่าง
-            if (serial) {
-                existingMap.set(device.dec_id, serial); // เก็บ id, serial เดิม (กรณีแก้ตัวเอง)
-                existingSet.add(serial); // เก็บ serial ทั้งหมด
-            }
-        });
-
-        // ดึง serial จาก draft ทั้งหมด และตัดช่องว่าง
-        const draftSerials = draftDevice
-            .map(draft => normalize(draft.dec_serial_number))
-            .filter(Boolean) as string[];
-
+        const existingSet = new Set(
+            devicesChilds
+                .map(device => normalize(device.dec_serial_number)) // ดึง serial แล้วตัดช่องว่าง
+                .filter(Boolean)
+        );
         // ตรวจ draft ซ้ำกันเอง
         const draftSet = new Set<string>();
 
-        for (const serial of draftSerials) {
+        // ตรวจ draft
+        draftDevice.forEach(draft => {
+            const serial = normalize(draft.dec_serial_number);
+            if (!serial) return;
             // เช็ค draft ซ้ำกันเอง
             if (draftSet.has(serial)) {
-                toast.push({ tone: "danger", message: "มีรายการ Serial Number ที่ซ้ำกัน" });
-                return false;
+                newErrors[draft.draft_id] = "Serial ซ้ำกัน";
             }
-            draftSet.add(serial); // ถ้าไม่ซ้ำ เพิ่มเข้า Set
             // เช็ค draft ซ้ำกับข้อมูลเดิมในระบบ
             if (existingSet.has(serial)) {
-                toast.push({ tone: "danger", message: "Serial Number ซ้ำกับข้อมูลเดิม" });
-                return false;
-            }
-        }
-
-        // ตรวจสอบ update ซ้ำกันเอง
-        const updateSet = new Set<string>();
-
-        for (const update of updateDevices) {
-            const newSerial = normalize(update.serialNumber); // ดึง serial แล้วตัดช่องว่าง
-            if (!newSerial) continue; // ถ้าไม่ได้แก้ serial ข้าม
-            // เช็ค update ซ้ำกันเอง
-            if (updateSet.has(newSerial)) {
-                toast.push({ tone: "danger", message: "มีรายการ Serial Number ที่ซ้ำกันในรายการแก้ไข" });
-                return false;
-            }
-            updateSet.add(newSerial); // ถ้าไม่ซ้ำ เพิ่มเข้า Set
-            // เช็ค update ซ้ำกับ draft
-            if (draftSet.has(newSerial)) {
-                toast.push({ tone: "danger", message: "Serial Number ซ้ำกันระหว่างเพิ่มใหม่และแก้ไข" });
-                return false;
+                newErrors[draft.draft_id] = "Serial ซ้ำกับข้อมูลเดิม";
             }
 
+            draftSet.add(serial); // ถ้าไม่ซ้ำ เพิ่มเข้า Set
+        });
+
+        // ตรวจ update
+        updateDevices.forEach(update => {
+            const serial = normalize(update.serialNumber); // ดึง serial แล้วตัดช่องว่าง
+            if (!serial) return;
+            // ค่าเดิม
+            const original = devicesChilds.find(device => device.dec_id === update.id);
             // เช็ค update ซ้ำกับข้อมูลเดิมในระบบ (ยกเว้นตัวเอง)
-            const oldSerial = existingMap.get(update.id);
-
-            if (existingSet.has(newSerial) && oldSerial !== newSerial) {
-                toast.push({ tone: "danger", message: "Serial Number ซ้ำกับที่มีอยู่" });
-                return false;
+            if (existingSet.has(serial) && original?.dec_serial_number !== serial) {
+                newErrors[update.id] = "Serial ซ้ำกับข้อมูลเดิม";
             }
-        }
+        });
 
-        return true;
+        setSerialErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
     };
 
     return (
@@ -592,74 +562,91 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
                     </div>
                 </div>
                 {/* รายการอุปกรณ์ */}
-                {pageRows.map((device, index) => (
-                    <div key={device.dec_id} className="w-full">
-                        {/* หัวข้อ */}
-                        <div className="flex gap-[270px] items-center h-[62px]">
-                            <div className="flex gap-[10px] w-[147px]">
-                                <Checkbox
-                                    className="bg-[#FFFFFF] border border-[#BFBFBF]"
-                                    isChecked={
-                                        "__draft" in device
-                                            ? selectedDraft.includes(device.draft_id)
-                                            : selectedDevices.includes(device.dec_id)
+                {pageRows.map((device, index) => {
+                    // id กลางสำหรับทั้ง draft และอุปกรณ์จริง
+                    const rowId = "__draft" in device ? device.draft_id : device.dec_id;
+                    return (
+                        <div key={rowId} className="w-full">
+                            {/* หัวข้อ */}
+                            <div className="flex gap-[270px] items-start min-h-[62px] py-2">
+                                <div className="flex items-center gap-[10px] w-[147px] min-h-[46px]">
+                                    <Checkbox
+                                        className="bg-[#FFFFFF] border border-[#BFBFBF]"
+                                        isChecked={
+                                            "__draft" in device
+                                                ? selectedDraft.includes(device.draft_id)
+                                                : selectedDevices.includes(device.dec_id)
+                                        }
+                                        onClick={() => toggleSelect(device)}
+                                    />
+                                    <p>{(page - 1) * pageSize + (index + 1)}</p>
+                                </div>
+                                <div className="flex items-center w-[230px] min-h-[46px]">
+                                    <p>{device.dec_asset_code}</p>
+                                </div>
+                                <div className="flex flex-col w-[230px]">
+                                    <input
+                                        type="text"
+                                        value={hasSerialNumber ? (getCurrentSerial(device) ?? "") : "-"}
+                                        onChange={(event) => {
+                                            if ("__draft" in device) {
+                                                setDraftDevice(prev =>
+                                                    prev.map(draft =>
+                                                        draft.draft_id === device.draft_id
+                                                            ? { ...draft, dec_serial_number: event.target.value }
+                                                            : draft
+                                                    )
+                                                );
+                                            } else {
+                                                changeSerialNumber(device.dec_id, event.target.value);
+                                            }
+                                        }}
+                                        className={`w-full h-[46px] rounded-[16px] border pl-[20px]
+                                            ${serialErrors[rowId]
+                                                ? "border-red-500"
+                                                : "border-[#D8D8D8]"
+                                            }`}
+                                        disabled={!hasSerialNumber}
+                                    />
+                                    {
+                                        serialErrors[rowId] && (
+                                            <span className="text-red-500 text-sm mt-1">
+                                                {serialErrors[rowId]}
+                                            </span>
+                                        )
                                     }
-                                    onClick={() => toggleSelect(device)}
-                                />
-                                <p>{(page - 1) * pageSize + (index + 1)}</p>
-                            </div>
-                            <p className="w-[230px]">{device.dec_asset_code}</p>
-                            <div className="flex w-[230px]">
-                                <input
-                                    type="text"
-                                    value={hasSerialNumber ? (getCurrentSerial(device) ?? "") : "-"}
-                                    onChange={(event) => {
-                                        if ("__draft" in device) {
-                                            setDraftDevice(prev =>
-                                                prev.map(draft =>
-                                                    draft.draft_id === device.dec_id
-                                                        ? { ...draft, dec_serial_number: event.target.value }
-                                                        : draft
-                                                )
-                                            );
-                                        } else {
-                                            changeSerialNumber(device.dec_id, event.target.value);
-                                        }
-                                    }}
-                                    className="w-[330px] h-[46px] rounded-[16px] border border-[#D8D8D8] pl-[20px]"
-                                    disabled={!hasSerialNumber}
-                                />
-                            </div>
-                            <div className="flex w-[200px]">
-                                <DropDown
-                                    className="!w-[160px]"
-                                    items={statusItems}
-                                    value={statusItems.find(
-                                        status => status.value === getCurrentStatus(device)
-                                    )}
-                                    onChange={(status) => {
-                                        if ("__draft" in device) {
-                                            setDraftDevice(prev =>
-                                                prev.map(draft =>
-                                                    draft.draft_id === device.dec_id
-                                                        ? { ...draft, dec_status: status.value as DeviceChild["dec_status"] }
-                                                        : draft
-                                                )
-                                            );
-                                        } else {
-                                            changeStatusDevice({
-                                                id: device.dec_id,
-                                                status: status.value as DeviceChild["dec_status"]
-                                            });
-                                        }
-                                    }}
-                                    triggerClassName="!border-[#a2a2a2]"
-                                    searchable={false}
-                                />
+                                </div>
+                                <div className="flex items-center w-[200px] min-h-[46px]">
+                                    <DropDown
+                                        className="!w-[160px]"
+                                        items={statusItems}
+                                        value={statusItems.find(
+                                            status => status.value === getCurrentStatus(device)
+                                        )}
+                                        onChange={(status) => {
+                                            if ("__draft" in device) {
+                                                setDraftDevice(prev =>
+                                                    prev.map(draft =>
+                                                        draft.draft_id === device.draft_id
+                                                            ? { ...draft, dec_status: status.value as DeviceChild["dec_status"] }
+                                                            : draft
+                                                    )
+                                                );
+                                            } else {
+                                                changeStatusDevice({
+                                                    id: device.dec_id,
+                                                    status: status.value as DeviceChild["dec_status"]
+                                                });
+                                            }
+                                        }}
+                                        triggerClassName="!border-[#a2a2a2]"
+                                        searchable={false}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
             </div>
             {/* Footer */}
             <div className="flex items-center justify-end mt-4">

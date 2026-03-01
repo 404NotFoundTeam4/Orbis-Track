@@ -206,7 +206,7 @@ async function getRecentTickets(userId: number) {
         name: mainDevice?.de_name || "Unknown Device",
         // ใช้ serial ของลูก (child) ถ้ามี หรือของแม่ (main)
         serial_number:
-          deviceChild?.dec_serial_number || mainDevice?.de_serial_number || "-",
+          mainDevice?.de_serial_number ||  deviceChild?.dec_serial_number || "-",
         total_quantity: ticket.brt_quantity,
         category: mainDevice?.category?.ca_name || "-",
         department: cleanDept || "-",

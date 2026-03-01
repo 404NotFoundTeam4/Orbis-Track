@@ -605,6 +605,11 @@ const RequestItem = ({
                     ticketDetail.timeline.length > 0 && (
                       <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
                         <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[330px] max-h-[300px] overflow-y-auto">
+                         <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-semibold text-neutral-800">
+                            ลำดับการอนุมัติ
+                          </div>
+                        </div>
                           <div className="flex flex-col">
                             {ticketDetail.timeline.map((stage, index) => {
                               const isLast =

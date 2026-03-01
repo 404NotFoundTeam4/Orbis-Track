@@ -600,8 +600,7 @@ async function getHistoryBorrowTickets(
         brt_id: true,
         brt_status: true,
         created_at: true,
-        brt_user: true,
-        brt_phone: true,
+        brt_user_id: true,
         requester: {
           select: {
             us_id: true,
@@ -667,6 +666,12 @@ async function getHistoryBorrowTickets(
           // override name จาก cart_items 
           fullName:
             cartName && cartName.length > 0 ? cartName : "",
+          borrowName: ticketRecordItem.requester
+            ? `${ticketRecordItem.requester.us_firstname ?? ""} ${ticketRecordItem.requester.us_lastname ?? ""}`.trim()
+            : null,
+
+          borrowPhone: ticketRecordItem.requester?.us_phone ?? null,
+          borrowEmployeeCode: ticketRecordItem.requester?.us_emp_code ?? null,
         },
       };
     });
@@ -715,13 +720,13 @@ async function getHistoryBorrowTickets(
           brt_id: true,
           brt_status: true,
           created_at: true,
-          brt_user: true,
-          brt_phone: true,
+          brt_user_id: true,
           requester: {
             select: {
               us_id: true,
               us_firstname: true,
               us_lastname: true,
+              us_phone: true,
               us_emp_code: true,
               department: { select: { dept_name: true } },
               section: { select: { sec_name: true } },
@@ -768,8 +773,12 @@ async function getHistoryBorrowTickets(
           ...requesterBaseline,
           fullName:
             cartName && cartName.length > 0 ? cartName : requesterBaseline.fullName,
-          borrowName: ticketRecordItem.brt_user,
-          borrowPhone: ticketRecordItem.brt_phone,
+          borrowName: ticketRecordItem.requester
+            ? `${ticketRecordItem.requester.us_firstname ?? ""} ${ticketRecordItem.requester.us_lastname ?? ""}`.trim()
+            : null,
+
+          borrowPhone: ticketRecordItem.requester?.us_phone ?? null,
+          borrowEmployeeCode: ticketRecordItem.requester?.us_emp_code ?? null,
         },
       };
     });
@@ -802,6 +811,7 @@ async function getHistoryBorrowTickets(
           us_firstname: true,
           us_lastname: true,
           us_emp_code: true,
+           us_phone: true,
           department: { select: { dept_name: true } },
           section: { select: { sec_name: true } },
         },
@@ -811,7 +821,7 @@ async function getHistoryBorrowTickets(
         where: { deleted_at: null },
         select: {
           td_id: true,
-          td_origin_cti_id: true, // ✅ เพิ่ม
+          td_origin_cti_id: true,
           child: {
             select: {
               device: {

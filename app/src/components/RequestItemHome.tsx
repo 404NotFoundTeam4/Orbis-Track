@@ -174,7 +174,7 @@ const RequestItemHome = ({
   const getStepTicket = () => {
     return ticketDetail?.status;
   };
-  console.log(ticketDetail  )
+  console.log(ticket  )
   const toggleExpand = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
@@ -416,6 +416,7 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
 
                 {/* Step 2: Approve - with hover tooltip */}
                 <div className="flex gap-3 relative group">
+                  
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
@@ -478,6 +479,11 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
                     ticketDetail.timeline.length > 0 && (
                       <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
                         <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[330px] max-h-[300px] overflow-y-auto">
+                         <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-semibold text-neutral-800">
+                            ลำดับการอนุมัติ
+                          </div>
+                        </div>
                           <div className="flex flex-col">
                             {ticketDetail.timeline.map((stage, index) => {
                               const isLast =

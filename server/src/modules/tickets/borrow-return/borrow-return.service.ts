@@ -26,7 +26,7 @@ import { SocketEmitter } from "../../../infrastructure/websocket/socket.emitter.
 import { logger } from "../../../infrastructure/logger.js";
 
 export class BorrowReturnService {
-  constructor(private readonly repository: BorrowReturnRepository) { }
+  constructor(private readonly repository: BorrowReturnRepository) {}
 
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อมรายละเอียดสำหรับแต่ละรายการ
@@ -82,8 +82,7 @@ export class BorrowReturnService {
           image: item.requester.us_images,
           department: item.requester.department?.dept_name || "-",
           borrow_user: `${item.requester.us_firstname} ${item.requester.us_lastname}`,
-          borrow_phone: item.requester.us_phone
-
+          borrow_phone: item.requester.us_phone,
         },
 
         device_summary: {
@@ -96,7 +95,10 @@ export class BorrowReturnService {
           image: mainDevice ? mainDevice.de_images : null,
           category: mainDevice ? mainDevice.category.ca_name : "-",
           section:
-            mainDevice?.section?.sec_name.replace(dept, "").replace("ฝ่ายย่อย", "").trim() ?? "-",
+            mainDevice?.section?.sec_name
+              .replace(dept, "")
+              .replace("ฝ่ายย่อย", "")
+              .trim() ?? "-",
           department: dept.replace(/แผนก/g, "").trim() ?? "-",
           total_quantity: deviceCount,
         },
@@ -155,8 +157,8 @@ export class BorrowReturnService {
       requester: {
         ...ticket.requester,
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
-         borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
-          borrow_phone: ticket.requester.us_phone
+        borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+        borrow_phone: ticket.requester.us_phone,
       },
 
       devices: ticket.ticket_devices.map((td: any) => ({
@@ -168,11 +170,13 @@ export class BorrowReturnService {
       })),
 
       accessories:
-        ticket.ticket_devices[0]?.child.device?.accessories?.map(acc => ({
-          acc_id: acc.acc_id,
-          acc_name: acc.acc_name,
-          acc_quantity: acc.acc_quantity,
-        })) ?? [],
+        ticket.ticket_devices[0]?.child.device?.accessories?.map(
+          (acc: any) => ({
+            acc_id: acc.acc_id,
+            acc_name: acc.acc_name,
+            acc_quantity: acc.acc_quantity,
+          }),
+        ) ?? [],
       timeline: ticket.stages.map((stage: any) => ({
         role_name: stage.brts_name,
         step: stage.brts_step_approve,
@@ -228,7 +232,7 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-        currentStageData.brts_sec_id === approvalUser?.sec;
+          currentStageData.brts_sec_id === approvalUser?.sec;
 
     if (!isGrantApproveUser)
       throw new HttpError(
@@ -329,9 +333,9 @@ export class BorrowReturnService {
             ...(nextStage.brts_role === "HOD"
               ? { us_dept_id: nextStage.brts_dept_id }
               : {
-                us_dept_id: nextStage.brts_dept_id,
-                us_sec_id: nextStage.brts_sec_id,
-              }),
+                  us_dept_id: nextStage.brts_dept_id,
+                  us_sec_id: nextStage.brts_sec_id,
+                }),
           },
           select: { us_id: true },
         });
@@ -408,7 +412,7 @@ export class BorrowReturnService {
       approvalUser?.role === US_ROLE.HOD
         ? currentStageData.brts_dept_id === approvalUser?.dept
         : currentStageData.brts_dept_id === approvalUser?.dept &&
-        currentStageData.brts_sec_id === approvalUser?.sec;
+          currentStageData.brts_sec_id === approvalUser?.sec;
 
     if (!isGrantApproveUser)
       throw new HttpError(

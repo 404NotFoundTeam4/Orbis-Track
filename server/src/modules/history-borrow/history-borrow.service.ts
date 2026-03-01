@@ -40,7 +40,7 @@ function buildFullName(firstName: string, lastName: string): string {
  * Author: Chanwit Muangma (Boom) 66160224
  */
 function buildVisibilityWhere(
-  currentUserContext: CurrentUserContext
+  currentUserContext: CurrentUserContext,
 ): Prisma.borrow_return_ticketsWhereInput {
   if (currentUserContext.userRole === "ADMIN") return {};
 
@@ -68,7 +68,7 @@ function buildVisibilityWhere(
  * Author: Chanwit Muangma (Boom) 66160224
  */
 function buildSearchWhere(
-  searchText: string
+  searchText: string,
 ): Prisma.borrow_return_ticketsWhereInput {
   const normalizedSearchText = searchText.trim();
   if (!normalizedSearchText) return {};
@@ -151,7 +151,7 @@ function mapTicketToListItem(ticketRecord: any): HistoryBorrowTicketItem {
       userId: ticketRecord.requester.us_id,
       fullName: buildFullName(
         ticketRecord.requester.us_firstname,
-        ticketRecord.requester.us_lastname
+        ticketRecord.requester.us_lastname,
       ),
       employeeCode: ticketRecord.requester.us_emp_code ?? null,
 
@@ -168,7 +168,6 @@ function mapTicketToListItem(ticketRecord: any): HistoryBorrowTicketItem {
   };
 }
 
-
 /**
  * Description: สร้าง key สำหรับ cache ผู้มีสิทธิ์อนุมัติ ตาม role + scope (dept/sec)
  * Input : role, deptId, secId
@@ -178,7 +177,7 @@ function mapTicketToListItem(ticketRecord: any): HistoryBorrowTicketItem {
 function buildApproverScopeKey(
   role: US_ROLE,
   deptId: number | null,
-  secId: number | null
+  secId: number | null,
 ): string {
   return `${role}::dept=${deptId ?? "null"}::sec=${secId ?? "null"}`;
 }
@@ -243,7 +242,7 @@ async function getApproverCandidatesByScope(params: {
  * Author: Chanwit Muangma (Boom) 66160224
  */
 async function mapTicketToDetail(
-  ticketRecord: any
+  ticketRecord: any,
 ): Promise<HistoryBorrowTicketDetail> {
   const firstTicketDevice = ticketRecord.ticket_devices?.[0];
   const deviceRecord = firstTicketDevice?.child?.device;
@@ -260,7 +259,7 @@ async function mapTicketToDetail(
         serialNumber: deviceChildRecord.dec_serial_number ?? null,
         status: deviceChildRecord.dec_status,
       };
-    }
+    },
   );
 
   const accessories = (deviceRecord?.accessories ?? []).map(
@@ -268,7 +267,7 @@ async function mapTicketToDetail(
       accessoryId: accessoryRecord.acc_id,
       accessoryName: accessoryRecord.acc_name,
       quantity: accessoryRecord.acc_quantity,
-    })
+    }),
   );
 
   /**
@@ -280,7 +279,7 @@ async function mapTicketToDetail(
    */
   const stagesSorted = (ticketRecord.stages ?? []).sort(
     (leftStage: any, rightStage: any) =>
-      leftStage.brts_step_approve - rightStage.brts_step_approve
+      leftStage.brts_step_approve - rightStage.brts_step_approve,
   );
 
   const uniqueScopeKeySet = new Set<string>();
@@ -291,7 +290,7 @@ async function mapTicketToDetail(
     const scopeKey = buildApproverScopeKey(
       stageRecord.brts_role,
       flowDeptId,
-      flowSecId
+      flowSecId,
     );
     uniqueScopeKeySet.add(scopeKey);
   }
@@ -316,9 +315,13 @@ async function mapTicketToDetail(
       const secId =
         secIdRaw !== null && Number.isFinite(secIdRaw) ? secIdRaw : null;
 
-      const candidates = await getApproverCandidatesByScope({ role, deptId, secId });
+      const candidates = await getApproverCandidatesByScope({
+        role,
+        deptId,
+        secId,
+      });
       approverCandidatesByScopeMap.set(scopeKey, candidates);
-    })
+    }),
   );
 
   const timeline = stagesSorted.map((stageRecord: any) => {
@@ -344,7 +347,7 @@ async function mapTicketToDetail(
     const scopeKey = buildApproverScopeKey(
       stageRecord.brts_role,
       flowDepartmentId,
-      flowSectionId
+      flowSectionId,
     );
     const approverCandidates = approverCandidatesByScopeMap.get(scopeKey) ?? [];
 
@@ -367,16 +370,16 @@ async function mapTicketToDetail(
 
       approver: approverUser
         ? {
-          userId: approverUser.us_id,
-          fullName: buildFullName(
-            approverUser.us_firstname,
-            approverUser.us_lastname
-          ),
-          employeeCode: approverUser.us_emp_code ?? null,
-          role: approverUser.us_role,
-          departmentName: approverDepartmentName,
-          sectionName: approverSectionName,
-        }
+            userId: approverUser.us_id,
+            fullName: buildFullName(
+              approverUser.us_firstname,
+              approverUser.us_lastname,
+            ),
+            employeeCode: approverUser.us_emp_code ?? null,
+            role: approverUser.us_role,
+            departmentName: approverDepartmentName,
+            sectionName: approverSectionName,
+          }
         : null,
 
       /**
@@ -400,7 +403,7 @@ async function mapTicketToDetail(
       userId: ticketRecord.requester.us_id,
       fullName: buildFullName(
         ticketRecord.requester.us_firstname,
-        ticketRecord.requester.us_lastname
+        ticketRecord.requester.us_lastname,
       ),
       employeeCode: ticketRecord.requester.us_emp_code ?? null,
       phoneNumber: ticketRecord.requester.us_phone ?? null,
@@ -455,7 +458,7 @@ async function mapTicketToDetail(
  */
 async function getHistoryBorrowTickets(
   query: GetHistoryBorrowTicketQuery,
-  currentUserContext: CurrentUserContext
+  currentUserContext: CurrentUserContext,
 ) {
   const pageNumber = Math.max(1, Number(query.page ?? 1));
   const limitNumber = Math.max(1, Number(query.limit ?? 10));
@@ -478,7 +481,7 @@ async function getHistoryBorrowTickets(
    */
   const buildFullName = (
     firstName: string | null | undefined,
-    lastName: string | null | undefined
+    lastName: string | null | undefined,
   ) => `${firstName ?? ""} ${lastName ?? ""}`.trim();
 
   /**
@@ -498,7 +501,7 @@ async function getHistoryBorrowTickets(
   const collectOriginCartItemIds = (ticketRecords: any[]) => {
     const ids = ticketRecords
       .flatMap((ticket) =>
-        (ticket.ticket_devices ?? []).map((td: any) => td.td_origin_cti_id)
+        (ticket.ticket_devices ?? []).map((td: any) => td.td_origin_cti_id),
       )
       .filter((id: any): id is number => typeof id === "number");
 
@@ -512,7 +515,10 @@ async function getHistoryBorrowTickets(
     const originCartItemIds = collectOriginCartItemIds(ticketRecords);
 
     if (originCartItemIds.length === 0) {
-      return new Map<number, { cti_us_name: string | null; cti_phone: string | null }>();
+      return new Map<
+        number,
+        { cti_us_name: string | null; cti_phone: string | null }
+      >();
     }
 
     const cartItems = await prisma.cart_items.findMany({
@@ -531,7 +537,7 @@ async function getHistoryBorrowTickets(
       cartItems.map((cartItem) => [
         cartItem.cti_id,
         { cti_us_name: cartItem.cti_us_name, cti_phone: cartItem.cti_phone },
-      ])
+      ]),
     );
   };
 
@@ -540,7 +546,10 @@ async function getHistoryBorrowTickets(
    */
   const pickCartSnapshotForTicket = (
     ticketRecord: any,
-    cartItemById: Map<number, { cti_us_name: string | null; cti_phone: string | null }>
+    cartItemById: Map<
+      number,
+      { cti_us_name: string | null; cti_phone: string | null }
+    >,
   ) => {
     for (const td of ticketRecord.ticket_devices ?? []) {
       const originId = td?.td_origin_cti_id;
@@ -576,7 +585,7 @@ async function getHistoryBorrowTickets(
     });
 
     const ticketIds = groupedTicketDeviceCounts.map(
-      (groupedItem) => groupedItem.td_brt_id
+      (groupedItem) => groupedItem.td_brt_id,
     );
 
     if (ticketIds.length === 0) {
@@ -607,6 +616,7 @@ async function getHistoryBorrowTickets(
             us_firstname: true,
             us_lastname: true,
             us_emp_code: true,
+            us_phone: true,
             department: { select: { dept_name: true } },
             section: { select: { sec_name: true } },
           },
@@ -639,33 +649,39 @@ async function getHistoryBorrowTickets(
       ticketRecords.map((ticketRecordItem) => [
         ticketRecordItem.brt_id,
         ticketRecordItem,
-      ])
+      ]),
     );
 
     const orderedTicketRecords = ticketIds
       .map((ticketId) => ticketRecordByIdMap.get(ticketId))
       .filter(
-        (ticketRecordItem): ticketRecordItem is (typeof ticketRecords)[number] =>
-          Boolean(ticketRecordItem)
+        (
+          ticketRecordItem,
+        ): ticketRecordItem is (typeof ticketRecords)[number] =>
+          Boolean(ticketRecordItem),
       );
 
-    // ดึง cart_items แบบ batch 
+    // ดึง cart_items แบบ batch
     const cartItemById = await buildCartItemMap(orderedTicketRecords);
 
     const items = orderedTicketRecords.map((ticketRecordItem) => {
       const baseItem = mapTicketToListItem(ticketRecordItem);
 
-      const requesterBaseline = mapRequesterFromTicketForList(ticketRecordItem.requester);
-      const cartSnapshot = pickCartSnapshotForTicket(ticketRecordItem, cartItemById);
+      const requesterBaseline = mapRequesterFromTicketForList(
+        ticketRecordItem.requester,
+      );
+      const cartSnapshot = pickCartSnapshotForTicket(
+        ticketRecordItem,
+        cartItemById,
+      );
       const cartName = cartSnapshot?.cti_us_name?.trim();
 
       return {
         ...baseItem,
         requester: {
           ...requesterBaseline,
-          // override name จาก cart_items 
-          fullName:
-            cartName && cartName.length > 0 ? cartName : "",
+          // override name จาก cart_items
+          fullName: cartName && cartName.length > 0 ? cartName : "",
           borrowName: ticketRecordItem.requester
             ? `${ticketRecordItem.requester.us_firstname ?? ""} ${ticketRecordItem.requester.us_lastname ?? ""}`.trim()
             : null,
@@ -763,8 +779,13 @@ async function getHistoryBorrowTickets(
     const items = ticketRecords.map((ticketRecordItem) => {
       const baseItem = mapTicketToListItem(ticketRecordItem);
 
-      const requesterBaseline = mapRequesterFromTicketForList(ticketRecordItem.requester);
-      const cartSnapshot = pickCartSnapshotForTicket(ticketRecordItem, cartItemById);
+      const requesterBaseline = mapRequesterFromTicketForList(
+        ticketRecordItem.requester,
+      );
+      const cartSnapshot = pickCartSnapshotForTicket(
+        ticketRecordItem,
+        cartItemById,
+      );
       const cartName = cartSnapshot?.cti_us_name?.trim();
 
       return {
@@ -772,7 +793,9 @@ async function getHistoryBorrowTickets(
         requester: {
           ...requesterBaseline,
           fullName:
-            cartName && cartName.length > 0 ? cartName : requesterBaseline.fullName,
+            cartName && cartName.length > 0
+              ? cartName
+              : requesterBaseline.fullName,
           borrowName: ticketRecordItem.requester
             ? `${ticketRecordItem.requester.us_firstname ?? ""} ${ticketRecordItem.requester.us_lastname ?? ""}`.trim()
             : null,
@@ -811,7 +834,7 @@ async function getHistoryBorrowTickets(
           us_firstname: true,
           us_lastname: true,
           us_emp_code: true,
-           us_phone: true,
+          us_phone: true,
           department: { select: { dept_name: true } },
           section: { select: { sec_name: true } },
         },
@@ -845,8 +868,13 @@ async function getHistoryBorrowTickets(
   const allItems = allTicketRecords.map((ticketRecordItem) => {
     const baseItem = mapTicketToListItem(ticketRecordItem);
 
-    const requesterBaseline = mapRequesterFromTicketForList(ticketRecordItem.requester);
-    const cartSnapshot = pickCartSnapshotForTicket(ticketRecordItem, cartItemById);
+    const requesterBaseline = mapRequesterFromTicketForList(
+      ticketRecordItem.requester,
+    );
+    const cartSnapshot = pickCartSnapshotForTicket(
+      ticketRecordItem,
+      cartItemById,
+    );
     const cartName = cartSnapshot?.cti_us_name?.trim();
 
     return {
@@ -854,7 +882,9 @@ async function getHistoryBorrowTickets(
       requester: {
         ...requesterBaseline,
         fullName:
-          cartName && cartName.length > 0 ? cartName : requesterBaseline.fullName,
+          cartName && cartName.length > 0
+            ? cartName
+            : requesterBaseline.fullName,
       },
     };
   });
@@ -901,7 +931,7 @@ async function getHistoryBorrowTickets(
  */
 async function getHistoryBorrowTicketDetail(
   ticketId: number,
-  currentUserContext: CurrentUserContext
+  currentUserContext: CurrentUserContext,
 ): Promise<HistoryBorrowTicketDetail> {
   const visibilityWhere = buildVisibilityWhere(currentUserContext);
 
@@ -1021,7 +1051,7 @@ async function getHistoryBorrowTicketDetail(
     throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
   }
 
-  // หา cart_items snapshot จาก td_origin_cti_id 
+  // หา cart_items snapshot จาก td_origin_cti_id
   const originCartItemIds = (ticketRecord.ticket_devices ?? [])
     .map((td: any) => td.td_origin_cti_id)
     .filter((id: any): id is number => typeof id === "number");
@@ -1058,8 +1088,10 @@ async function getHistoryBorrowTicketDetail(
 
   const detail = await mapTicketToDetail(ticketRecord);
 
-  // fallback จาก users 
-  const requesterFullNameFromUser = `${ticketRecord.requester?.us_firstname ?? ""} ${ticketRecord.requester?.us_lastname ?? ""
+  // fallback จาก users
+  const requesterFullNameFromUser =
+    `${ticketRecord.requester?.us_firstname ?? ""} ${
+      ticketRecord.requester?.us_lastname ?? ""
     }`.trim();
 
   return {
@@ -1067,10 +1099,10 @@ async function getHistoryBorrowTicketDetail(
     requester: {
       ...detail.requester,
       userId: ticketRecord.requester?.us_id,
-      // ไม่มี cart -> ให้เป็น "" 
+      // ไม่มี cart -> ให้เป็น ""
       fullName: cartName && cartName.length > 0 ? cartName : "",
       employeeCode: ticketRecord.requester?.us_emp_code ?? null,
-      // ไม่มี cart -> ให้เป็น null 
+      // ไม่มี cart -> ให้เป็น null
       phoneNumber: cartPhone && cartPhone.length > 0 ? cartPhone : null,
       department_name: ticketRecord.requester?.department?.dept_name ?? null,
       section_name: ticketRecord.requester?.section?.sec_name ?? null,

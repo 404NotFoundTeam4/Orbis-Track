@@ -283,7 +283,7 @@ async function createBorrowTicket(
     // สร้าง borrow return ticket
     const ticket = await tx.borrow_return_tickets.create({
       data: {
-        brt_user_id: requesterId,
+        brt_user_id: borrowerId,
         brt_user: `${borrower.us_firstname} ${borrower.us_lastname}`,
         brt_phone: borrower.us_phone,
         brt_borrow_purpose: reason,

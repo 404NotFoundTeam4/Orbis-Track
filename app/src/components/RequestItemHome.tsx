@@ -194,6 +194,20 @@ const RequestItemHome = ({
     // Removing isExpanded from dependencies allows user to collapse it manually.
   }, [forceExpand, ticket.id, onExpand, expandTrigger]);
 
+const formatUpdateByDateTime = (dateTimeString: string | null): string => {
+  if (!dateTimeString || dateTimeString === "-") return "-";
+  const date = new Date(dateTimeString);
+  const dayOfMonth = date.getDate();
+  const monthShortName = date.toLocaleDateString("th-TH", { month: "short" });
+  const buddhistYear = date.getFullYear() + 543;
+  const timeString = date.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${dayOfMonth} ${monthShortName} ${buddhistYear} ${timeString} น.`;
+};
+
+
   const status = statusConfig[ticket.status] || statusConfig.PENDING;
   const deviceImage =
     ticket.device_summary.image ||
@@ -219,8 +233,11 @@ const RequestItemHome = ({
         onClick={toggleExpand}
       >
         {/* Device Name & ID */}
-        <div className="flex flex-col pl-2">
+        <div className="flex flex-col ">
           <span className="text-[#000000]">{ticket.device_summary.name}</span>
+           <span className="text-[#8C8C8C]">
+            รหัส : {ticket.device_summary.serial_number || ticket.id}
+          </span>
         </div>
 
         {/* Quantity */}
@@ -233,7 +250,8 @@ const RequestItemHome = ({
 
         {/* Requester */}
         <div className="flex flex-col">
-          <span className="text-[#000000]">{ticket.requester.fullname}</span>
+          <span className="text-[#000000]">{ticket.requester.borrow_user}</span>
+          <span className="text-[#8C8C8C]">{ticket.requester.empcode}</span>
         </div>
 
         {/* Date & Time (Start) */}
@@ -249,7 +267,7 @@ const RequestItemHome = ({
         {/* Date & Time (Return) */}
         <div className="flex flex-col">
           <span className="text-[#000000]">{formatTimeThai(endDate ?? null)}</span>
-          <span className="text-[#7BACFF] text-sm">
+          <span className="text-[#7BACFF]   ">
             เวลา : {formatTime(endDate ?? null)}
           </span>
         </div>
@@ -375,7 +393,7 @@ const RequestItemHome = ({
                     ></div>
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 flex flex-col">
                     <span
                       className={`text-sm font-medium ${getStepTicket() === "PENDING"
                           ? " text-[#4CAF50]"
@@ -392,11 +410,13 @@ const RequestItemHome = ({
                     >
                       ส่งคำร้อง
                     </span>
+                    <span className="text-xs text-neutral-500 mt-0.5">{formatUpdateByDateTime(startDate)}</span>
                   </div>
                 </div>
 
                 {/* Step 2: Approve - with hover tooltip */}
                 <div className="flex gap-3 relative group">
+                  
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
@@ -459,6 +479,11 @@ const RequestItemHome = ({
                     ticketDetail.timeline.length > 0 && (
                       <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
                         <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[330px] max-h-[300px] overflow-y-auto">
+                         <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-semibold text-neutral-800">
+                            ลำดับการอนุมัติ
+                          </div>
+                        </div>
                           <div className="flex flex-col">
                             {ticketDetail.timeline.map((stage, index) => {
                               const isLast =
@@ -476,7 +501,7 @@ const RequestItemHome = ({
                                   {/* Icon & Line */}
                                   <div className="flex flex-col items-center">
                                     <div
-                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
+                                      className={`grid h-9 w-9 rounded-full border flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
                                           ? "border-[#4CAF50] text-[#4CAF50]"
                                           : stage.status === "REJECTED"
                                             ? "border-[#FF4D4F] text-[#FF4D4F]"
@@ -488,21 +513,19 @@ const RequestItemHome = ({
                                       {stage.status === "REJECTED" ? (
                                         <Icon
                                           icon="mdi:close"
-                                          width="14"
-                                          height="14"
+                                          className="text-lg"
                                         />
                                       ) : (
                                         <Icon
                                           icon="ic:sharp-check"
-                                          width="14"
-                                          height="14"
+                                          className="text-lg"
                                         />
                                       )}
                                     </div>
                                     {/* Connecting Line - hide for last item */}
                                     {!isLast && (
                                       <div
-                                        className={`w-0.5 h-12 -my-1 ${stage.status === "APPROVED"
+                                        className={`mt-1 h-8 w-px mb-1 ${stage.status === "APPROVED"
                                             ? "bg-[#4CAF50]"
                                             : "bg-[#9E9E9E]"
                                           }`}

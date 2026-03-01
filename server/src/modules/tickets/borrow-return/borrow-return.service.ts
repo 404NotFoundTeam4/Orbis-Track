@@ -81,6 +81,9 @@ export class BorrowReturnService {
           empcode: item.requester.us_emp_code,
           image: item.requester.us_images,
           department: item.requester.department?.dept_name || "-",
+          borrow_user: `${item.requester.us_firstname} ${item.requester.us_lastname}`,
+          borrow_phone: item.requester.us_phone
+
         },
 
         device_summary: {
@@ -93,7 +96,7 @@ export class BorrowReturnService {
           image: mainDevice ? mainDevice.de_images : null,
           category: mainDevice ? mainDevice.category.ca_name : "-",
           section:
-            mainDevice?.section?.sec_name.replace(dept, "").trim() ?? "-",
+            mainDevice?.section?.sec_name.replace(dept, "").replace("ฝ่ายย่อย", "").trim() ?? "-",
           department: dept.replace(/แผนก/g, "").trim() ?? "-",
           total_quantity: deviceCount,
         },
@@ -152,6 +155,8 @@ export class BorrowReturnService {
       requester: {
         ...ticket.requester,
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+         borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+          borrow_phone: ticket.requester.us_phone
       },
 
       devices: ticket.ticket_devices.map((td: any) => ({
@@ -163,20 +168,11 @@ export class BorrowReturnService {
       })),
 
       accessories:
-        ticket.ticket_devices[0]?.child.device?.accessories?.length > 0
-          ? [
-            {
-              acc_id:
-                ticket.ticket_devices[0].child.device.accessories[0].acc_id,
-              acc_name:
-                ticket.ticket_devices[0].child.device.accessories[0].acc_name,
-              acc_quantity:
-                ticket.ticket_devices[0].child.device.accessories[0]
-                  .acc_quantity,
-            },
-          ]
-          : [],
-
+        ticket.ticket_devices[0]?.child.device?.accessories?.map(acc => ({
+          acc_id: acc.acc_id,
+          acc_name: acc.acc_name,
+          acc_quantity: acc.acc_quantity,
+        })) ?? [],
       timeline: ticket.stages.map((stage: any) => ({
         role_name: stage.brts_name,
         step: stage.brts_step_approve,
@@ -296,8 +292,8 @@ export class BorrowReturnService {
           recipient_ids: [borrowUserId],
           title: "มีคำขอยืมที่กำลังรออนุมัติ",
           message: `ลำดับการอนุมัติปัจจุบัน : ${displayStep}`,
-          base_event: BASE_EVENT.TICKET_STAGE_PASSED,
-          event: NR_EVENT.YOUR_TICKET_STAGE_APPROVED,
+          base_event: "TICKET_STAGE_PASSED",
+          event: "YOUR_TICKET_STAGE_APPROVED",
           brt_id: ticketId,
           target_route: `/home/${ticketId}`,
           upsert: true,
@@ -345,8 +341,8 @@ export class BorrowReturnService {
             recipient_ids: nextApprovers.map((approver) => approver.us_id),
             title: "แจ้งเตือนคำขอยืมใหม่",
             message: `มีคำขอยืมกำลังรออนุมัติ`,
-            base_event: BASE_EVENT.TICKET_STAGE_PASSED,
-            event: NR_EVENT.APPROVAL_REQUESTED,
+            base_event: "TICKET_STAGE_PASSED",
+            event: "APPROVAL_REQUESTED",
             brt_id: ticketId,
             target_route: `/request-borrow-ticket/${ticketId}`,
             // upsert: true,
@@ -434,8 +430,8 @@ export class BorrowReturnService {
         recipient_ids: [borrowUserId],
         title: "คำขอยืมถูกปฏิเสธ",
         message: `เหตุผลการปฏิเสธ : ${rejectReason}`,
-        base_event: BASE_EVENT.TICKET_REJECTED,
-        event: NR_EVENT.YOUR_TICKET_REJECTED,
+        base_event: "TICKET_REJECTED",
+        event: "YOUR_TICKET_REJECTED",
         brt_id: ticketId,
         target_route: `/home/${ticketId}`,
         upsert: true,

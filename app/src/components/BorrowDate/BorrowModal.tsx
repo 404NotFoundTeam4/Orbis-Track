@@ -143,7 +143,6 @@ export default function BorrowModal({
   useEffect(() => {
     setdefaultBorrow(defaultValues);
   }, [defaultValues]);
-  console.log(defaultValues);
   useEffect(() => {
     setTimeStart(timeDefault?.time_start);
     setTimeEnd(timeDefault?.time_end);

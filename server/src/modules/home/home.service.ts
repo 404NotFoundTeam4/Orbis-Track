@@ -206,7 +206,7 @@ async function getRecentTickets(userId: number) {
         name: mainDevice?.de_name || "Unknown Device",
         // ใช้ serial ของลูก (child) ถ้ามี หรือของแม่ (main)
         serial_number:
-          deviceChild?.dec_serial_number || mainDevice?.de_serial_number || "-",
+          mainDevice?.de_serial_number ||  deviceChild?.dec_serial_number || "-",
         total_quantity: ticket.brt_quantity,
         category: mainDevice?.category?.ca_name || "-",
         department: cleanDept || "-",
@@ -219,8 +219,8 @@ async function getRecentTickets(userId: number) {
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
         empcode: ticket.requester.us_emp_code,
-        borrow_user: ticket.brt_user,
-        borrow_phone: ticket.brt_phone,
+        borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+        borrow_phone: ticket.requester.us_phone,
       },
     };
   });
@@ -331,20 +331,16 @@ async function getTicketDetailById(id: number) {
       name: td.child.device.de_name,
       image: td.child.device.de_images,
       current_status: td.child.dec_status,
+
       has_serial_number: Boolean(
         td.child.dec_serial_number && td.child.dec_serial_number !== "-",
       ),
     })),
-    accessories:
-      firstDevice?.accessories && firstDevice.accessories.length > 0
-        ? [
-          {
-            acc_id: firstDevice.accessories[0].acc_id,
-            acc_name: firstDevice.accessories[0].acc_name,
-            acc_quantity: firstDevice.accessories[0].acc_quantity,
-          },
-        ]
-        : [],
+    accessories: firstDevice?.accessories?.map(acc => ({
+      acc_id: acc.acc_id,
+      acc_name: acc.acc_name,
+      acc_quantity: acc.acc_quantity,
+    })) ?? [],
     requester: {
       id: ticket.requester.us_id,
       fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
@@ -352,8 +348,8 @@ async function getTicketDetailById(id: number) {
       image: ticket.requester.us_images,
       department: ticket.requester.department?.dept_name || "-",
       us_phone: ticket.requester.us_phone,
-      borrow_user: ticket.brt_user,
-      borrow_phone: ticket.brt_phone,
+       borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+        borrow_phone: ticket.requester.us_phone,
     },
   };
 }

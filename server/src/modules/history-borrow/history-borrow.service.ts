@@ -35,6 +35,12 @@ function buildFullName(firstName: string, lastName: string): string {
 
 /**
  * Description: สร้างเงื่อนไข where สำหรับการมองเห็นข้อมูล (visibility) ตามบทบาทของผู้ใช้
+ * Rule :
+ * - ADMIN : เห็นประวัติการยืม-คืนของทุกคน (ทั้งระบบ)
+ * - HOD   : เห็นประวัติการยืม-คืนของคนที่อยู่ "แผนกเดียวกัน" (ไม่สนฝ่ายย่อย)
+ * - HOS   : เห็นประวัติการยืม-คืนของคนที่อยู่ "แผนกเดียวกัน + ฝ่ายย่อยเดียวกัน"
+ * - STAFF : เห็นประวัติการยืม-คืนของ "คนที่ยืมอุปกรณ์ในคลังที่ตัวเองดูแล"
+ * - อื่นๆ : เห็นเฉพาะของตัวเอง
  * Input : currentUserContext (userId, userRole, departmentId, sectionId)
  * Output : Prisma.borrow_return_ticketsWhereInput เงื่อนไขสำหรับกรอง ticket ตามสิทธิ์การมองเห็น
  * Author: Chanwit Muangma (Boom) 66160224
@@ -42,8 +48,10 @@ function buildFullName(firstName: string, lastName: string): string {
 function buildVisibilityWhere(
   currentUserContext: CurrentUserContext
 ): Prisma.borrow_return_ticketsWhereInput {
+  // ====== ADMIN เห็นทั้งหมด ======
   if (currentUserContext.userRole === "ADMIN") return {};
 
+  // ====== HOD เห็นทั้งแผนก (ไม่สนฝ่ายย่อย) ======
   if (currentUserContext.userRole === "HOD") {
     if (!currentUserContext.departmentId) {
       return { brt_user_id: currentUserContext.userId };
@@ -51,13 +59,45 @@ function buildVisibilityWhere(
     return { requester: { us_dept_id: currentUserContext.departmentId } };
   }
 
+  // ====== HOS เห็นทั้งแผนก + ฝ่ายย่อยเดียวกัน ======
   if (currentUserContext.userRole === "HOS") {
-    if (!currentUserContext.sectionId) {
+    if (!currentUserContext.departmentId || !currentUserContext.sectionId) {
       return { brt_user_id: currentUserContext.userId };
     }
-    return { requester: { us_sec_id: currentUserContext.sectionId } };
+    return {
+      requester: {
+        us_dept_id: currentUserContext.departmentId,
+        us_sec_id: currentUserContext.sectionId,
+      },
+    };
   }
 
+  // ====== STAFF เห็นเฉพาะคำขอที่ยืม "อุปกรณ์ในคลังที่ตัวเองดูแล" ======
+  if (currentUserContext.userRole === "STAFF") {
+    if (!currentUserContext.departmentId || !currentUserContext.sectionId) {
+      return { brt_user_id: currentUserContext.userId };
+    }
+
+    return {
+      ticket_devices: {
+        some: {
+          deleted_at: null,
+          child: {
+            device: {
+              section: {
+                sec_id: currentUserContext.sectionId,
+                department: {
+                  dept_id: currentUserContext.departmentId,
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+  }
+
+  // ====== Role อื่นๆ เห็นเฉพาะของตัวเอง ======
   return { brt_user_id: currentUserContext.userId };
 }
 
@@ -461,14 +501,32 @@ async function getHistoryBorrowTickets(
   const limitNumber = Math.max(1, Number(query.limit ?? 10));
   const offsetNumber = (pageNumber - 1) * limitNumber;
 
-  const visibilityWhere = buildVisibilityWhere(currentUserContext);
-  const searchWhere = query.search ? buildSearchWhere(query.search) : {};
+    /**
+     * Description: โหมดการมองเห็นข้อมูลของหน้า List
+     * Rule :
+     * - viewMode = "mine" : บังคับเห็นเฉพาะรายการของผู้ใช้ปัจจุบัน (ไม่สน role)
+     * - viewMode = "all"  : ใช้ rule การมองเห็นตาม role (ADMIN/HOD/HOS/STAFF/อื่นๆ)
+     * Input : query.viewMode, currentUserContext
+     * Output : Prisma where สำหรับ visibility ที่ใช้กับ baseWhere
+     * Author: Chanwit Muangma (Boom) 66160224
+     */
+    const resolvedViewMode = query.viewMode ?? "all";
 
-  const baseWhere: Prisma.borrow_return_ticketsWhereInput = {
-    deleted_at: null,
-    ...(query.status ? { brt_status: query.status as BRT_STATUS } : {}),
-    AND: [visibilityWhere, searchWhere],
-  };
+    const roleBasedVisibilityWhere = buildVisibilityWhere(currentUserContext);
+
+    const visibilityWhere: Prisma.borrow_return_ticketsWhereInput =
+      resolvedViewMode === "mine"
+        ? { brt_user_id: currentUserContext.userId }
+        : roleBasedVisibilityWhere;
+
+    const searchWhere = query.search ? buildSearchWhere(query.search) : {};
+
+    const baseWhere: Prisma.borrow_return_ticketsWhereInput = {
+      deleted_at: null,
+      ...(query.status ? { brt_status: query.status as BRT_STATUS } : {}),
+      AND: [visibilityWhere, searchWhere],
+    };
+
 
   const sortDirection = query.sortDirection === "asc" ? "asc" : "desc";
   const sortField = query.sortField ?? "requestDate";

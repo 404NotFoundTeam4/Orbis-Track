@@ -28,7 +28,7 @@ const emptyToUndefined = (value: unknown) => {
 
 /**
  * Description: Schema สำหรับ query ของ endpoint List ประวัติการยืม-คืน
- * Input : Query string (page, limit, status, search, sortField, sortDirection)
+ * Input : Query string (page, limit, viewMode, status, search, sortField, sortDirection)
  * Output : Zod Schema สำหรับ validate และ coerce ชนิดข้อมูลของ query
  * Author: Chanwit Muangma (Boom) 66160224
  */
@@ -36,16 +36,36 @@ export const getHistoryBorrowTicketQuerySchema = z.object({
   page: z.preprocess(
     emptyToUndefined,
     z.coerce.number().int().min(1).optional()
-  ).openapi({ description: "เลขหน้า" }), // กัน page="" และ page=0
+  ).openapi({ description: "เลขหน้า" }),
 
   limit: z.preprocess(
     emptyToUndefined,
     z.coerce.number().int().min(1).max(100).optional()
-  ).openapi({ description: "จำนวนต่อหน้า" }), // กัน limit="" และ limit=0
+  ).openapi({ description: "จำนวนต่อหน้า" }),
 
-  status: z.preprocess(emptyToUndefined, z.nativeEnum(BRT_STATUS).optional()).openapi({ description: "สถานะ" }),
+  /**
+   * Description: โหมดการมองเห็นข้อมูลของหน้า List
+   * Rule :
+   * - mine = เห็นเฉพาะรายการของฉัน (brt_user_id = current user)
+   * - all  = เห็นทั้งหมดตามสิทธิ์ของ Role (ใช้ visibility rule เดิม)
+   * Input : viewMode (string) จาก query
+   * Output : "mine" | "all" | undefined
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  viewMode: z.preprocess(
+    emptyToUndefined,
+    z.enum(["mine", "all"]).optional()
+  ).openapi({ description: "โหมดการมองเห็น (mine=ของฉัน, all=ทั้งหมด)" }),
 
-  search: z.preprocess(emptyToUndefined, z.string().optional()).openapi({ description: "คำค้นหา" }),
+  status: z.preprocess(
+    emptyToUndefined,
+    z.nativeEnum(BRT_STATUS).optional()
+  ).openapi({ description: "สถานะ" }),
+
+  search: z.preprocess(
+    emptyToUndefined,
+    z.string().optional()
+  ).openapi({ description: "คำค้นหา" }),
 
   sortField: z.preprocess(
     emptyToUndefined,

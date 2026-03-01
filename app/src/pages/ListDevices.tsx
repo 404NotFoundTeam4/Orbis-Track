@@ -77,7 +77,7 @@ const ListDevices = () => {
 
   const filtered = useMemo(() => {
     const search = searchFilter.search.trim().toLowerCase();
-    let result = devices.filter((device) => {
+    const result = devices.filter((device) => {
       const bySearch =
         !search || [device.de_name].join(" ").toLowerCase().includes(search);
       const byCategory =

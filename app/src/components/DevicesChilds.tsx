@@ -263,7 +263,7 @@ const DevicesChilds = ({ devicesChilds, onUpload, onDelete, onSaveAll, lastAsset
         }));
 
         // รวมอุปกรณ์จริงและอุปกรณ์ draft เข้าเป็น array เดียว
-        let result = [...devicesChilds, ...draftAsDevices];
+        const result = [...devicesChilds, ...draftAsDevices];
 
         // SORT
         if (sortField) {

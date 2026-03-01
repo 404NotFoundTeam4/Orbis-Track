@@ -249,7 +249,7 @@ export const Inventory = () => {
   // Logic การกรองและการเรียงลำดับข้อมูล
   const filtered = useMemo(() => {
     const search = searchFilter.search?.trim().toLowerCase() || "";
-    let result = items.filter((item) => {
+    const result = items.filter((item) => {
       const bySearch =
         !search ||
         [item.name, item.department, item.category, item.serial_number]

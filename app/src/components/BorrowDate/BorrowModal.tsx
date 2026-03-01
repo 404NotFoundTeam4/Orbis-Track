@@ -148,7 +148,7 @@ export default function BorrowModal({
     setTimeEnd(timeDefault?.time_end);
   }, [timeDefault]);
 
-  let yearValue = 2025;
+  const yearValue = 2025;
 
   useEffect(() => {
     if (!dateDefault) return null;

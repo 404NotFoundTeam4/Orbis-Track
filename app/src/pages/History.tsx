@@ -339,6 +339,8 @@ export default function History() {
    */
   const [loadingDetailIssueId, setLoadingDetailIssueId] = useState<number | null>(null);
 
+  const [selectedBorrowHistoryViewMode, setSelectedBorrowHistoryViewMode] = useState<HistoryBorrowViewMode>("all");
+
   /**
    * Description: handler รับค่าจาก SearchFilter (repair) แล้วอัปเดต search + reset pagination + เคลียร์การ expand
    * Input : { search: string } (ค่าจาก SearchFilter)
@@ -471,11 +473,12 @@ export default function History() {
       page: currentPage,
       limit: pageSizeLimit,
       search: trimmedSearchText ? trimmedSearchText : undefined,
+      viewMode: selectedBorrowHistoryViewMode,
       status: selectedStatus || undefined,
       sortField,
       sortDirection,
     };
-  }, [currentPage, pageSizeLimit, searchText, selectedStatus, sortField, sortDirection]);
+  }, [currentPage, pageSizeLimit, searchText, selectedStatus, sortField, sortDirection , selectedBorrowHistoryViewMode]);
 
   /**
    * Description: ref เก็บ mock expandId ที่ถูก inject เข้าลิสต์ (กันโดน overwrite จาก response)
@@ -1254,6 +1257,123 @@ export default function History() {
     return classNameParts.filter(Boolean).join(" ");
   }
 
+   /**
+   * Description: เปลี่ยนโหมด segment "ทั้งหมด/ของฉัน" และ reset state ที่เกี่ยวข้อง
+   * - เคลียร์ mockExpandIdRef เพื่อกัน inject ticket จาก expandId เก่าปนข้ามโหมด
+   * - reset หน้า + เคลียร์การ expand เพื่อให้ UI ตรงกับผลลัพธ์ใหม่
+   * Input : nextViewMode ("all" | "mine")
+   * Output : void
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const onChangeBorrowHistoryViewMode = (nextViewMode: HistoryBorrowViewMode): void => {
+    setSelectedBorrowHistoryViewMode(nextViewMode);
+
+    setCurrentPage(1);
+    setExpandedTicketIds(new Set());
+
+    mockExpandIdRef.current = null;
+    lastExpandedIdRef.current = null;
+  };
+
+
+  /**
+   * Description: โหมดการมองเห็นข้อมูลของหน้า List ประวัติการยืม-คืน
+   * Rule :
+   * - "all"  = ทั้งหมดตามสิทธิ์ของ role
+   * - "mine" = ของฉัน (บังคับ brt_user_id = current user)
+   * Input : string union
+   * Output : type สำหรับ state และส่งเป็น query ไป backend
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  type HistoryBorrowViewMode = "all" | "mine";
+
+  /**
+   * Description: state โหมดการมองเห็นของหน้า "ประวัติยืม-คืน" (Segment control)
+   * Input : user click segment (ทั้งหมด/ของฉัน)
+   * Output : selectedBorrowHistoryViewMode ("all" | "mine")
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+
+  /**
+   * Description: ดึง role + scope (dept/sec) จาก currentUserProfile ให้รองรับหลายโครงสร้างข้อมูล
+   * Input : currentUserProfile (any)
+   * Output : resolvedUserRole, resolvedDepartmentId, resolvedSectionId
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  function resolveUserRoleAndScopeFromProfile(currentUserProfile: any) {
+    const rawUserRole =
+      currentUserProfile?.us_role ??
+      currentUserProfile?.userRole ??
+      currentUserProfile?.usRole ??
+      currentUserProfile?.role ??
+      currentUserProfile?.user_role ??
+      null;
+
+    const resolvedUserRole =
+      typeof rawUserRole === "string" ? rawUserRole.toUpperCase() : null;
+
+    const rawDepartmentId =
+      currentUserProfile?.us_dept_id ??
+      currentUserProfile?.departmentId ??
+      currentUserProfile?.department?.dept_id ??
+      currentUserProfile?.department?.deptId ??
+      currentUserProfile?.dept_id ??
+      null;
+
+    const rawSectionId =
+      currentUserProfile?.us_sec_id ??
+      currentUserProfile?.sectionId ??
+      currentUserProfile?.section?.sec_id ??
+      currentUserProfile?.section?.secId ??
+      currentUserProfile?.sec_id ??
+      null;
+
+    const resolvedDepartmentId =
+      rawDepartmentId === null || rawDepartmentId === undefined
+        ? null
+        : Number(rawDepartmentId);
+
+    const resolvedSectionId =
+      rawSectionId === null || rawSectionId === undefined
+        ? null
+        : Number(rawSectionId);
+
+    return {
+      resolvedUserRole,
+      resolvedDepartmentId: Number.isFinite(resolvedDepartmentId)
+        ? resolvedDepartmentId
+        : null,
+      resolvedSectionId: Number.isFinite(resolvedSectionId) ? resolvedSectionId : null,
+    };
+  }
+
+  /**
+   * Description: ตัดสินใจว่า role ปัจจุบันควรเห็น segment "ของฉัน/ทั้งหมด" หรือไม่
+   * Rule :
+   * - ADMIN : แสดงเสมอ
+   * - HOD   : แสดงเมื่อมี departmentId
+   * - HOS   : แสดงเมื่อมี departmentId และ sectionId
+   * - STAFF : แสดงเมื่อมี departmentId และ sectionId
+   * - อื่นๆ : ไม่แสดง
+   * Input : currentUserProfile, isLoadingCurrentUserProfile
+   * Output : boolean (true=แสดง segment)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const canViewBorrowHistoryViewModeSegment = useMemo(() => {
+    if (isLoadingCurrentUserProfile) return false;
+    if (!currentUserProfile) return false;
+
+    const { resolvedUserRole} =
+      resolveUserRoleAndScopeFromProfile(currentUserProfile);
+
+    if (!resolvedUserRole) return false;
+
+    if (resolvedUserRole === "ADMIN" || resolvedUserRole === "HOD" || resolvedUserRole === "HOS" || resolvedUserRole === "STAFF") return true;
+    
+
+    return false;
+  }, [currentUserProfile, isLoadingCurrentUserProfile]);
+
   // ----------------------------
   // Render
   // ----------------------------
@@ -1293,9 +1413,65 @@ export default function History() {
           Author: Chanwit Muangma (Boom) 66160224
         */}
         <div className="relative flex-1">
-          {activeTabKey === "borrow" && <SearchFilter onChange={handleSearchChange} />}
-          {activeTabKey === "approve" && <SearchFilter onChange={handleApprovalSearchChange} />}
-          {activeTabKey === "repair" && <SearchFilter onChange={handleRepairSearchChange} />}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            {/* 
+              Description: Segment control สลับโหมด "ทั้งหมด/ของฉัน" เฉพาะแท็บ borrow และ role ที่อนุญาต
+              Input : activeTabKey, isLoadingCurrentUserProfile, canViewBorrowHistoryViewModeSegment
+              Output : ReactNode (Segment หรือ null)
+              Author: Chanwit Muangma (Boom) 66160224
+            */}
+            {activeTabKey === "borrow" &&
+              !isLoadingCurrentUserProfile &&
+              canViewBorrowHistoryViewModeSegment && (
+                <div className="inline-flex rounded-full bg-[#D9D9D9] p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChangeBorrowHistoryViewMode("all");
+                      setCurrentPage(1);
+                      setExpandedTicketIds(new Set());
+                    }}
+                    className={[
+                      "rounded-full px-4 py-2 text-sm font-medium transition",
+                      selectedBorrowHistoryViewMode === "all"
+                        ? "bg-white text-neutral-900 shadow-sm"
+                        : "text-neutral-600 hover:text-neutral-900",
+                    ].join(" ")}
+                  >
+                    ทั้งหมด
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChangeBorrowHistoryViewMode("mine");
+                      setCurrentPage(1);
+                      setExpandedTicketIds(new Set());
+                    }}
+                    className={[
+                      "rounded-full px-4 py-2 text-sm font-medium transition",
+                      selectedBorrowHistoryViewMode === "mine"
+                        ? "bg-white text-neutral-900 shadow-sm"
+                        : "text-neutral-600 hover:text-neutral-900",
+                    ].join(" ")}
+                  >
+                    ของฉัน
+                  </button>
+                </div>
+              )}
+
+            {/* 
+              Description: Search เปลี่ยนตามแท็บ (ให้อยู่ถัดจาก segment และกินพื้นที่ที่เหลือ)
+              Input : activeTabKey
+              Output : ReactNode
+              Author: Chanwit Muangma (Boom) 66160224
+            */}
+            <div className="flex-1">
+              {activeTabKey === "borrow" && <SearchFilter onChange={handleSearchChange} />}
+              {activeTabKey === "approve" && <SearchFilter onChange={handleApprovalSearchChange} />}
+              {activeTabKey === "repair" && <SearchFilter onChange={handleRepairSearchChange} />}
+            </div>
+          </div>
         </div>
 
         <div className="md:ml-auto">
@@ -1414,7 +1590,7 @@ export default function History() {
                 )}
 
                 {!isLoadingRepairList && repairItemsForRender.length === 0 && (
-                  <div className="px-2 py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
+                  <div className="px-[30px] py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
                 )}
 
                 {!isLoadingRepairList &&
@@ -1757,7 +1933,7 @@ export default function History() {
                 )}
 
                 {!isLoadingList && ticketItems.length === 0 && (
-                  <div className="px-2 py-8 text-sm text-neutral-600"></div>
+                  <div className="px-[30px] py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
                 )}
 
                 {!isLoadingList &&

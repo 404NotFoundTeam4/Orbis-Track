@@ -174,7 +174,7 @@ const RequestItemHome = ({
   const getStepTicket = () => {
     return ticketDetail?.status;
   };
-  console.log(ticket  )
+  console.log(ticket )
   const toggleExpand = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);

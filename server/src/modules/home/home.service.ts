@@ -214,7 +214,7 @@ async function getRecentTickets(userId: number) {
         description: mainDevice?.de_description || null,
         accessories: mainDevice?._count?.accessories ?? 0,
         image: mainDevice?.de_images || null,
-        max_borrow_days: mainDevice?.de_max_borrow_days || 0,
+        maxBorrowDays: mainDevice?.de_max_borrow_days || 0,
       },
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,

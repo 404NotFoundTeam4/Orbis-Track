@@ -23,7 +23,7 @@ export interface TicketDeviceSummary {
   serial_number: string;
   description: string | null;
   location: string;
-  maxBorrowDays: number | string | null;
+  max_borrow_days: number | string | null;
   image: string | null;
   category: string;
   section: string;

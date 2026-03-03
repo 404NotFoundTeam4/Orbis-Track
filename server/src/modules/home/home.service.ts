@@ -206,7 +206,7 @@ async function getRecentTickets(userId: number) {
         name: mainDevice?.de_name || "Unknown Device",
         // ใช้ serial ของลูก (child) ถ้ามี หรือของแม่ (main)
         serial_number:
-          mainDevice?.de_serial_number ||  deviceChild?.dec_serial_number || "-",
+          mainDevice?.de_serial_number || deviceChild?.dec_serial_number || "-",
         total_quantity: ticket.brt_quantity,
         category: mainDevice?.category?.ca_name || "-",
         department: cleanDept || "-",
@@ -214,7 +214,7 @@ async function getRecentTickets(userId: number) {
         description: mainDevice?.de_description || null,
         accessories: mainDevice?._count?.accessories ?? 0,
         image: mainDevice?.de_images || null,
-        maxBorrowDays: mainDevice?.de_max_borrow_days || 0,
+        max_borrow_days: mainDevice?.de_max_borrow_days || 0,
       },
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
@@ -348,8 +348,8 @@ async function getTicketDetailById(id: number) {
       image: ticket.requester.us_images,
       department: ticket.requester.department?.dept_name || "-",
       us_phone: ticket.requester.us_phone,
-       borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
-        borrow_phone: ticket.requester.us_phone,
+      borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+      borrow_phone: ticket.requester.us_phone,
     },
   };
 }

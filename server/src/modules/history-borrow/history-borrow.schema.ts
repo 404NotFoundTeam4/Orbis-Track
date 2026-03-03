@@ -28,7 +28,7 @@ const emptyToUndefined = (value: unknown) => {
 
 /**
  * Description: Schema สำหรับ query ของ endpoint List ประวัติการยืม-คืน
- * Input : Query string (page, limit, status, search, sortField, sortDirection)
+ * Input : Query string (page, limit, viewMode, status, search, sortField, sortDirection)
  * Output : Zod Schema สำหรับ validate และ coerce ชนิดข้อมูลของ query
  * Author: Chanwit Muangma (Boom) 66160224
  */
@@ -43,9 +43,23 @@ export const getHistoryBorrowTicketQuerySchema = z.object({
     z.coerce.number().int().min(1).max(100).optional()
   ).openapi({ description: "จำนวนต่อหน้า" }), // กัน limit="" และ limit=0
 
-  status: z.preprocess(emptyToUndefined, z.nativeEnum(BRT_STATUS).optional()).openapi({ description: "สถานะ" }),
 
-  search: z.preprocess(emptyToUndefined, z.string().optional()).openapi({ description: "คำค้นหา" }),
+  viewMode: z.preprocess(
+    emptyToUndefined,
+    z.enum(["mine", "all"]).optional()
+  ).openapi({ description: "โหมดการมองเห็น (mine=ของฉัน, all=ทั้งหมด)" }),
+
+  status: z.preprocess(
+    emptyToUndefined,
+    z.nativeEnum(BRT_STATUS).optional()
+  ).openapi({ description: "สถานะ" }),
+
+  search: z.preprocess(
+    emptyToUndefined,
+    z.string().optional()
+  ).openapi({ description: "คำค้นหา" }),
+
+  
 
   sortField: z.preprocess(
     emptyToUndefined,

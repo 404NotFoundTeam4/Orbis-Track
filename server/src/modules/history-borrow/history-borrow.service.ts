@@ -42,8 +42,10 @@ function buildFullName(firstName: string, lastName: string): string {
 function buildVisibilityWhere(
   currentUserContext: CurrentUserContext,
 ): Prisma.borrow_return_ticketsWhereInput {
+  // ====== ADMIN เห็นทั้งหมด ======
   if (currentUserContext.userRole === "ADMIN") return {};
 
+  // ====== HOD เห็นทั้งแผนก (ไม่สนฝ่ายย่อย) ======
   if (currentUserContext.userRole === "HOD") {
     if (!currentUserContext.departmentId) {
       return { brt_user_id: currentUserContext.userId };
@@ -51,13 +53,45 @@ function buildVisibilityWhere(
     return { requester: { us_dept_id: currentUserContext.departmentId } };
   }
 
+  // ====== HOS เห็นทั้งแผนก + ฝ่ายย่อยเดียวกัน ======
   if (currentUserContext.userRole === "HOS") {
-    if (!currentUserContext.sectionId) {
+    if (!currentUserContext.departmentId || !currentUserContext.sectionId) {
       return { brt_user_id: currentUserContext.userId };
     }
-    return { requester: { us_sec_id: currentUserContext.sectionId } };
+    return {
+      requester: {
+        us_dept_id: currentUserContext.departmentId,
+        us_sec_id: currentUserContext.sectionId,
+      },
+    };
   }
 
+  // ====== STAFF เห็นเฉพาะคำขอที่ยืม "อุปกรณ์ในคลังที่ตัวเองดูแล" ======
+  if (currentUserContext.userRole === "STAFF") {
+    if (!currentUserContext.departmentId || !currentUserContext.sectionId) {
+      return { brt_user_id: currentUserContext.userId };
+    }
+
+    return {
+      ticket_devices: {
+        some: {
+          deleted_at: null,
+          child: {
+            device: {
+              section: {
+                sec_id: currentUserContext.sectionId,
+                department: {
+                  dept_id: currentUserContext.departmentId,
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+  }
+
+  // ====== Role อื่นๆ เห็นเฉพาะของตัวเอง ======
   return { brt_user_id: currentUserContext.userId };
 }
 
@@ -464,7 +498,24 @@ async function getHistoryBorrowTickets(
   const limitNumber = Math.max(1, Number(query.limit ?? 10));
   const offsetNumber = (pageNumber - 1) * limitNumber;
 
-  const visibilityWhere = buildVisibilityWhere(currentUserContext);
+  /**
+   * Description: โหมดการมองเห็นข้อมูลของหน้า List
+   * Rule :
+   * - viewMode = "mine" : บังคับเห็นเฉพาะรายการของผู้ใช้ปัจจุบัน (ไม่สน role)
+   * - viewMode = "all"  : ใช้ rule การมองเห็นตาม role (ADMIN/HOD/HOS/STAFF/อื่นๆ)
+   * Input : query.viewMode, currentUserContext
+   * Output : Prisma where สำหรับ visibility ที่ใช้กับ baseWhere
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const resolvedViewMode = query.viewMode ?? "all";
+
+  const roleBasedVisibilityWhere = buildVisibilityWhere(currentUserContext);
+
+  const visibilityWhere: Prisma.borrow_return_ticketsWhereInput =
+    resolvedViewMode === "mine"
+      ? { brt_user_id: currentUserContext.userId }
+      : roleBasedVisibilityWhere;
+
   const searchWhere = query.search ? buildSearchWhere(query.search) : {};
 
   const baseWhere: Prisma.borrow_return_ticketsWhereInput = {

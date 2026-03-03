@@ -3,14 +3,13 @@ import { dashboardBorrowController } from "./dashboard-borrow.controller.js";
 import {
   getBorrowStatsQuerySchema,
   getBorrowStatsResponseSchema,
+  getDeviceChildCountQuerySchema,
+  getDeviceChildCountResponseSchema,
 } from "./dashboard-borrow.schema.js";
 
 const dashboardController = new dashboardBorrowController();
 const router = new Router(undefined, "/dashboard");
 
-/**
- * GET /dashboard/borrow-stats?year=2026&quarter=1
- */
 router.getDoc(
   "/borrow-stats",
   {
@@ -20,6 +19,17 @@ router.getDoc(
     res: getBorrowStatsResponseSchema,
   },
   dashboardController.getBorrowStats,
+);
+
+router.getDoc(
+  "/device-child-count",
+  {
+    tag: "Dashboard",
+    auth: true,
+    query: getDeviceChildCountQuerySchema,
+    res: getDeviceChildCountResponseSchema,
+  },
+  dashboardController.getDeviceChildCount,
 );
 
 export default router.instance;

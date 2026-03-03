@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import BorrowStatsLineCard, {
-  type LinePoint,
-} from "../components/BorrowStatsLineCard";
-import DashboardBorrowService from "../services/DashboardBorrowService";
+import BorrowStatsLineCard, { type LinePoint } from "../components/LineChartCard";
+import DashboardBorrowService from "../services/DashboardLineChartService";
 import DropDown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import Button from "../components/Button";
@@ -50,6 +48,7 @@ export default function Dashboard() {
   }));
 
   const [lineData, setLineData] = useState<LinePoint[]>([]);
+  const [deviceTotal, setDeviceTotal] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -61,14 +60,22 @@ export default function Dashboard() {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await DashboardBorrowService.getBorrowStats({
-          year,
-          quarter,
-        });
-        if (!cancelled) setLineData(res.points);
+
+        const [borrowRes, deviceRes] = await Promise.all([
+          DashboardBorrowService.getBorrowStats({ year, quarter }),
+          DashboardBorrowService.getDeviceChildCount({ year, quarter }),
+        ]);
+
+        if (!cancelled) {
+          setLineData(borrowRes.points);
+          setDeviceTotal(deviceRes.total);
+        }
       } catch (e) {
-        console.error("load borrow stats error:", e);
-        if (!cancelled) setLineData([]);
+        console.error("load dashboard stats error:", e);
+        if (!cancelled) {
+          setLineData([]);
+          setDeviceTotal(0);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -83,12 +90,12 @@ export default function Dashboard() {
   const year = yearItem?.value ?? new Date().getFullYear();
   const quarter = quarterItem?.value ?? 0;
 
+  const periodText = `ปี ${year} / ${quarter === 0 ? "ทั้งปี" : `ไตรมาส ${quarter}`}${loading ? " (กำลังโหลด...)" : ""}`;
+  const deviceText = `จำนวนอุปกรณ์ ${deviceTotal.toLocaleString()} ชิ้น`;
   return (
     <div className="mx-auto w-full px-[20px] py-[20px]">
       <div className="text-sm text-[#000000]">แดชบอร์ด</div>
-      <div className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900">
-        แดชบอร์ด
-      </div>
+      <div className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900">แดชบอร์ด</div>
 
       <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
         <DropDown
@@ -111,9 +118,7 @@ export default function Dashboard() {
           <Button
             variant="primary"
             type="button"
-            onClick={() => {
-              console.log("export clicked");
-            }}
+            onClick={() => console.log("export clicked")}
             className="!w-[108px] !h-[46px] !rounded-full !bg-[#58B3FF] hover:!bg-[#40A9FF] active:!bg-[#1890FF] !text-[16px] !font-bold"
           >
             <span className="inline-flex items-center gap-1">
@@ -127,19 +132,22 @@ export default function Dashboard() {
       <div className="mt-4 flex flex-col gap-[7px]">
         <BorrowStatsLineCard
           title="สถิติการยืม"
-          badgeText={`ปี ${year} / ${quarter === 0 ? "ทั้งปี" : `ไตรมาส ${quarter}`}${loading ? " (กำลังโหลด...)" : ""}`}
-          badgeBgColor={"#E6F7FF"}
+          periodLabel={periodText}
+          badgeText={deviceText}
+          badgeBgColor="#E6F7FF"
           data={lineData}
           width={982}
           minHeight={392}
           svgClassName="w-full h-full"
           chart={{ stroke: "#40A9FF" }}
         />
+
         <BorrowStatsLineCard
           title="สถิติการแจ้งปัญหา"
-          badgeText={`ปี ${year} / ${quarter === 0 ? "ทั้งปี" : `ไตรมาส ${quarter}`}${loading ? " (กำลังโหลด...)" : ""}`}
-          badgeBgColor={"#FFF1F0"}
-          data={lineData}
+          periodLabel={periodText}
+          badgeText={deviceText}
+          badgeBgColor="#FFF1F0"
+          data={lineData}               
           width={982}
           minHeight={392}
           svgClassName="w-full h-full"

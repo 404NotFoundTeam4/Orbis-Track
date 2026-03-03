@@ -5,6 +5,8 @@ import { dashboardBorrowService } from "./dashboard-borrow.service.js";
 import {
   getBorrowStatsQuerySchema,
   type GetBorrowStatsResponseDto,
+  getDeviceChildCountQuerySchema,
+  type GetDeviceChildCountResponseDto,
 } from "./dashboard-borrow.schema.js";
 
 /**
@@ -29,6 +31,22 @@ export class dashboardBorrowController extends BaseController {
   ): Promise<BaseResponse<GetBorrowStatsResponseDto>> {
     const query = getBorrowStatsQuerySchema.parse(req.query);
     const data = await dashboardBorrowService.getBorrowStatsByQuarter(query);
+    return { data };
+  }
+
+  /**
+   * Description: ดึงจำนวนอุปกรณ์ย่อยแบบสะสมจนถึงสิ้นสุดช่วง (filter ปี/ไตรมาส)
+   * Input : req.query { year, quarter }
+   * Output: { data: { year, quarter, range, total } }
+   * Author: Nontapat Sinhum (Guitar) 66160104
+   */
+  async getDeviceChildCount(
+    req: Request,
+    _res: Response,
+    _next: NextFunction,
+  ): Promise<BaseResponse<GetDeviceChildCountResponseDto>> {
+    const query = getDeviceChildCountQuerySchema.parse(req.query);
+    const data = await dashboardBorrowService.getDeviceChildCountByQuarter(query);
     return { data };
   }
 }

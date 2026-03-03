@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
-import type { GetBorrowStatsQueryDto, GetBorrowStatsResponseDto } from "./dashboard-borrow.schema.js";
+import type { GetBorrowStatsQueryDto, GetBorrowStatsResponseDto, GetDeviceChildCountQueryDto, GetDeviceChildCountResponseDto, } from "./dashboard-borrow.schema.js";
 
 function getQuarterRange(year: number, quarter: number) {
   const startMonthIndex = (quarter - 1) * 3; // Q1=0, Q2=3, Q3=6, Q4=9
@@ -32,7 +32,7 @@ async function getBorrowStatsByQuarter(
   const isYear = quarter === 0;
   const { start, end } = isYear ? getYearRange(year) : getQuarterRange(year, quarter);
 
-  // ✅ นิยาม "การยืม": ตัด REJECTED ออก
+  // นิยาม "การยืม": ตัด REJECTED ออก
   const includedStatuses = ["PENDING", "APPROVED", "IN_USE", "COMPLETED"] as const;
 
   type MonthRow = { month: number; count: number };
@@ -78,4 +78,34 @@ async function getBorrowStatsByQuarter(
   };
 }
 
-export const dashboardBorrowService = { getBorrowStatsByQuarter };
+async function getDeviceChildCountByQuarter(
+  query: GetDeviceChildCountQueryDto,
+): Promise<GetDeviceChildCountResponseDto> {
+  const year = query.year;
+  const quarter = query.quarter ?? 0;
+
+  const isYear = quarter === 0;
+  const { start, end } = isYear ? getYearRange(year) : getQuarterRange(year, quarter);
+
+  /**
+   * นับแบบสะสม: ตั้งแต่ต้นระบบ -> จนถึง "สิ้นสุดช่วงที่เลือก"
+   * เงื่อนไขหลัก: created_at < end
+   */
+  const row = (await prisma.$queryRaw`
+    SELECT COUNT(*)::int AS total
+    FROM device_childs dec
+    WHERE dec.created_at < ${end}
+      AND (dec.deleted_at IS NULL OR dec.deleted_at >= ${end});
+  `) as Array<{ total: number }>;
+
+  const total = Number(row?.[0]?.total ?? 0);
+
+  return {
+    year,
+    quarter,
+    range: { start: start.toISOString(), end: end.toISOString() },
+    total,
+  };
+}
+
+export const dashboardBorrowService = { getBorrowStatsByQuarter, getDeviceChildCountByQuarter };

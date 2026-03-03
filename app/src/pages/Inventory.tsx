@@ -332,7 +332,7 @@ export const Inventory = () => {
   const gridCols = "1.8fr 1fr 1fr 1fr 0.7fr 1fr 1fr";
 
   return (
-    <div className="w-full flex flex-col p-4 h-[80%] ">
+    <div className="w-full flex flex-col p-4">
       <div className="flex-1">
         {/* Breadcrumbs */}
         <div className="mb-[8px] space-x-[9px]">
@@ -343,7 +343,7 @@ export const Inventory = () => {
 
         {/* Title */}
         <div className="flex items-center gap-[14px] mb-[21px]">
-          <h1 className="text-[42px] font-semibold">จัดการคลังอุปกรณ์</h1>
+          <h1 className="text-2xl font-semibold">จัดการคลังอุปกรณ์</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             อุปกรณ์ทั้งหมด {items.length}
           </div>

@@ -501,7 +501,7 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
                                   {/* Icon & Line */}
                                   <div className="flex flex-col items-center">
                                     <div
-                                      className={`grid h-9 w-9 rounded-full border flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
+                                      className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
                                           ? "border-[#4CAF50] text-[#4CAF50]"
                                           : stage.status === "REJECTED"
                                             ? "border-[#FF4D4F] text-[#FF4D4F]"
@@ -513,19 +513,21 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
                                       {stage.status === "REJECTED" ? (
                                         <Icon
                                           icon="mdi:close"
-                                          className="text-lg"
+                                          width="14"
+                                          height="14"
                                         />
                                       ) : (
                                         <Icon
                                           icon="ic:sharp-check"
-                                          className="text-lg"
+                                          width="14"
+                                          height="14"
                                         />
                                       )}
                                     </div>
                                     {/* Connecting Line - hide for last item */}
                                     {!isLast && (
                                       <div
-                                        className={`mt-1 h-8 w-px mb-1 ${stage.status === "APPROVED"
+                                        className={`w-0.5 h-12 -my-1 ${stage.status === "APPROVED"
                                             ? "bg-[#4CAF50]"
                                             : "bg-[#9E9E9E]"
                                           }`}
@@ -549,34 +551,35 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
                                       {stage.role_name}
                                       {stage.dept_name && ` ${stage.dept_name}`}
                                     </span>
-                                    {stage.status === "PENDING" &&
-                                      Array.isArray(stage.approvers) &&
+                                    {stage.approvers &&
+                                      stage.status === "PENDING" &&
                                       stage.approvers.length > 0 && (
                                         <div className="text-xs text-[#9E9E9E] mt-1 whitespace-nowrap">
                                           ผู้ใช้งานในตำแหน่งนี้ :{" "}
                                           {(() => {
                                             const maxShow = 2;
-                                            const total =
+                                            const count =
                                               stage.approvers.length;
-
                                             const displayNames = stage.approvers
                                               .slice(0, maxShow)
                                               .map((name) =>
                                                 name.length > 20
-                                                  ? `${name.substring(0, 17)}...`
-                                                  : name
+                                                  ? name.substring(0, 17) +
+                                                  "..."
+                                                  : name,
                                               );
 
-                                            return (
-                                              <>
-                                                {displayNames.join(", ")}
-                                                {total > maxShow && (
-                                                  <span className="bg-gray-100 border border-[#9E9E9E] ml-1 px-1 rounded-sm text-[10px]">
-                                                    +{total - maxShow}
+                                            if (count > maxShow) {
+                                              return (
+                                                <span>
+                                                  {displayNames.join(", ")}
+                                                  <span className="bg-gray-100 pt-0 text-[#9E9E9E] border border-[#9E9E9E] ml-1 px-1 rounded-sm text-[10px]">
+                                                    +{count - maxShow}
                                                   </span>
-                                                )}
-                                              </>
-                                            );
+                                                </span>
+                                              );
+                                            }
+                                            return displayNames.join(", ");
                                           })()}
                                         </div>
                                       )}

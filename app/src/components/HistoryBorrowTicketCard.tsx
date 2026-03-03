@@ -774,11 +774,7 @@ const formatTimeThai = (dateStr: string | null): string => {
                     <span
                       className={`cursor-pointer text-sm font-medium ${step2TextClass}`}
                     >
-                      อนุมัติ{" "}
-                      <Icon
-                        icon="mdi:chevron-down"
-                        className="inline-block align-middle"
-                      />
+                      อนุมัติ
                       {shouldShowMainStepTime({
                         stepKey: "APPROVAL",
                         effectiveTicketStatus,
@@ -793,7 +789,7 @@ const formatTimeThai = (dateStr: string | null): string => {
 
                   {detail?.timeline && detail.timeline.length > 0 && (
                     <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
-                      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[360px] max-h-[320px] overflow-y-auto">
+                      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[330px] max-h-[300px] overflow-y-auto">
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-sm font-semibold text-neutral-800">
                             ลำดับการอนุมัติ
@@ -802,120 +798,125 @@ const formatTimeThai = (dateStr: string | null): string => {
 
                         <div className="flex flex-col">
                           {detail.timeline.map((stage, index) => {
-                            const timeline = detail.timeline;
+                            const isLast =
+                              index === detail.timeline.length - 1;
 
-                            const isAnyRejected = timeline.some(
-                              (timelineStage) =>
-                                String(timelineStage.status).toUpperCase() ===
-                                "REJECTED",
-                            );
+                            const prevStage =
+                              index > 0
+                                ? detail.timeline[index - 1]
+                                : null;
 
-                            const currentIndex = timeline.findIndex(
-                              (timelineStage) => {
-                                const st = String(
-                                  timelineStage.status,
-                                ).toUpperCase();
-                                return st !== "APPROVED" && st !== "REJECTED";
-                              },
-                            );
-
-                            const isCurrentQueue =
-                              !isAnyRejected && currentIndex === index;
-
-                            const tone = getTimelineTone({
-                              stepStatus: String(stage.status).toUpperCase(),
-                              isAnyRejected,
-                              isCurrentQueue,
-                            });
-
-                            const classNames = toneClass(tone);
-
-                            const icon =
-                              tone === "rejected"
-                                ? "mdi:close"
-                                : tone === "done"
-                                  ? "mdi:check"
-                                  : "mdi:check";
-
-                            /**
-                             * Description: สร้าง node สำหรับแสดงสรุปรายชื่อผู้มีสิทธิ์อนุมัติ
-                             * - แสดง 2 ชื่อแรก + ถ้ามีมากกว่า 2 คน จะมี badge "+N"
-                             *
-                             * Input : stage.approverCandidates
-                             * Output : ReactNode สำหรับ render ใน tooltip
-                             * Author: Chanwit Muangma (Boom) 66160224
-                             */
-                            const candidateSummaryNode =
-                              renderApproverCandidateSummary(
-                                stage.approverCandidates,
-                              );
+                            const isNextApprover =
+                              prevStage?.status === "APPROVED" &&
+                              stage.status === "PENDING";
 
                             return (
-                              <div
-                                key={`${stage.stepNumber}-${index}`}
-                                className="flex gap-3"
-                              >
+                              <div key={index} className="flex gap-3">
+                                {/* Icon & Line */}
                                 <div className="flex flex-col items-center">
                                   <div
-                                    className={[
-                                      "grid h-9 w-9 place-items-center rounded-full border bg-white",
-                                      classNames.ring,
-                                    ].join(" ")}
+                                    className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
+                                      ? "border-[#4CAF50] text-[#4CAF50]"
+                                      : stage.status === "REJECTED"
+                                        ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                        : isNextApprover
+                                          ? "border-[#000000] text-[#000000]"
+                                          : "border-[#9E9E9E] text-[#9E9E9E]"
+                                      }`}
                                   >
-                                    <Icon icon={icon} className="text-lg" />
+                                    {stage.status === "REJECTED" ? (
+                                      <Icon icon="mdi:close" width="14" height="14" />
+                                    ) : (
+                                      <Icon icon="ic:sharp-check" width="14" height="14" />
+                                    )}
                                   </div>
 
-                                  {index !== timeline.length - 1 && (
+                                  {!isLast && (
                                     <div
-                                      className={[
-                                        " h-8 w-px",
-                                        classNames.line,
-                                      ].join(" ")}
+                                      className={`w-0.5 h-12 -my-1 ${stage.status === "APPROVED"
+                                        ? "bg-[#4CAF50]"
+                                        : "bg-[#9E9E9E]"
+                                        }`}
                                     />
                                   )}
                                 </div>
 
-                                <div className="min-w-0 pt-0.5">
-                                  <div
-                                    className={[
-                                      "text-sm font-medium",
-                                      classNames.text,
-                                    ].join(" ")}
+                                {/* Text */}
+                                <div
+                                  className={`${stage.status === "APPROVED" ||
+                                    stage.status === "REJECTED"
+                                    ? ""
+                                    : "pt-1"
+                                    } ${!isLast ? "pb-3" : ""}`}
+                                >
+                                  <span
+                                    className={`text-sm ${stage.status === "APPROVED"
+                                      ? "text-[#4CAF50]"
+                                      : stage.status === "REJECTED"
+                                        ? "text-[#FF4D4F]"
+                                        : isNextApprover
+                                          ? "text-[#000000]"
+                                          : "text-[#9E9E9E]"
+                                      }`}
                                   >
-                                    <span className="text-neutral-500 font-normal">
-                                      {getApproverScopeLabel(stage)}
-                                    </span>
-                                  </div>
+                                    {`${stage.requiredRole ?? stage.approver?.role ?? ""} ${getApproverScopeLabel(stage)}`}
+                                  </span>
 
-                                  {!stage.approver ? (
-                                    <div className="text-xs text-neutral-700 mt-0.5">
-                                      ผู้มีสิทธิ์อนุมัติ :{" "}
-                                      <span className="font-medium">
-                                        {candidateSummaryNode}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <div className="text-xs text-neutral-700 mt-0.5">
-                                        {String(stage.status).toUpperCase() ===
-                                        "REJECTED"
-                                          ? "ผู้ปฏิเสธ"
-                                          : "ผู้อนุมัติ"}
-                                        {" : "}
-                                        <span className="font-medium">
-                                          {stage.approver.fullName}
-                                        </span>
+                                  {/* Pending Approvers */}
+                                  {stage.status === "PENDING" &&
+                                    stage.approverCandidates &&
+                                    stage.approverCandidates.length > 0 && (
+                                      <div className="text-xs text-[#9E9E9E] mt-1 whitespace-nowrap">
+                                        ผู้ใช้งานในตำแหน่งนี้ :{" "}
+                                        {(() => {
+                                          const maxShow = 2;
+                                          const count = stage.approverCandidates.length;
+
+                                          const displayNames = stage.approverCandidates
+                                            .slice(0, maxShow)
+                                            .map((user) => {
+                                              const name = user.fullName
+
+                                              return name.length > 20
+                                                ? name.substring(0, 17) + "..."
+                                                : name
+                                            });
+
+                                          if (count > maxShow) {
+                                            return (
+                                              <span>
+                                                {displayNames.join(", ")}
+                                                <span className="bg-gray-100 text-[#9E9E9E] border border-[#9E9E9E] ml-1 px-1 rounded-sm text-[10px]">
+                                                  +{count - maxShow}
+                                                </span>
+                                              </span>
+                                            );
+                                          }
+
+                                          return displayNames.join(", ");
+                                        })()}
                                       </div>
+                                    )}
 
-                                      {shouldShowTimelineTime(stage) && (
-                                        <div className="text-xs text-neutral-500 mt-0.5">
+                                  {/* Approved / Rejected */}
+                                  {(stage.status === "APPROVED" ||
+                                    stage.status === "REJECTED") && (
+                                      <>
+                                        <div className="text-xs text-[#9E9E9E]">
+                                          {stage.status === "APPROVED"
+                                            ? "ผู้อนุมัติ"
+                                            : "ผู้ดำเนินการ"}{" "}
+                                          : {stage.approver?.fullName}
+                                        </div>
+
+                                        <div className="text-xs text-[#9E9E9E]">
+                                          เวลา :{" "}
                                           {formatUpdateByDateTime(
-                                            stage.updatedAt,
+                                            stage.updatedAt || "-"
                                           )}
                                         </div>
-                                      )}
-                                    </>
-                                  )}
+                                      </>
+                                    )}
                                 </div>
                               </div>
                             );

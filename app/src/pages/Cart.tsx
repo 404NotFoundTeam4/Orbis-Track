@@ -113,13 +113,13 @@ export const Cart = () => {
    * Output : - (เปลี่ยนค่า CSS overflow ของ document.body และคืนค่าเดิมผ่าน cleanup)
    * Author : Nontapat Sinhum (Guitar) 66160104
    **/
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  // useEffect(() => {
+  //   const prev = document.body.style.overflow;
+  //   document.body.style.overflow = "hidden";
+  //   return () => {
+  //     document.body.style.overflow = prev;
+  //   };
+  // }, []);
 
   /**
    * Description: mark cart snapshot ว่า "เห็นแล้ว" หลังโหลด cart สำเร็จ (ลดการยิงซ้ำจาก Navbar)
@@ -402,7 +402,8 @@ export const Cart = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-126px)] overflow-hidden">
+    // <div className="h-[calc(100vh-126px)] overflow-hidden">
+    <div className="h-auto">
       <div className="w-full h-full min-h-0 flex flex-row p-4 gap-6 overflow-hidden">
         {/* LEFT SIDE: Cart Items */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">

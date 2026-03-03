@@ -1380,8 +1380,7 @@ export default function History() {
 
   return (
     <div className="mx-auto w-full px-[20px] py-[20px]">
-      <div className="text-sm text-neutral-500">ดูประวัติ</div>
-      <div className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900">ประวัติการยืม-คืน</div>
+      <div className="text-2xl font-semibold">ประวัติการยืม-คืน</div>
 
       <div className="mt-5 flex flex-wrap gap-3">
         <TabButton active={activeTabKey === "borrow"} onClick={() => setActiveTabKey("borrow")}>

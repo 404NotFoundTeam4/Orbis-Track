@@ -120,6 +120,9 @@ async function getDeviceForBorrow(params: IdParamDto) {
 
       // อุปกรณ์เสริม
       accessories: {
+        where: {
+          deleted_at: null
+        },
         select: {
           acc_name: true,
           acc_quantity: true,

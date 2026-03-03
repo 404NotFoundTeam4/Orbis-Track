@@ -259,6 +259,9 @@ export class BorrowReturnRepository {
                 device: {
                   select: {
                     accessories: {
+                      where: {
+                        deleted_at: null
+                      },
                       select: {
                         acc_id: true,
                         acc_name: true,

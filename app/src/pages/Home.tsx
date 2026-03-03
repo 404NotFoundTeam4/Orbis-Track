@@ -91,6 +91,31 @@ export const Home = () => {
 
     fetchData();
   }, []);
+
+  /**
+  * Description: ล้าง Cache เฉพาะ ID นี้เพื่อให้ข้อมูลอัปเดตล่าสุด
+  * Input     : expandId, tickets, isLoading
+  * Output    : void
+  * Author    : Panyapon Phollert (Ton) 66160086
+  */
+  useEffect(() => {
+    if (expandId && !isLoading && tickets.length > 0) {
+      const ticketExists = tickets.some((ticketID) => ticketID.id === expandId);
+      if (ticketExists) {
+        // ล้าง Cache เฉพาะ ID นี้เพื่อให้ข้อมูลอัปเดตล่าสุด
+        setTicketDetails(prev => {
+          const newState = { ...prev };
+          delete newState[expandId];
+          return newState;
+        });
+
+        setExpandedId(expandId);
+        // เรียก handleExpand เพื่อยิง API เอาข้อมูลใหม่
+        handleExpand(expandId);
+      }
+    }
+  }, [expandId, isLoading, tickets]);
+
   /**
    * Description: Auto-expand ticket เมื่อมี expandId จาก URL/location.state
    *              หรือ redirect ไป /history/:id ถ้าไม่พบใน 5 รายการล่าสุด

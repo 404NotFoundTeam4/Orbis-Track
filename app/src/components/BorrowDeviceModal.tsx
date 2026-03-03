@@ -761,7 +761,10 @@ const BorrowEquipmentModal = ({
                 type="button"
                 className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px] font-semibold"
                 variant="outline"
-                onClick={handleAddToCart}
+                onClick={() => {
+                  if (!validate()) return;
+                  handleAddToCart();
+                }}
               >
                 <Icon icon="mdi-light:cart" width="36" height="36" />
                 เพิ่มไปยังรถเข็น

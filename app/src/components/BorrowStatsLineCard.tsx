@@ -48,6 +48,8 @@ export type LineChartStyle = {
   gridStroke?: string; // สีเส้นกริด
   gridDasharray?: string; // ลายเส้นกริด
 
+  stroke?: string; // สีเส้นกราฟ
+
   tickColor?: string; // สีตัวเลขแกน Y
   tickFontSize?: number; // ขนาดตัวเลขแกน Y
   xLabelColor?: string; // สี label แกน X
@@ -93,6 +95,7 @@ export type BorrowLineChartConfig = {
 export type BorrowStatsLineCardProps = {
   title?: string; // ข้อความหัวการ์ด
   badgeText?: string; // badge ด้านขวาบน
+  badgeBgColor?: string; // สีพื้นหลัง badge
 
   periodLabel?: string; // ข้อความช่วงเวลา (เช่น รายเดือน)
   periodIcon?: string; // ไอคอนช่วงเวลา
@@ -148,6 +151,7 @@ function classNames(...parts: Array<string | false | null | undefined>) {
 export default function BorrowStatsLineCard({
   title = "สถิติการยืม", // ชื่อหัวการ์ด
   badgeText, // badge ขวาบน
+  badgeBgColor, // สีพื้นหลัง badge
   periodLabel = "รายเดือน", // label ช่วงเวลา
   periodIcon = "solar:calendar-bold", // icon ช่วงเวลา
   showPeriod = true, // toggle ช่วงเวลา
@@ -232,7 +236,7 @@ export default function BorrowStatsLineCard({
       <div className="flex items-start justify-between gap-3">
         <div
           className={classNames(
-            "text-sm font-semibold text-neutral-900", // ตัวอักษร title
+            "text-[20px] font-bold text-[#000000]", // ตัวอักษร title
             titleClassName, // className title เพิ่มเติม
           )}
         >
@@ -242,16 +246,19 @@ export default function BorrowStatsLineCard({
         {badgeText ? (
           <div
             className={classNames(
-              "rounded-full bg-sky-50 px-4 py-2 text-xs font-medium text-sky-700", // style badge
+              "flex rounded-full w-[183px] h-[52px] justify-center items-center px-4 py-2 text-[16px] font-regular text-[#000000]", // style badge
               badgeClassName, // className badge เพิ่มเติม
             )}
+            style={{
+              backgroundColor: badgeBgColor,
+            }}
           >
             {badgeText}
           </div>
         ) : null}
       </div>
 
-      {showPeriod && (
+      {/* {showPeriod && (
         <div
           className={classNames(
             "mt-2 flex items-center gap-2 text-xs text-neutral-500", // style period row
@@ -261,7 +268,7 @@ export default function BorrowStatsLineCard({
           <Icon icon={periodIcon} className="text-base" />
           {periodLabel}
         </div>
-      )}
+      )} */}
 
       {/* Chart Area */}
       <div
@@ -316,10 +323,15 @@ function LineChartRecharts({
   const uid = useId(); // id unique สำหรับสร้างชื่อ gradient ไม่ชนกัน
 
   const resolvedTicks = chart?.ticks ?? ticks; // ticks ที่ใช้จริง (chart มาก่อน)
-  const resolvedStroke = chart?.stroke ?? stroke; // สีเส้นที่ใช้จริง (chart มาก่อน)
+  const resolvedStroke = chart?.stroke ?? chartStyle?.stroke ?? stroke; // สีเส้นที่ใช้จริง (chart มาก่อน)
   const resolvedPadding = chart?.padding ?? chartStyle?.padding; // padding ที่ใช้จริง (chart มาก่อน)
 
-  const basePadding: ChartPadding = { top: 12, right: 20, bottom: 12, left: 12 }; // padding default
+  const basePadding: ChartPadding = {
+    top: 12,
+    right: 20,
+    bottom: 12,
+    left: 12,
+  }; // padding default
   const margin = {
     top: resolvedPadding?.top ?? basePadding.top, // margin top
     right: resolvedPadding?.right ?? basePadding.right, // margin right
@@ -328,20 +340,25 @@ function LineChartRecharts({
   }; // margin ของ recharts
 
   const gridStroke = chart?.gridStroke ?? chartStyle?.gridStroke ?? "#D1D5DB"; // สีกริด
-  const gridDasharray = chart?.gridDasharray ?? chartStyle?.gridDasharray ?? "4 4"; // ลายกริด
+  const gridDasharray =
+    chart?.gridDasharray ?? chartStyle?.gridDasharray ?? "4 4"; // ลายกริด
 
   const tickColor = chart?.tickColor ?? chartStyle?.tickColor ?? "#9CA3AF"; // สี tick Y
   const tickFontSize = chart?.tickFontSize ?? chartStyle?.tickFontSize ?? 12; // ขนาด tick Y
 
-  const xLabelColor = chart?.xLabelColor ?? chartStyle?.xLabelColor ?? "#9CA3AF"; // สี label X
-  const xLabelFontSize = chart?.xLabelFontSize ?? chartStyle?.xLabelFontSize ?? 12; // ขนาด label X
+  const xLabelColor =
+    chart?.xLabelColor ?? chartStyle?.xLabelColor ?? "#9CA3AF"; // สี label X
+  const xLabelFontSize =
+    chart?.xLabelFontSize ?? chartStyle?.xLabelFontSize ?? 12; // ขนาด label X
 
   const lineWidth = chart?.lineWidth ?? chartStyle?.lineWidth ?? 3; // ความหนาเส้น
   const dotRadius = chart?.dotRadius ?? chartStyle?.dotRadius ?? 5; // รัศมีจุด
 
   const showArea = chart?.showArea ?? chartStyle?.showArea ?? true; // toggle area
-  const areaOpacityTop = chart?.areaOpacityTop ?? chartStyle?.areaOpacityTop ?? 0.18; // opacity top
-  const areaOpacityBottom = chart?.areaOpacityBottom ?? chartStyle?.areaOpacityBottom ?? 0.03; // opacity bottom
+  const areaOpacityTop =
+    chart?.areaOpacityTop ?? chartStyle?.areaOpacityTop ?? 0.18; // opacity top
+  const areaOpacityBottom =
+    chart?.areaOpacityBottom ?? chartStyle?.areaOpacityBottom ?? 0.03; // opacity bottom
 
   const ASPECT = chart?.aspect ?? 980 / 260; // อัตราส่วนกราฟ
   const minChartHeight = chart?.minChartHeight ?? 220; // minHeight ของกราฟ
@@ -355,7 +372,11 @@ function LineChartRecharts({
   ); // ค่าสูงสุดจาก data
   const domainMax = Math.max(tickMax, dataMax, 1); // domain max ของแกน Y
 
-  const [pinned, setPinned] = useState<null | { index: number; x: number; y: number }>(null); // state เก็บตำแหน่ง tooltip ที่ "ปัก" ไว้
+  const [pinned, setPinned] = useState<null | {
+    index: number;
+    x: number;
+    y: number;
+  }>(null); // state เก็บตำแหน่ง tooltip ที่ "ปัก" ไว้
 
   /**
    * Description: ล็อคตำแหน่ง Tooltip ให้ปักตาม "จุด" ที่ active ไม่ให้ไหลตามเมาส์
@@ -384,8 +405,15 @@ function LineChartRecharts({
   const handleLeave = () => setPinned(null);
 
   return (
-    <div className={classNames("w-full", wrapperClassName)} style={wrapperStyle}>
-      <ResponsiveContainer width="100%" aspect={ASPECT} minHeight={minChartHeight}>
+    <div
+      className={classNames("w-full", wrapperClassName)}
+      style={wrapperStyle}
+    >
+      <ResponsiveContainer
+        width="100%"
+        aspect={ASPECT}
+        minHeight={minChartHeight}
+      >
         <ComposedChart
           data={data} // data กราฟ
           margin={margin} // margin ของกราฟ
@@ -394,12 +422,24 @@ function LineChartRecharts({
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={resolvedStroke} stopOpacity={areaOpacityTop} />
-              <stop offset="100%" stopColor={resolvedStroke} stopOpacity={areaOpacityBottom} />
+              <stop
+                offset="0%"
+                stopColor={resolvedStroke}
+                stopOpacity={areaOpacityTop}
+              />
+              <stop
+                offset="100%"
+                stopColor={resolvedStroke}
+                stopOpacity={areaOpacityBottom}
+              />
             </linearGradient>
           </defs>
 
-          <CartesianGrid stroke={gridStroke} strokeDasharray={gridDasharray} vertical={false} />
+          <CartesianGrid
+            stroke={gridStroke}
+            strokeDasharray={gridDasharray}
+            vertical={false}
+          />
 
           <XAxis
             dataKey="label"
@@ -431,7 +471,8 @@ function LineChartRecharts({
                 <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs shadow-sm">
                   <div className="font-semibold text-neutral-900">{label}</div>
                   <div className="mt-1 text-neutral-600">
-                    จำนวน: <span className="font-semibold text-neutral-900">{v}</span>
+                    จำนวน:{" "}
+                    <span className="font-semibold text-neutral-900">{v}</span>
                   </div>
                 </div>
               );

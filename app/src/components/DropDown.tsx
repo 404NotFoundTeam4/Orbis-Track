@@ -33,6 +33,7 @@ interface DropDownProps<T extends DropDownItem> {
   triggerClassName?: string;
   emptyMessage?: string; // ข้อความแสดงเมื่อไม่มีข้อมูล
   dropdownHeight?: number; // ความสูงของ dropdown
+  width?: number | string; // ความกว้างของ dropdown
 }
 
 /**
@@ -62,6 +63,7 @@ function DropDown<T extends DropDownItem>({
   triggerClassName = "",
   emptyMessage = "ไม่พบข้อมูล",
   dropdownHeight = 240,
+  width = 250,
 }: Readonly<DropDownProps<T>>) {
   const [isOpen, setIsOpen] = useState(false); // สถานะเปิด/ปิด dropdown
   const [searchTerm, setSearchTerm] = useState(""); // คำค้นหาปัจจุบัน
@@ -196,8 +198,10 @@ function DropDown<T extends DropDownItem>({
     </div>
   );
 
+  const resolvedWidth = typeof width === "number" ? `${width}px` : width;
+
   return (
-    <div className={`relative w-[250px] ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className}`} ref={dropdownRef} style={{ width: resolvedWidth }}>
       {/* Label */}
       {label && (
         <label className="block text-[16px] font-medium text-[#000000] mb-1.5">

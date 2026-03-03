@@ -1,117 +1,149 @@
-// src/pages/Dashboard.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Icon } from "@iconify/react";
 import BorrowStatsLineCard, {
   type LinePoint,
 } from "../components/BorrowStatsLineCard";
+import DashboardBorrowService from "../services/DashboardBorrowService";
+import DropDown from "../components/DropDown";
+import { Icon } from "@iconify/react";
+import Button from "../components/Button";
 
-/**
- * Description: หน้า Dashboard (ใช้ component ใหม่: BorrowStatsLineCard)
- * Output : React Component
- * Author: Nontapat Sinthum (Guitar) 66160104
- */
+type SelectItem = {
+  id: number;
+  label: string;
+  value: number;
+  subtitle?: string;
+  disabled?: boolean;
+};
+
 export default function Dashboard() {
-  const [isLoading, setIsLoading] = useState(false);
+  const yearOptions: SelectItem[] = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const minYear = 2021;
+    const years: SelectItem[] = [];
+    for (let y = currentYear; y >= minYear; y--) {
+      years.push({ id: y, label: String(y), value: y });
+    }
+    return years;
+  }, []);
 
-  // ข้อมูลที่ส่งเข้า component
-  const [totalDevices, setTotalDevices] = useState(0);
+  const quarterOptions: SelectItem[] = useMemo(
+    () => [
+      { id: 0, label: "ทั้งปี", value: 0, subtitle: "ม.ค. - ธ.ค." },
+      { id: 1, label: "Q1 (ม.ค. - มี.ค.)", value: 1 },
+      { id: 2, label: "Q2 (เม.ย. - มิ.ย.)", value: 2 },
+      { id: 3, label: "Q3 (ก.ค. - ก.ย.)", value: 3 },
+      { id: 4, label: "Q4 (ต.ค. - ธ.ค.)", value: 4 },
+    ],
+    [],
+  );
+
+  const [yearItem, setYearItem] = useState<SelectItem | null>(() => {
+    const y = new Date().getFullYear();
+    return { id: y, label: String(y), value: y };
+  });
+
+  const [quarterItem, setQuarterItem] = useState<SelectItem | null>(() => ({
+    id: 0,
+    label: "ทั้งปี",
+    value: 0,
+    subtitle: "ม.ค. - ธ.ค.",
+  }));
+
   const [lineData, setLineData] = useState<LinePoint[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  /**
-   * Description: โหลดข้อมูล Dashboard (mock)
-   * Author: Nontapat Sinthum (Guitar) 66160104
-   */
   useEffect(() => {
+    const year = yearItem?.value ?? new Date().getFullYear();
+    const quarter = quarterItem?.value ?? 0;
+
     let cancelled = false;
 
     const load = async () => {
       try {
-        setIsLoading(true);
-
-        await new Promise((r) => setTimeout(r, 350));
-        if (cancelled) return;
-
-        setTotalDevices(1000);
-
-        const nextLine: LinePoint[] = [
-          { label: "ม.ค.", value: 60 },
-          { label: "ก.พ.", value: 105 },
-          { label: "มี.ค.", value: 78 },
-          { label: "เม.ย.", value: 32 },
-          { label: "พ.ค.", value: 70 },
-          { label: "มิ.ย.", value: 72 },
-          { label: "ก.ค.", value: 45 },
-          { label: "ส.ค.", value: 110 },
-          { label: "ก.ย.", value: 35 },
-          { label: "ต.ค.", value: 108 },
-          { label: "พ.ย.", value: 95 },
-          { label: "ธ.ค.", value: 62 },
-        ];
-
-        setLineData(nextLine);
+        setLoading(true);
+        const res = await DashboardBorrowService.getBorrowStats({
+          year,
+          quarter,
+        });
+        if (!cancelled) setLineData(res.points);
+      } catch (e) {
+        console.error("load borrow stats error:", e);
+        if (!cancelled) setLineData([]);
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     load();
-
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [yearItem?.value, quarterItem?.value]);
 
-  const badgeText = useMemo(
-    () => `จำนวนอุปกรณ์ ${totalDevices} ชิ้น`,
-    [totalDevices],
-  );
+  const year = yearItem?.value ?? new Date().getFullYear();
+  const quarter = quarterItem?.value ?? 0;
 
   return (
     <div className="mx-auto w-full px-[20px] py-[20px]">
-      {/* Breadcrumb */}
-      <div className="text-sm text-neutral-500">แดชบอร์ด</div>
-
-      {/* Header */}
-      <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-3xl font-extrabold tracking-tight text-neutral-900">
-          แดชบอร์ด
-        </div>
-
-        <button
-          type="button"
-          onClick={() => console.log("[Dashboard] export clicked")}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-[#1890FF] px-4 text-sm font-semibold text-white hover:opacity-95"
-        >
-          ส่งออก
-          <Icon icon="solar:export-bold" className="text-lg" />
-        </button>
+      <div className="text-sm text-[#000000]">แดชบอร์ด</div>
+      <div className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900">
+        แดชบอร์ด
       </div>
 
-      {/* Loading strip */}
-      {isLoading && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-600">
-          <Icon icon="mdi:loading" className="animate-spin text-lg" />
-          กำลังโหลดข้อมูล...
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+        <DropDown
+          items={quarterOptions}
+          value={quarterItem}
+          onChange={setQuarterItem}
+          placeholder="ไตรมาส"
+          searchable={false}
+          width={137}
+        />
+        <DropDown
+          items={yearOptions}
+          value={yearItem}
+          onChange={setYearItem}
+          placeholder="ปี"
+          searchable={false}
+          width={137}
+        />
+        <div className="flex justify-end">
+          <Button
+            variant="primary"
+            type="button"
+            onClick={() => {
+              console.log("export clicked");
+            }}
+            className="!w-[108px] !h-[46px] !rounded-full !bg-[#58B3FF] hover:!bg-[#40A9FF] active:!bg-[#1890FF] !text-[16px] !font-bold"
+          >
+            <span className="inline-flex items-center gap-1">
+              ส่งออก
+              <Icon icon="flowbite:download-solid" width="24" height="24" className="text-[16px]" />
+            </span>
+          </Button>
         </div>
-      )}
+      </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-col gap-[7px]">
         <BorrowStatsLineCard
-          title="สถิติการยืม" // title การ์ด
-          badgeText={badgeText} // badge ขวาบน
-          data={lineData} // ข้อมูลกราฟ
-          width={982} // ความกว้าง card
-          minHeight={392} // ความสูงขั้นต่ำ card
-          chart={{
-            ticks: [0, 50, 100, 150], // ticks แกน Y ที่อยากได้
-            stroke: "#1890FF", // สีเส้นกราฟ
-            showArea: true, // เปิด area ใต้กราฟ
-            lineWidth: 3, // ความหนาเส้น
-            dotRadius: 4, // ขนาดจุด
-            padding: { left: 6, right: 10, top: 8, bottom: 8 }, // margin ของกราฟ
-            minChartHeight: 260, // กันกราฟเตี้ยเกิน
-            aspect: 980 / 300, // aspect กราฟ
-          }}
+          title="สถิติการยืม"
+          badgeText={`ปี ${year} / ${quarter === 0 ? "ทั้งปี" : `ไตรมาส ${quarter}`}${loading ? " (กำลังโหลด...)" : ""}`}
+          badgeBgColor={"#E6F7FF"}
+          data={lineData}
+          width={982}
+          minHeight={392}
+          svgClassName="w-full h-full"
+          chart={{ stroke: "#40A9FF" }}
+        />
+        <BorrowStatsLineCard
+          title="สถิติการแจ้งปัญหา"
+          badgeText={`ปี ${year} / ${quarter === 0 ? "ทั้งปี" : `ไตรมาส ${quarter}`}${loading ? " (กำลังโหลด...)" : ""}`}
+          badgeBgColor={"#FFF1F0"}
+          data={lineData}
+          width={982}
+          minHeight={392}
+          svgClassName="w-full h-full"
+          chart={{ stroke: "#FFCCC7" }}
         />
       </div>
     </div>

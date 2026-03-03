@@ -737,7 +737,7 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
                 {/* Footer Alert */}
                 <div className="bg-[#FFE8E8] border border-[#FF4D4F] text-[#FF4D4F] p-1 rounded-lg text-sm text-center">
                   *อุปกรณ์นี้ถูกยืมได้สูงสุด{" "}
-                  {ticket.device_summary.maxBorrowDays ?? "-"} วัน
+                  {ticket.device_summary.max_borrow_days ?? "-"} วัน
                 </div>
               </div>
 

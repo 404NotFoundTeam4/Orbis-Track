@@ -1015,7 +1015,7 @@ const formatTimeThai = (dateStr: string | null): string => {
                   <div className="font-bold text-[#000000] text-sm">
                     รายละเอียด —{" "}
                     <span className="text-sm text-[#636363]">
-                      {detail?.device?.description || "-"}
+                      {detail?.device?.description || "ไม่มีรายละเอียด"}
                     </span>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TI_STATUS } from "@prisma/client";
+import { TI_STATUS,DEVICE_CHILD_STATUS } from "@prisma/client";
 
 // Schema สำหรับข้อมูลภายใน (Data Item)
 export const repairTicketItemSchema = z.object({
@@ -18,8 +18,10 @@ export const repairTicketItemSchema = z.object({
     location: z.string().nullable().openapi({ description: "สถานที่ตั้งอุปกรณ์/รับอุปกรณ์" }), 
     image: z.string().nullable().openapi({ description: "รูปภาพอุปกรณ์" }),
     reported_devices: z.array(z.object({
+      id: z.number(),
       asset_code: z.string().nullable(),
       serial_number: z.string().nullable(),
+      current_status: z.string().nullable(),
     })).openapi({ description: "รายการอุปกรณ์ลูกที่แจ้งซ่อม" }),
   }).openapi({ description: "ข้อมูลอุปกรณ์" }),
   problem: z.object({
@@ -46,6 +48,7 @@ export const getRepairTicketsQuerySchema = z.object({
   status: z.nativeEnum(TI_STATUS).optional(),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
+  assignID: z.coerce.number().optional(),
 });
 
 // Schema สำหรับ Response รวม
@@ -65,7 +68,17 @@ export const approveRepairTicketBodySchema = z.object({
   user_id: z.coerce.number().openapi({ description: "ID ของผู้ที่กดอนุมัติ/รับเรื่อง" }),
 });
 
+// Schema สำหรับ Body ตอนบันทึกผลการซ่อมและอัปเดตสถานะอุปกรณ์
+export const updateRepairResultBodySchema = z.object({
+  updates: z.array(z.object({
+    id: z.number().openapi({ description: "ID ของ device_child (dec_id)" }),
+    status: z.nativeEnum(DEVICE_CHILD_STATUS).openapi({ description: "สถานะใหม่ของอุปกรณ์" }),
+  })),
+});
+
+
 export type GetRepairTicketsQuery = z.infer<typeof getRepairTicketsQuerySchema>;
 export type RepairTicketItem = z.infer<typeof repairTicketItemSchema>;
 export type ApproveRepairTicketBody = z.infer<typeof approveRepairTicketBodySchema>;
 export type RepairTicketsResponse = z.infer<typeof getRepairTicketsResponseSchema>;
+export type UpdateRepairResultBody = z.infer<typeof updateRepairResultBodySchema>;

@@ -6,8 +6,16 @@ export type RepairTicketStatus =
   | "COMPLETED";
 
 export interface RepairTicketReportedDevice {
+  id: number;
   asset_code: string | null;
   serial_number: string | null;
+}
+
+export interface UpdateRepairResultBody {
+  updates: {
+    id: number;
+    status: string;
+  }[];
 }
 
 export interface RepairTicketDeviceInfo {
@@ -49,6 +57,7 @@ export interface RepairTicketItem {
 
 export interface RepairTicketDeviceDetail {
   id?: number;
+  status: string;
   name: string;
   asset_code?: string;
   serial_number?: string;
@@ -80,6 +89,7 @@ export interface GetRepairTicketsQuery {
   status?: RepairTicketStatus;
   start_date?: string;
   end_date?: string;
+  assignID?: number;
 }
 export interface ApproveRepairTicketResponse {
   message: string;
@@ -114,6 +124,21 @@ getRepairTickets: async (
     const response = await api.patch(`/repair-tickets/${ticketId}/approve`, {
       user_id: userId,
     });
+    return response.data;
+  },
+
+  /**
+   * Description: บันทึกผลการซ่อมและอัปเดตสถานะอุปกรณ์ โดยส่งข้อมูลอุปกรณ์ที่ซ่อมเสร็จแล้วและสถานะใหม่ไปยัง API
+   * Endpoint  : PATCH /repair-tickets/:id/result
+   * Input     : ticketId (number), data (UpdateRepairResultBody)
+   * Output    : Promise<{ success: boolean; message: string }>
+   * Author    : Worrawat Namwat (Wave)  66160372
+   * */
+  updateRepairResult: async (
+    ticketId: number,
+    data: UpdateRepairResultBody
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.patch(`/repair-tickets/${ticketId}/result`, data);
     return response.data;
   },
 };

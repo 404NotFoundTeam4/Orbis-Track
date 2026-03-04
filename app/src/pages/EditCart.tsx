@@ -490,7 +490,7 @@ const EditCart = () => {
     <div className="w-full min-h-screen flex flex-row p-4 gap-6">
       <div className="flex-1">
         {/* Breadcrumb */}
-        <div className="mb-[24px] space-x-[9px] text-sm">
+        <div className="mb-[8px] space-x-[9px] text-sm">
           <span
             className="text-[#858585] cursor-pointer hover:underline"
             onClick={() => navigate("/list-devices")}
@@ -507,7 +507,7 @@ const EditCart = () => {
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000] font-medium">แก้ไขรายละเอียด</span>
         </div>
-        <h1 className="text-2xl font-semibold mb-[24px]">แก้ไขรายละเอียด</h1>
+        <h1 className="text-2xl font-semibold mb-[21px]">แก้ไขรายละเอียด</h1>
         
         <BorrowDeviceModal
           mode="edit-detail"

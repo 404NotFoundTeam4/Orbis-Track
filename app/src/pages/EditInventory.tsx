@@ -264,9 +264,10 @@ const EditInventory = () => {
   };
 
   return (
-    <div className="flex flex-col gap-[20px] px-[24px] py-[24px]">
+    <div className="flex flex-col gap-[20px] p-4">
+      <div className="flex-1">
       {/* แถบนำทาง */}
-      <div className="text-[18px] mb-[8px] space-x-[9px]">
+      <div className="mb-[8px] space-x-[9px]">
         <span className="text-[#858585]">การจัดการ</span>
         <span className="text-[#858585]">&gt;</span>
         <span className="text-[#858585]">คลังอุปกรณ์</span>
@@ -275,7 +276,7 @@ const EditInventory = () => {
       </div>
       {/* ชื่อหน้า */}
       <div className="flex items-center gap-[14px] mb-[21px]">
-        <h1 className="text-[36px] font-semibold">แก้ไขอุปกรณ์</h1>
+        <h1 className="text-2xl font-semibold">แก้ไขอุปกรณ์</h1>
       </div>
       <MainDeviceModal
         mode="edit"
@@ -294,6 +295,7 @@ const EditInventory = () => {
         lastAssetCode={lastAssetCode}
         statusItems={statusItems}
       />
+    </div>
     </div>
   );
 };

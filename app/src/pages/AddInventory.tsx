@@ -75,7 +75,7 @@ export default function AddInventory() {
       <div className="mb-[8px] space-x-[9px]">
         <span className="text-[#858585]">การจัดการ</span>
         <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#000000]">คลังอุปกรณ์</span>
+        <span className="text-[#858585]">คลังอุปกรณ์</span>
         <span className="text-[#858585]">&gt;</span>
         <span className="text-[#000000]">เพิ่มอุปกรณ์ใหม่</span>
       </div>

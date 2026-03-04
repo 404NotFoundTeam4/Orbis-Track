@@ -304,8 +304,9 @@ const BorrowDevice = () => {
   };
 
   return (
-    <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] px-[20px] py-[20px]">
-      <div className="space-x-[9px]">
+    <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] p-4">
+      <div className="flex-1">
+      <div className="mb-[8px] space-x-[9px]">
         <Link to="/list-devices" className="text-[#858585]">
           รายการอุปกรณ์
         </Link>
@@ -314,8 +315,8 @@ const BorrowDevice = () => {
         <span className="text-[#000000]">ยืมอุปกรณ์</span>
       </div>
 
-      <div className="flex items-center">
-        <h1 className="text-[36px] font-semibold">ยืมอุปกรณ์</h1>
+      <div className="flex items-center mb-[21px]">
+        <h1 className="text-2xl font-semibold">ยืมอุปกรณ์</h1>
       </div>
       <BorrowEquipmentModal
         mode="borrow-equipment"
@@ -329,6 +330,7 @@ const BorrowDevice = () => {
         onAddToCart={handleAddToCart}
         borrowUsers={borrowUsers}
       />
+    </div>
     </div>
   );
 };

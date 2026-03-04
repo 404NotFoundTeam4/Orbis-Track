@@ -1,6 +1,6 @@
-import { Prisma } from "@prisma/client";
+import { Prisma,BRT_STATUS   } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
-import type { GetBorrowStatsQueryDto, GetBorrowStatsResponseDto } from "./dashboard-borrow.schema.js";
+import type { GetBorrowStatsQueryDto, GetBorrowStatsResponseDto } from "./dashboard.schema.js";
 
 function getQuarterRange(year: number, quarter: number) {
   const startMonthIndex = (quarter - 1) * 3; // Q1=0, Q2=3, Q3=6, Q4=9
@@ -77,5 +77,57 @@ async function getBorrowStatsByQuarter(
     points,
   };
 }
+async function getTopBorrowedDevices(year?: number) {
+  type Row = {
+    device_id: number;
+    device_name: string;
+    total: number;
+  };
 
-export const dashboardBorrowService = { getBorrowStatsByQuarter };
+  const rows = await prisma.$queryRaw<Row[]>`
+    SELECT
+      d.id AS device_id,
+      d.device_name,
+      COUNT(*)::int AS total
+    FROM borrow_return_ticket_items bi
+    JOIN borrow_return_tickets brt
+      ON brt.id = bi.borrow_return_ticket_id
+    JOIN devices d
+      ON d.id = bi.device_id
+    WHERE brt.deleted_at IS NULL
+      AND brt.brt_status <> 'REJECTED'
+      ${
+        year
+          ? Prisma.sql`AND EXTRACT(YEAR FROM brt.brt_start_date)::int = ${year}`
+          : Prisma.empty
+      }
+    GROUP BY d.id, d.device_name
+    ORDER BY total DESC
+    LIMIT 5;
+  `;
+
+  return rows;
+}
+export async function updateOverdueTickets() {
+  const now = new Date();
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.borrow_return_tickets.updateMany({
+      where: {
+        brt_status: BRT_STATUS.IN_USE,
+        brt_end_date: { lt: now },
+        deleted_at: null,
+      },
+      data: {
+        brt_status: BRT_STATUS.OVERDUE,
+      },
+    });
+
+    if (updated.count > 0) {
+      console.log(`🔥 Updated ${updated.count} overdue tickets`);
+    }
+
+    return updated.count;
+  });
+}
+export const dashboardBorrowService = { getBorrowStatsByQuarter,updateOverdueTickets  };

@@ -1,9 +1,9 @@
 import { Router } from "../../core/router.js";
-import { dashboardBorrowController } from "./dashboard-borrow.controller.js";
+import { dashboardBorrowController } from "./dashboard.controller.js";
 import {
   getBorrowStatsQuerySchema,
   getBorrowStatsResponseSchema,
-} from "./dashboard-borrow.schema.js";
+} from "./dashboard.schema.js";
 
 const dashboardController = new dashboardBorrowController();
 const router = new Router(undefined, "/dashboard");
@@ -21,5 +21,6 @@ router.getDoc(
   },
   dashboardController.getBorrowStats,
 );
+
 
 export default router.instance;

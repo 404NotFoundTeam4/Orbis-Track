@@ -42,8 +42,28 @@ export const getBorrowStatsResponseSchema = z.object({
     start: z.string().openapi({ description: "ISO start (inclusive)" }),
     end: z.string().openapi({ description: "ISO end (exclusive)" }),
   }),
-  points: z.array(linePointSchema).openapi({ description: "ข้อมูล 3 เดือนในไตรมาส" }),
+  points: z
+    .array(linePointSchema)
+    .openapi({ description: "ข้อมูล 3 เดือนในไตรมาส" }),
 });
 
+export const getTopBorrowedQuerySchema = z.object({
+  year: z.coerce.number().int().min(2000).max(2100).optional(),
+});
+
+export const topBorrowedDeviceSchema = z.object({
+  device_id: z.number(),
+  device_name: z.string(),
+  total: z.number(),
+});
+
+export const getTopBorrowedResponseSchema = z.array(topBorrowedDeviceSchema);
+
+export type GetTopBorrowedQueryDto = z.infer<typeof getTopBorrowedQuerySchema>;
+export type GetTopBorrowedResponseDto = z.infer<
+  typeof getTopBorrowedResponseSchema
+>;
 export type GetBorrowStatsQueryDto = z.infer<typeof getBorrowStatsQuerySchema>;
-export type GetBorrowStatsResponseDto = z.infer<typeof getBorrowStatsResponseSchema>;
+export type GetBorrowStatsResponseDto = z.infer<
+  typeof getBorrowStatsResponseSchema
+>;

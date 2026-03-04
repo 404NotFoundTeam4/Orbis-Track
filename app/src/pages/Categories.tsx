@@ -85,7 +85,7 @@ export const Categories = () => {
           page,
           limit,
           includeDeleted,
-          sortBy: "ca_name",
+          sortBy: "created_at",
           sortOrder,
         });
 
@@ -142,9 +142,9 @@ export const Categories = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   return (
-    <div className="w-full h-screen overflow-hidden flex flex-col p-[20px]">
+    <div className="w-full h-screen overflow-hidden flex flex-col p-4">
       <div className="flex-1 overflow-hidden ">
-        <div className="mb-[22px] space-x-[9px]">
+        <div className="mb-[8px] space-x-[9px]">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
           <span className="text-[#000000]">หมวดหมู่อุปกรณ์</span>
@@ -152,7 +152,7 @@ export const Categories = () => {
 
         {/* Title จัดการหมวดหมู่*/}
         <div className="flex items-center gap-[14px] mb-[21px] h-[34px]">
-          <h1 className="text-[36px] font-semibold">จัดการหมวดหมู่อุปกรณ์</h1>
+          <h1 className="text-2xl font-semibold">จัดการหมวดหมู่อุปกรณ์</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">
             หมวดหมู่ทั้งหมด {activeTotal}
           </div>
@@ -347,7 +347,7 @@ export const Categories = () => {
         description={
           deleteTarget ? (
             <>
-              หมวดหมู่ อุปกรณ์ทั่วไป จะถูกลบและการดำเนินการนี้ไม่สามารถกู้คืนได้
+              หมวดหมู่ {deleteTarget.ca_name} จะถูกลบและการดำเนินการนี้ไม่สามารถกู้คืนได้
             </>
           ) : null
         }

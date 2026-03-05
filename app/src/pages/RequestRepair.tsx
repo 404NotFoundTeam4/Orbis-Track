@@ -96,13 +96,13 @@ const RequestsRepair = () => {
   ) => {
     try {
       // แปลงข้อมูลให้อยู่ในรูปแบบที่ API ต้องการ
-      const formattedUpdates = updates.map((u) => ({
+      const deviceStatusPayload = updates.map((u) => ({
         id: u.id,
         status: u.status,
       }));
 
       await repairTicketsService.updateRepairResult(ticketId, {
-        updates: formattedUpdates,
+        updates: deviceStatusPayload,
       });
 
       push({ message: "บันทึกผลการซ่อมสำเร็จ!", tone: "success" });
@@ -228,19 +228,20 @@ const RequestsRepair = () => {
     setExpandedId(isExpanded ? ticketId : null);
   };
 
-  const DISPLAY_ROWS = 10;
+  // กำหนดจำนวนแถวที่ต้องการแสดงในตาราง (รวมแถวว่าง)
+  const displayRow = 10;
 
   /**
-   * Description: ฟังก์ชันสำหรับเติมแถวว่างในกรณีที่จำนวนคำร้องน้อยกว่า DISPLAY_ROWS เพื่อให้ตารางมีความสวยงามและคงรูปแบบเดิม
+   * Description: ฟังก์ชันสำหรับเติมแถวว่างในกรณีที่จำนวนคำร้องน้อยกว่า displayRow เพื่อให้ตารางมีความสวยงามและคงรูปแบบเดิม
    * Input : - tickets (อาร์เรย์ของคำร้องแจ้งซ่อมที่ดึงมาจาก API)
-   * Output : อาร์เรย์ของ TicketRow ที่มีทั้งคำร้องจริงและแถวว่าง (ถ้าจำนวนคำร้องน้อยกว่า DISPLAY_ROWS)
+   * Output : อาร์เรย์ของ TicketRow ที่มีทั้งคำร้องจริงและแถวว่าง (ถ้าจำนวนคำร้องน้อยกว่า displayRow)
    * Author : Worrawat Namwat (Wave) 66160372
    */
   const filledTickets: TicketRow[] =
-    tickets.length < DISPLAY_ROWS
+    tickets.length < displayRow
       ? [
           ...tickets,
-          ...Array.from({ length: DISPLAY_ROWS - tickets.length }, (_, i) => ({
+          ...Array.from({ length: displayRow - tickets.length }, (_, i) => ({
             id: `empty-${i}`,
             isEmpty: true as const,
           })),

@@ -108,11 +108,11 @@ const DeviceManageModalRepair = ({
    * Author : Worrawat Namwat (Wave) 66160372
    */
   const updateStatus = (index: number, newStatus: string) => {
-    // เอา Error ของแถวนี้ออกเมื่อมีการเลือกสถานะแล้ว
-    setErrors((prev) => prev.filter((i) => i !== index));
+    // ลบ Error ของแถวนี้ออกเมื่อผู้ใช้เลือกสถานะใหม่แล้ว
+    setErrors((prevErrors) => prevErrors.filter((errorIndex) => errorIndex !== index));
 
-    setLocalDevices((prev) =>
-      prev.map((localDevice, idx) =>
+    setLocalDevices((prevDevices) =>
+      prevDevices.map((localDevice, idx) =>
         idx === index
           ? { ...localDevice, current_status: newStatus }
           : localDevice,

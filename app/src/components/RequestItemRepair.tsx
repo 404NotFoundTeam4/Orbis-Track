@@ -93,7 +93,6 @@ export default function RequestItemRepair({
   onSave,
   activeTabKey,
   isForceExpand,
-  currentUserId,
   currentUserName,
 }: RequestItemRepairProps) {
   const [isExpanded, setIsExpanded] = useState(isForceExpand || false);
@@ -134,7 +133,7 @@ export default function RequestItemRepair({
    * Output : void (ฟังก์ชันนี้จะเปิด AlertDialog โดยตั้งค่า isAlertOpen เป็น true เพื่อแสดงกล่องยืนยันการรับคำร้อง)
    * Author : Worrawat Namwat (Wave) 66160372
    */
-  const handleApproveClick = (e: React.MouseEvent) => {
+  const openApproveDialog = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsAlertOpen(true); 
   };
@@ -145,7 +144,7 @@ export default function RequestItemRepair({
    * Output : void (ฟังก์ชันนี้จะปิด AlertDialog โดยตั้งค่า isAlertOpen เป็น false และถ้า onApprove มีอยู่ จะเรียกใช้ฟังก์ชันนั้นเพื่อรับคำร้อง และอัปเดตสถานะและผู้รับงานใน UI ตามผลลัพธ์ที่ได้รับจากการเรียกใช้ onApprove)
    * Author : Worrawat Namwat (Wave) 66160372
    */
-  const handleConfirmApprove = async (e?: React.MouseEvent) => {
+  const submitApprovalRequest = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault(); 
       e.stopPropagation();
@@ -164,6 +163,14 @@ export default function RequestItemRepair({
         push({ message: "เกิดข้อผิดพลาดในการรับงาน", tone: "danger", duration: 3000 });
       }
     }
+  };
+
+  /**
+   * Description: ป้องกันไม่ให้ Event การคลิกทะลุไปทำให้ Accordion กาง/หุบ
+   * Author : Worrawat Namwat (Wave) 66160372
+   */
+  const preventAccordionToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
 
    /**
@@ -225,7 +232,7 @@ export default function RequestItemRepair({
         </div>
 
         {/* ช่องจัดการ */}
-        <div className="flex" onClick={(e) => e.stopPropagation()}>
+        <div className="flex action-buttons-container" onClick={preventAccordionToggle}>
           {activeTabKey === "mine" ? (
             <button
               type="button"
@@ -250,7 +257,7 @@ export default function RequestItemRepair({
             </div>
           ) : localStatus === "PENDING" ? (
             <button
-              onClick={handleApproveClick}
+              onClick={openApproveDialog}
               className="bg-[#73D13D] border border-[#73D13D] text-white w-[105px] h-[44px] rounded-full flex items-center justify-center hover:bg-[#52C41A] transition-colors -ml-4"
             >
               อนุมัติ
@@ -400,9 +407,30 @@ export default function RequestItemRepair({
         actionsMode="double" 
         confirmText="ยืนยัน"
         cancelText="ยกเลิก"
-        onConfirm={handleConfirmApprove}
+        onConfirm={submitApprovalRequest}
         padX={30}
       />
+      {/* Modal แสดงภาพขนาดเต็มเมื่อคลิกที่รูปภาพ */}
+      {isPreviewImageOpen && deviceImage && (
+        <div 
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 transition-opacity"
+          onClick={() => setIsPreviewImageOpen(false)}
+        >
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex justify-center items-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+              onClick={() => setIsPreviewImageOpen(false)}
+            >
+              <Icon icon="mdi:close-circle-outline" width="36" height="36" />
+            </button>
+            <img 
+              src={getImageUrl(deviceImage)} 
+              alt="Preview Fullscreen" 
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

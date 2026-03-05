@@ -221,7 +221,7 @@ export const repairTicketsService = {
     ticketId: number,
     updates: { id: number; status: any }[],
   ) {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // วนลูปอัปเดตสถานะ device_child แต่ละตัว
       for (const item of updates) {
         await tx.device_childs.update({

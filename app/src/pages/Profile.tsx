@@ -522,7 +522,7 @@ const Profile: React.FC = () => {
                   <InputField
                     label="รหัสผ่านเดิม"
                     name="old_password"
-                    type="text"
+                    type="password"
                     onChange={handlePasswordChange}
                     value={passwordForm.old_password}
                     error={passwordError.old_password}
@@ -534,7 +534,7 @@ const Profile: React.FC = () => {
                     <InputField
                       label="รหัสผ่านใหม่"
                       name="new_password"
-                      type="text"
+                      type="password"
                       onChange={handlePasswordChange}
                       value={passwordForm.new_password}
                       width="w-full lg:w-[533px]"
@@ -578,7 +578,7 @@ const Profile: React.FC = () => {
                     <InputField
                       label="ยืนยันรหัสผ่านใหม่"
                       name="confirm_password"
-                      type="text"
+                      type="password"
                       onChange={handlePasswordChange}
                       value={passwordForm.confirm_password}
                       width="w-full lg:w-[533px]"

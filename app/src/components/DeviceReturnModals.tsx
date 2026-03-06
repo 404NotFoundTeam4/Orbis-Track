@@ -39,7 +39,7 @@ const DeviceReturnModal = ({
     devices,
     onConfirm,
 }: DeviceReturnModalProps) => {
-    // State เก็บสถานะที่เลือกของแต่ละอุปกรณ์
+    // State เก็บสถานที่เลือกของแต่ละอุปกรณ์
     const [deviceStatuses, setDeviceStatuses] = useState<Record<number, string>>(
         {},
     );

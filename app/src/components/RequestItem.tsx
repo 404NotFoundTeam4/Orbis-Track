@@ -1028,7 +1028,7 @@ const RequestItem = ({
                   {/* Textarea */}
                   <div className="grid grid-cols-[150px_1fr] items-start">
                     <span className="text-[#000000] text-sm">
-                      สถานะที่รับอุปกรณ์
+                      สถานที่รับอุปกรณ์
                     </span>
                     {checkLastStage(
                       ticketDetail?.details.current_stage,

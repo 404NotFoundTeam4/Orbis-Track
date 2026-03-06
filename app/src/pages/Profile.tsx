@@ -620,11 +620,14 @@ const Profile: React.FC = () => {
       {isSaveDialogOpen && (
         <AlertDialog
           open={true}
+          title="คุณแน่ใจหรือไม่ว่าต้องการแก้ไขโปรไฟล์?"
           onConfirm={async () => {
             await handleSaveProfile();
             setIsSaveDialogOpen(false);
           }}
-          title="คุณแน่ใจหรือไม่ว่าต้องการแก้ไขโปรไฟล์?"
+          onCancel={() => {
+            setIsSaveDialogOpen(false);
+          }}
         />
       )}
     </div>

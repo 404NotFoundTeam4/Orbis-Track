@@ -17,7 +17,8 @@ export const categorySchema = z.object({
 
   created_at: z.coerce.date().nullable().openapi({ description: "วันที่สร้าง" }),
   updated_at: z.coerce.date().nullable().openapi({ description: "วันที่แก้ไข" }),
-  deleted_at: z.coerce.date().nullable().openapi({ description: "วันที่ลบ" })
+  deleted_at: z.coerce.date().nullable().openapi({ description: "วันที่ลบ" }),
+  isUsed: z.boolean().optional().openapi({ description: "หมวดหมู่นี้ถูกใช้งานอยู่หรือไม่" })
 })
 
 

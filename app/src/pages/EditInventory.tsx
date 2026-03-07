@@ -266,36 +266,39 @@ const EditInventory = () => {
   return (
     <div className="flex flex-col gap-[20px] p-4">
       <div className="flex-1">
-      {/* แถบนำทาง */}
-      <div className="mb-[8px] space-x-[9px]">
-        <span className="text-[#858585]">การจัดการ</span>
-        <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#858585]">คลังอุปกรณ์</span>
-        <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#000000]">แก้ไขอุปกรณ์</span>
+        {/* แถบนำทาง */}
+        <div className="mb-[8px] space-x-[9px]">
+          <span className="text-[#858585]">การจัดการ</span>
+          <span className="text-[#858585]">&gt;</span>
+          <span className="text-[#858585]">คลังอุปกรณ์</span>
+          <span className="text-[#858585]">&gt;</span>
+          <span className="text-[#000000]">แก้ไขอุปกรณ์</span>
+        </div>
+        {/* ชื่อหน้า */}
+        <div className="flex items-center gap-[14px] mb-[21px]">
+          <h1 className="text-2xl font-semibold">แก้ไขอุปกรณ์</h1>
+        </div>
+        {/* การ์ดอุปกรณ์หลัก / การ์ดอุปกรณ์ย่อย */}
+        <div className="flex flex-col gap-[20px]">
+          <MainDeviceModal
+            mode="edit"
+            defaultValues={parentDevice}
+            onSubmit={(data) => {
+              handleSubmit(data);
+            }}
+            existingDeviceNames={existingDeviceNames}
+            existingDeviceCodes={existingDeviceCodes}
+          />
+          <DevicesChilds
+            devicesChilds={deviceChilds}
+            onUpload={handleUploadFile}
+            onDelete={handleDeleteDeviceChild}
+            onSaveAll={handleSaveAll}
+            lastAssetCode={lastAssetCode}
+            statusItems={statusItems}
+          />
+        </div>
       </div>
-      {/* ชื่อหน้า */}
-      <div className="flex items-center gap-[14px] mb-[21px]">
-        <h1 className="text-2xl font-semibold">แก้ไขอุปกรณ์</h1>
-      </div>
-      <MainDeviceModal
-        mode="edit"
-        defaultValues={parentDevice}
-        onSubmit={(data) => {
-          handleSubmit(data);
-        }}
-        existingDeviceNames={existingDeviceNames}
-        existingDeviceCodes={existingDeviceCodes}
-      />
-      <DevicesChilds
-        devicesChilds={deviceChilds}
-        onUpload={handleUploadFile}
-        onDelete={handleDeleteDeviceChild}
-        onSaveAll={handleSaveAll}
-        lastAssetCode={lastAssetCode}
-        statusItems={statusItems}
-      />
-    </div>
     </div>
   );
 };

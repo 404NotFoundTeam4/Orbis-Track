@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "./Button";
 import Input from "./Input";
 import { Icon } from "@iconify/react";
@@ -209,18 +209,6 @@ const BorrowEquipmentModal = ({
     // ตรวจสอบวันที่ยืมและวันที่คืน (กรณีไม่เลือกวัน)
     if (!form.dateRange[0]) {
       newError.dateRange = "กรุณาเลือกช่วงวันที่ยืม";
-    }
-
-    // วันที่เริ่มยืมและวันที่สิ้นสุด
-    const startDate = form.dateRange[0];
-    const endDate = form.dateRange[1] ?? form.dateRange[0];
-
-    if (startDate && endDate && form.borrowTime && form.returnTime) {
-      const sameDay = startDate.toISOString() === endDate.toISOString();
-      // กรณียืมวันเดียว เวลาคืนต้องมากกว่าเวลายืม
-      if (sameDay && form.borrowTime >= form.returnTime) {
-        newError.returnTime = "เวลาที่คืนต้องมากกว่าเวลาที่ยืม";
-      }
     }
 
     // ตรวจสอบเวลาที่ยืม
@@ -517,6 +505,85 @@ const BorrowEquipmentModal = ({
     }));
   };
 
+  /**
+   * Description: ตรวจสอบว่าช่วงเวลาที่เลือกมีความถูกต้องหรือไม่
+   * Input: form.dateRange - ช่วงเวลาที่เลือก
+   * Output: อัปเดต state ของฟอร์ม
+   * Author : Thakdanai Makmi (Ryu) 66160355
+   */
+  useEffect(() => {
+    const startDate = form.dateRange[0]; // วันที่เริ่ม
+    const endDate = form.dateRange[1] ?? form.dateRange[0]; // วันที่สิ้นสุด
+
+    if (!startDate || !endDate) return;
+    // ถ้าไม่มีเวลาที่เลือก
+    if (!form.borrowTime || !form.returnTime) {
+      // ล้าง error
+      setErrors((prev) => ({
+        ...prev,
+        returnTime: undefined
+      }));
+      return;
+    }
+
+    /**
+    * Description: แปลงเวลาเป็นนาที
+    * Input: time - เวลาในรูปแบบ "HH:mm"
+    * Output: จำนวนนาที
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    */
+    const timeToMinutes = (time: string) => {
+      const [hour, minute] = time.split(":").map(Number);
+      return hour * 60 + minute;
+    };
+
+    const startMin = timeToMinutes(form.borrowTime); // เวลาที่ยืม
+    const endMin = timeToMinutes(form.returnTime); // เวลาที่คืน
+
+    // วันที่ที่เลือก
+    const sameDay =
+      startDate.getFullYear() === endDate.getFullYear() &&
+      startDate.getMonth() === endDate.getMonth() &&
+      startDate.getDate() === endDate.getDate();
+
+    let message = ""; // ข้อความ error
+
+    // เวลาที่คืนต้องมากกว่าเวลาที่ยืม
+    if (sameDay && endMin <= startMin) {
+      message = "เวลาที่คืนต้องมากกว่าเวลาที่ยืม";
+    }
+    // การยืมวันเดียวกัน ต้องเลือกเวลาขั้นต่ำ 1 ชั่วโมง
+    else if (sameDay && endMin - startMin < 60) {
+      message = "การยืมวันเดียวกัน ต้องเลือกเวลาขั้นต่ำ 1 ชั่วโมง";
+    }
+
+    // ถ้ามี error
+    setErrors((prev) => ({
+      ...prev,
+      returnTime: message || undefined
+    }));
+
+  }, [form.borrowTime, form.returnTime, form.dateRange]);
+
+  /**
+  * Description: ตรวจสอบว่าฟอร์มยืมอุปกรณ์มีข้อมูลครบถ้วนหรือไม่
+  * Input: form - ข้อมูลฟอร์มยืมอุปกรณ์
+  * Output: boolean - ถ้ามีข้อมูลครบถ้วนคืนค่า true ถ้าไม่ครบถ้วนคืนค่า false
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const isFormValid = useMemo(() => {
+    return Boolean(
+      form.borrower.trim() &&
+      form.phone.trim() &&
+      form.reason.trim() &&
+      form.placeOfUse.trim() &&
+      form.dateRange[0] &&
+      form.borrowTime &&
+      form.returnTime &&
+      !errors.returnTime
+    );
+  }, [form, errors]);
+
   return (
     <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
       {/* การ์ดฟอร์มยืมอุปกรณ์ */}
@@ -652,45 +719,45 @@ const BorrowEquipmentModal = ({
             </div>
           </div>
           {/* เวลาที่ยืม - คืน */}
-          <div className="flex gap-[10px]">
-            <div className="flex flex-col gap-[4px]">
-              <label className="text-[16px] font-medium">
-                ช่วงเวลาที่ยืม <span className="text-[#F5222D]">*</span>
-              </label>
-              <TimePickerField
-                width={239}
-                label=""
-                value={form.borrowTime}
-                onChange={(time: string) =>
-                  setForm({ ...form, borrowTime: time })
-                }
-                placeholder="เวลายืม"
-              />
-              {errors.borrowTime && (
-                <span className="text-sm mt-1 text-red-500">
-                  {errors.borrowTime}
-                </span>
-              )}
+          <div className="flex flex-col gap-[4px]">
+            <div className="flex gap-[10px]">
+              <div className="flex flex-col gap-[4px]">
+                <label className="text-[16px] font-medium">
+                  ช่วงเวลาที่ยืม <span className="text-[#F5222D]">*</span>
+                </label>
+                <TimePickerField
+                  width={239}
+                  label=""
+                  value={form.borrowTime}
+                  onChange={(time: string) =>
+                    setForm({ ...form, borrowTime: time })
+                  }
+                  placeholder="เวลายืม"
+                  date={form.dateRange[0]}
+                />
+              </div>
+              <div className="flex flex-col gap-[4px]">
+                <label className="text-[16px] font-medium">
+                  ช่วงเวลาที่คืน <span className="text-[#F5222D]">*</span>
+                </label>
+                <TimePickerField
+                  width={239}
+                  label=""
+                  value={form.returnTime}
+                  onChange={(time: string) =>
+                    setForm({ ...form, returnTime: time })
+                  }
+                  placeholder="เวลาคืน"
+                  date={form.dateRange[1] ?? form.dateRange[0]}
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-[4px]">
-              <label className="text-[16px] font-medium">
-                ช่วงเวลาที่คืน <span className="text-[#F5222D]">*</span>
-              </label>
-              <TimePickerField
-                width={239}
-                label=""
-                value={form.returnTime}
-                onChange={(time: string) =>
-                  setForm({ ...form, returnTime: time })
-                }
-                placeholder="เวลาคืน"
-              />
-              {errors.returnTime && (
-                <span className="text-sm mt-1 text-red-500">
-                  {errors.returnTime}
-                </span>
-              )}
-            </div>
+            {/* ข้อความ error */}
+            {(errors.borrowTime || errors.returnTime) && (
+              <span className="text-sm text-red-500">
+                {errors.borrowTime || errors.returnTime}
+              </span>
+            )}
           </div>
           {
             // เลือกวันที่และเวลายืม-คืน ก่อนจึงจะแสดง
@@ -757,7 +824,7 @@ const BorrowEquipmentModal = ({
             // ถ้าเป็นยืมอุปกรณ์แสดงเพิ่มไปยังรถเข็น
             mode === "borrow-equipment" && (
               <Button
-                disabled={selectedDeviceIds.length === 0}
+                disabled={!isFormValid || selectedDeviceIds.length === 0}
                 type="button"
                 className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px] font-semibold"
                 variant="outline"
@@ -785,7 +852,7 @@ const BorrowEquipmentModal = ({
           )}
           {/* ปุ่มหลัก */}
           <Button
-            disabled={selectedDeviceIds.length === 0}
+            disabled={!isFormValid || selectedDeviceIds.length === 0}
             onClick={handleOpenConfirm}
             type="button"
             className="!w-[155px] !h-[46px] font-semibold"
@@ -799,11 +866,16 @@ const BorrowEquipmentModal = ({
       <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[600px] min-h-[668px] px-[40px] py-[40px]">
         {/* รูปภาพอุปกรณ์ */}
         <div className="rounded-[16px] w-[520px] h-[118px] overflow-hidden">
-          {equipment.imageUrl && (
+          {equipment.imageUrl ? (
             <img
               className="w-full h-full object-cover"
               src={getImageUrl(equipment.imageUrl)}
             />
+          ) : (
+            <div className="text-[#BFBFBF] flex flex-col items-center gap-2">
+              <Icon icon="mdi:image-outline" width="64" height="64" />
+              <span className="text-sm">ไม่มีรูปภาพ</span>
+            </div>
           )}
         </div>
         {/* รายละเอียดอุปกรณ์ */}

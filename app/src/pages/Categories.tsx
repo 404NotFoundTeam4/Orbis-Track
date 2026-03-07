@@ -230,14 +230,17 @@ export const Categories = () => {
                     </button>
 
                     {/* delete */}
-                    {!c.deleted_at && (
+                    <div className="w-[34px] h-[34px] flex items-center justify-center">
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(c)}
                         title="ลบ"
-                        className="group w-[34px] h-[34px] flex items-center justify-center rounded-[12px]
-                                                text-[#FF4D4F] transition-colors duration-150
-                                                hover:bg-[#FF7875] hover:text-white"
+                        className={`group w-[34px] h-[34px] flex items-center justify-center rounded-[12px]
+                        transition-colors duration-150
+                          ${!c.deleted_at && !c.isUsed
+                              ? "text-[#FF4D4F] hover:bg-[#FF7875] hover:text-white"
+                              : "invisible"
+                          }`}
                       >
                         <Icon
                           icon="solar:trash-bin-trash-outline"
@@ -245,7 +248,7 @@ export const Categories = () => {
                           height="22"
                         />
                       </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))

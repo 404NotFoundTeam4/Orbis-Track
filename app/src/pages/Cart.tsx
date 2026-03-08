@@ -549,7 +549,7 @@ export const Cart = () => {
                       <div className="w-full text-left text-sm space-y-[2px]">
                         ช่วงเวลายืม - คืน
                       </div>
-                      <div className="text-right text-sm text-[#B3B1B1] space-y-[2px]">
+                      <div className="text-left text-sm text-[#B3B1B1] space-y-[2px]">
                         <div>วันที่ยืม : {item.borrowDate}</div>
                         <div>วันที่คืน : {item.returnDate}</div>
                       </div>

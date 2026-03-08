@@ -529,27 +529,27 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
     }
 
     // หา cartItem เดิมทั้งหมดของ (cart เดียวกัน + device เดียวกัน) ไม่สน deleted_at
-    const dupItems = await tx.cart_items.findMany({
-      where: {
-        cti_ct_id: cart.ct_id,
-        cti_de_id: deviceId,
-      },
-      select: { cti_id: true },
-    });
+    // const dupItems = await tx.cart_items.findMany({
+    //   where: {
+    //     cti_ct_id: cart.ct_id,
+    //     cti_de_id: deviceId,
+    //   },
+    //   select: { cti_id: true },
+    // });
 
-    if (dupItems.length > 0) {
-      const dupIds = dupItems.map((item) => item.cti_id);
+    // if (dupItems.length > 0) {
+    //   const dupIds = dupItems.map((item) => item.cti_id);
 
-      // ลบลูกก่อน (กัน FK พัง)
-      await tx.cart_device_childs.deleteMany({
-        where: { cdc_cti_id: { in: dupIds } },
-      });
+    //   // ลบลูกก่อน (กัน FK พัง)
+    //   await tx.cart_device_childs.deleteMany({
+    //     where: { cdc_cti_id: { in: dupIds } },
+    //   });
 
-      // hard delete ตัวแม่
-      await tx.cart_items.deleteMany({
-        where: { cti_id: { in: dupIds } },
-      });
-    }
+    //   // hard delete ตัวแม่
+    //   await tx.cart_items.deleteMany({
+    //     where: { cti_id: { in: dupIds } },
+    //   });
+    // }
 
     // สร้าง cartItem ใหม่
     const cartItem = await tx.cart_items.create({

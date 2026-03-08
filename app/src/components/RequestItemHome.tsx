@@ -209,9 +209,7 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
 
 
   const status = statusConfig[ticket.status] || statusConfig.PENDING;
-  const deviceImage =
-    ticket.device_summary.image ||
-    "https://placehold.co/200x150/png?text=Device";
+  const deviceImage = ticket.device_summary.image ?? null;
   const sectionName =
     typeof ticket.device_summary.section === "object" &&
       ticket.device_summary.section
@@ -718,11 +716,20 @@ const formatUpdateByDateTime = (dateTimeString: string | null): string => {
               <div className="w-[300px] flex flex-col gap-2">
                 {/* Device Image */}
                 <div className="w-full h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden border border-[#D9D9D9] p-4">
-                  <img
-                    src={getImageUrl(deviceImage)}
-                    alt={ticket.device_summary.name}
-                    className="max-w-full max-h-full object-contain"
-                  />
+                  {
+                    deviceImage ? (
+                      <img
+                        src={getImageUrl(deviceImage)}
+                        alt={ticket.device_summary.name}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-[#BFBFBF] flex flex-col items-center gap-2">
+                        <Icon icon="mdi:image-outline" width="40" height="40" />
+                        <span className="text-sm">ไม่มีรูปภาพ</span>
+                      </div>
+                    )
+                  }
                 </div>
 
                 <div className="bg-[#F4F4F4] p-3 rounded-lg border border-[#D9D9D9]">

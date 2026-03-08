@@ -47,13 +47,23 @@ export async function getCategories(query: GetCategoriesQuerySchema) {
                 created_at: true,
                 updated_at: true,
                 deleted_at: true,
-
+                _count: {
+                    select: {
+                        devices: true
+                    }
+                }
             }
         })
     ]);
 
+    // แปลงข้อมูล
+    const mapped = data.map((category) => ({
+        ...category,
+        isUsed: category._count.devices > 0
+    }));
+
     return {
-        data,
+        data: mapped,
         meta: {
             page,
             limit,

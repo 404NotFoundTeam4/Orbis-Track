@@ -292,21 +292,43 @@ export default function BorrowModal({
 
   const canBorrow = isValidBorrowTime(start, end, timeStart, timeEnd);
 
+  /**
+  * Description: ตรวจสอบเลือกเวลาที่ผ่านมาแล้ว
+  * Input : date - วันที่เลือก, time - เวลา
+  * Output : true - เวลาที่เลือกอยู่ในอดีต, false - เวลาที่เลือกยังไม่ผ่าน
+  * Author: Thakdanai Makmi (Ryu) 66160355
+  **/
+  const isPastTime = (date: Date | null, time?: string) => {
+    if (!date || !time) return false;
+
+    const now = new Date(); // วันที่และเวลาปัจจุบัน
+
+    const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+
+    const selected = new Date(date); // สร้างวันที่ตามวันที่เลือก
+    selected.setHours(hour, minute, 0, 0); // กำหนดเวลาให้กับวันที่เลือก
+
+    return selected < now;
+  };
+
   const timeItems: timeDropdownItem[] = hours.flatMap((hour, index) => {
     return [0, 30]
       .filter((m) => !(hour === 17 && m > 0))
       .map((minute, indexRound) => {
         const isPM = hour >= 12;
         const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        // ค่าเวลาแบบ 24 ชั่วโมง
+        const value = `${hour.toString().padStart(2, "0")}:${minute
+          .toString()
+          .padStart(2, "0")}`;
 
         return {
           id: index * 2 + indexRound,
           label: `${displayHour.toString().padStart(2, "0")}:${minute
             .toString()
             .padStart(2, "0")} ${isPM ? "PM" : "AM"}`,
-          value: `${hour.toString().padStart(2, "0")}:${minute
-            .toString()
-            .padStart(2, "0")}`,
+          value,
+          disabled: isPastTime(start, value) // disable ถ้าเป็นเวลาที่ผ่านมาแล้ว
         };
       });
   });
@@ -429,6 +451,8 @@ export default function BorrowModal({
     end !== null &&
     !!timeStart &&
     !!timeEnd &&
+    !isPastTime(start, timeStart) &&
+    !isPastTime(end ?? start, timeEnd) &&
     (() => {
       if (!start || !end || !timeStart || !timeEnd) return false;
 
@@ -642,14 +666,16 @@ export default function BorrowModal({
                           />
                         </div>
 
-                        {/* {start &&
+                        {start &&
                           end &&
+                          timeStart &&
+                          timeEnd &&
                           isSameDay(start, end) &&
                           !canBorrow && (
                             <p className="text-red-500 text-sm">
                               การยืมวันเดียวกัน ต้องเลือกเวลาขั้นต่ำ 1 ชั่วโมง
                             </p>
-                          )} */}
+                          )}
 
                         <div className="flex gap-2">
                           <button

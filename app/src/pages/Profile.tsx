@@ -388,12 +388,14 @@ const Profile: React.FC = () => {
                 {/* ส่วนซ้าย: รูปภาพ */}
                 <div className="flex flex-col items-center gap-5 shrink-0">
                   <div className="w-[184px] h-[184px] rounded-full overflow-hidden bg-[#F3F4F6] border border-black flex items-center justify-center">
-                    {(previewUrl || profileData.us_images) && (
+                    {(previewUrl || profileData.us_images) ? (
                       <img
                         src={getImageUrl(previewUrl || profileData.us_images)}
                         alt="Avatar"
                         className="w-full h-full object-cover"
                       />
+                    ) : (
+                      <Icon icon="ph:user" width="62" height="62" className="text-gray-500" />
                     )}
                   </div>
                   <input

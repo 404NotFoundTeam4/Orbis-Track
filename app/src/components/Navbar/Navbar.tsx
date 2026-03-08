@@ -474,11 +474,17 @@ const Navbar = () => {
               to="profile"
               className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl"
             >
-              <img
-                src={getImageUrl(user.us_images)}
-                alt=""
-                className="w-9 h-9 rounded-full"
-              />
+              {user.us_images ? (
+                <img
+                  src={getImageUrl(user.us_images)}
+                  alt=""
+                  className="w-9 h-9 rounded-full"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
+                  <Icon icon="ph:user" width="20" height="20" className="text-gray-500" />
+                </div>
+              )}
               <div className=" text-left text-black pr-8">
                 <div className="text-[16px] font-semibold">
                   {user.us_firstname}

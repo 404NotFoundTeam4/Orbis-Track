@@ -8,6 +8,7 @@ interface TimePickerFieldProps {
     width?: number;
     placeholder?: string;
     onChange: (time: string) => void; // เปลี่ยนเวลา
+    date?: Date | null; // เวลาที่เลือก
 }
 
 const TimePickerField = ({
@@ -16,7 +17,8 @@ const TimePickerField = ({
     value,
     width = 137,
     placeholder = "ชั่วโมง : นาที",
-    onChange
+    onChange,
+    date
 }: TimePickerFieldProps) => {
     const hours = [
         "08:00", "08:30",
@@ -39,6 +41,21 @@ const TimePickerField = ({
         const hour12 = (hour % 12 === 0 ? 12 : hour % 12).toString().padStart(2, "0");
         return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
     };
+
+    /**
+    * Description: ตรวจสอบว่าเวลาที่เลือกเป็นเวลาที่ผ่านมาแล้วหรือไม่
+    * Input : time - เวลาในรูปแบบ "HH:mm"
+    * Output : true - เวลาที่เลือกอยู่ในอดีต, false - เวลาที่ยังไม่ผ่าน
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    */
+    const isPastTime = (time: string) => {
+        if (!date) return false;
+        const now = new Date(); // วันที่ปัจจุบัน
+        const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+        const selected = new Date(date); // วันที่เลือก
+        selected.setHours(hour, minute, 0, 0); // กำหนดเวลาให้กับวันที่ที่เลือก
+        return selected < now;
+    }
 
     return (
         <div className="flex flex-col gap-1 z-10">
@@ -71,21 +88,28 @@ const TimePickerField = ({
                     <div className="flex flex-col max-h-[322px] overflow-y-scroll">
                         {
                             // ลูปแสดงเวลา
-                            hours.map((hour) => (
-                                <Popover.Close key={hour} asChild>
-                                    <button
-                                        type="button"
-                                        onClick={() => onChange(hour)}
-                                        className={`px-5 py-3 rounded-xl text-left text-[16px]
-                                    ${value === hour
-                                                ? "bg-[#F6F6F6]"
-                                                : "hover:bg-[#F6F6F6]"
-                                            }
-                `               }>
-                                        {formatToAMPM(hour)}
-                                    </button>
-                                </Popover.Close>
-                            ))}
+                            hours.map((hour) => {
+                                const disabled = isPastTime(hour); // เวลาที่เลือกอยู่ในอดีต
+
+                                return (
+                                    <Popover.Close key={hour} asChild>
+                                        <button
+                                            type="button"
+                                            onClick={() => onChange(hour)}
+                                            className={`px-5 py-3 rounded-xl text-left text-[16px]
+                                                ${disabled
+                                                    ? "text-gray-300 cursor-not-allowed"
+                                                    : value === hour
+                                                        ? "bg-[#F6F6F6]"
+                                                        : "hover:bg-[#F6F6F6]"
+                                                }`}
+                                            disabled={disabled}
+                                        >
+                                            {formatToAMPM(hour)}
+                                        </button>
+                                    </Popover.Close>
+                                )
+                            })}
                     </div>
                 </Popover.Content>
             </Popover.Root>

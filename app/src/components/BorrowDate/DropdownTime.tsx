@@ -6,6 +6,7 @@ interface Option {
   id: number | string;
   label: string;
   value: string;
+  disabled?: boolean;
 }
 
 interface Props {
@@ -77,13 +78,19 @@ export default function Dropdown({
               <button
                 key={opt.id}
                 onClick={() => {
+                  if (opt.disabled) return;
                   setSelectedTime(opt);
                   onChange(opt.value);
                   setOpen(false);
                 }}
+                disabled={opt.disabled}
                 className={`
-                  w-full px-4 py-3 text-left
-                  hover:bg-gray-100
+                  w-full px-4 py-3 text-left rounded-xl
+                  ${
+                    opt.disabled
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "hover:bg-gray-100"
+                  }
                   ${opt.value === value ? "bg-gray-100 font-medium" : ""}
                 `}
               >

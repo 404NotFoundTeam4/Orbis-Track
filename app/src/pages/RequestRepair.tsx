@@ -96,9 +96,9 @@ const RequestsRepair = () => {
   ) => {
     try {
       // แปลงข้อมูลให้อยู่ในรูปแบบที่ API ต้องการ
-      const deviceStatusPayload = updates.map((update) => ({
-        id: update.id,
-        status: update.status,
+      const deviceStatusPayload = updates.map((u) => ({
+        id: u.id,
+        status: u.status,
       }));
 
       await repairTicketsService.updateRepairResult(ticketId, {
@@ -241,8 +241,8 @@ const RequestsRepair = () => {
     tickets.length < displayRow
       ? [
           ...tickets,
-          ...Array.from({ length: displayRow - tickets.length }, (_, emptyRowIndex) => ({
-            id: `empty-${emptyRowIndex}`,
+          ...Array.from({ length: displayRow - tickets.length }, (_, i) => ({
+            id: `empty-${i}`,
             isEmpty: true as const,
           })),
         ]

@@ -31,7 +31,6 @@ import Profile from "./Profile";
 import NotFound from "./NotFound";
 import { Settings } from "./Setting";
 import History from "./History";
-import Repair from "./Repair";
 import RequestsIssues from "./RequestRepair";
 
 function App() {
@@ -72,7 +71,6 @@ function App() {
       <Route path="account-management" element={<Users />} />
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-      <Route path="repair" element={<Repair />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -90,7 +88,6 @@ function App() {
     <>
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-      <Route path="repair" element={<Repair />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -205,7 +202,6 @@ function App() {
                   element={<RolePathRedirect />}
                 />
                 <Route path="/category" element={<RolePathRedirect />} />
-                <Route path="/repair" element={<RolePathRedirect />} />
                 <Route path="/inventory" element={<RolePathRedirect />} />
                 <Route path="/inventory/add" element={<RolePathRedirect />} />
                 <Route

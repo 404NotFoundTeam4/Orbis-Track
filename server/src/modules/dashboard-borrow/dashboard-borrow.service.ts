@@ -1,7 +1,22 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "../../infrastructure/database/client.js";
-import type { GetBorrowStatsQueryDto, GetBorrowStatsResponseDto, GetDeviceChildCountQueryDto, GetDeviceChildCountResponseDto, } from "./dashboard-borrow.schema.js";
+import type {
+  GetBorrowStatsQueryDto,
+  GetBorrowStatsResponseDto,
+  GetDeviceChildCountQueryDto,
+  GetDeviceChildCountResponseDto,
+} from "./dashboard-borrow.schema.js";
 
+const ThaiMonths = [
+  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+];
+
+/**
+ * Description: คำนวณช่วงวันเริ่มต้นและสิ้นสุดของไตรมาสที่เลือก
+ * Input : year (number), quarter (number: 1-4)
+ * Output: { start: Date, end: Date }
+ * Author: Nontapat Sinhum (Guitar) 66160104
+ */
 function getQuarterRange(year: number, quarter: number) {
   const startMonthIndex = (quarter - 1) * 3; // Q1=0, Q2=3, Q3=6, Q4=9
   const start = new Date(year, startMonthIndex, 1, 0, 0, 0, 0);
@@ -9,20 +24,29 @@ function getQuarterRange(year: number, quarter: number) {
     quarter === 4
       ? new Date(year + 1, 0, 1, 0, 0, 0, 0)
       : new Date(year, startMonthIndex + 3, 1, 0, 0, 0, 0);
+
   return { start, end };
 }
 
+/**
+ * Description: คำนวณช่วงวันเริ่มต้นและสิ้นสุดของทั้งปีที่เลือก
+ * Input : year (number)
+ * Output: { start: Date, end: Date }
+ * Author: Nontapat Sinhum (Guitar) 66160104
+ */
 function getYearRange(year: number) {
   const start = new Date(year, 0, 1, 0, 0, 0, 0);
   const end = new Date(year + 1, 0, 1, 0, 0, 0, 0);
+
   return { start, end };
 }
 
-const TH_MONTHS = [
-  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
-  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
-];
-
+/**
+ * Description: ดึงสถิติการยืมรายเดือนตามช่วงปี/ไตรมาสที่เลือก
+ * Input : query { year, quarter }
+ * Output: { year, quarter, range, points[] }
+ * Author: Nontapat Sinhum (Guitar) 66160104
+ */
 async function getBorrowStatsByQuarter(
   query: GetBorrowStatsQueryDto,
 ): Promise<GetBorrowStatsResponseDto> {
@@ -30,54 +54,60 @@ async function getBorrowStatsByQuarter(
   const quarter = query.quarter ?? 0;
 
   const isYear = quarter === 0;
-  const { start, end } = isYear ? getYearRange(year) : getQuarterRange(year, quarter);
-
-  // นิยาม "การยืม": ตัด REJECTED ออก
-  const includedStatuses = ["PENDING", "APPROVED", "IN_USE", "COMPLETED"] as const;
+  const { start, end } = isYear
+    ? getYearRange(year)
+    : getQuarterRange(year, quarter);
 
   type MonthRow = { month: number; count: number };
 
-  // year, quarter (0=ทั้งปี)
   const rows = (await prisma.$queryRaw`
-  SELECT
-    EXTRACT(MONTH FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int AS month,
-    COUNT(*)::int AS count
-  FROM borrow_return_tickets brt
-  WHERE brt.deleted_at IS NULL
-    AND brt.brt_status <> 'REJECTED'
-    AND EXTRACT(YEAR FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${year}
-    AND (
-      ${quarter} = 0 OR
-      EXTRACT(QUARTER FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${quarter}
-    )
-  GROUP BY 1
-  ORDER BY 1;
-`) as MonthRow[];
+    SELECT
+      EXTRACT(MONTH FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int AS month,
+      COUNT(*)::int AS count
+    FROM borrow_return_tickets brt
+    WHERE brt.deleted_at IS NULL
+      AND brt.brt_status <> 'REJECTED'
+      AND EXTRACT(YEAR FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${year}
+      AND (
+        ${quarter} = 0 OR
+        EXTRACT(QUARTER FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${quarter}
+      )
+    GROUP BY 1
+    ORDER BY 1;
+  `) as MonthRow[];
 
   const countMap = new Map<number, number>(); // key = 1..12
-  for (const r of rows) countMap.set(r.month, Number(r.count) || 0);
+  for (const row of rows) {
+    countMap.set(row.month, Number(row.count) || 0);
+  }
 
-  // monthIndices ที่จะคืน
   const monthIndices =
     quarter === 0
-      ? Array.from({ length: 12 }, (_, i) => i + 1) // 1..12
+      ? Array.from({ length: 12 }, (_, index) => index + 1)
       : [(quarter - 1) * 3 + 1, (quarter - 1) * 3 + 2, (quarter - 1) * 3 + 3];
 
-  const TH_MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-
-  const points = monthIndices.map((m) => ({
-    label: TH_MONTHS[m - 1],
-    value: countMap.get(m) ?? 0,
+  const points = monthIndices.map((month) => ({
+    label: ThaiMonths[month - 1],
+    value: countMap.get(month) ?? 0,
   }));
 
   return {
     year,
     quarter,
-    range: { start: start.toISOString(), end: end.toISOString() },
+    range: {
+      start: start.toISOString(),
+      end: end.toISOString(),
+    },
     points,
   };
 }
 
+/**
+ * Description: ดึงจำนวนอุปกรณ์ย่อยแบบสะสมจนถึงสิ้นสุดช่วง (filter ปี/ไตรมาส)
+ * Input : query { year, quarter }
+ * Output: { year, quarter, range, total }
+ * Author: Nontapat Sinhum (Guitar) 66160104
+ */
 async function getDeviceChildCountByQuarter(
   query: GetDeviceChildCountQueryDto,
 ): Promise<GetDeviceChildCountResponseDto> {
@@ -85,7 +115,9 @@ async function getDeviceChildCountByQuarter(
   const quarter = query.quarter ?? 0;
 
   const isYear = quarter === 0;
-  const { start, end } = isYear ? getYearRange(year) : getQuarterRange(year, quarter);
+  const { start, end } = isYear
+    ? getYearRange(year)
+    : getQuarterRange(year, quarter);
 
   /**
    * นับแบบสะสม: ตั้งแต่ต้นระบบ -> จนถึง "สิ้นสุดช่วงที่เลือก"
@@ -103,9 +135,15 @@ async function getDeviceChildCountByQuarter(
   return {
     year,
     quarter,
-    range: { start: start.toISOString(), end: end.toISOString() },
+    range: {
+      start: start.toISOString(),
+      end: end.toISOString(),
+    },
     total,
   };
 }
 
-export const dashboardBorrowService = { getBorrowStatsByQuarter, getDeviceChildCountByQuarter };
+export const dashboardBorrowService = {
+  getBorrowStatsByQuarter,
+  getDeviceChildCountByQuarter,
+};

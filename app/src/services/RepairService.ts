@@ -1,9 +1,6 @@
 import api from "../api/axios";
 
-export type RepairTicketStatus =
-  | "PENDING"
-  | "IN_PROGRESS"
-  | "COMPLETED";
+export type RepairStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
 
 export interface RepairTicketReportedDevice {
   id: number;
@@ -82,7 +79,7 @@ export interface GetRepairTicketsResponse {
   };
 }
 
-export interface GetRepairTicketsQuery {
+export type RepairQuery = {
   page?: number;
   limit?: number;
   search?: string;
@@ -95,35 +92,27 @@ export interface ApproveRepairTicketResponse {
   message: string;
 }
 
-export const repairTicketsService = {
-  /**
-   * Description: ดึงรายการคำร้องแจ้งซ่อมทั้งหมด พร้อมระบบค้นหา กรองสถานะ และแบ่งหน้า
-   * Endpoint  : GET /repair-tickets
-   * Input     : params (GetRepairTicketsQuery)
-   * Output    : Promise<GetRepairTicketsResponse>
-   * Author    : Worrawat Namwat (Wave) 66160372
+type RepairListResponse = {
+  status: number;
+  message: string;
+  totalNum: number;
+  maxPage: number;
+  currentPage: number;
+  data: RepairItem[];
+};
+/**
+   * Description: ดึงรายการงานซ่อมจาก API โดยสามารถใช้พารามิเตอร์สำหรับการค้นหา, กรอง, และเรียงลำดับข้อมูล
+   * 
+   * Input:
+   *  - RepairQuery: พารามิเตอร์ที่ใช้ในการค้นหาหรือกรองข้อมูล
+   *  - AccessTokenPayload (optional): ข้อมูลการยืนยันตัวตน (ไม่จำเป็นต้องใช้ในบางกรณี)
+   * 
+   * Output:
+   *  - RepairListResponse: ผลลัพธ์ที่มีการแบ่งหน้า พร้อมข้อมูลของงานซ่อมและข้อมูลการแบ่งหน้า
    */
-getRepairTickets: async (
-  params?: GetRepairTicketsQuery,
-): Promise<GetRepairTicketsResponse> => {
-  const response = await api.get("/repair-tickets", { params });
-  return response.data;
-},
-
-  /**
-   * Description: อนุมัติใบแจ้งซ่อม โดยเปลี่ยนสถานะเป็น IN_PROGRESS และบันทึกผู้รับเรื่อง
-   * Endpoint  : PATCH /repair-tickets/:id/approve
-   * Input     : ticketId (number), userId (number)
-   * Output    : Promise<ApproveRepairTicketResponse>
-   * Author    : Worrawat Namwat (Wave)  66160372
-   * */
-  approveTicket: async (
-    ticketId: number,
-    userId: number,
-  ): Promise<ApproveRepairTicketResponse> => {
-    const response = await api.patch(`/repair-tickets/${ticketId}/approve`, {
-      user_id: userId,
-    });
+export const repairService = {
+  async getRepairs(params: RepairQuery): Promise<RepairListResponse> {
+    const response = await api.get("/repairs", { params });
     return response.data;
   },
 
@@ -142,3 +131,4 @@ getRepairTickets: async (
     return response.data;
   },
 };
+

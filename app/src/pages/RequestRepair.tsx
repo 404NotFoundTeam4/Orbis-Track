@@ -118,7 +118,7 @@ const RequestsRepair = () => {
   // --- States ---
   const [activeTabKey, setActiveTabKey] = useState<string>("all");
   const [searchFilter, setSearchFilter] = useState({ search: "" });
-  const [statusFilter, setStatusFilter] = useState(statusOptions[0]);
+  const [statusFilter, setStatusFilter] = useState<typeof statusOptions[number]>();
 
   // Data State
   const [tickets, setTickets] = useState<RepairTicketItem[]>([]);
@@ -160,9 +160,9 @@ const RequestsRepair = () => {
         queryParams.search = searchFilter.search;
       }
 
-      if (statusFilter.value !== "ALL") {
-        queryParams.status = statusFilter.value as RepairTicketStatus;
-      }
+      if (statusFilter && statusFilter.value !== "ALL") {
+  queryParams.status = statusFilter.value as RepairTicketStatus;
+}
 
       const response = await repairTicketsService.getRepairTickets(queryParams);
 
@@ -180,11 +180,11 @@ const RequestsRepair = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, searchFilter.search, statusFilter.value, activeTabKey]);
+  }, [page, searchFilter.search, statusFilter?.value, activeTabKey]);
 
   useEffect(() => {
     setPage(1);
-  }, [searchFilter.search, statusFilter.value, activeTabKey]);
+  }, [searchFilter.search, statusFilter?.value, activeTabKey]);
 
   useEffect(() => {
     fetchTickets();
@@ -229,7 +229,7 @@ const RequestsRepair = () => {
   };
 
   // กำหนดจำนวนแถวที่ต้องการแสดงในตาราง (รวมแถวว่าง)
-  const displayRow = 10;
+  const displayRow = 8;
 
   /**
    * Description: ฟังก์ชันสำหรับเติมแถวว่างในกรณีที่จำนวนคำร้องน้อยกว่า displayRow เพื่อให้ตารางมีความสวยงามและคงรูปแบบเดิม
@@ -247,6 +247,42 @@ const RequestsRepair = () => {
           })),
         ]
       : tickets;
+
+    const sortedTickets = [...tickets].sort((a, b) => {
+    let valA: string | number = "";
+    let valB: string | number = "";
+
+    switch (sortField) {
+      case "device_name":
+        valA = a.device_info.name;
+        valB = b.device_info.name;
+        break;
+      case "quantity":
+        valA = a.device_info.quantity;
+        valB = b.device_info.quantity;
+        break;
+      case "category":
+        valA = a.device_info.category || "";
+        valB = b.device_info.category || "";
+        break;
+      case "requester":
+        valA = a.requester.fullname;
+        valB = b.requester.fullname;
+        break;
+      case "request_date":
+        valA = new Date(a.dates.created).getTime();
+        valB = new Date(b.dates.created).getTime();
+        break;
+      case "status":
+        valA = a.status;
+        valB = b.status;
+        break;
+    }
+
+    if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+    if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="w-full h-full flex flex-col p-4 bg-[#F9FAFB]">
@@ -279,7 +315,7 @@ const RequestsRepair = () => {
         </div>
 
         {/* Filters */}
-        <div className="w-full mb-[23px]">
+        <div className="w-full mb-[23px] ">
           <div className="flex justify-between items-center gap-4">
             <SearchFilter onChange={setSearchFilter} />
             <div>
@@ -394,18 +430,12 @@ const RequestsRepair = () => {
             <div className="w-full rounded-2xl p-8 text-center text-gray-500"></div>
           )}
 
-          {!loading && !error && tickets.length > 0 && (
+          {!loading && !error && sortedTickets.length > 0 && (
             <div className="flex flex-col ">
-              {filledTickets.map((ticket) =>
-                "isEmpty" in ticket ? (
-                  <div
-                    key={ticket.id}
-                    className="w-full bg-white rounded-[16px] mb-[16px] h-[61px] "
-                  />
-                ) : (
+              {sortedTickets.map((ticket) => (
                   <RequestItemRepair
                     key={ticket.id}
-                    ticket={ticket}
+                    ticket={ticket as RepairTicketItem}
                     onExpand={handleExpand}
                     currentUserId={user?.us_id}
                     currentUserName={loggedInUserName}
@@ -414,8 +444,7 @@ const RequestsRepair = () => {
                     onSave={handleSaveAction}
                     activeTabKey={activeTabKey}
                   />
-                ),
-              )}
+              ))}
             </div>
           )}
 

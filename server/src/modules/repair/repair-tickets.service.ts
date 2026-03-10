@@ -23,6 +23,14 @@ const ticketInclude = Prisma.validator<Prisma.ticket_issuesInclude>()({
     },
   },
   assignee: true,
+  attachments: {         
+    where: {
+      deleted_at: null,  
+    },
+    orderBy: {
+      uploaded_at: 'asc' 
+    }
+  }
 });
 
 type TicketWithRelations = Prisma.ticket_issuesGetPayload<{
@@ -115,6 +123,10 @@ export const repairTicketsService = {
           current_status: id.device_child?.dec_status ?? null,
         })) ?? [];
 
+        const issuePrimaryImage = t.attachments && t.attachments.length > 0 
+        ? t.attachments[0].iatt_path_url 
+        : null;
+
       return {
         id: t.ti_id,
         ticket_no: `TI-${t.ti_id.toString().padStart(5, "0")}`,
@@ -129,7 +141,7 @@ export const repairTicketsService = {
           category: t.device?.category?.ca_name || "ไม่ระบุหมวดหมู่",
           quantity: quantity,
           location: t.device?.de_location || "-",
-          image: t.device?.de_images || null,
+          image: issuePrimaryImage,
           reported_devices: reportedDevices,
         },
         problem: {

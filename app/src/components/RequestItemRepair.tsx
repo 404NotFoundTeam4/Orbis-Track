@@ -129,25 +129,25 @@ export default function RequestItemRepair({
 
    /**
    * Description: ฟังก์ชันสำหรับจัดการการคลิกปุ่มอนุมัติคำร้อง โดยจะแสดง AlertDialog เพื่อยืนยันการรับคำร้องก่อนที่จะดำเนินการต่อ
-   * Input : e: React.MouseEvent (เหตุการณ์การคลิกที่เกิดขึ้นเมื่อผู้ใช้คลิกปุ่มอนุมัติ)
+   * Input : event: React.MouseEvent (เหตุการณ์การคลิกที่เกิดขึ้นเมื่อผู้ใช้คลิกปุ่มอนุมัติ)
    * Output : void (ฟังก์ชันนี้จะเปิด AlertDialog โดยตั้งค่า isAlertOpen เป็น true เพื่อแสดงกล่องยืนยันการรับคำร้อง)
    * Author : Worrawat Namwat (Wave) 66160372
    */
-  const openApproveDialog = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const openApproveDialog = (event: React.MouseEvent) => {
+    event.stopPropagation();
     setIsAlertOpen(true); 
   };
 
    /**
    * Description: ฟังก์ชันสำหรับจัดการการยืนยันการรับคำร้องหลังจากที่ผู้ใช้คลิกปุ่มอนุมัติและยืนยันใน AlertDialog แล้ว โดยจะทำการเรียกใช้ฟังก์ชัน onApprove ที่ส่งมาจาก props เพื่อดำเนินการรับคำร้อง และอัปเดตสถานะและผู้รับงานใน UI ตามผลลัพธ์ที่ได้รับ
-   * Input : e: React.MouseEvent (เหตุการณ์การคลิกที่เกิดขึ้นเมื่อผู้ใช้ยืนยันการรับคำร้องใน AlertDialog)
+   * Input : event: React.MouseEvent (เหตุการณ์การคลิกที่เกิดขึ้นเมื่อผู้ใช้ยืนยันการรับคำร้องใน AlertDialog)
    * Output : void (ฟังก์ชันนี้จะปิด AlertDialog โดยตั้งค่า isAlertOpen เป็น false และถ้า onApprove มีอยู่ จะเรียกใช้ฟังก์ชันนั้นเพื่อรับคำร้อง และอัปเดตสถานะและผู้รับงานใน UI ตามผลลัพธ์ที่ได้รับจากการเรียกใช้ onApprove)
    * Author : Worrawat Namwat (Wave) 66160372
    */
-  const submitApprovalRequest = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault(); 
-      e.stopPropagation();
+  const submitApprovalRequest = async (event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault(); 
+      event.stopPropagation();
     }
     
     setIsAlertOpen(false);
@@ -169,8 +169,8 @@ export default function RequestItemRepair({
    * Description: ป้องกันไม่ให้ Event การคลิกทะลุไปทำให้ Accordion กาง/หุบ
    * Author : Worrawat Namwat (Wave) 66160372
    */
-  const preventAccordionToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const preventAccordionToggle = (event: React.MouseEvent) => {
+    event.stopPropagation();
   };
 
    /**
@@ -236,9 +236,9 @@ export default function RequestItemRepair({
           {activeTabKey === "mine" ? (
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 setIsManageModalOpen(true);
               }}
               className="bg-[#40A9FF] border border-[#40A9FF] text-white w-[105px] h-[44px] rounded-full flex items-center justify-center hover:bg-[#1890FF] transition-colors -ml-3.5"
@@ -416,7 +416,7 @@ export default function RequestItemRepair({
           className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 transition-opacity"
           onClick={() => setIsPreviewImageOpen(false)}
         >
-          <div className="relative max-w-4xl w-full max-h-[90vh] flex justify-center items-center" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex justify-center items-center" onClick={(event) => event.stopPropagation()}>
             <button
               className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
               onClick={() => setIsPreviewImageOpen(false)}

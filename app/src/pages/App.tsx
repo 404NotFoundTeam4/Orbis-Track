@@ -31,11 +31,8 @@ import Profile from "./Profile";
 import NotFound from "./NotFound";
 import { Settings } from "./Setting";
 import History from "./History";
-<<<<<<< HEAD
 import Repair from "./Repair";
 import RepairRequestPage from "./RepairRequestPage";
-=======
->>>>>>> develop
 import RequestsIssues from "./RequestRepair";
 
 function App() {
@@ -76,11 +73,8 @@ function App() {
       <Route path="account-management" element={<Users />} />
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-<<<<<<< HEAD
       <Route path="repair" element={<Repair />} />
       <Route path="repair/request" element={<RepairRequestPage />} />
-=======
->>>>>>> develop
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -98,11 +92,8 @@ function App() {
     <>
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-<<<<<<< HEAD
       <Route path="repair" element={<Repair />} />
       <Route path="repair/request" element={<RepairRequestPage />} />
-=======
->>>>>>> develop
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -217,11 +208,8 @@ function App() {
                   element={<RolePathRedirect />}
                 />
                 <Route path="/category" element={<RolePathRedirect />} />
-<<<<<<< HEAD
                 <Route path="/repair" element={<RolePathRedirect />} />
                 <Route path="/repair/request" element={<RolePathRedirect />} />
-=======
->>>>>>> develop
                 <Route path="/inventory" element={<RolePathRedirect />} />
                 <Route path="/inventory/add" element={<RolePathRedirect />} />
                 <Route

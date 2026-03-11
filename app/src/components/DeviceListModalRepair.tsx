@@ -7,7 +7,7 @@
  * Author: Worrawat Namwat (Wave) 66160372 (Refactored for Repair)
  */
 import { Icon } from "@iconify/react";
-import type { RepairTicketReportedDevice } from "../services/RepairService";
+import type { RepairTicketReportedDevice } from "../services/RequestRepairService";
 
 interface DeviceListModalProps {
   isOpen: boolean;

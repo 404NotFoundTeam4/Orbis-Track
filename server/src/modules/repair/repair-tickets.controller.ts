@@ -5,7 +5,8 @@ import { BaseResponse } from "../../core/base.response.js";
 import { BaseController } from "../../core/base.controller.js";
 import { 
   getRepairTicketsQuerySchema, 
-  RepairTicketsResponse 
+  RepairTicketsResponse, 
+  updateRepairResultBodySchema
 } from "./repair-tickets.schema.js";
 import { ticket_issues } from "@prisma/client"; 
 
@@ -49,13 +50,10 @@ export class RepairTicketsController extends BaseController {
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<BaseResponse<ticket_issues>> {
-    
-    const ticketId = Number(req.params.id);
-    
+  ): Promise<BaseResponse<ticket_issues>> {  
+    const ticketId = Number(req.params.id);   
     // Zod ตรวจสอบข้อมูล ถ้าไม่ผ่านระบบ Router จะจับโยนเป็น 400 ให้อัตโนมัติ
     const body = approveRepairTicketBodySchema.parse(req.body);
-    
     // เรียกใช้ Service อัปเดตข้อมูลใน Database
     const result = await repairTicketsService.approveTicket(ticketId, body.user_id); 
     return { 
@@ -64,4 +62,27 @@ export class RepairTicketsController extends BaseController {
       data: result 
     };
   }
+
+   /**
+   * Description: บันทึกผลการซ่อมและอัปเดตสถานะอุปกรณ์ โดยมีการตรวจสอบ Body ผ่าน Zod แบบ safeParse และส่งข้อมูลอัปเดตกลับไปยัง Service เพื่อทำการบันทึกใน Database
+   * Input : req (params: id, body: updates), res, next
+   * Output : Promise<BaseResponse<ticket_issues>>
+   * Author : Worrawat Namwat (Wave) 66160372
+   */
+  async updateRepairResult(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<BaseResponse<ticket_issues>> {
+  const ticketId = Number(req.params.id);
+  const { updates } = updateRepairResultBodySchema.parse(req.body);
+
+  const result = await repairTicketsService.updateRepairResult(ticketId, updates);
+
+  return {
+    success: true,
+    message: "บันทึกผลการซ่อมและปิดงานเรียบร้อยแล้ว",
+    data: result
+  };
+}
 }

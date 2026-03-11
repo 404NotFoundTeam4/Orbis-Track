@@ -27,6 +27,10 @@ export const getRepairQuery = z.object({
     .openapi({ description: "ทิศทางการเรียง" }),
 });
 
+export const repairIssueParamSchema = z.object({
+  issueId: z.coerce.number().int().positive().openapi({ description: "รหัสรายการอ้างอิง" }),
+});
+
 export const repairItemSchema = z.object({
   id: z.coerce.number().openapi({ description: "รหัสงานซ่อม" }),
   title: z.string().openapi({ description: "หัวข้อปัญหา" }),
@@ -40,5 +44,37 @@ export const repairItemSchema = z.object({
   status: z.nativeEnum(TI_STATUS).openapi({ description: "สถานะงานซ่อม" }),
 });
 
+export const repairPrefillSchema = z.object({
+  issue_id: z.coerce.number().openapi({ description: "รหัสรายการอ้างอิง" }),
+  device_id: z.coerce.number().openapi({ description: "รหัสอุปกรณ์" }),
+  device_code: z.string().openapi({ description: "รหัสอุปกรณ์" }),
+  device_name: z.string().openapi({ description: "ชื่ออุปกรณ์" }),
+  quantity: z.coerce.number().openapi({ description: "จำนวน" }),
+  category: z.string().openapi({ description: "หมวดหมู่" }),
+  requester_name: z.string().openapi({ description: "ชื่อผู้ร้องขอ" }),
+  requester_emp_code: z.string().nullable().openapi({ description: "รหัสพนักงาน" }),
+});
+
+export const createRepairRequestBody = z.object({
+  sourceIssueId: z.coerce.number().int().positive().optional().nullable(),
+  deviceId: z.coerce.number().int().positive(),
+  subDeviceIds: z.array(z.coerce.number().int().positive()).optional().default([]),
+  subject: z.string().trim().min(1).max(200),
+  problemDescription: z.string().trim().min(1),
+  quantity: z.coerce.number().int().positive().optional().default(1),
+  category: z.string().trim().optional().nullable(),
+  requesterName: z.string().trim().min(1),
+  requesterEmpCode: z.string().trim().optional().nullable(),
+  receiveLocation: z.string().trim().optional().nullable(),
+});
+
+export const createRepairRequestResponseSchema = z.object({
+  id: z.coerce.number().openapi({ description: "รหัสคำขอแจ้งซ่อมที่สร้างใหม่" }),
+  message: z.string().openapi({ description: "ข้อความสถานะ" }),
+});
+
 export type GetRepairQuery = z.infer<typeof getRepairQuery>;
 export type RepairItemDto = z.infer<typeof repairItemSchema>;
+export type RepairPrefillDto = z.infer<typeof repairPrefillSchema>;
+export type CreateRepairRequestBody = z.infer<typeof createRepairRequestBody>;
+export type RepairIssueParamDto = z.infer<typeof repairIssueParamSchema>;

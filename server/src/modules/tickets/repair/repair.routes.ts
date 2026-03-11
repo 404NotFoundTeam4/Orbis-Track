@@ -7,7 +7,15 @@
  */
 import { Router } from "../../../core/router.js";
 import { RepairController } from "./repair.controller.js";
-import { getRepairQuery, repairItemSchema } from "./repair.schema.js";
+import { upload } from "../../upload/upload.service.js";
+import {
+  createRepairRequestBody,
+  createRepairRequestResponseSchema,
+  getRepairQuery,
+  repairIssueParamSchema,
+  repairItemSchema,
+  repairPrefillSchema,
+} from "./repair.schema.js";
 
 const repairController = new RepairController();
 const router = new Router(undefined, "/repairs");
@@ -22,6 +30,30 @@ router.getDoc(
     auth: true,
   },
   repairController.getRepairs,
+);
+
+router.getDoc(
+  "/prefill/:issueId",
+  {
+    tag: "Repairs",
+    params: repairIssueParamSchema,
+    res: repairPrefillSchema,
+    auth: true,
+  },
+  repairController.getRepairPrefill,
+);
+
+router.postDoc(
+  "/request",
+  {
+    tag: "Repairs",
+    body: createRepairRequestBody,
+    res: createRepairRequestResponseSchema,
+    auth: true,
+    contentType: "multipart/form-data",
+  },
+  upload.array("images", 10),
+  repairController.createRepairRequest,
 );
 
 export default router.instance;

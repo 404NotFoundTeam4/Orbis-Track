@@ -7,6 +7,7 @@
  * Author: Rachata Jitjeankhan (Tang) 66160369
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SearchFilter from "../components/SearchFilter";
 import DropDown from "../components/DropDown";
 import Pagination from "../components/Pagination";
@@ -38,6 +39,7 @@ const PAGE_SIZE = 10;
  */
 export default function Repair() {
   const { push } = useToast();
+  const navigate = useNavigate();
 
   const [allItems, setAllItems] = useState<RepairItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -143,21 +145,6 @@ export default function Repair() {
   };
 
   /**
-   * handleRepairRequestSuccess
-   * Description: จัดการเมื่อการแจ้งซ่อมสำเร็จ
-   * Input      : ไม่มี
-   * Output     : แสดงข้อความแจ้งเตือนและดึงข้อมูลใหม่
-   * Author     : Rachata Jitjeankhan (Tang) 66160369
-   */
-  const handleRepairRequestSuccess = () => {
-    push({
-      tone: "success",
-      message: "แจ้งซ่อมเรียบร้อยแล้ว",
-    });
-    fetchRepairs();
-  };
-
-  /**
    * handleOpenAction
    * Description: จัดการเมื่อคลิกเปิดรายการแจ้งซ่อม
    * Input      : item (รายการแจ้งซ่อมที่เลือก)
@@ -165,8 +152,11 @@ export default function Repair() {
    * Author     : Rachata Jitjeankhan (Tang) 66160369
    */
   const handleOpenAction = (item: RepairItem) => {
-    // TODO: Implement action for repair item (e.g., open detail modal)
-    console.log("Open action for item:", item);
+    navigate(`/repair/request?mode=fromIssue&issueId=${item.id}`);
+  };
+
+  const handleOpenOtherDeviceForm = () => {
+    navigate("/repair/request?mode=other");
   };
 
   return (
@@ -196,13 +186,7 @@ export default function Repair() {
           <button
             type="button"
             className="h-[46px] rounded-full bg-[#F44336] px-6 text-base font-medium text-white"
-            onClick={() =>
-              push({
-                tone: "info",
-                message: "เปิดฟอร์มแจ้งซ่อมอุปกรณ์อื่น",
-                description: "พร้อมเชื่อมต่อในสเต็ปถัดไป",
-              })
-            }
+            onClick={handleOpenOtherDeviceForm}
           >
             แจ้งซ่อมอุปกรณ์อื่น
           </button>

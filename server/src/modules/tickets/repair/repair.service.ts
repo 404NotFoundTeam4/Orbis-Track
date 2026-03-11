@@ -1,10 +1,15 @@
-import { Prisma, TI_STATUS } from "@prisma/client";
+import { Prisma, TI_RESULT, TI_STATUS } from "@prisma/client";
 import { HttpStatus } from "../../../core/http-status.enum.js";
 import type { PaginatedResult } from "../../../core/paginated-result.interface.js";
 import { HttpError } from "../../../errors/errors.js";
 import { prisma } from "../../../infrastructure/database/client.js";
 import type { AccessTokenPayload } from "../../auth/auth.schema.js";
-import type { GetRepairQuery, RepairItemDto } from "./repair.schema.js";
+import type {
+  CreateRepairRequestBody,
+  GetRepairQuery,
+  RepairItemDto,
+  RepairPrefillDto,
+} from "./repair.schema.js";
 
 /**
  * Description: Service สำหรับจัดการข้อมูลงานซ่อม
@@ -209,6 +214,169 @@ export class RepairService {
       limit,
       maxPage: Math.ceil(total / limit),
       paginated: true,
+    };
+  }
+
+  async getPrefillByIssueId(issueId: number): Promise<RepairPrefillDto> {
+    const issue = await prisma.ticket_issues.findFirst({
+      where: {
+        ti_id: issueId,
+        deleted_at: null,
+      },
+      select: {
+        ti_id: true,
+        ti_de_id: true,
+        ti_reported_by: true,
+      },
+    });
+
+    if (!issue) {
+      throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบรายการสำหรับเติมข้อมูล");
+    }
+
+    const [device, reporter] = await Promise.all([
+      prisma.devices.findFirst({
+        where: { de_id: issue.ti_de_id, deleted_at: null },
+        select: {
+          de_serial_number: true,
+          de_name: true,
+          de_ca_id: true,
+        },
+      }),
+      prisma.users.findFirst({
+        where: { us_id: issue.ti_reported_by },
+        select: {
+          us_firstname: true,
+          us_lastname: true,
+          us_emp_code: true,
+        },
+      }),
+    ]);
+
+    const category = device?.de_ca_id
+      ? await prisma.categories.findFirst({
+          where: { ca_id: device.de_ca_id },
+          select: { ca_name: true },
+        })
+      : null;
+
+    const requesterName = `${reporter?.us_firstname ?? ""} ${reporter?.us_lastname ?? ""}`.trim() || "-";
+
+    return {
+      issue_id: issue.ti_id,
+      device_id: issue.ti_de_id,
+      device_code: device?.de_serial_number ?? "-",
+      device_name: device?.de_name ?? "-",
+      quantity: 1,
+      category: category?.ca_name ?? "-",
+      requester_name: requesterName,
+      requester_emp_code: reporter?.us_emp_code ?? null,
+    };
+  }
+
+  async createRepairRequest(
+    payload: CreateRepairRequestBody,
+    currentUser?: AccessTokenPayload,
+    imagePaths: string[] = [],
+  ): Promise<{ id: number; message: string }> {
+    const userId = currentUser?.sub;
+
+    if (!userId) {
+      throw new HttpError(HttpStatus.UNAUTHORIZED, "กรุณาเข้าสู่ระบบ");
+    }
+
+    const device = await prisma.devices.findFirst({
+      where: { de_id: payload.deviceId, deleted_at: null },
+      select: { de_id: true },
+    });
+
+    if (!device) {
+      throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
+    }
+
+    if (payload.sourceIssueId) {
+      const sourceIssue = await prisma.ticket_issues.findFirst({
+        where: {
+          ti_id: payload.sourceIssueId,
+          deleted_at: null,
+        },
+        select: {
+          ti_id: true,
+          ti_de_id: true,
+        },
+      });
+
+      if (!sourceIssue) {
+        throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบรายการอ้างอิงสำหรับแจ้งซ่อม");
+      }
+
+      if (sourceIssue.ti_de_id !== payload.deviceId) {
+        throw new HttpError(HttpStatus.BAD_REQUEST, "อุปกรณ์ไม่ตรงกับรายการอ้างอิง");
+      }
+    }
+
+    const validSubDeviceIds = payload.subDeviceIds ?? [];
+
+    if (validSubDeviceIds.length > 0) {
+      const matchedSubDevices = await prisma.device_childs.findMany({
+        where: {
+          dec_id: { in: validSubDeviceIds },
+          dec_de_id: payload.deviceId,
+          deleted_at: null,
+        },
+        select: { dec_id: true },
+      });
+
+      if (matchedSubDevices.length !== validSubDeviceIds.length) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "มีอุปกรณ์ย่อยบางรายการไม่ตรงกับอุปกรณ์แม่ที่เลือก",
+        );
+      }
+    }
+
+    const createdIssue = await prisma.$transaction(async (tx) => {
+      const created = await tx.ticket_issues.create({
+        data: {
+          ti_de_id: payload.deviceId,
+          ti_brt_id: null,
+          ti_title: payload.subject,
+          ti_description: payload.problemDescription,
+          ti_reported_by: userId,
+          ti_assigned_to: null,
+          ti_status: TI_STATUS.PENDING,
+          ti_result: TI_RESULT.IN_PROGRESS,
+          ti_damaged_reason: payload.category ?? null,
+          ti_resolved_note: payload.receiveLocation ?? null,
+        },
+        select: { ti_id: true },
+      });
+
+      if (validSubDeviceIds.length > 0) {
+        await tx.$executeRaw`
+          INSERT INTO issue_devices (id_ti_id, id_dec_id, created_at, updated_at)
+          SELECT ${created.ti_id}, dec_id, NOW(), NOW()
+          FROM device_childs
+          WHERE dec_id = ANY(${validSubDeviceIds}::int[])
+        `;
+      }
+
+      if (imagePaths.length > 0) {
+        await tx.issue_attachments.createMany({
+          data: imagePaths.map((path) => ({
+            iatt_path_url: path,
+            iatt_ti_id: created.ti_id,
+            uploaded_by: userId,
+          })),
+        });
+      }
+
+      return created;
+    });
+
+    return {
+      id: createdIssue.ti_id,
+      message: "แจ้งซ่อมเรียบร้อยแล้ว",
     };
   }
 }

@@ -32,6 +32,7 @@ import NotFound from "./NotFound";
 import { Settings } from "./Setting";
 import History from "./History";
 import Repair from "./Repair";
+import RepairRequestPage from "./RepairRequestPage";
 
 function App() {
   const ADMIN_ONLY: Role[] = ["ADMIN"];
@@ -72,6 +73,7 @@ function App() {
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
       <Route path="repair" element={<Repair />} />
+      <Route path="repair/request" element={<RepairRequestPage />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -90,6 +92,7 @@ function App() {
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
       <Route path="repair" element={<Repair />} />
+      <Route path="repair/request" element={<RepairRequestPage />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -199,6 +202,7 @@ function App() {
                 />
                 <Route path="/category" element={<RolePathRedirect />} />
                 <Route path="/repair" element={<RolePathRedirect />} />
+                <Route path="/repair/request" element={<RolePathRedirect />} />
                 <Route path="/inventory" element={<RolePathRedirect />} />
                 <Route path="/inventory/add" element={<RolePathRedirect />} />
                 <Route

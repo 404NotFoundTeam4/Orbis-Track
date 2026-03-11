@@ -18,6 +18,8 @@ import { borrowRouter } from "./modules/borrows/index.js";
 import { usersRouter } from "./modules/users/index.js";
 import { historyApprovalRouter } from "./modules/history-approval/index.js";
 import { repairRouter } from "./modules/tickets/repair/index.js";
+import { repairTicketsRouter } from "./modules/repair/index.js";
+import { historyIssueRouter } from "./modules/history-issue/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1
@@ -68,12 +70,7 @@ export function routes(app: Express) {
     borrowReturnRouter,
   );
 
-  api.use(
-    "/inventory",
-    authMiddleware,
-    requireRole([UserRole.ADMIN, UserRole.STAFF]),
-    inventoryRouter,
-  );
+  api.use("/inventory", authMiddleware, inventoryRouter);
 
   api.use(
     "/category",
@@ -89,12 +86,15 @@ export function routes(app: Express) {
   api.use("/borrow", authMiddleware, borrowRouter);
 
   api.use("/home", authMiddleware, homeRouter);
-  
+
   api.use("/history-approval", authMiddleware, historyApprovalRouter);
+
+  api.use("/history-issue", authMiddleware, historyIssueRouter);
 
   api.use("/history-borrow", authMiddleware, historyBorrowRouter);
 
   api.use("/repairs", authMiddleware, repairRouter);
+  api.use("/repair-tickets", authMiddleware, repairTicketsRouter);
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

@@ -9,6 +9,8 @@ import {
     otpTemplate,
     welcomeTemplate,
     passwordChangedTemplate,
+    ticketDueSoonTemplate,
+    ticketOverdueTemplate,
 } from './templates/index.js';
 import { logger } from '../../infrastructure/logger.js';
 
@@ -75,7 +77,7 @@ class EmailService {
             logger.info('Email service is ready');
         } catch (error) {
             this.isVerified = false;
-            logger.debug(`Email service connection failed: ${error}` );
+            logger.debug(`Email service connection failed: ${error}`);
             throw error;
         }
     }
@@ -225,6 +227,58 @@ class EmailService {
             this.send({ to, subject, html })
         );
         await Promise.all(promises);
+    }
+
+    /**
+     * Description: ส่งอีเมลแจ้งเตือน Ticket ใกล้ถึงกำหนดคืน (Due Soon)
+     * Input     : to (อีเมลผู้รับ), data { name, username, ticketId, deviceName, dueTime, ticketUrl }
+     * Output    : Promise<void>
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
+    async sendTicketDueSoon(
+        to: string,
+        data: {
+            name: string;
+            username: string;
+            ticketId: number;
+            deviceName: string;
+            dueTime: string;
+            ticketUrl: string;
+        }
+    ): Promise<void> {
+        const html = ticketDueSoonTemplate(data);
+
+        await this.send({
+            to,
+            subject: '⚠️ ใกล้ถึงกำหนดคืนอุปกรณ์ - Orbis Track',
+            html,
+        });
+    }
+
+    /**
+     * Description: ส่งอีเมลแจ้งเตือน Ticket เกินกำหนดคืน (Overdue)
+     * Input     : to (อีเมลผู้รับ), data { name, username, ticketId, deviceName, overdueSince, ticketUrl }
+     * Output    : Promise<void>
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
+    async sendTicketOverdue(
+        to: string,
+        data: {
+            name: string;
+            username: string;
+            ticketId: number;
+            deviceName: string;
+            overdueSince: string;
+            ticketUrl: string;
+        }
+    ): Promise<void> {
+        const html = ticketOverdueTemplate(data);
+
+        await this.send({
+            to,
+            subject: '🚨 แจ้งเตือนเกินกำหนดคืนอุปกรณ์ - Orbis Track',
+            html,
+        });
     }
 
     /**

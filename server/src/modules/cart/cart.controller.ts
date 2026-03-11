@@ -81,13 +81,13 @@ export class CartController extends BaseController {
     const borrowTicket = await cartsService.createBorrowTicket(params);
 
     // สร้างรายการอุปกรณ์ใน ticket + ตารางช่วงเวลา availability
-    const ticketDevice = await cartsService.createTicketDevice({
+    await cartsService.createTicketDevice({
       cartItemId: params.cartItemId,
       borrowTicketId: borrowTicket.brt_id,
     })
 
     // สร้างขั้นตอนการอนุมัติ (Stages)
-    const borrowTicketStep = await cartsService.createBorrowTicketStages({
+    await cartsService.createBorrowTicketStages({
       cartItemId: params.cartItemId,
       borrowTicketId: borrowTicket.brt_id,
     })

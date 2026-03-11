@@ -152,8 +152,8 @@ const Requests = () => {
    * Output : void (อัปเดต tickets state)
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
-  const fetchTickets = useCallback(async () => {
-    setLoading(true);
+  const fetchTickets = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const params: GetTicketsParams = {
@@ -184,7 +184,7 @@ const Requests = () => {
       console.error("Failed to fetch tickets:", err);
       setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [
     statusFilter?.value,
@@ -489,6 +489,7 @@ const Requests = () => {
       setRejectLoading(false);
     }
   };
+  
 
   return (
     <div className="w-full h-full flex flex-col p-4">
@@ -605,7 +606,7 @@ const Requests = () => {
             <div className="w-full bg-red-50 border border-red-200 rounded-2xl p-8 text-center text-red-500">
               {error}
               <button
-                onClick={fetchTickets}
+                onClick={() => fetchTickets()}
                 className="ml-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
               >
                 ลองใหม่
@@ -648,6 +649,7 @@ const Requests = () => {
                   }}
                   isInvalid={validationErrors[ticket.id]}
                   onReturn={handleReturn}
+                  onManage={() => fetchTickets(true)}
                 />
               ))}
 

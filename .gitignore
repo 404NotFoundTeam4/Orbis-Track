@@ -34,3 +34,7 @@ Thumbs.db
 
 /src/generated/prisma
 *.zed
+
+/uploads
+
+/server/src/infrastructure/database/prisma/migrations

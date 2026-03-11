@@ -45,14 +45,14 @@ export type DeleteCartItemPayload = {
  * Author : Salsabeela (San) 66160349
  **/
 export type UpdateCartItemPayload = {
-  borrower: string;
-  phone: string;
-  reason: string;
-  placeOfUse: string;
-  quantity: number;
-  borrowDate: Date | string | null;
-  returnDate: Date | string | null;
-  deviceChilds: number[];
+    borrower: string;
+    phone: string;
+    reason: string;
+    placeOfUse: string;
+    quantity: number;
+    borrowDate: Date | string | null;
+    returnDate: Date | string | null;
+    deviceChilds: number[];
 };
 
 /**
@@ -71,6 +71,8 @@ export type CartItem = {
     cti_end_date: string | null;
     cti_ct_id: number | null;
     cti_dec_id: number | null;
+    created_at?: string | null;
+    updated_at?: string | null;
 
     device: any | null;
     de_ca_name: string | null;
@@ -82,7 +84,7 @@ export type CartItem = {
     dec_ready_count: number;
     dec_availability: string; // "พร้อมใช้งาน" / "ไม่พร้อมใช้งาน"
     de_max_borrow_days: number;
-    isBorrow: boolean; 
+    isBorrow: boolean;
 };
 
 /**
@@ -103,6 +105,16 @@ export type DeleteCartItemResponse = {
     message: string;
 };
 
+/**
+ * Description: แจ้งระบบว่า cart มีการเปลี่ยนแปลง เพื่อให้ Navbar รีเช็ค badge แบบ realtime
+ * Input : -
+ * Output : void
+ * Author : Nontapat Sinthum (Guitar) 66160104
+ **/
+function emitCartChanged(): void {
+    window.dispatchEvent(new Event("cart:changed"));
+}
+
 export const CartService = {
     /**
     * Description: ดึงรายการอุปกรณ์ในตะกร้าของผู้ใช้ (backend จะ resolve ผู้ใช้จาก token/session)
@@ -113,6 +125,8 @@ export const CartService = {
         const res = await api.get<ApiEnvelope<CartItemListResponse>>(
             `/borrow/cart`
         );
+
+        emitCartChanged();
         return res.data.data;
     },
 
@@ -127,6 +141,8 @@ export const CartService = {
             `/borrow/cart/`,
             { data: payload }
         );
+
+        emitCartChanged();
         return res.data.message ?? "Delete successfully";
     },
 
@@ -143,58 +159,61 @@ export const CartService = {
             `/borrow/cart/`,
             payload
         );
+
+        emitCartChanged();
         return res.data.data;
     },
 
     /**
    * UPDATE: แก้ไข cart item ตาม ctiId
    */
-  /**
-   * Description: แก้ไขรายละเอียดอุปกรณ์ในรถเข็น (Edit Cart)
-   *
-   * Note:
-   * - ใช้ในหน้า Edit Cart
-   * - รองรับการแก้ไขจำนวน, วันที่ยืม–คืน, ผู้ยืม, เหตุผล และสถานที่ใช้งาน
-   *
-   * Flow การทำงาน:
-   * 1. รับ ctiId และข้อมูลที่แก้ไขจากฟอร์ม
-   * 2. แปลง Date → ISO string ก่อนส่งไป Backend
-   * 3. เรียก API PUT /borrow/cart/:ctiId
-   * 4. Backend อัปเดตข้อมูลในระบบ
-   *
-   * Result:
-   * - สำเร็จ → return message
-   * - ไม่สำเร็จ → throw error ให้หน้า Edit Cart จัดการ
-   *
-   * Author: Salsabeela Sa-e (San) 66160349
-   */
-  async updateCartItem( 
-    ctiId: number,
-    payload: UpdateCartItemPayload
-  ): Promise<string> {
-    try {
-const datapayload = {
-  cti_us_name: payload.borrower,
-        cti_phone: payload.phone,
-        cti_note: payload.reason,
-        cti_usage_location: payload.placeOfUse,
-        cti_quantity: payload.quantity,
-        cti_start_date: payload.borrowDate
-          ? new Date(payload.borrowDate).toISOString()
-          : null,
-        cti_end_date: payload.returnDate
-          ? new Date(payload.returnDate).toISOString()
-          : null,
-        device_childs: payload.deviceChilds,
-      };
+    /**
+     * Description: แก้ไขรายละเอียดอุปกรณ์ในรถเข็น (Edit Cart)
+     *
+     * Note:
+     * - ใช้ในหน้า Edit Cart
+     * - รองรับการแก้ไขจำนวน, วันที่ยืม–คืน, ผู้ยืม, เหตุผล และสถานที่ใช้งาน
+     *
+     * Flow การทำงาน:
+     * 1. รับ ctiId และข้อมูลที่แก้ไขจากฟอร์ม
+     * 2. แปลง Date → ISO string ก่อนส่งไป Backend
+     * 3. เรียก API PUT /borrow/cart/:ctiId
+     * 4. Backend อัปเดตข้อมูลในระบบ
+     *
+     * Result:
+     * - สำเร็จ → return message
+     * - ไม่สำเร็จ → throw error ให้หน้า Edit Cart จัดการ
+     *
+     * Author: Salsabeela Sa-e (San) 66160349
+     */
+    async updateCartItem(
+        ctiId: number,
+        payload: UpdateCartItemPayload
+    ): Promise<string> {
+        try {
+            const datapayload = {
+                cti_us_name: payload.borrower,
+                cti_phone: payload.phone,
+                cti_note: payload.reason,
+                cti_usage_location: payload.placeOfUse,
+                cti_quantity: payload.quantity,
+                cti_start_date: payload.borrowDate
+                    ? new Date(payload.borrowDate).toISOString()
+                    : null,
+                cti_end_date: payload.returnDate
+                    ? new Date(payload.returnDate).toISOString()
+                    : null,
+                device_childs: payload.deviceChilds,
+            };
 
-      const res = await api.patch<ApiEnvelope<null>>(`/borrow/cart/device/${ctiId}`, datapayload);
+            const res = await api.patch<ApiEnvelope<null>>(`/borrow/cart/device/${ctiId}`, datapayload);
 
-      return res.data.message ?? "Update successfully";
-    } catch (error) {
-      console.error("API UPDATE /borrow/cart error:", error);
-      throw error;
-    }
-  },
+            emitCartChanged();
+            return res.data.message ?? "Update successfully";
+        } catch (error) {
+            console.error("API UPDATE /borrow/cart error:", error);
+            throw error;
+        }
+    },
 };
 export default CartService;

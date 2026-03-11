@@ -33,6 +33,7 @@ import { Settings } from "./Setting";
 import History from "./History";
 import Repair from "./Repair";
 import RepairRequestPage from "./RepairRequestPage";
+import RequestsIssues from "./RequestRepair";
 
 function App() {
   const ADMIN_ONLY: Role[] = ["ADMIN"];
@@ -100,7 +101,10 @@ function App() {
   );
 
   const technicalRoutes = (
-    <>{/*<Route path="departments-management" element={<Departments />} />*/}</>
+    <>
+      {/*<Route path="departments-management" element={<Departments />} />*/}
+      <Route path="request-issues" element={<RequestsIssues />} />
+    </>
   );
 
   // route หน้า dashboard
@@ -179,6 +183,9 @@ function App() {
                   path="/request-borrow-ticket/:id?"
                   element={<RolePathRedirect />}
                 />
+
+                <Route path="/request-issues" element={<RolePathRedirect />} />
+
                 <Route
                   path="/list-devices/cart"
                   element={<RolePathRedirect />}

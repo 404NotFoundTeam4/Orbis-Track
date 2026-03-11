@@ -1,9 +1,10 @@
 import { Router } from "../../core/router.js";
-import { approveRepairTicketBodySchema } from "./repair-tickets.schema.js";
 import { RepairTicketsController } from "./repair-tickets.controller.js";
 import { 
   getRepairTicketsResponseSchema, 
-  getRepairTicketsQuerySchema 
+  getRepairTicketsQuerySchema,
+  approveRepairTicketBodySchema,
+  updateRepairResultBodySchema
 } from "./repair-tickets.schema.js";
 
 const controller = new RepairTicketsController();
@@ -39,5 +40,20 @@ router.patchDoc("/:id/approve", {
   body: approveRepairTicketBodySchema, 
   auth: true
 }, controller.approveTicket);
+
+/**
+ * Route: PATCH /repair-tickets/:id/result
+ * Description: บันทึกผลการซ่อมและอัปเดตสถานะอุปกรณ์
+ * Input     : Path Param (id), Body (อุปกรณ์ที่ซ่อมเสร็จแล้วและสถานะ)
+ * Output    : { success: boolean, message: string }
+ * Author    : Worrawat Namwat (Wave) 66160372
+ */
+router.patchDoc("/:id/result", {
+  tag: "Repair-Tickets",
+  summary: "บันทึกผลการซ่อมและปิดงาน",
+  description: "อัปเดตสถานะอุปกรณ์รายชิ้น และเปลี่ยนสถานะ Ticket เป็น COMPLETED",
+  body: updateRepairResultBodySchema, 
+  auth: true
+}, controller.updateRepairResult);
 
 export default router.instance;

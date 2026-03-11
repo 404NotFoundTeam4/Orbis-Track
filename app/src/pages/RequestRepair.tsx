@@ -8,11 +8,11 @@ import RequestItemRepair from "../components/RequestItemRepair";
 import {
   repairTicketsService,
   type RepairTicketStatus,
-} from "../services/RepairService";
+} from "../services/RequestRepairService";
 import type {
   RepairTicketItem,
   GetRepairTicketsQuery,
-} from "../services/RepairService";
+} from "../services/RequestRepairService";
 import { useUserStore } from "../stores/userStore";
 import type { RepairDeviceUpdate } from "../components/DeviceManageModalRepair";
 

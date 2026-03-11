@@ -17,7 +17,7 @@ import {
   type RepairTicketStatus,
   type RepairTicketItem,
   type RepairTicketDetail,
-} from "../services/RepairService";
+} from "../services/RequestRepairService";
 import DeviceListModalRepair from "./DeviceListModalRepair";
 import DeviceManageModalRepair, {
   type RepairDeviceUpdate,

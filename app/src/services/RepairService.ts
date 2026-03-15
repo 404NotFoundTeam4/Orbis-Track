@@ -59,6 +59,36 @@ type RepairListResponse = {
   data: RepairItem[];
 };
 
+type RepairTicketApiItem = {
+  id: number;
+  status: RepairStatus;
+  dates: {
+    created: string;
+  };
+  device_info: {
+    name: string;
+    quantity: number;
+    category: string | null;
+  };
+  problem: {
+    title: string;
+    description: string;
+  };
+  requester: {
+    fullname: string;
+    emp_code: string | null;
+  };
+};
+
+type RepairTicketsApiResponse = {
+  success?: boolean;
+  message?: string;
+  data?: RepairTicketApiItem[] | { data?: RepairTicketApiItem[]; pagination?: { totalPages?: number } };
+  pagination?: {
+    totalPages?: number;
+  };
+};
+
 type RepairPrefillResponse = {
   success: boolean;
   message: string;
@@ -85,8 +115,86 @@ type CreateRepairRequestResponse = {
    */
 export const repairService = {
   async getRepairs(params: RepairQuery): Promise<RepairListResponse> {
-    const response = await api.get("/repairs", { params });
-    return response.data;
+    const response = await api.get<RepairTicketsApiResponse>("/repair-tickets", {
+      params: {
+        page: params.page,
+        limit: params.limit,
+        search: params.search,
+      },
+    });
+
+    const payload = response.data;
+    const rawList = Array.isArray(payload.data)
+      ? payload.data
+      : Array.isArray(payload.data?.data)
+        ? payload.data.data
+        : [];
+
+    const mapped: RepairItem[] = rawList.map((item) => ({
+      id: item.id,
+      title: item.problem?.title ?? "-",
+      description: item.problem?.description ?? null,
+      device_name: item.device_info?.name ?? "-",
+      quantity: item.device_info?.quantity ?? 1,
+      category: item.device_info?.category ?? "-",
+      requester_name: item.requester?.fullname ?? "-",
+      requester_emp_code: item.requester?.emp_code ?? null,
+      request_date: item.dates?.created ?? new Date().toISOString(),
+      status: item.status,
+    }));
+
+    const sortField = params.sortField;
+    const sortDirection = params.sortDirection ?? "desc";
+    const factor = sortDirection === "asc" ? 1 : -1;
+
+    const sorted = sortField
+      ? [...mapped].sort((a, b) => {
+          const aValue =
+            sortField === "device_name"
+              ? a.device_name
+              : sortField === "quantity"
+                ? a.quantity
+                : sortField === "category"
+                  ? a.category
+                  : sortField === "requester"
+                    ? a.requester_name
+                    : sortField === "request_date"
+                      ? new Date(a.request_date).getTime()
+                      : a.status;
+
+          const bValue =
+            sortField === "device_name"
+              ? b.device_name
+              : sortField === "quantity"
+                ? b.quantity
+                : sortField === "category"
+                  ? b.category
+                  : sortField === "requester"
+                    ? b.requester_name
+                    : sortField === "request_date"
+                      ? new Date(b.request_date).getTime()
+                      : b.status;
+
+          if (typeof aValue === "number" && typeof bValue === "number") {
+            return (aValue - bValue) * factor;
+          }
+
+          return String(aValue).localeCompare(String(bValue), "th") * factor;
+        })
+      : mapped;
+
+    const total = sorted.length;
+    const limit = Math.max(1, params.limit ?? 10);
+    const page = Math.max(1, params.page ?? 1);
+
+    return {
+      status: 200,
+      message: payload.message ?? "Request successful",
+      totalNum: total,
+      maxPage: Math.max(1, Math.ceil(total / limit)),
+      currentPage: page,
+      data: sorted,
+    };
   },
 
   async getRepairPrefill(issueId: number): Promise<RepairPrefill> {

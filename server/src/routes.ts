@@ -17,8 +17,7 @@ import { homeRouter } from "./modules/home/index.js";
 import { borrowRouter } from "./modules/borrows/index.js";
 import { usersRouter } from "./modules/users/index.js";
 import { historyApprovalRouter } from "./modules/history-approval/index.js";
-import { dashboardBorrowRouter } from "./modules/dashboard-borrow/index.js";
-import { dashboardIssueRouter } from "./modules/dashboard-issue/index.js";
+// import { dashboardIssueRouter } from "./modules/dashboard-issue/index.js";
 import { dashboardBorrowRouter } from "./modules/dashboard/index.js";
 
 /**
@@ -100,7 +99,7 @@ export function routes(app: Express) {
     "/dashboard",
     authMiddleware,
     dashboardBorrowRouter,
-    dashboardIssueRouter,
+    // dashboardIssueRouter,
   );
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1

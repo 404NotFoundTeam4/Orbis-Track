@@ -3,6 +3,11 @@ import BorrowStatsLineCard, {
   type LinePoint,
 } from "../components/LineChartCard";
 import DashboardBorrowService from "../services/DashboardLineChartService";
+import DashboardService, {
+  type MostBorrowedPoint,
+  type RepairStatusPoint,
+  type OverdueTicket,
+} from "../services/dashboard";
 import DropDown from "../components/DropDown";
 import { Icon } from "@iconify/react";
 import Button from "../components/Button";
@@ -11,17 +16,11 @@ import RepairStatusSummary from "../components/RepairStatusSummary";
 import BorrowStatusSummary from "../components/BorrowStatusSummary";
 
 /**
- * Description: โครงสร้างข้อมูลสำหรับตัวเลือกใน DropDown
- * Input : id, label, value, subtitle?, disabled?
- * Output: SelectItem
+ * Description: หน้า Dashboard สำหรับแสดงสถิติการยืมและสถิติการแจ้งปัญหา
+ * Input : -
+ * Output: JSX.Element
  * Author: Nontapat Sinthum (Guitar) 66160104
  */
-const repairData = [
-  { name: "รอดำเนินการ", value: 12 },
-  { name: "กำลังซ่อม", value: 8 },
-  { name: "ซ่อมเสร็จ", value: 20 },
-  { name: "ยกเลิก", value: 3 },
-];
 type SelectItem = {
   id: number;
   label: string;
@@ -30,221 +29,6 @@ type SelectItem = {
   disabled?: boolean;
 };
 
-/**
- * Description: หน้า Dashboard สำหรับแสดงสถิติการยืมและสถิติการแจ้งปัญหา
- * Input : -
- * Output: JSX.Element
- * Author: Nontapat Sinthum (Guitar) 66160104
- */
-const mockData = [
-  {
-    id: 1,
-    name: "สมชาย ใจดี",
-    position: "เจ้าหน้าที่",
-    department: "IT",
-    equipment: "Notebook",
-    lateDays: 3,
-    year: 2025,
-    quarter: 2,
-  },
-  {
-    id: 2,
-    name: "สมหญิง พรชัย",
-    position: "หัวหน้าแผนก",
-    department: "HR",
-    equipment: "iPad",
-    lateDays: 1,
-    year: 2024,
-    quarter: 4,
-  },
-  {
-    id: 3,
-    name: "วิทยา แสงทอง",
-    position: "เจ้าหน้าที่",
-    department: "Finance",
-    equipment: "Printer",
-    lateDays: 5,
-    year: 2025,
-    quarter: 1,
-  },
-  {
-    id: 4,
-    name: "กนกวรรณ มีสุข",
-    position: "ผู้จัดการ",
-    department: "Marketing",
-    equipment: "MacBook",
-    lateDays: 0,
-    year: 2024,
-    quarter: 3,
-  },
-  {
-    id: 5,
-    name: "ธีรภัทร์ บุญมาก",
-    position: "เจ้าหน้าที่",
-    department: "IT",
-    equipment: "Monitor",
-    lateDays: 2,
-    year: 2025,
-    quarter: 2,
-  },
-  {
-    id: 6,
-    name: "ปาริชาติ อินทร์แก้ว",
-    position: "เจ้าหน้าที่",
-    department: "HR",
-    equipment: "Notebook",
-    lateDays: 4,
-    year: 2023,
-    quarter: 4,
-  },
-  {
-    id: 7,
-    name: "ศุภชัย ทองดี",
-    position: "หัวหน้าแผนก",
-    department: "Finance",
-    equipment: "Projector",
-    lateDays: 6,
-    year: 2025,
-    quarter: 3,
-  },
-  {
-    id: 8,
-    name: "อรทัย สุขใจ",
-    position: "เจ้าหน้าที่",
-    department: "Marketing",
-    equipment: "Tablet",
-    lateDays: 1,
-    year: 2024,
-    quarter: 2,
-  },
-  {
-    id: 9,
-    name: "ณัฐพล แก้วคำ",
-    position: "ผู้จัดการ",
-    department: "IT",
-    equipment: "Server",
-    lateDays: 8,
-    year: 2025,
-    quarter: 1,
-  },
-  {
-    id: 10,
-    name: "จิราพร คงมั่น",
-    position: "เจ้าหน้าที่",
-    department: "Finance",
-    equipment: "Scanner",
-    lateDays: 0,
-    year: 2023,
-    quarter: 3,
-  },
-  {
-    id: 11,
-    name: "ภาณุพงศ์ ใจกล้า",
-    position: "เจ้าหน้าที่",
-    department: "HR",
-    equipment: "Notebook",
-    lateDays: 2,
-    year: 2025,
-    quarter: 4,
-  },
-  {
-    id: 12,
-    name: "สุภาวดี แสงจันทร์",
-    position: "หัวหน้าแผนก",
-    department: "Marketing",
-    equipment: "Camera",
-    lateDays: 7,
-    year: 2024,
-    quarter: 1,
-  },
-  {
-    id: 13,
-    name: "ธนกร ศรีสุข",
-    position: "เจ้าหน้าที่",
-    department: "IT",
-    equipment: "Keyboard",
-    lateDays: 1,
-    year: 2023,
-    quarter: 2,
-  },
-  {
-    id: 14,
-    name: "พิมพ์ชนก วัฒนะ",
-    position: "เจ้าหน้าที่",
-    department: "Finance",
-    equipment: "Notebook",
-    lateDays: 3,
-    year: 2025,
-    quarter: 3,
-  },
-  {
-    id: 15,
-    name: "อนุชา รัตน์ดี",
-    position: "ผู้จัดการ",
-    department: "HR",
-    equipment: "iPad",
-    lateDays: 9,
-    year: 2024,
-    quarter: 2,
-  },
-  {
-    id: 16,
-    name: "เบญจวรรณ ทองมาก",
-    position: "เจ้าหน้าที่",
-    department: "Marketing",
-    equipment: "Printer",
-    lateDays: 2,
-    year: 2025,
-    quarter: 1,
-  },
-  {
-    id: 17,
-    name: "จักรกฤษณ์ นิ่มนวล",
-    position: "เจ้าหน้าที่",
-    department: "IT",
-    equipment: "Mouse",
-    lateDays: 0,
-    year: 2023,
-    quarter: 4,
-  },
-  {
-    id: 18,
-    name: "ชลธิชา สุขสำราญ",
-    position: "หัวหน้าแผนก",
-    department: "Finance",
-    equipment: "Notebook",
-    lateDays: 4,
-    year: 2025,
-    quarter: 2,
-  },
-  {
-    id: 19,
-    name: "วรเมธ คำภา",
-    position: "เจ้าหน้าที่",
-    department: "HR",
-    equipment: "Tablet",
-    lateDays: 5,
-    year: 2024,
-    quarter: 3,
-  },
-  {
-    id: 20,
-    name: "ณิชาภา แก้วดี",
-    position: "เจ้าหน้าที่",
-    department: "Marketing",
-    equipment: "MacBook",
-    lateDays: 1,
-    year: 2025,
-    quarter: 4,
-  },
-];
-const borrowData = [
-  { name: "โปรเจคเตอร์", value: 230 },
-  { name: "โน้ตบุ๊ก", value: 226 },
-  { name: "เมาส์", value: 150 },
-  { name: "เก้าอี้", value: 115 },
-  { name: "โต๊ะ", value: 30 },
-];
 export default function Dashboard() {
   /**
    * Description: สร้างรายการปีสำหรับใช้ใน DropDown โดยเริ่มจากปีปัจจุบันย้อนหลังถึงปี 2021
@@ -303,13 +87,7 @@ export default function Dashboard() {
     subtitle: "ม.ค. - ธ.ค.",
   }));
 
-  /**
-   * Description: state สำหรับเก็บข้อมูลกราฟสถิติการยืม
-   * Input : -
-   * Output: lineData, setLineData
-   * Author: Nontapat Sinthum (Guitar) 66160104
-   */
-  const [lineData, setLineData] = useState<LinePoint[]>([]);
+  const [borrowMonthData, setBorrowMonthData] = useState<LinePoint[]>([]);
 
   /**
    * Description: state สำหรับเก็บข้อมูลกราฟสถิติการแจ้งปัญหา
@@ -318,6 +96,15 @@ export default function Dashboard() {
    * Author: Nontapat Sinthum (Guitar) 66160104
    */
   const [issueLineData, setIssueLineData] = useState<LinePoint[]>([]);
+
+  // New states for real API data
+  const [mostBorrowedData, setMostBorrowedData] = useState<MostBorrowedPoint[]>(
+    [],
+  );
+  const [repairStatusData, setRepairStatusData] = useState<RepairStatusPoint[]>(
+    [],
+  );
+  const [overdueTableData, setOverdueTableData] = useState<OverdueTicket[]>([]);
 
   /**
    * Description: state สำหรับเก็บจำนวนอุปกรณ์ย่อยสะสม
@@ -351,23 +138,42 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        const [borrowRes, deviceRes, issueRes] = await Promise.all([
-          DashboardBorrowService.getBorrowStats({ year, quarter }),
+        const [
+          deviceRes,
+          issueRes,
+          borrowMonthRes,
+          mostBorrowedRes,
+          repairStatusRes,
+          overdueTableRes,
+        ] = await Promise.all([
           DashboardBorrowService.getDeviceChildCount({ year, quarter }),
           DashboardBorrowService.getIssueStats({ year, quarter }),
+          DashboardService.getBorrowStats(year, quarter),
+          DashboardService.getMostBorrowedStats(year, quarter),
+          DashboardService.getRepairStatusStats(year, quarter),
+          DashboardService.getOverdueTable(),
         ]);
 
         if (!cancelled) {
-          setLineData(borrowRes.points);
+          // old format stats (removed lineData mapping since we're replacing it)
           setDeviceTotal(deviceRes.total);
           setIssueLineData(issueRes.points);
+
+          // new format stats
+          setBorrowMonthData(borrowMonthRes.points);
+          setMostBorrowedData(mostBorrowedRes.points);
+          setRepairStatusData(repairStatusRes.points);
+          setOverdueTableData(overdueTableRes);
         }
       } catch (exception) {
         console.error("load dashboard stats error:", exception);
         if (!cancelled) {
-          setLineData([]);
           setIssueLineData([]);
           setDeviceTotal(0);
+          setBorrowMonthData([]);
+          setMostBorrowedData([]);
+          setRepairStatusData([]);
+          setOverdueTableData([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -379,6 +185,30 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, [yearItem?.value, quarterItem?.value]);
+
+  // Translate mapped points for the BorrowStatusSummary component (it expects {name, value})
+  const mostBorrowedFormattedData = mostBorrowedData.map((d) => ({
+    name: d.equipmentName,
+    value: d.value,
+  }));
+
+  // Translate mapped points for the RepairStatusSummary component (it expects {name, value})
+  // Let's aggregate the whole year for the pie chart view
+  const repairChartData = useMemo(() => {
+    let pending = 0,
+      inProgress = 0,
+      completed = 0;
+    repairStatusData.forEach((m) => {
+      pending += m.pending;
+      inProgress += m.inProgress;
+      completed += m.completed;
+    });
+    return [
+      { name: "รอดำเนินการ", value: pending },
+      { name: "กำลังซ่อม", value: inProgress },
+      { name: "ซ่อมเสร็จ", value: completed },
+    ];
+  }, [repairStatusData]);
 
   /**
    * Description: ค่าปีที่ใช้จริงในการ query หากยังไม่ได้เลือกจะใช้ปีปัจจุบัน
@@ -455,44 +285,53 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col mt-4 gap-1">
         <div className="flex gap-3">
           <div className="">
             <BorrowStatsLineCard
-              title="สถิติการยืม"
+              title="สถิติการยืม (รายเดือนปีเต็ม)"
               badgeText="รายปี"
               badgeBgColor="#E6F7FF"
-              data={lineData}
+              data={borrowMonthData}
+              width={982}
+              minHeight={392}
+              chart={{ stroke: "#40A9FF" }}
+            />
+          </div>
+
+          <div className=" flex flex-col gap-[7px]">
+            <BorrowStatusSummary
+              title="อุปกรณ์ที่ถูกยืมบ่อยที่สุด"
+              width={667}
+              height={392}
+              isAnimation={true}
+              data={mostBorrowedFormattedData}
+            />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div>
+            <BorrowStatsLineCard
+              title="สถิติการแจ้งปัญหา"
+              badgeText="จำนวนอุปกรณ์ ชิ้น"
+              badgeBgColor="#E6F7FF"
+              data={issueLineData}
               width={982}
               minHeight={409}
               chart={{ stroke: "#40A9FF" }}
             />
           </div>
-
-          <div className="mt-4 flex flex-col gap-[7px]">
-            <BorrowStatsLineCard
-              title="สถิติการยืม"
-              periodLabel={periodText}
-              badgeText={deviceText}
-              badgeBgColor="#E6F7FF"
-              data={lineData}
-              width={982}
-              minHeight={392}
-              svgClassName="w-full h-full"
-              chart={{ stroke: "#40A9FF" }}
+          <div>
+            <RepairStatusSummary
+              title="สถิติสถานะงานซ่อม"
+              data={repairChartData}
+              width={667}
+              height={405}
             />
           </div>
-          <BorrowStatsLineCard
-            title="สถิติการแจ้งปัญหา"
-            periodLabel={periodText}
-            badgeText={deviceText}
-            badgeBgColor="#FFF1F0"
-            data={issueLineData}
-            width={982}
-            minHeight={392}
-            svgClassName="w-full h-full"
-            chart={{ stroke: "#FF7875" }}
-          />
+        </div>
+        <div className="mr-[3px]">
+          <BorrowGridTable data={overdueTableData} />
         </div>
       </div>
     </div>

@@ -1,44 +1,80 @@
 import type { Request, Response, NextFunction } from "express";
 import { BaseController } from "../../core/base.controller.js";
-import { BaseResponse } from "../../core/base.response.js";
-import { dashboardBorrowService,updateOverdueTickets  } from "./dashboard.service.js";
+import { dashboardIssueService, dashboardDataService } from "./dashboard.service.js";
 import {
-  getBorrowStatsQuerySchema,
-  type GetBorrowStatsResponseDto,
-
+  getIssueStatsQuerySchema,
+  dashboardQuerySchema,
 } from "./dashboard.schema.js";
 
 /**
- * Description: Controller สำหรับ Dashboard APIs
+ * Description: Controller สำหรับ Dashboard Issue APIs
  * Author: Nontapat Sinhum (Guitar) 66160104
  */
-export class dashboardBorrowController extends BaseController {
+export class dashboardIssueController extends BaseController {
   constructor() {
     super();
   }
 
   /**
-   * Description: ดึงสถิติการยืมรายเดือนในไตรมาส (filter ปี/ไตรมาส)
-   * Input : req.query { year, quarter }
-   * Output: { data: { year, quarter, range, points[] } }
+   * Description: ดึงสถิติคำร้องแจ้งซ่อมรายเดือน (filter ปี/ไตรมาส)
    * Author: Nontapat Sinhum (Guitar) 66160104
    */
+  async getIssueStats(
+    req: Request,
+    _res: Response,
+    _next: NextFunction
+  ) {
+    const query = getIssueStatsQuerySchema.parse(req.query);
+    const data = await dashboardIssueService.getIssueStatsByQuarter(query);
+    return { data };
+  }
+
+  async getDeviceChildCount(
+    req: Request,
+    _res: Response,
+    _next: NextFunction
+  ) {
+    const query = getIssueStatsQuerySchema.parse(req.query);
+    const data = await dashboardIssueService.getDeviceChildCount(query);
+    return { data };
+  }
+
   async getBorrowStats(
     req: Request,
     _res: Response,
-    _next: NextFunction,
-  ): Promise<BaseResponse<GetBorrowStatsResponseDto>> {
-    const query = getBorrowStatsQuerySchema.parse(req.query);
-    const data = await dashboardBorrowService.getBorrowStatsByQuarter(query);
+    _next: NextFunction
+  ) {
+    const query = dashboardQuerySchema.parse(req.query);
+    const data = await dashboardDataService.getBorrowStats(query);
     return { data };
   }
-   async getBorrow(
+
+  async getMostBorrowedEqStats(
     req: Request,
     _res: Response,
-    _next: NextFunction,
-  ): Promise<BaseResponse<GetBorrowStatsResponseDto>> {
-    const query = getBorrowStatsQuerySchema.parse(req.query);
-    const data = await dashboardBorrowService.getBorrowStatsByQuarter(query);
+    _next: NextFunction
+  ) {
+    const query = dashboardQuerySchema.parse(req.query);
+    const data = await dashboardDataService.getMostBorrowedEquipmentStats(query);
+    return { data };
+  }
+
+  async getRepairStatusStats(
+    req: Request,
+    _res: Response,
+    _next: NextFunction
+  ) {
+    const query = dashboardQuerySchema.parse(req.query);
+    const data = await dashboardDataService.getRepairStatusStats(query);
+    return { data };
+  }
+
+  async getOverdueTable(
+    _req: Request,
+    _res: Response,
+    _next: NextFunction
+  ) {
+    const data = await dashboardDataService.getOverdueTicketsTable();
     return { data };
   }
 }

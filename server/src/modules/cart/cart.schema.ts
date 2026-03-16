@@ -73,6 +73,7 @@ export const deviceChildSchema = z.object({
     dec_asset_code: z.string().min(1).max(120).openapi({ description: "Asset Code" }),
     dec_has_serial_number: z.boolean().openapi({ description: "มี Serial Number" }),
     dec_status: z.enum([
+        "UNAVAILABLE",
         "READY",
         "BORROWED",
         "REPAIRING",

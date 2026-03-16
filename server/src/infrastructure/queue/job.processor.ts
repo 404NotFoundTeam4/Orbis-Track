@@ -16,7 +16,12 @@ const handlers: Record<string, (data: any) => Promise<void>> = {
     },
 
     // เพิ่ม Job ใหม่ๆ ได้ที่นี่...
-    // [JobType.NOTIFICATION_GENERIC]: async (data) => { ... },
+    [JobType.EMAIL_TICKET_DUE_SOON]: async (data) => {
+        await emailService.sendTicketDueSoon(data.email, data);
+    },
+    [JobType.EMAIL_TICKET_OVER_DUE]: async (data) => {
+        await emailService.sendTicketOverdue(data.email, data);
+    },
 };
 
 export const mainWorker = new Worker(

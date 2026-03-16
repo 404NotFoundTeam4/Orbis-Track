@@ -19,6 +19,7 @@ import { usersRouter } from "./modules/users/index.js";
 import { historyApprovalRouter } from "./modules/history-approval/index.js";
 import { dashboardBorrowRouter } from "./modules/dashboard-borrow/index.js";
 import { dashboardIssueRouter } from "./modules/dashboard-issue/index.js";
+import { dashboardBorrowRouter } from "./modules/dashboard/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1

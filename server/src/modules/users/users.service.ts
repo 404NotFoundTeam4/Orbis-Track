@@ -21,6 +21,7 @@ async function getProfile(userId: number) {
       us_email: true,
       us_phone: true,
       us_role: true,
+      us_images: true,
       // ดึงข้อมูลจากตารางที่ Join ผ่าน us_dept_id
       department: { 
         select: { dept_name: true } 

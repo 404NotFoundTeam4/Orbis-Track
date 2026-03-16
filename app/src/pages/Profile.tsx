@@ -115,6 +115,7 @@ const Profile: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   console.log(previewUrl);
   // --- Password Validation Logic (Real-time) ---
@@ -206,7 +207,7 @@ const Profile: React.FC = () => {
       const userData = await usersService.getProfile();
       const data = userData.data || userData;
 
-      setProfileData({
+      const processedData = {
         ...data,
 
         // แปลงตำแหน่ง
@@ -219,7 +220,10 @@ const Profile: React.FC = () => {
         us_sec_name: data.us_sec_name
           ? data.us_sec_name.replace(/.*ฝ่ายย่อย\s*/g, "")
           : "",
-      });
+      };
+
+      setProfileData(processedData);
+      setProfile(processedData);
 
       await getAccount();
 
@@ -290,6 +294,14 @@ const Profile: React.FC = () => {
       push({ tone: "danger", message: "เปลี่ยนรหัสผ่านไม่สำเร็จ" });
     }
   };
+
+  const isProfileChanged =
+  profile &&
+  (
+    profileData.us_phone !== profile.us_phone ||
+    selectedFile !== null
+  );
+
 
   return (
     <div className="w-full min-h-screen bg-[#F5F7FA] p-8 flex flex-col items-center">
@@ -418,13 +430,18 @@ const Profile: React.FC = () => {
               <div className="mt-16 flex justify-center w-full">
                 <button
                   onClick={() => setIsSaveDialogOpen(true)}
-                  disabled={profileData.us_phone.length < 10} // กดไม่ได้ถ้าไม่ครบ 10
-                  className={`w-[105px] h-[50px] rounded-full font-bold text-[18px] transition-all text-white
-                ${
-                  profileData.us_phone.length < 10
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-[#40A9FF] hover:bg-[#1890FF] active:scale-95"
-                }`}
+                  disabled={
+                    profileData.us_phone.length < 10 ||
+                    !isProfileChanged
+                  }
+
+                className={`w-[105px] h-[50px] rounded-full font-bold text-[18px] transition-all text-white
+                  ${
+                    profileData.us_phone.length < 10 || !isProfileChanged
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-[#40A9FF] hover:bg-[#1890FF] active:scale-95"
+                  }`}
+
                 >
                   บันทึก
                 </button>

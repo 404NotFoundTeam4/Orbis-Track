@@ -95,7 +95,7 @@ export function App(): Express {
     }),
   );
   routes(app);
-  swagger(app, baseUrl);
+  swagger(app, "/api/v1"); // Use relative URL so Swagger works dynamically in both dev and prod without hardcoding the domain
 
   // 404 Not Found Handler สำหรับ routes ที่ไม่พบ
   app.use((_req, res) => {

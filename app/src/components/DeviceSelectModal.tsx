@@ -37,7 +37,9 @@ const DeviceSelectModal = ({
 
   const searchAvailableDeviceChilds = availableDeviceChilds.filter(
     (availableDevice) =>
-      availableDevice.asset_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      availableDevice.asset_code
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       availableDevice.serial?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
@@ -45,9 +47,13 @@ const DeviceSelectModal = ({
 
   const toggleSelectDevice = (device: TicketDevice) => {
     setSelectedDevices((prev) => {
-      const exists = prev.some((selectedDevice) => selectedDevice.child_id === device.child_id);
+      const exists = prev.some(
+        (selectedDevice) => selectedDevice.child_id === device.child_id,
+      );
       if (exists) {
-        return prev.filter((selectedDevice) => selectedDevice.child_id !== device.child_id);
+        return prev.filter(
+          (selectedDevice) => selectedDevice.child_id !== device.child_id,
+        );
       }
       return [...prev, device];
     });
@@ -102,7 +108,7 @@ const DeviceSelectModal = ({
 
         {/* Note */}
         <p className="text-sm text-black mb-3">
-          * ระบบแสดงเฉพาะอุปกรณ์ที่สถานะ "ว่าง" เท่านั้น
+          * ระบบแสดงเฉพาะอุปกรณ์ที่สถานะ <b>"ว่าง"</b> เท่านั้น
         </p>
 
         {/* Device List */}
@@ -111,16 +117,17 @@ const DeviceSelectModal = ({
           style={{ maxHeight: "270px" }}
         >
           {searchAvailableDeviceChilds.length === 0 ? (
-            <div className="py-8 text-center text-gray-400">  ไม่พบอุปกรณ์</div>
+            <div className="py-8 text-center text-gray-400"> ไม่พบอุปกรณ์</div>
           ) : (
             searchAvailableDeviceChilds.map((device, index) => (
               <div
                 key={`${device.child_id}-${index}`}
                 onClick={() => toggleSelectDevice(device)}
-                className={`flex items-center py-4 px-4 md:px-6 ${!checkLastIndex(index, availableDevicesLength) ? "border-b border-[#D9D9D9]" : "rounded-xl"} cursor-pointer transition-colors ${isSelected(device.child_id)
+                className={`flex items-center py-4 px-4 md:px-6 ${!checkLastIndex(index, availableDevicesLength) ? "border-b border-[#D9D9D9]" : "rounded-xl"} cursor-pointer transition-colors ${
+                  isSelected(device.child_id)
                     ? "bg-blue-50"
                     : "hover:bg-gray-50"
-                  }`}
+                }`}
               >
                 <div className="w-[50px] text-black">{index + 1}</div>
                 <div className="flex-1">
@@ -146,7 +153,7 @@ const DeviceSelectModal = ({
           <Button
             variant="secondary"
             onClick={handleClose}
-            className={"rounded-xl"}
+            className={"rounded-2xl"}
             style={{ width: 112, height: 46 }}
           >
             ยกเลิก
@@ -154,7 +161,7 @@ const DeviceSelectModal = ({
           <Button
             variant="primary"
             onClick={handleConfirm}
-            className={"rounded-xl"}
+            className={"rounded-2xl"}
             disabled={selectedDevices.length === 0}
             style={{ minWidth: 151, height: 46 }}
           >

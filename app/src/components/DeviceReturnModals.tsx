@@ -56,14 +56,10 @@ const DeviceReturnModal = ({
         if (isOpen) {
             const initialStatuses: Record<number, string> = {};
             devices.forEach((device) => {
-                // ถ้าเป็น DAMAGED หรือ LOST ให้ set ค่าสถานะเดิม
-                if (
-                    device.current_status === "DAMAGED" ||
-                    device.current_status === "LOST"
-                ) {
-                    initialStatuses[device.child_id] = device.current_status;
+                if (device.current_status === "BORROWED") {
+                    initialStatuses[device.child_id] = "READY";
                 } else {
-                    initialStatuses[device.child_id] = "";
+                    initialStatuses[device.child_id] = device.current_status;
                 }
             });
             setDeviceStatuses(initialStatuses);
@@ -144,7 +140,7 @@ const DeviceReturnModal = ({
             <div className="relative bg-white rounded-2xl shadow-xl w-[95%] max-w-[1025px] h-full max-h-[90vh] overflow-hidden flex flex-col sm:px-[43px] px-6 sm:py-[25px] py-6 m-4">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4">
-                    <h2 className="text-2xl font-bold text-black">รายการอุปกรณ์</h2>
+                    <h2 className="text-2xl font-bold text-black">รับคืนอุปกรณ์</h2>
                     <button
                         onClick={onClose}
                         className="w-8 h-8 rounded-full border border-black flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"

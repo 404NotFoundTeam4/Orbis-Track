@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
-import type { BorrowItem } from "./Types";
+import type { OverdueTicket } from "../../services/dashboard";
 import BorrowDetailModal from "./BorrowDetailModal";
 import Pagination from "../Pagination";
 
 interface Props {
-  data: BorrowItem[];
+  data: OverdueTicket[];
 }
 
-type SortKey = keyof BorrowItem;
+type SortKey = keyof OverdueTicket;
 import { Icon } from "@iconify/react";
 
 interface HeaderProps {
@@ -48,38 +48,19 @@ function HeaderCell({
   );
 }
 export default function BorrowGridTable({ data }: Props) {
-  const [selected, setSelected] = useState<BorrowItem | null>(null);
+  const [selected, setSelected] = useState<OverdueTicket | null>(null);
   const [page, setPage] = useState(1);
 
-  const [sortKey, setSortKey] = useState<SortKey>("year");
+  const [sortKey, setSortKey] = useState<SortKey>("delayedDays");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const pageSize = 5;
 
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => {
-      // 🔥 ถ้า sort ตามปี → ต้องดู quarter ด้วย
-      if (sortKey === "year") {
-        if (a.year !== b.year) {
-          return sortOrder === "asc" ? a.year - b.year : b.year - a.year;
-        }
-
-        // ปีเท่ากัน → sort quarter
-        return sortOrder === "asc"
-          ? a.quarter - b.quarter
-          : b.quarter - a.quarter;
-      }
-
-      // 🔥 ถ้า sort ตาม quarter อย่างเดียว
-      if (sortKey === "quarter") {
-        return sortOrder === "asc"
-          ? a.quarter - b.quarter
-          : b.quarter - a.quarter;
-      }
-
       // 🔥 default sort (string/number ปกติ)
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
+      const aVal = a[sortKey] ?? "";
+      const bVal = b[sortKey] ?? "";
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
@@ -105,12 +86,15 @@ export default function BorrowGridTable({ data }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-[11px]">
+    <div className="flex flex-col gap-[11px] ">
+      <div>
+        ตารางการคืนอุปกรณ์ล่าช้า
+      </div>
       <div className="">
         <div
           className="
   grid
-grid-cols-[150px_minmax(250px,2fr)_minmax(200px,1.5fr)_1fr_1fr_1.2fr_1fr_180px]
+grid-cols-[80px_minmax(250px,2fr)_150px_1fr_1fr_1.2fr_1fr_150px]
  bg-white
   px-6
   py-3.75
@@ -122,20 +106,20 @@ grid-cols-[150px_minmax(250px,2fr)_minmax(200px,1.5fr)_1fr_1fr_1.2fr_1fr_180px]
   text-[#1F1F1F]
   "
         >
-          <HeaderCell label="ลำดับ" sortKey="id" onSort={handleSort} />
-          <HeaderCell label="ชื่อผู้ใช้" sortKey="name" onSort={handleSort} />
-          <HeaderCell label="ตำแหน่ง" sortKey="position" onSort={handleSort} />
+          <HeaderCell label="ลำดับ" sortKey="ticketId" onSort={handleSort} />
+          <HeaderCell label="ชื่อผู้ใช้" sortKey="userName" onSort={handleSort} />
+          <HeaderCell label="ตำแหน่ง" sortKey="userRole" onSort={handleSort} />
           <HeaderCell label="แผนก" sortKey="department" onSort={handleSort} />
           <HeaderCell
             label="ฝ่ายย่อย"
-            sortKey="subDepartment"
+            sortKey="section"
             onSort={handleSort}
           />
           <HeaderCell label="เบอร์ติดต่อ" sortKey="phone" onSort={handleSort} />
-          <HeaderCell label="อุปกรณ์" sortKey="equipment" onSort={handleSort} />
+          <HeaderCell label="อุปกรณ์" sortKey="equipments" onSort={handleSort} />
           <HeaderCell
             label="จำนวนวันที่ล่าช้า"
-            sortKey="lateDays"
+            sortKey="delayedDays"
             align="right"
             onSort={handleSort}
           />
@@ -144,39 +128,52 @@ grid-cols-[150px_minmax(250px,2fr)_minmax(200px,1.5fr)_1fr_1fr_1.2fr_1fr_180px]
       <div className="bg-white rounded-2xl shadow overflow-hidden">
         {paginated.map((item) => (
           <div
-            key={item.id}
-            onClick={() => setSelected(item)}
+            key={item.ticketId}
+            onClick={() => setSelected(item as any)} // keep existing detail modal working loosely, or omit entirely as needed
             className="
   grid
-grid-cols-[150px_minmax(250px,2fr)_minmax(200px,1.5fr)_1fr_1fr_1.2fr_1fr_180px]
+grid-cols-[80px_minmax(250px,2fr)_150px_1fr_1fr_1.2fr_1fr_150px]
   px-6
   py-4
   hover:bg-gray-50
   cursor-pointer
+  items-center
   "
           >
-            <div className="text-left  font-medium">
-              <div>{item.id}</div>
+            <div className="text-left font-medium">
+              <div>{item.ticketId}</div>
             </div>
-            <div className="text-left  font-medium">
-              <div>{item.name}</div>
+            <div className="text-left font-medium flex items-center gap-3">
+              <div className="w-[40px] h-[40px] rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                {item.userImage ? (
+                  <img src={item.userImage} alt={item.userName} className="w-full h-full object-cover" />
+                ) : (
+                  <Icon icon="octicon:person-24" className="text-gray-400 text-2xl" />
+                )}
+              </div>
+              <div className="flex flex-col">
+                <div className="text-[14px] font-bold text-gray-900">{item.userName}</div>
+                <div className="text-[12px] text-gray-500">
+                  <span className="text-[#8AB4F8]">{item.userEmail}</span> : {item.userEmpCode || "-"}
+                </div>
+              </div>
             </div>
-            <div className="text-left  font-medium">
-              <div>{item.position}</div>
+            <div className="text-left font-medium">
+              <div>{item.userRole}</div>
             </div>
-            <div className="text-left  font-medium">
-              <div>{item.department}</div>
+            <div className="text-left font-medium">
+              <div>{item.department || "-"}</div>
             </div>
-            <div className="text-left  font-medium">
-              <div>{item.subDepartment}</div>
+            <div className="text-left font-medium">
+              <div>{item.section || "-"}</div>
             </div>
-            <div className="text-left  font-medium">
+            <div className="text-left font-medium">
               <div>{item.phone}</div>
             </div>
-            <div className="text-left  font-medium">
-              <div>{item.equipment}</div>
+            <div className="text-left font-medium" title={item.equipments.join(", ")}>
+              <div className="truncate">{item.equipments.join(", ")}</div>
             </div>
-            <div className="text-center  font-medium">{item.lateDays}</div>
+            <div className="text-center font-medium text-red-500">{item.delayedDays}</div>
           </div>
         ))}
 

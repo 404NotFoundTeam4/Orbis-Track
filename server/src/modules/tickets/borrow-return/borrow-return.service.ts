@@ -132,9 +132,21 @@ export class BorrowReturnService {
       throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
     }
 
+    const deviceChildIds = ticket.ticket_devices.map(
+      (td: any) => td.child.dec_id,
+    );
+    const conflict = await this.repository.findFinalApprovalConflict({
+      ticketId: id,
+      deviceChildIds,
+      startDate: ticket.brt_start_date,
+      endDate: ticket.brt_end_date,
+    });
+    const devicesAvailable = !conflict;
+
     return {
       id: ticket.brt_id,
       status: ticket.brt_status,
+      devices_available: devicesAvailable,
       details: {
         purpose: ticket.brt_borrow_purpose,
         location_use: ticket.brt_usage_location,
@@ -241,14 +253,27 @@ export class BorrowReturnService {
       );
 
     // ดำเนินการอนุมัติผ่าน Transaction ใน Repository
-    await this.repository.approveStageTransaction({
-      approverId: approvalUser.sub,
-      stageId: currentStageData.brts_id,
-      ticketId: ticketId,
-      currentStage: indexCurrentStage + 1,
-      isLastStage,
-      pickupLocation: payload?.pickupLocation || undefined,
-    });
+    try {
+      await this.repository.approveStageTransaction({
+        approverId: approvalUser.sub,
+        stageId: currentStageData.brts_id,
+        ticketId: ticketId,
+        currentStage: indexCurrentStage + 1,
+        isLastStage,
+        pickupLocation: payload?.pickupLocation || undefined,
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "DEVICE_UNAVAILABLE_FOR_FINAL_APPROVAL"
+      ) {
+        throw new HttpError(
+          HttpStatus.CONFLICT,
+          "อุปกรณ์ถูกอนุมัติให้คำขออื่นแล้ว",
+        );
+      }
+      throw error;
+    }
 
     // เตรียมแจ้งเตือน
     const totalStages = ticketStage.length;

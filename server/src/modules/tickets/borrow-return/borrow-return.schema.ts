@@ -135,6 +135,7 @@ const ticketTimelineSchema = z.object({
 export const borrowReturnTicketDetailSchema = z.object({
   id: z.number().openapi({ description: "ID Ticket" }),
   status: z.nativeEnum(BRT_STATUS).openapi({ description: "สถานะ" }),
+  devices_available: z.boolean().openapi({ description: "อุปกรณ์ยังว่างอยู่หรือไม่" }),
   details: ticketDetailsSchema.openapi({ description: "รายละเอียด Ticket" }),
   requester: ticketRequesterSchema.openapi({ description: "ข้อมูลผู้ร้องขอ" }),
   devices: z.array(ticketDeviceSchema).openapi({ description: "รายการอุปกรณ์" }),

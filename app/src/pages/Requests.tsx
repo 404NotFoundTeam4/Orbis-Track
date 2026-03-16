@@ -8,6 +8,7 @@
  * Author: Pakkapon Chomchoey (Tonnam) 66160080
  */
 import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
 import RequestItem from "../components/RequestItem";
@@ -175,6 +176,37 @@ const Requests = () => {
         setTickets(result.data);
         // ใช้ maxPage จาก backend โดยตรง
         setTotalPages(result.maxPage || 1);
+        const pendingIds = result.data
+          .filter((ticket) => ticket.status === "PENDING")
+          .map((ticket) => ticket.id);
+        if (pendingIds.length > 0) {
+          void (async () => {
+            try {
+              const details = await Promise.all(
+                pendingIds.map(async (id) => {
+                  try {
+                    const detail = await ticketsService.getTicketById(id);
+                    return [id, detail] as const;
+                  } catch (error) {
+                    console.error(
+                      `Failed to prefetch ticket detail ${id}:`,
+                      error,
+                    );
+                    return null;
+                  }
+                }),
+              );
+              const nextDetails = Object.fromEntries(
+                details.filter(Boolean) as [number, TicketDetail][],
+              );
+              if (Object.keys(nextDetails).length > 0) {
+                setTicketDetails((prev) => ({ ...prev, ...nextDetails }));
+              }
+            } catch (error) {
+              console.error("Failed to prefetch ticket details:", error);
+            }
+          })();
+        }
         // console.log("DEBUG Pagination:", { totalNum: result.totalNum, maxPage: result.maxPage, data: result.data.length });
       } catch (err) {
         console.error("Failed to fetch tickets:", err);
@@ -305,6 +337,15 @@ const Requests = () => {
       const stageLength = detail?.timeline?.length || 0;
       const isLastStage = currentStage === stageLength;
 
+      if (isLastStage && detail?.devices_available === false) {
+        push({
+          tone: "danger",
+          message: "ไม่สามารถอนุมัติได้",
+          description: "อุปกรณ์ถูกอนุมัติให้คำขออื่นแล้ว",
+        });
+        return;
+      }
+
       // เพิ่ม Validation: ถ้าเป็น Stage สุดท้าย ต้องกรอกสถานที่รับอุปกรณ์
       if (isLastStage) {
         const pLocation = pickupLocations[id] || "";
@@ -363,10 +404,15 @@ const Requests = () => {
             fetchTickets();
           } catch (err) {
             console.error("Failed to approve ticket:", err);
+            const serverMessage = axios.isAxiosError(err)
+              ? err.response?.data?.message
+              : undefined;
             push({
               tone: "danger",
               message: "อนุมัติไม่สำเร็จ",
-              description: "เกิดข้อผิดพลาดในการอนุมัติ กรุณาลองใหม่อีกครั้ง",
+              description:
+                serverMessage ||
+                "เกิดข้อผิดพลาดในการอนุมัติ กรุณาลองใหม่อีกครั้ง",
             });
           }
         },

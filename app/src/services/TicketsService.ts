@@ -133,6 +133,7 @@ export interface TicketTimelineItem {
 export interface TicketDetail {
   id: number;
   status: TicketStatus;
+  devices_available: boolean;
   details: TicketDetails;
   requester: TicketDetailRequester;
   devices: TicketDevice[];

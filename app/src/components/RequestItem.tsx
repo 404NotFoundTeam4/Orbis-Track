@@ -180,6 +180,11 @@ const RequestItem = ({
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   console.log(ticket);
+  const currentStage = ticketDetail?.details?.current_stage ?? null;
+  const stageLength = ticketDetail?.timeline?.length ?? 0;
+  const isLastStage = stageLength > 0 && checkLastStage(currentStage, stageLength);
+  const isApproveBlocked =
+    isLastStage && ticketDetail?.devices_available === false;
   /**
    * Description: ดึงสถานะปัจจุบันของ ticket (สำหรับ Timeline)
    * Input      : void
@@ -351,6 +356,7 @@ const RequestItem = ({
               <Button
                 variant="accept"
                 onClick={() => onApprove(ticket.id)}
+                disabled={isApproveBlocked}
                 style={{ width: 105, height: 44, padding: "5px 15px" }}
               >
                 อนุมัติ

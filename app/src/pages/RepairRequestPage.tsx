@@ -5,9 +5,18 @@ import { useToast } from "../components/Toast";
 import {
   repairService,
   type RepairPrefill,
-  type RepairQuery,
 } from "../services/RepairService";
 import { inventoryService, DeviceService, type DeviceChild, type GetInventory } from "../services/InventoryService";
+
+type RepairRequestNavigationState = {
+  selectedRepairItem?: {
+    issueId: number;
+    deviceName: string;
+    category: string;
+    requesterName: string;
+    requesterEmpCode: string | null;
+  };
+};
 
 export default function RepairRequestPage() {
   const navigate = useNavigate();
@@ -18,6 +27,8 @@ export default function RepairRequestPage() {
   const mode = searchParams.get("mode") === "other" ? "other" : "fromIssue";
   const issueIdParam = searchParams.get("issueId");
   const selectedIssueId = issueIdParam ? Number(issueIdParam) : null;
+  const selectedRepairItem = (location.state as RepairRequestNavigationState | null)?.selectedRepairItem;
+  const effectiveIssueId = selectedIssueId ?? selectedRepairItem?.issueId ?? null;
 
   const [prefill, setPrefill] = useState<RepairPrefill | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,17 +36,6 @@ export default function RepairRequestPage() {
   const [selectedMainDeviceId, setSelectedMainDeviceId] = useState<number | "">("");
   const [subDevices, setSubDevices] = useState<DeviceChild[]>([]);
   const [selectedSubDeviceIds, setSelectedSubDeviceIds] = useState<number[]>([]);
-
-  const fetchIssues = async () => {
-    const params: RepairQuery = {
-      page: 1,
-      limit: 1000,
-      sortField: "request_date",
-      sortDirection: "desc",
-    };
-    const result = await repairService.getRepairs(params);
-    return result.data;
-  };
 
   const fetchPrefill = async (issueId: number) => {
     setLoading(true);
@@ -56,22 +56,20 @@ export default function RepairRequestPage() {
         const deviceList = await inventoryService.getInventory();
         setMainDevices(deviceList);
 
-        const loadedIssues = await fetchIssues();
-
-        if (selectedIssueId && selectedIssueId > 0) {
-          await fetchPrefill(selectedIssueId);
+        if (effectiveIssueId && effectiveIssueId > 0) {
+          await fetchPrefill(effectiveIssueId);
           return;
         }
 
-        if (mode === "fromIssue" && loadedIssues.length > 0) {
-          const firstIssueId = loadedIssues[0].id;
-          await fetchPrefill(firstIssueId);
+        if (mode === "fromIssue") {
+          setPrefill(null);
+          push({ tone: "danger", message: "ไม่พบรายการอ้างอิงสำหรับแบบฟอร์มแจ้งซ่อม" });
         }
       } catch {
         push({ tone: "danger", message: "ไม่สามารถโหลดข้อมูลแบบฟอร์มแจ้งซ่อมได้" });
       }
     })();
-  }, [selectedIssueId, mode, push]);
+  }, [effectiveIssueId, mode, push]);
 
   useEffect(() => {
     if (!prefill?.device_id) return;
@@ -133,6 +131,9 @@ export default function RepairRequestPage() {
     navigate(repairListPath);
   };
 
+  const isDeviceLocked = mode === "fromIssue";
+  const lockedDeviceId = isDeviceLocked ? prefill?.device_id ?? null : null;
+
   return (
     <div className="bg-[#FAFAFA] p-5">
       <div className="mb-5 flex flex-col gap-3">
@@ -140,7 +141,11 @@ export default function RepairRequestPage() {
           <span className="text-[#858585]">แจ้งซ่อม</span>
           <span className="text-[#858585]">›</span>
           <span className="text-black">
-            {prefill?.device_name ? `คำขอยืม ${prefill.device_name}` : "คำขอยืมอุปกรณ์"}
+            {prefill?.device_name
+              ? `คำขอยืม ${prefill.device_name}`
+              : selectedRepairItem?.deviceName
+                ? `คำขอยืม ${selectedRepairItem.deviceName}`
+                : "คำขอยืมอุปกรณ์"}
           </span>
         </div>
         <h1 className="text-[36px] font-semibold leading-[42px] text-black">แจ้งซ่อม</h1>
@@ -150,6 +155,8 @@ export default function RepairRequestPage() {
         mode={mode}
         prefill={prefill}
         loadingPrefill={loading}
+        isDeviceLocked={isDeviceLocked}
+        lockedDeviceId={lockedDeviceId}
         onCancel={handleCancel}
         onSuccess={handleSuccess}
         submitLabel="แจ้งซ่อม"

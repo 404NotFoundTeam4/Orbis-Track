@@ -322,24 +322,20 @@ export class RepairService {
       throw new HttpError(HttpStatus.UNAUTHORIZED, "กรุณาเข้าสู่ระบบ");
     }
 
-    const device = await prisma.devices.findFirst({
-      where: { de_id: payload.deviceId, deleted_at: null },
-      select: { de_id: true },
-    });
-
-    if (!device) {
-      throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
-    }
+    let resolvedDeviceId = payload.deviceId;
+    let sourceIssueBorrowTicketId: number | null = null;
 
     if (payload.sourceIssueId) {
       const sourceIssue = await prisma.ticket_issues.findFirst({
         where: {
           ti_id: payload.sourceIssueId,
+          ti_reported_by: userId,
           deleted_at: null,
         },
         select: {
           ti_id: true,
           ti_de_id: true,
+          ti_brt_id: true,
         },
       });
 
@@ -350,6 +346,18 @@ export class RepairService {
       if (sourceIssue.ti_de_id !== payload.deviceId) {
         throw new HttpError(HttpStatus.BAD_REQUEST, "อุปกรณ์ไม่ตรงกับรายการอ้างอิง");
       }
+
+      resolvedDeviceId = sourceIssue.ti_de_id;
+      sourceIssueBorrowTicketId = sourceIssue.ti_brt_id ?? null;
+    }
+
+    const device = await prisma.devices.findFirst({
+      where: { de_id: resolvedDeviceId, deleted_at: null },
+      select: { de_id: true },
+    });
+
+    if (!device) {
+      throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
     }
 
     const validSubDeviceIds = payload.subDeviceIds ?? [];
@@ -358,7 +366,7 @@ export class RepairService {
       const matchedSubDevices = await prisma.device_childs.findMany({
         where: {
           dec_id: { in: validSubDeviceIds },
-          dec_de_id: payload.deviceId,
+          dec_de_id: resolvedDeviceId,
           deleted_at: null,
         },
         select: { dec_id: true },
@@ -379,7 +387,7 @@ export class RepairService {
         where: {
           deleted_at: null,
           child: {
-            dec_de_id: payload.deviceId,
+            dec_de_id: resolvedDeviceId,
             deleted_at: null,
           },
           ticket: {
@@ -397,20 +405,8 @@ export class RepairService {
         borrowTicketId = activeBorrowTicket.td_brt_id;
       }
 
-      if (payload.sourceIssueId) {
-        const sourceIssueWithBorrow = await tx.ticket_issues.findFirst({
-          where: {
-            ti_id: payload.sourceIssueId,
-            deleted_at: null,
-          },
-          select: {
-            ti_brt_id: true,
-          },
-        });
-
-        if (sourceIssueWithBorrow?.ti_brt_id) {
-          borrowTicketId = sourceIssueWithBorrow.ti_brt_id;
-        }
+      if (sourceIssueBorrowTicketId) {
+        borrowTicketId = sourceIssueBorrowTicketId;
       }
 
       if (!borrowTicketId) {
@@ -422,7 +418,7 @@ export class RepairService {
 
       const created = await tx.ticket_issues.create({
         data: {
-          ti_de_id: payload.deviceId,
+          ti_de_id: resolvedDeviceId,
           ti_brt_id: borrowTicketId,
           ti_title: payload.subject,
           ti_description: payload.problemDescription,

@@ -21,6 +21,8 @@ type RepairRequestFormProps = {
   mode: "fromIssue" | "other";
   prefill: RepairPrefill | null;
   loadingPrefill?: boolean;
+  isDeviceLocked?: boolean;
+  lockedDeviceId?: number | null;
   defaultRequesterName?: string;
   defaultRequesterEmpCode?: string | null;
   onCancel: () => void;
@@ -42,6 +44,8 @@ export default function RepairRequestForm({
   mode,
   prefill,
   loadingPrefill = false,
+  isDeviceLocked = false,
+  lockedDeviceId = null,
   defaultRequesterName,
   defaultRequesterEmpCode,
   onCancel,
@@ -111,23 +115,34 @@ export default function RepairRequestForm({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!validate()) return;
-    if (!prefill?.device_id) {
+
+    const resolvedDeviceId =
+      isDeviceLocked && lockedDeviceId
+        ? lockedDeviceId
+        : prefill?.device_id ??
+          (typeof selectedMainDeviceId === "number" ? selectedMainDeviceId : null);
+
+    if (!resolvedDeviceId) {
       setErrors((prev) => ({ ...prev, subject: prev.subject ?? "กรุณาเลือกอุปกรณ์จากรายการก่อน" }));
       return;
     }
 
+    const sourceIssueId = prefill?.issue_id && prefill.issue_id > 0 ? prefill.issue_id : null;
+    const resolvedRequesterName = requesterName?.trim() || prefill?.requester_name || "ไม่ระบุชื่อ";
+    const resolvedRequesterEmpCode = requesterEmpCode || prefill?.requester_emp_code || null;
+
     setSubmitting(true);
     try {
       await repairService.createRepairRequest({
-        sourceIssueId: prefill.issue_id > 0 ? prefill.issue_id : null,
-        deviceId: prefill.device_id,
+        sourceIssueId,
+        deviceId: resolvedDeviceId,
         subDeviceIds: selectedSubDeviceIds,
         subject,
         problemDescription,
         quantity: Math.max(selectedSubDeviceIds.length, 1),
         category,
-        requesterName: requesterName?.trim() || prefill.requester_name || "ไม่ระบุชื่อ",
-        requesterEmpCode: requesterEmpCode || prefill.requester_emp_code || null,
+        requesterName: resolvedRequesterName,
+        requesterEmpCode: resolvedRequesterEmpCode,
         receiveLocation: receiveLocation || null,
         images,
       });
@@ -148,24 +163,37 @@ export default function RepairRequestForm({
 
           <div className="flex flex-col gap-[13px]">
             <label className="text-[18px] font-medium">ชื่ออุปกรณ์</label>
-            <select
-              className="h-[46px] w-full rounded-[16px] border border-[#D9D9D9] px-[15px]"
-              value={selectedMainDeviceId}
-              onChange={(e) => {
-                const raw = e.target.value;
-                const parsed = raw === "" ? "" : Number(raw);
-                if (raw === "" || !Number.isNaN(parsed)) {
-                  onMainDeviceChange?.(parsed as number | "");
+            {isDeviceLocked ? (
+              <input
+                className="h-[46px] w-full rounded-[16px] border border-[#D9D9D9] bg-[#F5F5F5] px-[15px] text-[#666666]"
+                value={
+                  prefill?.device_name
+                    ? `${prefill.device_name} (${prefill.device_code || "-"})`
+                    : "-"
                 }
-              }}
-            >
-              <option value="">-- เลือกอุปกรณ์แม่ --</option>
-              {mainDevices.map((device) => (
-                <option key={device.de_id} value={device.de_id}>
-                  {device.de_name} ({device.de_serial_number})
-                </option>
-              ))}
-            </select>
+                readOnly
+                disabled
+              />
+            ) : (
+              <select
+                className="h-[46px] w-full rounded-[16px] border border-[#D9D9D9] px-[15px]"
+                value={selectedMainDeviceId}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const parsed = raw === "" ? "" : Number(raw);
+                  if (raw === "" || !Number.isNaN(parsed)) {
+                    onMainDeviceChange?.(parsed as number | "");
+                  }
+                }}
+              >
+                <option value="">-- เลือกอุปกรณ์แม่ --</option>
+                {mainDevices.map((device) => (
+                  <option key={device.de_id} value={device.de_id}>
+                    {device.de_name} ({device.de_serial_number})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="flex flex-col gap-[13px]">

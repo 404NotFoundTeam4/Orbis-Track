@@ -161,7 +161,17 @@ export default function Repair() {
    * Author     : Rachata Jitjeankhan (Tang) 66160369
    */
   const handleOpenAction = (item: RepairItem) => {
-    navigate(`${repairRequestPath}?mode=fromIssue&issueId=${item.id}`);
+    navigate(`${repairRequestPath}?mode=fromIssue&issueId=${item.id}`, {
+      state: {
+        selectedRepairItem: {
+          issueId: item.id,
+          deviceName: item.device_name,
+          category: item.category,
+          requesterName: item.requester_name,
+          requesterEmpCode: item.requester_emp_code,
+        },
+      },
+    });
   };
 
   const handleOpenOtherDeviceForm = () => {

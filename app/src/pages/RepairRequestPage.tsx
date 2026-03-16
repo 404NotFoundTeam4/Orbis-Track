@@ -4,7 +4,6 @@ import RepairRequestForm from "../components/RepairRequestForm";
 import { useToast } from "../components/Toast";
 import {
   repairService,
-  type RepairItem,
   type RepairPrefill,
   type RepairQuery,
 } from "../services/RepairService";
@@ -20,7 +19,6 @@ export default function RepairRequestPage() {
   const issueIdParam = searchParams.get("issueId");
   const selectedIssueId = issueIdParam ? Number(issueIdParam) : null;
 
-  const [issues, setIssues] = useState<RepairItem[]>([]);
   const [prefill, setPrefill] = useState<RepairPrefill | null>(null);
   const [loading, setLoading] = useState(false);
   const [mainDevices, setMainDevices] = useState<GetInventory[]>([]);
@@ -36,7 +34,6 @@ export default function RepairRequestPage() {
       sortDirection: "desc",
     };
     const result = await repairService.getRepairs(params);
-    setIssues(result.data);
     return result.data;
   };
 
@@ -137,20 +134,22 @@ export default function RepairRequestPage() {
   };
 
   return (
-    <div className="p-5">
-      <div className="mb-5 flex flex-col">
-        <span className="mb-[8px]">แจ้งซ่อม</span>
-        <h1 className="text-2xl font-semibold">ฟอร์มแจ้งซ่อม</h1>
+    <div className="bg-[#FAFAFA] p-5">
+      <div className="mb-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2 text-[18px] leading-[21px]">
+          <span className="text-[#858585]">แจ้งซ่อม</span>
+          <span className="text-[#858585]">›</span>
+          <span className="text-black">
+            {prefill?.device_name ? `คำขอยืม ${prefill.device_name}` : "คำขอยืมอุปกรณ์"}
+          </span>
+        </div>
+        <h1 className="text-[36px] font-semibold leading-[42px] text-black">แจ้งซ่อม</h1>
       </div>
 
       <RepairRequestForm
         mode={mode}
-        issues={issues}
         prefill={prefill}
         loadingPrefill={loading}
-        onSelectIssue={(issueId) => {
-          void fetchPrefill(issueId);
-        }}
         onCancel={handleCancel}
         onSuccess={handleSuccess}
         submitLabel="แจ้งซ่อม"

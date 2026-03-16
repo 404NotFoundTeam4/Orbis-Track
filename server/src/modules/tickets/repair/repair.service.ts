@@ -1,4 +1,4 @@
-import { BRT_STATUS, Prisma, TI_RESULT, TI_STATUS } from "@prisma/client";
+import { BRT_STATUS, DEVICE_CHILD_STATUS, Prisma, TI_RESULT, TI_STATUS } from "@prisma/client";
 import { HttpStatus } from "../../../core/http-status.enum.js";
 import type { PaginatedResult } from "../../../core/paginated-result.interface.js";
 import { HttpError } from "../../../errors/errors.js";
@@ -358,6 +358,23 @@ export class RepairService {
 
     if (!device) {
       throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
+    }
+
+    if (!payload.sourceIssueId) {
+      const borrowableChildCount = await prisma.device_childs.count({
+        where: {
+          dec_de_id: resolvedDeviceId,
+          dec_status: DEVICE_CHILD_STATUS.READY,
+          deleted_at: null,
+        },
+      });
+
+      if (borrowableChildCount === 0) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "อุปกรณ์นี้ไม่พร้อมให้ยืมและไม่สามารถแจ้งซ่อมจากเมนูอุปกรณ์อื่นได้",
+        );
+      }
     }
 
     const validSubDeviceIds = payload.subDeviceIds ?? [];

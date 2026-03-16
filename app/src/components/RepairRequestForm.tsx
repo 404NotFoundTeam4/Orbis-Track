@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Button from "./Button";
+import DropDown from "./DropDown";
 import {
   repairService,
   type RepairPrefill,
@@ -17,12 +18,20 @@ type SubDeviceItem = {
   dec_serial_number: string | null;
 };
 
+type DeviceDropdownItem = {
+  id: number;
+  label: string;
+  value: number;
+  searchText: string;
+};
+
 type RepairRequestFormProps = {
   mode: "fromIssue" | "other";
   prefill: RepairPrefill | null;
   loadingPrefill?: boolean;
   isDeviceLocked?: boolean;
   lockedDeviceId?: number | null;
+  allowedMainDeviceIds?: number[];
   defaultRequesterName?: string;
   defaultRequesterEmpCode?: string | null;
   onCancel: () => void;
@@ -52,6 +61,7 @@ export default function RepairRequestForm({
   loadingPrefill = false,
   isDeviceLocked = false,
   lockedDeviceId = null,
+  allowedMainDeviceIds = [],
   defaultRequesterName,
   defaultRequesterEmpCode,
   onCancel,
@@ -88,6 +98,20 @@ export default function RepairRequestForm({
       selectedSubDeviceIds.length > 3 ? " ..." : ""
     })`;
   }, [selectedSubDeviceIds, subDevices]);
+
+  const deviceOptions = useMemo<DeviceDropdownItem[]>(() => {
+    return mainDevices.map((device) => ({
+      id: device.de_id,
+      value: device.de_id,
+      label: device.de_name,
+      searchText: `${device.de_name} ${device.de_serial_number || ""} ${device.de_id}`.toLowerCase(),
+    }));
+  }, [mainDevices]);
+
+  const selectedDeviceOption = useMemo(() => {
+    if (typeof selectedMainDeviceId !== "number") return null;
+    return deviceOptions.find((item) => item.value === selectedMainDeviceId) ?? null;
+  }, [deviceOptions, selectedMainDeviceId]);
 
   const autoFillFormData = (selectedData: RepairPrefill) => {
     setCategory(selectedData.category || "");
@@ -130,6 +154,14 @@ export default function RepairRequestForm({
 
     if (!resolvedDeviceId) {
       setErrors((prev) => ({ ...prev, subject: prev.subject ?? "กรุณาเลือกอุปกรณ์จากรายการก่อน" }));
+      return;
+    }
+
+    if (!isDeviceLocked && allowedMainDeviceIds.length > 0 && !allowedMainDeviceIds.includes(resolvedDeviceId)) {
+      setErrors((prev) => ({
+        ...prev,
+        subject: prev.subject ?? "อุปกรณ์นี้ไม่พร้อมให้ยืมและไม่สามารถแจ้งซ่อมจากเมนูนี้ได้",
+      }));
       return;
     }
 
@@ -181,24 +213,27 @@ export default function RepairRequestForm({
                 disabled
               />
             ) : (
-              <select
-                className={baseInputClass}
-                value={selectedMainDeviceId}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const parsed = raw === "" ? "" : Number(raw);
-                  if (raw === "" || !Number.isNaN(parsed)) {
-                    onMainDeviceChange?.(parsed as number | "");
-                  }
+              <DropDown
+                items={deviceOptions}
+                value={selectedDeviceOption}
+                onChange={(item) => onMainDeviceChange?.(item.value)}
+                placeholder="เลือกอุปกรณ์แม่"
+                searchPlaceholder="ค้นหาชื่ออุปกรณ์"
+                searchable
+                className="w-full"
+                triggerClassName="!border-[#D9D9D9]"
+                emptyMessage="ไม่พบอุปกรณ์"
+                filterFunction={(item, searchTerm) => {
+                  const keyword = searchTerm.trim().toLowerCase();
+                  if (!keyword) return true;
+
+                  return (
+                    item.searchText.includes(keyword) ||
+                    item.label.toLowerCase().includes(keyword) ||
+                    String(item.value).includes(keyword)
+                  );
                 }}
-              >
-                <option value="">-- เลือกอุปกรณ์แม่ --</option>
-                {mainDevices.map((device) => (
-                  <option key={device.de_id} value={device.de_id}>
-                    {device.de_name} ({device.de_serial_number})
-                  </option>
-                ))}
-              </select>
+              />
             )}
           </div>
 

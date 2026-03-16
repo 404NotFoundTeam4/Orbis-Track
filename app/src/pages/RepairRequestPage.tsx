@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import RepairRequestForm from "../components/RepairRequestForm";
 import { useToast } from "../components/Toast";
 import {
@@ -36,6 +36,10 @@ export default function RepairRequestPage() {
   const [selectedMainDeviceId, setSelectedMainDeviceId] = useState<number | "">("");
   const [subDevices, setSubDevices] = useState<DeviceChild[]>([]);
   const [selectedSubDeviceIds, setSelectedSubDeviceIds] = useState<number[]>([]);
+
+  const availableMainDevices = useMemo(() => {
+    return mainDevices.filter((device) => Number(device.available) > 0);
+  }, [mainDevices]);
 
   const fetchPrefill = async (issueId: number) => {
     setLoading(true);
@@ -136,17 +140,16 @@ export default function RepairRequestPage() {
 
   return (
     <div className="p-4">
-      <div className="mb-[8px] space-x-[9px]">
-        <span className="text-[#858585]">แจ้งซ่อม</span>
-        <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#000000]">แบบฟอร์มแจ้งซ่อม</span>
+      <div className="space-x-[9px]">
+        <Link
+          to={repairListPath}
+          className="text-[#858585]"
+        >
+          แจ้งซ่อม
+        </Link>
         <span className="text-[#858585]">&gt;</span>
         <span className="text-[#000000]">
-          {prefill?.device_name
-            ? prefill.device_name
-            : selectedRepairItem?.deviceName
-              ? selectedRepairItem.deviceName
-              : "คำขอแจ้งซ่อม"}
+          แบบฟอร์มแจ้งซ่อม
         </span>
       </div>
 
@@ -165,7 +168,8 @@ export default function RepairRequestPage() {
           onSuccess={handleSuccess}
           submitLabel="แจ้งซ่อม"
           selectedSubDeviceIds={selectedSubDeviceIds}
-          mainDevices={mainDevices}
+          mainDevices={availableMainDevices}
+          allowedMainDeviceIds={availableMainDevices.map((device) => device.de_id)}
           selectedMainDeviceId={selectedMainDeviceId}
           onMainDeviceChange={setSelectedMainDeviceId}
           subDevices={subDevices}

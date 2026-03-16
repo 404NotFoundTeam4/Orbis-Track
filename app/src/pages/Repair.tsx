@@ -10,7 +10,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SearchFilter from "../components/SearchFilter";
 import DropDown from "../components/DropDown";
-import Pagination from "../components/Pagination";
 import { useToast } from "../components/Toast";
 import RepairManagementTable from "../components/RepairManagementTable";
 import {
@@ -218,9 +217,10 @@ export default function Repair() {
         onSort={handleSort}
         getSortIcon={getSortIcon}
         onOpenAction={handleOpenAction}
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
       />
-
-      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
 
     </div>
   );

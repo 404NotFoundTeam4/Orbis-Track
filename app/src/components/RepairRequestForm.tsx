@@ -40,6 +40,12 @@ type FormErrors = Partial<
   Record<"subject" | "problemDescription", string>
 >;
 
+const sectionTitleClass = "text-[18px] font-medium text-[#1F1F1F]";
+const sectionHelperClass = "text-[14px] font-medium text-[#40A9FF]";
+const fieldLabelClass = "text-[16px] font-medium text-[#1F1F1F]";
+const baseInputClass =
+  "h-[46px] w-full rounded-[16px] border border-[#D9D9D9] px-[15px] text-[16px] text-[#1F1F1F]";
+
 export default function RepairRequestForm({
   mode,
   prefill,
@@ -153,19 +159,19 @@ export default function RepairRequestForm({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1475px] rounded-2xl border border-[#D8D8D8] bg-white p-[50px]">
-      <form className="flex flex-col gap-[20px]" onSubmit={handleSubmit}>
-        <section className="flex flex-col gap-5">
+    <div className="w-full rounded-2xl border border-[#D8D8D8] bg-white px-8 py-9 lg:px-10 lg:py-10">
+      <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
+        <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-[7px]">
-            <h3 className="text-[18px] font-medium">1. ระบุข้อมูลอุปกรณ์</h3>
-            <p className="text-[16px] font-medium text-[#40A9FF]">รายละเอียดข้อมูลอุปกรณ์</p>
+            <h3 className={sectionTitleClass}>1. ระบุข้อมูลอุปกรณ์</h3>
+            <p className={sectionHelperClass}>รายละเอียดข้อมูลอุปกรณ์</p>
           </div>
 
-          <div className="flex flex-col gap-[13px]">
-            <label className="text-[18px] font-medium">ชื่ออุปกรณ์</label>
+          <div className="flex flex-col gap-3">
+            <label className={fieldLabelClass}>ชื่ออุปกรณ์</label>
             {isDeviceLocked ? (
               <input
-                className="h-[46px] w-full rounded-[16px] border border-[#D9D9D9] bg-[#F5F5F5] px-[15px] text-[#666666]"
+                className={`${baseInputClass} bg-[#F5F5F5] text-[#666666]`}
                 value={
                   prefill?.device_name
                     ? `${prefill.device_name} (${prefill.device_code || "-"})`
@@ -176,7 +182,7 @@ export default function RepairRequestForm({
               />
             ) : (
               <select
-                className="h-[46px] w-full rounded-[16px] border border-[#D9D9D9] px-[15px]"
+                className={baseInputClass}
                 value={selectedMainDeviceId}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -196,8 +202,8 @@ export default function RepairRequestForm({
             )}
           </div>
 
-          <div className="flex flex-col gap-[13px]">
-            <label className="text-[18px] font-medium">ระบุรหัสอุปกรณ์</label>
+          <div className="flex flex-col gap-3">
+            <label className={fieldLabelClass}>ระบุรหัสอุปกรณ์</label>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {subDevices.map((sub) => (
                 <label
@@ -210,31 +216,31 @@ export default function RepairRequestForm({
                     onChange={() => onToggleSubDevice?.(sub.dec_id)}
                   />
                   <span className="flex flex-col">
-                    <span className="text-[16px]">{sub.dec_asset_code}</span>
-                    <span className="text-[14px] text-[#CDCDCD]">{sub.dec_serial_number ?? "-"}</span>
+                    <span className="text-[16px] text-[#1F1F1F]">{sub.dec_asset_code}</span>
+                    <span className="text-[14px] text-[#8C8C8C]">{sub.dec_serial_number ?? "-"}</span>
                   </span>
                 </label>
               ))}
             </div>
-            <div className="inline-flex rounded-[10px] bg-[rgba(0,170,26,0.1)] px-5 py-2 text-[#00AA1A]">
+            <div className="inline-flex rounded-[10px] bg-[rgba(0,170,26,0.1)] px-5 py-2 text-[14px] font-medium text-[#00AA1A]">
               {selectedSubDeviceText}
             </div>
           </div>
 
         </section>
 
-        <section className="flex flex-col gap-5">
+        <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-[7px]">
-            <h3 className="text-[18px] font-medium">2. ระบุปัญหาที่พบเจอ</h3>
-            <p className="text-[16px] font-medium text-[#40A9FF]">รายละเอียดข้อมูลปัญหา</p>
+            <h3 className={sectionTitleClass}>2. ระบุปัญหาที่พบเจอ</h3>
+            <p className={sectionHelperClass}>รายละเอียดข้อมูลปัญหา</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[837px_472px]">
-            <div className="flex flex-col gap-[13px]">
-              <div className="flex flex-col gap-[13px]">
-                <label className="text-[18px] font-medium">หัวข้อ</label>
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
+                <label className={fieldLabelClass}>หัวข้อ</label>
                 <input
-                  className={`h-[46px] rounded-[16px] border px-[15px] ${
+                  className={`${baseInputClass} ${
                     errors.subject ? "border-red-500" : "border-[#D9D9D9]"
                   }`}
                   value={subject}
@@ -244,9 +250,9 @@ export default function RepairRequestForm({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[18px] font-medium">รายละเอียดปัญหา</label>
+                <label className={fieldLabelClass}>รายละเอียดปัญหา</label>
                 <textarea
-                  className={`min-h-[164px] rounded-[16px] border px-4 py-3 focus:outline-none ${
+                  className={`min-h-[180px] w-full rounded-[16px] border px-[15px] py-[10px] text-[16px] text-[#1F1F1F] focus:outline-none ${
                     errors.problemDescription ? "border-red-500" : "border-[#D9D9D9]"
                   }`}
                   value={problemDescription}
@@ -258,9 +264,9 @@ export default function RepairRequestForm({
               </div>
             </div>
 
-            <div className="flex flex-col gap-[13px]">
-              <label className="text-[18px] font-medium">รูปภาพ</label>
-              <label className="flex h-[254px] cursor-pointer flex-col items-center justify-center gap-5 rounded-[16px] border border-[#D9D9D9] text-center text-[#40A9FF]">
+            <div className="flex flex-col gap-3">
+              <label className={fieldLabelClass}>รูปภาพ</label>
+              <label className="flex min-h-[254px] w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-[16px] border border-[#D9D9D9] px-6 text-center text-[#40A9FF]">
                 <svg
                   width="48"
                   height="40"
@@ -277,10 +283,10 @@ export default function RepairRequestForm({
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span className="text-[14px] font-medium leading-[22px]">
+                <span className="text-[14px] font-medium leading-[22px] text-[#40A9FF]">
                   อัปโหลดไฟล์ หรือวางไฟล์ที่นี่
                   <br />
-                  ประเภทไฟล์ PNG, JPG
+                  <span className="text-[#8C8C8C]">ประเภทไฟล์ PNG, JPG</span>
                 </span>
                 <input
                   type="file"
@@ -294,23 +300,23 @@ export default function RepairRequestForm({
           </div>
         </section>
 
-        <section className="flex flex-col gap-5">
+        <section className="flex flex-col gap-6">
           <div className="flex flex-col gap-[7px]">
-            <h3 className="text-[18px] font-medium">3. ระบุสถานที่รับอุปกรณ์</h3>
-            <p className="text-[16px] font-medium text-[#40A9FF]">รายละเอียดข้อมูลสถานที่รับอุปกรณ์</p>
+            <h3 className={sectionTitleClass}>3. ระบุสถานที่รับอุปกรณ์</h3>
+            <p className={sectionHelperClass}>รายละเอียดข้อมูลสถานที่รับอุปกรณ์</p>
           </div>
 
-          <div className="flex flex-col gap-[13px]">
-            <label className="text-[18px] font-medium">สถานที่รับ</label>
+          <div className="flex flex-col gap-3">
+            <label className={fieldLabelClass}>สถานที่รับ</label>
             <textarea
-              className="h-[115px] w-full rounded-[16px] border border-[#D9D9D9] px-[15px] py-[10px]"
+              className="h-[115px] w-full rounded-[16px] border border-[#D9D9D9] px-[15px] py-[10px] text-[16px] text-[#1F1F1F]"
               value={receiveLocation}
               onChange={(e) => setReceiveLocation(e.target.value)}
             />
           </div>
         </section>
 
-        <div className="mt-[30px] flex justify-end gap-[10px]">
+        <div className="mt-2 flex justify-end gap-[10px] border-t border-[#F0F0F0] pt-6">
           <Button variant="secondary" type="button" onClick={onCancel} className="rounded-[16px]">
             ยกเลิก
           </Button>

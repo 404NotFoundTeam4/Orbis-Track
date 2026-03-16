@@ -135,38 +135,43 @@ export default function RepairRequestPage() {
   const lockedDeviceId = isDeviceLocked ? prefill?.device_id ?? null : null;
 
   return (
-    <div className="bg-[#FAFAFA] p-5">
-      <div className="mb-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-[18px] leading-[21px]">
-          <span className="text-[#858585]">แจ้งซ่อม</span>
-          <span className="text-[#858585]">›</span>
-          <span className="text-black">
-            {prefill?.device_name
-              ? `คำขอยืม ${prefill.device_name}`
-              : selectedRepairItem?.deviceName
-                ? `คำขอยืม ${selectedRepairItem.deviceName}`
-                : "คำขอยืมอุปกรณ์"}
-          </span>
-        </div>
-        <h1 className="text-[36px] font-semibold leading-[42px] text-black">แจ้งซ่อม</h1>
+    <div className="p-4">
+      <div className="mb-[8px] space-x-[9px]">
+        <span className="text-[#858585]">แจ้งซ่อม</span>
+        <span className="text-[#858585]">&gt;</span>
+        <span className="text-[#000000]">แบบฟอร์มแจ้งซ่อม</span>
+        <span className="text-[#858585]">&gt;</span>
+        <span className="text-[#000000]">
+          {prefill?.device_name
+            ? prefill.device_name
+            : selectedRepairItem?.deviceName
+              ? selectedRepairItem.deviceName
+              : "คำขอแจ้งซ่อม"}
+        </span>
       </div>
 
-      <RepairRequestForm
-        mode={mode}
-        prefill={prefill}
-        loadingPrefill={loading}
-        isDeviceLocked={isDeviceLocked}
-        lockedDeviceId={lockedDeviceId}
-        onCancel={handleCancel}
-        onSuccess={handleSuccess}
-        submitLabel="แจ้งซ่อม"
-        selectedSubDeviceIds={selectedSubDeviceIds}
-        mainDevices={mainDevices}
-        selectedMainDeviceId={selectedMainDeviceId}
-        onMainDeviceChange={setSelectedMainDeviceId}
-        subDevices={subDevices}
-        onToggleSubDevice={toggleSubDevice}
-      />
+      <div className="mb-[21px] flex items-center gap-[14px]">
+        <h1 className="text-2xl font-semibold">แจ้งซ่อม</h1>
+      </div>
+
+      <div className="w-full">
+        <RepairRequestForm
+          mode={mode}
+          prefill={prefill}
+          loadingPrefill={loading}
+          isDeviceLocked={isDeviceLocked}
+          lockedDeviceId={lockedDeviceId}
+          onCancel={handleCancel}
+          onSuccess={handleSuccess}
+          submitLabel="แจ้งซ่อม"
+          selectedSubDeviceIds={selectedSubDeviceIds}
+          mainDevices={mainDevices}
+          selectedMainDeviceId={selectedMainDeviceId}
+          onMainDeviceChange={setSelectedMainDeviceId}
+          subDevices={subDevices}
+          onToggleSubDevice={toggleSubDevice}
+        />
+      </div>
     </div>
   );
 }

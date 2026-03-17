@@ -3,6 +3,7 @@ import Input from "./Input";
 import { useToast } from "./Toast";
 import { AlertDialog } from "./AlertDialog";
 import { categoryService, type Category } from "../services/CategoryService";
+import Button from "./Button";
 
 type ModalType =
     | "add-category"
@@ -52,7 +53,7 @@ export function CategoryModal({
         try {
             const result = await categoryService.getCategories({
                 page: 1,
-                limit: 1000,
+                // limit: 1000,
             });
             setExistingCategories(result.data);
         } catch (err) {
@@ -148,14 +149,14 @@ export function CategoryModal({
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/10" onClick={handleClose} />
+            <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
             {/* Modal */}
             <div className="relative bg-white border border-[#858585] rounded-[42px] w-[804px] h-[371px]">
                 {/* Close */}
                 <button
                     onClick={handleClose}
-                    className="absolute top-6 right-6 w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center hover:bg-gray-100"
+                    className="absolute top-6 right-6 w-8 h-8 rounded-full border border-black flex items-center justify-center hover:bg-gray-100"
                 >
                     ✕
                 </button>
@@ -163,7 +164,7 @@ export function CategoryModal({
                 {/* Content */}
                 <form
                     onSubmit={handleSubmit}
-                    className="absolute left-1/2 top-[40px] -translate-x-1/2 flex flex-col items-center gap-[57px] w-[333px]"
+                    className="flex flex-col items-center gap-[47px] w-[333px] mx-auto mt-[40px]"
                 >
                     <h2 className="text-[28px] font-semibold text-black">
                         {mode === "add-category" ? "เพิ่มหมวดหมู่อุปกรณ์" : "แก้ไขหมวดหมู่อุปกรณ์"}
@@ -183,13 +184,13 @@ export function CategoryModal({
                         />
                     </div>
 
-                    <button
+                    <Button
                         type="submit"
-                        className="w-[120px] h-[44px] rounded-full bg-[#1890FF] text-white font-medium hover:bg-[#1677ff] transition"
-                        disabled={loading}
+                        className="w-[120px] h-[44px] rounded-full bg-[#40A9FF] text-white font-medium hover:bg-[#1677ff] transition"
+                        disabled={loading || !categoryName.trim()}
                     >
                         บันทึก
-                    </button>
+                    </Button>
                 </form>
             </div>
 

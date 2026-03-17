@@ -98,6 +98,25 @@ const formatTime = (dateStr: string | null): string => {
 };
 
 /**
+ * Description: แปลงเวลาเป็นรูปแบบ HH:MM:YYYY
+ * Input : dateStr - date string หรือ null
+ * Output : string (รูปแบบเวลา) 20 ม.ค. 2568
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+const formatTimeThai = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+
+  const date = new Date(dateStr);
+
+  const day = date.getDate();
+  const month = date.toLocaleString("th-TH", { month: "short" });
+  const year = date.getFullYear() + 543;
+
+  return `${day} / ${month} / ${year}`;
+};
+
+
+/**
  * Description: แปลงวันที่เวลาแบบเต็ม (D / MMM / YYYY | HH:MM น.)
  * Input : dateStr - date string หรือ null
  * Output : string (รูปแบบวันที่เวลาเต็ม)
@@ -155,7 +174,7 @@ const RequestItemHome = ({
   const getStepTicket = () => {
     return ticketDetail?.status;
   };
-
+  console.log(ticket )
   const toggleExpand = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
@@ -164,7 +183,7 @@ const RequestItemHome = ({
       onExpand(ticket.id, true);
     }
   };
-
+ 
   // Handle external force expansion (e.g. from notification navigation)
   useEffect(() => {
     if (forceExpand) {
@@ -175,17 +194,29 @@ const RequestItemHome = ({
     // Removing isExpanded from dependencies allows user to collapse it manually.
   }, [forceExpand, ticket.id, onExpand, expandTrigger]);
 
+const formatUpdateByDateTime = (dateTimeString: string | null): string => {
+  if (!dateTimeString || dateTimeString === "-") return "-";
+  const date = new Date(dateTimeString);
+  const dayOfMonth = date.getDate();
+  const monthShortName = date.toLocaleDateString("th-TH", { month: "short" });
+  const buddhistYear = date.getFullYear() + 543;
+  const timeString = date.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${dayOfMonth} ${monthShortName} ${buddhistYear} ${timeString} น.`;
+};
+
+
   const status = statusConfig[ticket.status] || statusConfig.PENDING;
-  const deviceImage =
-    ticket.device_summary.image ||
-    "https://placehold.co/200x150/png?text=Device";
+  const deviceImage = ticket.device_summary.image ?? null;
   const sectionName =
     typeof ticket.device_summary.section === "object" &&
       ticket.device_summary.section
       ? ticket.device_summary.section
       : ticket.device_summary.section || "-";
-
-  const startDate = ticket.dates?.start || ticket.request_date;
+  console.log( ticket.request_date)
+  const startDate = ticket.request_date || ticket.dates?.start  
   const endDate =
     ticket.dates?.return || ticket.dates?.end || ticket.return_date;
   return (
@@ -200,8 +231,11 @@ const RequestItemHome = ({
         onClick={toggleExpand}
       >
         {/* Device Name & ID */}
-        <div className="flex flex-col pl-2">
+        <div className="flex flex-col ">
           <span className="text-[#000000]">{ticket.device_summary.name}</span>
+           <span className="text-[#8C8C8C]">
+            รหัส : {ticket.device_summary.serial_number || ticket.id}
+          </span>
         </div>
 
         {/* Quantity */}
@@ -214,13 +248,14 @@ const RequestItemHome = ({
 
         {/* Requester */}
         <div className="flex flex-col">
-          <span className="text-[#000000]">{ticket.requester.fullname}</span>
+          <span className="text-[#000000]">{ticket.requester.borrow_user}</span>
+          <span className="text-[#8C8C8C]">{ticket.requester.empcode}</span>
         </div>
 
         {/* Date & Time (Start) */}
         <div className="flex flex-col">
           <span className="text-[#000000]">
-            {formatDate(startDate ?? null)}
+            {formatTimeThai(startDate ?? null)}
           </span>
           <span className="text-[#7BACFF]">
             เวลา : {formatTime(startDate ?? null)}
@@ -229,8 +264,8 @@ const RequestItemHome = ({
 
         {/* Date & Time (Return) */}
         <div className="flex flex-col">
-          <span className="text-[#000000]">{formatDate(endDate ?? null)}</span>
-          <span className="text-[#7BACFF] text-sm">
+          <span className="text-[#000000]">{formatTimeThai(endDate ?? null)}</span>
+          <span className="text-[#7BACFF]   ">
             เวลา : {formatTime(endDate ?? null)}
           </span>
         </div>
@@ -356,7 +391,7 @@ const RequestItemHome = ({
                     ></div>
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 flex flex-col">
                     <span
                       className={`text-sm font-medium ${getStepTicket() === "PENDING"
                           ? " text-[#4CAF50]"
@@ -373,11 +408,13 @@ const RequestItemHome = ({
                     >
                       ส่งคำร้อง
                     </span>
+                    <span className="text-xs text-neutral-500 mt-0.5">{formatUpdateByDateTime(startDate)}</span>
                   </div>
                 </div>
 
                 {/* Step 2: Approve - with hover tooltip */}
                 <div className="flex gap-3 relative group">
+                  
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white cursor-pointer ${getStepTicket() === "PENDING"
@@ -440,6 +477,11 @@ const RequestItemHome = ({
                     ticketDetail.timeline.length > 0 && (
                       <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
                         <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[330px] max-h-[300px] overflow-y-auto">
+                         <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-semibold text-neutral-800">
+                            ลำดับการอนุมัติ
+                          </div>
+                        </div>
                           <div className="flex flex-col">
                             {ticketDetail.timeline.map((stage, index) => {
                               const isLast =
@@ -457,7 +499,7 @@ const RequestItemHome = ({
                                   {/* Icon & Line */}
                                   <div className="flex flex-col items-center">
                                     <div
-                                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
+                                      className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
                                           ? "border-[#4CAF50] text-[#4CAF50]"
                                           : stage.status === "REJECTED"
                                             ? "border-[#FF4D4F] text-[#FF4D4F]"
@@ -507,34 +549,35 @@ const RequestItemHome = ({
                                       {stage.role_name}
                                       {stage.dept_name && ` ${stage.dept_name}`}
                                     </span>
-                                    {stage.status === "PENDING" &&
-                                      Array.isArray(stage.approvers) &&
+                                    {stage.approvers &&
+                                      stage.status === "PENDING" &&
                                       stage.approvers.length > 0 && (
                                         <div className="text-xs text-[#9E9E9E] mt-1 whitespace-nowrap">
                                           ผู้ใช้งานในตำแหน่งนี้ :{" "}
                                           {(() => {
                                             const maxShow = 2;
-                                            const total =
+                                            const count =
                                               stage.approvers.length;
-
                                             const displayNames = stage.approvers
                                               .slice(0, maxShow)
                                               .map((name) =>
                                                 name.length > 20
-                                                  ? `${name.substring(0, 17)}...`
-                                                  : name
+                                                  ? name.substring(0, 17) +
+                                                  "..."
+                                                  : name,
                                               );
 
-                                            return (
-                                              <>
-                                                {displayNames.join(", ")}
-                                                {total > maxShow && (
-                                                  <span className="bg-gray-100 border border-[#9E9E9E] ml-1 px-1 rounded-sm text-[10px]">
-                                                    +{total - maxShow}
+                                            if (count > maxShow) {
+                                              return (
+                                                <span>
+                                                  {displayNames.join(", ")}
+                                                  <span className="bg-gray-100 pt-0 text-[#9E9E9E] border border-[#9E9E9E] ml-1 px-1 rounded-sm text-[10px]">
+                                                    +{count - maxShow}
                                                   </span>
-                                                )}
-                                              </>
-                                            );
+                                                </span>
+                                              );
+                                            }
+                                            return displayNames.join(", ");
                                           })()}
                                         </div>
                                       )}
@@ -673,11 +716,20 @@ const RequestItemHome = ({
               <div className="w-[300px] flex flex-col gap-2">
                 {/* Device Image */}
                 <div className="w-full h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden border border-[#D9D9D9] p-4">
-                  <img
-                    src={getImageUrl(deviceImage)}
-                    alt={ticket.device_summary.name}
-                    className="max-w-full max-h-full object-contain"
-                  />
+                  {
+                    deviceImage ? (
+                      <img
+                        src={getImageUrl(deviceImage)}
+                        alt={ticket.device_summary.name}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-[#BFBFBF] flex flex-col items-center gap-2">
+                        <Icon icon="mdi:image-outline" width="40" height="40" />
+                        <span className="text-sm">ไม่มีรูปภาพ</span>
+                      </div>
+                    )
+                  }
                 </div>
 
                 <div className="bg-[#F4F4F4] p-3 rounded-lg border border-[#D9D9D9]">
@@ -692,7 +744,7 @@ const RequestItemHome = ({
                 {/* Footer Alert */}
                 <div className="bg-[#FFE8E8] border border-[#FF4D4F] text-[#FF4D4F] p-1 rounded-lg text-sm text-center">
                   *อุปกรณ์นี้ถูกยืมได้สูงสุด{" "}
-                  {ticket.device_summary.maxBorrowDays ?? "-"} วัน
+                  {ticket.device_summary.max_borrow_days ?? "-"} วัน
                 </div>
               </div>
 
@@ -703,7 +755,7 @@ const RequestItemHome = ({
                   <div className="grid grid-cols-[140px_1fr] items-baseline">
                     <span className="text-[#000000] text-sm">ผู้ส่งคำร้อง</span>
                     <span className="text-[#636363] text-sm">
-                      {ticket.requester.fullname}
+                      {ticket.requester.borrow_user}
                     </span>
                   </div>
                   <div className="grid grid-cols-[140px_1fr] items-baseline">
@@ -807,8 +859,8 @@ const RequestItemHome = ({
                       เบอร์โทรศัพท์ผู้ยืม
                     </span>
                     <span className="text-[#636363] text-sm">
-                      {ticketDetail?.requester?.us_phone
-                        ? ticketDetail.requester.us_phone.replace(
+                      {ticketDetail?.requester?.borrow_phone  
+                        ? ticketDetail.requester.borrow_phone.replace(
                           /(\d{3})(\d{3})(\d{4})/,
                           "$1-$2-$3"
                         )

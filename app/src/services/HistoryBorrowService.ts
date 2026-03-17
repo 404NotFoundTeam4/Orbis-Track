@@ -2,6 +2,17 @@
 import api from "../api/axios.js";
 
 /**
+ * Description: โหมดการมองเห็นข้อมูลของหน้า List ประวัติการยืม-คืน
+ * Rule :
+ * - "mine" = ของฉัน (brt_user_id = current user)
+ * - "all"  = ทั้งหมด (ตามสิทธิ์ของ role)
+ * Input : string union
+ * Output : ใช้ส่งเป็น query parameter viewMode ไปยัง backend
+ * Author: Chanwit Muangma (Boom) 66160224
+ */
+export type HistoryBorrowViewMode = "mine" | "all";
+
+/**
  * Description: ทิศทางการเรียงลำดับข้อมูลในหน้า List
  * Input : "asc" | "desc"
  * Output : ใช้ส่งเป็น query parameter ไปยัง backend
@@ -123,7 +134,8 @@ export type HistoryBorrowTicketItem = {
     userId: number;
     fullName: string;
     employeeCode: string | null;
-
+     borrowName: string | null;
+      borrowPhone: string | null;
     /**
      * Description: ชื่อหน่วยงานของผู้ร้องขอ (ใส่มาเพื่อให้ UI list แสดงได้)
      * Input : requester.department_name / requester.section_name จาก backend
@@ -245,7 +257,7 @@ export type HistoryBorrowTicketDetail = {
 
 /**
  * Description: พารามิเตอร์สำหรับเรียกหน้า List
- * Input : page, limit, status, search, sortField, sortDirection
+ * Input : page, limit, viewMode, status, search, sortField, sortDirection
  * Output : ใช้ส่งเป็น query parameters ไปยัง backend
  * Author: Chanwit Muangma (Boom) 66160224
  */
@@ -253,6 +265,7 @@ export type GetHistoryBorrowListParams = {
   page?: number;
   limit?: number;
   status?: HistoryBorrowStatus;
+  viewMode?: HistoryBorrowViewMode;
   search?: string;
   sortField?: HistoryBorrowSortField;
   sortDirection?: SortDirection;

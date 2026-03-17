@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import type { GetInventory } from "../services/InventoryService"
 import Button from "./Button"
 import getImageUrl from "../services/GetImage";
+import { Icon } from "@iconify/react";
 
 interface DevicesCardProps {
   device: GetInventory;
@@ -32,12 +33,17 @@ const DevicesCard = ({ device }: DevicesCardProps) => {
 
       {/* รูปภาพ */}
       <div className="w-full h-[115px] bg-[#FFFFFF] flex items-center justify-center">
-        {device.de_images && (
+        {device.de_images ? (
           <img
             src={getImageUrl(device.de_images)}
             className="object-cover h-full"
             alt={device.de_name}
           />
+        ) : (
+          <div className="text-[#BFBFBF] flex flex-col items-center gap-2">
+            <Icon icon="mdi:image-outline" width="48" height="48" />
+            <span className="text-sm">ไม่มีรูปภาพ</span>
+          </div>
         )}
       </div>
 

@@ -120,6 +120,9 @@ async function getDeviceForBorrow(params: IdParamDto) {
 
       // อุปกรณ์เสริม
       accessories: {
+        where: {
+          deleted_at: null
+        },
         select: {
           acc_name: true,
           acc_quantity: true,
@@ -240,19 +243,33 @@ async function getAvailable(params: IdParamDto) {
  * Author: Thakdanai Makmi (Ryu) 66160355
  */
 async function createBorrowTicket(
-  payload: CreateBorrowTicketPayload & { userId: number },
+  payload: CreateBorrowTicketPayload & {
+    requesterId: number;
+    borrowerId: number;
+  },
 ) {
-  const { userId, deviceChilds, borrowStart, borrowEnd, reason, placeOfUse } =
+  const { requesterId, borrowerId, deviceChilds, borrowStart, borrowEnd, reason, placeOfUse } =
     payload;
 
   const result = await prisma.$transaction(async (tx) => {
-    // ดึงข้อมูลผู้ใช้เพื่อใช้สร้างใบคำร้อง
-    const user = await tx.users.findUnique({
-      where: { us_id: userId },
+    // ดึงข้อมูลคนกดส่งคำร้อง
+    const requester = await tx.users.findUnique({
+      where: { us_id: requesterId },
       select: { us_firstname: true, us_lastname: true, us_phone: true },
     });
-    if (!user) {
-      throw new Error("User not found");
+
+    if (!requester) {
+      throw new Error("Requester not found");
+    }
+
+    // ดึงข้อมูลคนที่ถูกยืมให้
+    const borrower = await tx.users.findUnique({
+      where: { us_id: borrowerId },
+      select: { us_firstname: true, us_lastname: true, us_phone: true },
+    });
+
+    if (!borrower) {
+      throw new Error("Borrower not found");
     }
 
     // ค้นหารหัส Preset ของอุปกรณ์แม่
@@ -269,9 +286,9 @@ async function createBorrowTicket(
     // สร้าง borrow return ticket
     const ticket = await tx.borrow_return_tickets.create({
       data: {
-        brt_user_id: userId,
-        brt_user: `${user.us_firstname} ${user.us_lastname}`,
-        brt_phone: user.us_phone,
+        brt_user_id: borrowerId,
+        brt_user: `${borrower.us_firstname} ${borrower.us_lastname}`,
+        brt_phone: borrower.us_phone,
         brt_borrow_purpose: reason,
         brt_usage_location: placeOfUse,
         brt_start_date: borrowStart,
@@ -432,9 +449,9 @@ async function createBorrowTicket(
       data: {
         lbr_action: "CREATED",
         lbr_new_status: "CREATED",
-        lbr_note: `${user.us_firstname} ${user.us_lastname} ส่งคำร้องการยืมอุปกรณ์`,
+        lbr_note: `${requester.us_firstname} ${requester.us_lastname} ส่งคำร้องการยืมอุปกรณ์`,
         lbr_brt_id: ticket.brt_id,
-        lbr_actor_id: userId,
+        lbr_actor_id: requesterId,
       },
     });
 
@@ -512,27 +529,27 @@ async function addToCart(payload: AddToCartPayload & { userId: number }) {
     }
 
     // หา cartItem เดิมทั้งหมดของ (cart เดียวกัน + device เดียวกัน) ไม่สน deleted_at
-    const dupItems = await tx.cart_items.findMany({
-      where: {
-        cti_ct_id: cart.ct_id,
-        cti_de_id: deviceId,
-      },
-      select: { cti_id: true },
-    });
+    // const dupItems = await tx.cart_items.findMany({
+    //   where: {
+    //     cti_ct_id: cart.ct_id,
+    //     cti_de_id: deviceId,
+    //   },
+    //   select: { cti_id: true },
+    // });
 
-    if (dupItems.length > 0) {
-      const dupIds = dupItems.map((item) => item.cti_id);
+    // if (dupItems.length > 0) {
+    //   const dupIds = dupItems.map((item) => item.cti_id);
 
-      // ลบลูกก่อน (กัน FK พัง)
-      await tx.cart_device_childs.deleteMany({
-        where: { cdc_cti_id: { in: dupIds } },
-      });
+    //   // ลบลูกก่อน (กัน FK พัง)
+    //   await tx.cart_device_childs.deleteMany({
+    //     where: { cdc_cti_id: { in: dupIds } },
+    //   });
 
-      // hard delete ตัวแม่
-      await tx.cart_items.deleteMany({
-        where: { cti_id: { in: dupIds } },
-      });
-    }
+    //   // hard delete ตัวแม่
+    //   await tx.cart_items.deleteMany({
+    //     where: { cti_id: { in: dupIds } },
+    //   });
+    // }
 
     // สร้าง cartItem ใหม่
     const cartItem = await tx.cart_items.create({
@@ -616,19 +633,42 @@ async function checkCart(userId: number) {
     });
 
     //ถ้าไม่มี cart -> สร้าง cart ใหม่
-    const cart =
-      existingCart ??
-      (await tx.carts.create({
+    if (!existingCart) {
+      await tx.carts.create({
         data: {
           ct_us_id: id,
           created_at: new Date(),
         },
         select: { ct_id: true, ct_us_id: true },
-      }));
+      });
+    }
 
-    return { massage: "success" };
+    return { message: "success" };
   });
 }
+
+/**
+ * Description : ดึงรายชื่อผู้ใช้สำหรับยืมให้ผู้อื่น
+ * Input : -
+ * Output : รายชื่อผู้ใช้ (ไอดี, ชื่อ, นามสกุล, ตำแหน่ง, รหัสพนักงาน, เบอร์โทรศัพท์)
+ * Author: Thakdanai Makmi (Ryu) 66160355
+ */
+async function getBorrowUsers() {
+  return await prisma.users.findMany({
+    where: {
+      deleted_at: null,
+    },
+    select: {
+      us_id: true,
+      us_firstname: true,
+      us_lastname: true,
+      us_role: true,
+      us_emp_code: true,
+      us_phone: true,
+    },
+  });
+}
+
 export const borrowService = {
   getInventory,
   getDeviceForBorrow,
@@ -637,4 +677,5 @@ export const borrowService = {
   addToCart,
   getDeviceAvailabilities,
   checkCart,
+  getBorrowUsers
 };

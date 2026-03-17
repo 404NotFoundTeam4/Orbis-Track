@@ -2,7 +2,13 @@ export function Login(
     username: string,
     passwords: string,
     isRemember: boolean
-): Promise<{ success: boolean; data: { accessToken: string }; message: string }>;
+): Promise<{ data: { accessToken: string }; message: string }>;
+
+export function LoginWithCookie(
+    username: string,
+    passwords: string,
+    isRemember: boolean
+): Promise<{ message: string }>;
 
 export function UserData(token: string): Promise<{
     us_id: number;
@@ -23,3 +29,5 @@ export function ForgotPassword(
     newPassword: string,
     confirmNewPassword: string
 ): Promise<{ data: unknown; message: string }>;
+
+export function Logout(token: string): Promise<{ message: string }>;

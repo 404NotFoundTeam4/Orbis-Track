@@ -16,6 +16,8 @@ export interface TicketRequester {
   empcode: string | null;
   image: string | null;
   department: string | null;
+  borrow_user: string | null;
+  borrow_phone: string | null;
 }
 
 export interface TicketDeviceSummary {
@@ -131,6 +133,7 @@ export interface TicketTimelineItem {
 export interface TicketDetail {
   id: number;
   status: TicketStatus;
+  devices_available: boolean;
   details: TicketDetails;
   requester: TicketDetailRequester;
   devices: TicketDevice[];

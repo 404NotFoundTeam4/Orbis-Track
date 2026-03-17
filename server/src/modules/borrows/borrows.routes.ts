@@ -9,7 +9,8 @@ import {
     getDeviceForBorrowSchema,
     getInventorySchema,
     idParamSchema,
-    deviceAvailabilitiesSchema
+    deviceAvailabilitiesSchema,
+    getBorrowUsersSchema
 } from "./borrows.schema.js";
 
 const borrowController = new BorrowController();
@@ -21,5 +22,6 @@ router.getDoc('/available/:id', { tag: "Borrow", params: idParamSchema, res: get
 router.postDoc('/send-ticket', { tag: "Borrow", body: createBorrowTicketPayload, res: createBorrowTicketSchema, auth: true  }, borrowController.createBorrowTicket);
 router.postDoc('/add-cart', { tag: "Borrow", body: addToCartPayload, res: addToCartSchema, auth: true }, borrowController.addToCart);
 router.getDoc("/device-availabilities", { tag: "Borrow", res: deviceAvailabilitiesSchema, auth: true }, borrowController.getDeviceAvailabilities);
+router.getDoc("/users", { tag: "Borrow", res: getBorrowUsersSchema, auth: true }, borrowController.getBorrowUsers);
 
 export default router.instance;

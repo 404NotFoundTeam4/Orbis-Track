@@ -93,6 +93,13 @@ export default function BorrowModal({
   }, []);
 
   // console.log(dateDefault)
+
+   /**
+   * Description: เช็คอุปกรณ์ว่างตามช่วงเวลา
+   * Input : start, end, timeStart, timeEnd, activeBorrow - วันที่เริ่ม, วันที่สิ้นสุด, เวลาที่เริ่ม, เวลาที่สิ้นสุด, สถานะของอุปกรณ์
+   * Output : true - สามารถยืมได้, false - ไม่สามารถยืมได้
+   * Author: Panyapon Phollert (Ton) 66160086
+   **/
   const isBorrowAvailable = (
     start: Date | null,
     end: Date | null,
@@ -100,36 +107,32 @@ export default function BorrowModal({
     timeEnd?: string,
     activeBorrow?: ActiveBorrow[] | null,
   ): boolean => {
+    // ยังเลือกวันหรือเวลาไม่ครบ
+    if (!start || !end || !timeStart || !timeEnd) return true;
+    // อุปกรณ์ไม่มีประวัติการยืม
     if (!activeBorrow || activeBorrow.length === 0) return true;
 
-    const now = new Date();
-
-    const parseTime = (time?: string) => {
-      if (!time) {
-        return {
-          hour: now.getHours(),
-          minute: now.getMinutes(),
-        };
-      }
-      const [hours, minutes] = time.split(":").map(Number);
-      return { hour: hours, minute: minutes };
+    /**
+    * Description: รวมวันเวลา ให้กลายเป็น Date
+    * Input : date - วันที่, time - เวลา
+    * Output : Date object ที่รวมวัน + เวลา
+    * Author: Panyapon Phollert (Ton) 66160086
+    **/
+    const combineDateTime = (date: Date, time: string) => {
+      const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+      const dateTime = new Date(date);
+      dateTime.setHours(hour, minute, 0, 0);
+      return dateTime;
     };
 
-    const combineDateTime = (date: Date, time?: string) => {
-      const day = new Date(date);
-      const { hour, minute } = parseTime(time);
-      day.setHours(hour, minute, 0, 0);
-      return day;
-    };
+    // เวลาที่ผู้ใช้ต้องการยืม
+    const userStart = combineDateTime(start, timeStart);
+    const userEnd = combineDateTime(end, timeEnd);
 
-    const startDate = start ?? now;
-    const endDate = end ?? now;
-
-    const userStart = combineDateTime(startDate, timeStart);
-    const userEnd = combineDateTime(endDate, timeEnd);
-
+    // ถ้าเวลาเริ่มมากกว่าเวลาสิ้นสุด
     if (userStart > userEnd) return false;
 
+    // ตรวจสอบช่วงเวลาที่ผู้ใช้เลือก ชนกับช่วงเวลาที่ถูกยืมอยู่หรือไม่
     return !activeBorrow.some((borrow) => {
       const borrowStart = new Date(borrow.da_start);
       const borrowEnd = new Date(borrow.da_end);
@@ -140,13 +143,12 @@ export default function BorrowModal({
   useEffect(() => {
     setdefaultBorrow(defaultValues);
   }, [defaultValues]);
-  console.log(defaultValues);
   useEffect(() => {
     setTimeStart(timeDefault?.time_start);
     setTimeEnd(timeDefault?.time_end);
   }, [timeDefault]);
 
-  let yearValue = 2025;
+  const yearValue = 2025;
 
   useEffect(() => {
     if (!dateDefault) return null;
@@ -209,21 +211,52 @@ export default function BorrowModal({
     if (hour > 12) return `${hour - 12} PM`;
     return `${hour} AM`;
   };
-  const readyDevices = (defaultBorrow ?? []).filter((device) =>
-    isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
-  );
 
-  const borrowDevices = (defaultBorrow ?? []).filter(
-    (device) =>
-      !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow),
-  );
+  // ตรวจสอบว่าผู้ใช้เลือกวันและเวลาครบแล้วหรือยัง
+  const hasSelectedDateTime = start && end && timeStart && timeEnd;
+
+  /**
+  * Description: หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก
+  * Input : defaultBorrow - รายการอุปกรณ์ทั้งหมด
+  * Output : รายการอุปกรณ์ที่สามารถแสดงให้ผู้ใช้เลือกยืมได้
+  * Author: Thakdanai Makmi (Ryu) 66160355
+  **/
+  const readyDevices = (defaultBorrow ?? [])
+    .filter((devices) => devices.dec_status === "READY")
+    .filter((device) =>
+      hasSelectedDateTime
+        ? isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow)
+        : true,
+    );
+
+  /**
+  * Description: คัดกรองอุปกรณ์ที่มีสถานะ "READY" ที่มีการยืมทับซ้อนอยู่แล้ว
+  * Input : defaultBorrow - รายการอุปกรณ์ทั้งหมด
+  * Output : รายการอุปกรณ์ที่ไม่สามารถยืมได้ในช่วงเวลาที่เลือก
+  * Author: Thakdanai Makmi (Ryu) 66160355
+  **/
+  const borrowDevices = (defaultBorrow ?? [])
+    // เอาเฉพาะสถานะ READY
+    .filter((devices) => devices.dec_status === "READY")
+    .filter((device) =>
+      hasSelectedDateTime
+        ? !isBorrowAvailable(start, end, timeStart, timeEnd, device.activeBorrow)
+        : false,
+    );
 
   /* ========================================== */
+  /**
+  * Description: แปลงเวลาในรูปแบบ "HH:mm"
+  * Input : time - เวลาในรูปแบบ "HH:mm"
+  * Output : จำนวนนาทีรวม
+  * Author: Panyapon Phollert (Ton) 66160086
+  **/
   const timeToMinutes = (time?: string): number | null => {
     if (!time) return null;
     const [h, m] = time.split(":").map(Number);
     return h * 60 + m;
   };
+
   const isValidBorrowTime = (
     start: Date | null,
     end: Date | null,
@@ -259,21 +292,43 @@ export default function BorrowModal({
 
   const canBorrow = isValidBorrowTime(start, end, timeStart, timeEnd);
 
+  /**
+  * Description: ตรวจสอบเลือกเวลาที่ผ่านมาแล้ว
+  * Input : date - วันที่เลือก, time - เวลา
+  * Output : true - เวลาที่เลือกอยู่ในอดีต, false - เวลาที่เลือกยังไม่ผ่าน
+  * Author: Thakdanai Makmi (Ryu) 66160355
+  **/
+  const isPastTime = (date: Date | null, time?: string) => {
+    if (!date || !time) return false;
+
+    const now = new Date(); // วันที่และเวลาปัจจุบัน
+
+    const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+
+    const selected = new Date(date); // สร้างวันที่ตามวันที่เลือก
+    selected.setHours(hour, minute, 0, 0); // กำหนดเวลาให้กับวันที่เลือก
+
+    return selected < now;
+  };
+
   const timeItems: timeDropdownItem[] = hours.flatMap((hour, index) => {
     return [0, 30]
       .filter((m) => !(hour === 17 && m > 0))
       .map((minute, indexRound) => {
         const isPM = hour >= 12;
         const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        // ค่าเวลาแบบ 24 ชั่วโมง
+        const value = `${hour.toString().padStart(2, "0")}:${minute
+          .toString()
+          .padStart(2, "0")}`;
 
         return {
           id: index * 2 + indexRound,
           label: `${displayHour.toString().padStart(2, "0")}:${minute
             .toString()
             .padStart(2, "0")} ${isPM ? "PM" : "AM"}`,
-          value: `${hour.toString().padStart(2, "0")}:${minute
-            .toString()
-            .padStart(2, "0")}`,
+          value,
+          disabled: isPastTime(start, value) // disable ถ้าเป็นเวลาที่ผ่านมาแล้ว
         };
       });
   });
@@ -396,14 +451,34 @@ export default function BorrowModal({
     end !== null &&
     !!timeStart &&
     !!timeEnd &&
+    !isPastTime(start, timeStart) &&
+    !isPastTime(end ?? start, timeEnd) &&
     (() => {
       if (!start || !end || !timeStart || !timeEnd) return false;
 
       const startDateTime = mergeDateAndTime(start, timeStart);
       const endDateTime = mergeDateAndTime(end, timeEnd);
 
-      return startDateTime <= endDateTime;
+      // เวลาสิ้นสุดน้อยกว่าเวลาเริ่ม
+      if (endDateTime <= startDateTime) return false;
+
+      // ถ้ายืมวันเดียว ขั้นต่ำ 1 ชั่วโมง
+      if (isSameDay(start, end)) {
+        const diffMinutes =
+          (endDateTime.getTime() - startDateTime.getTime()) / 1000 / 60;
+
+        return diffMinutes >= 60;
+      }
+
+      return true;
     })();
+
+  /**
+  * Description: แปลง Date object ให้แสดงผลในรูปแบบวันที่ภาษาไทย
+  * Input : date - วันที่ Date Object
+  * Output : วันที่ในรูปแบบภาษาไทย
+  * Author: Panyapon Phollert (Ton) 66160086
+  **/
   const formatThaiDate = (date: Date) => {
     const months = [
       "ม.ค.",
@@ -484,11 +559,10 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
         shadow-md transition-all duration-200 cursor-pointer
-        ${
-          selectedDeviceId === device.dec_id
-            ? "border-[#40A9FF] shadow-lg"
-            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-        }`}
+        ${selectedDeviceId === device.dec_id
+                                  ? "border-[#40A9FF] shadow-lg"
+                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-[#00AA1A] flex items-center justify-center">
@@ -527,11 +601,10 @@ export default function BorrowModal({
                               }}
                               className={`flex items-center justify-between mb-2 w-[362px] p-3 rounded-xl border 
                         shadow-md transition-all duration-200 cursor-pointer
-                        ${
-                          selectedDeviceId === device.dec_id
-                            ? "border-[#40A9FF] shadow-lg"
-                            : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
-                        }`}
+                        ${selectedDeviceId === device.dec_id
+                                  ? "border-[#40A9FF] shadow-lg"
+                                  : "border-[#D8D8D8] hover:border-[#40A9FF] hover:shadow-lg"
+                                }`}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="w-5 h-5 rounded-full bg-[#ED1A1A] flex items-center justify-center">
@@ -595,6 +668,8 @@ export default function BorrowModal({
 
                         {start &&
                           end &&
+                          timeStart &&
+                          timeEnd &&
                           isSameDay(start, end) &&
                           !canBorrow && (
                             <p className="text-red-500 text-sm">
@@ -622,11 +697,10 @@ export default function BorrowModal({
                             disabled={!isValid}
                             className={`
     flex-1 rounded-xl py-2 text-white transition
-    ${
-      isValid
-        ? "bg-blue-500 hover:bg-blue-600"
-        : "bg-gray-300 cursor-not-allowed"
-    }
+    ${isValid
+                                ? "bg-blue-500 hover:bg-blue-600"
+                                : "bg-gray-300 cursor-not-allowed"
+                              }
   `}
                           >
                             ยืนยัน
@@ -667,9 +741,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("month")}
-                      className={`${baseClass}  rounded-l-xl ${
-                        active === "month" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass}  rounded-l-xl ${active === "month" ? activeClass : inactiveClass
+                        }`}
                     >
                       Month
                     </button>
@@ -677,9 +750,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("week")}
-                      className={`${baseClass} ${
-                        active === "week" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass} ${active === "week" ? activeClass : inactiveClass
+                        }`}
                     >
                       Week
                     </button>
@@ -687,9 +759,8 @@ export default function BorrowModal({
                     <button
                       type="button"
                       onClick={() => setActive("day")}
-                      className={`${baseClass} rounded-r-xl ${
-                        active === "day" ? activeClass : inactiveClass
-                      }`}
+                      className={`${baseClass} rounded-r-xl ${active === "day" ? activeClass : inactiveClass
+                        }`}
                     >
                       Day
                     </button>
@@ -716,7 +787,7 @@ export default function BorrowModal({
                               {index + 1 <= 31 ? index + 1 : ""}
                             </span>
                             {timeBorrow.map((borrow, idx) =>
-                              (borrow.day === index + 1 && borrow.month === monthShow && borrow.year === yearShow )? (
+                              (borrow.day === index + 1 && borrow.month === monthShow && borrow.year === yearShow) ? (
                                 <div
                                   key={idx}
                                   className="absolute top-10 left-2 right-2 bottom-[10%] w-33.25 h-13

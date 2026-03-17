@@ -11,7 +11,14 @@ import {
   IdParamDto,
   UploadFileDeviceChildPayload,
   UpdateDevicePayload,
+  UpdateDeviceChildPayload,
 } from "./inventory.schema.js";
+
+interface UploadDeviceChildRow {
+  "Asset Code"?: string;
+  "Serial Number"?: string;
+  "Status"?: string;
+}
 
 /**
  * Description: ดึงข้อมูลอุปกรณ์แม่พร้อมอุปกรณ์ลูก
@@ -157,8 +164,14 @@ async function createDeviceChild(payload: CreateDeviceChildPayload) {
 
   if (!parent) throw new Error("Parent device not found");
 
+  // กำหนด dec_has_serial_number จากค่า serial
+  const dataWithFlag = payload.map(item => ({
+    ...item,
+    dec_has_serial_number: Boolean(item.dec_serial_number?.trim()),
+  }));
+
   const newDeviceChilds = await prisma.device_childs.createMany({
-    data: payload
+    data: dataWithFlag
   });
 
   return newDeviceChilds;
@@ -167,12 +180,14 @@ async function createDeviceChild(payload: CreateDeviceChildPayload) {
 /**
  * Description: เพิ่มอุปกรณ์ลูกโดยการอัปโหลดไฟล์ (CSV / Excel)
  * Input     : payload { de_id, filePath } - รหัสอุปกรณ์แม่และตำแหน่งไฟล์
- * Output    : จำนวนอุปกรณ์ลูกที่ถูกเพิ่ม
+ * Output    : message (string) - ข้อความแสดงผลลัพธ์ของการอัปโหลด
  * Logic     :
  *   - อ่านไฟล์ CSV / Excel ด้วย xlsx
  *   - แปลงข้อมูลเป็น JSON
- *   - ค้นหาข้อมูลอุปกรณ์แม่เพื่อนำ Serial Number Prefix มาใช้ตรวจสอบ
- *   - ตรวจสอบ Serial Number แต่ละแถวต้องมีรูปแบบขึ้นต้นด้วย Prefix เดียวกัน
+ *   - ตรวจสอบไฟล์มีข้อมูลและ header ถูกต้อง
+ *   - ตรวจสอบว่าอุปกรณ์แม่ว่ามีอยู่ในระบบ
+ *   - ตรวจสอบว่า Asset Code ในไฟล์
+ *   - ตรวจสอบความถูกต้องของข้อมูลแต่ละแถว
  *   - เพิ่มรายการอุปกรณ์ลูกลงฐานข้อมูล
  *   - ลบไฟล์ออกจาก Server หลังจากอัปโหลดเสร็จ
  * Author    : Thakdanai Makmi (Ryu) 66160355
@@ -180,53 +195,101 @@ async function createDeviceChild(payload: CreateDeviceChildPayload) {
 async function uploadFileDeviceChild(payload: UploadFileDeviceChildPayload) {
   const { de_id, filePath } = payload;
 
-  const workbook = xlsx.readFile(filePath); // อ่านไฟล์ Excel / CSV
-  const sheet = workbook.Sheets[workbook.SheetNames[0]]; // ใช้เฉพาะ sheet แรก
-  const data = xlsx.utils.sheet_to_json(sheet); // แปลงข้อมูล sheet ให้เป็น array
+  try {
+    const fileBuffer = fs.readFileSync(filePath); // อ่านไฟล์จาก path ที่ถูกอัปโหลดมา
+    const workbook = xlsx.read(fileBuffer, { type: "buffer" }); // โหลดไฟล์ด้วย xlsx
 
-  // ค้นหาข้อมูลอุปกรณ์แม่
-  const parent = await prisma.devices.findFirst({
-    where: {
-      de_id,
-      deleted_at: null,
-    },
-    select: {
-      de_serial_number: true,
-    },
-  });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]]; // ใช้เฉพาะ sheet แรก
+    const data = xlsx.utils.sheet_to_json<UploadDeviceChildRow>(sheet); // แปลงข้อมูล sheet ให้เป็น JSON array
 
-  if (!parent) throw new Error("Parent device not found");
+    if (data.length === 0) throw new Error("ไม่มีข้อมูลในไฟล์นี้!"); // ตรวจสอบว่าไฟล์มีข้อมูลหรือไม่
 
-  // วนลูปเพื่อ map ข้อมูลในไฟล์
-  const childs = data.map((row: any) => {
-    const serialNumber = row["Serial Number"]?.trim(); // ดึง Serial Number จากไฟล์
-    const status = row["Status"]?.trim()?.toUpperCase() as $Enums.DEVICE_CHILD_STATUS;
+    const requiredColumns = ["Asset Code", "Serial Number", "Status"]; // คอลัมน์ที่ต้องมีในไฟล์
+    const headers = Object.keys(data[0] as UploadDeviceChildRow); // ดึง header จากแถวแรก
 
-    // ถ้า status ไม่ตรงกับ ENUM
-    if (!Object.values($Enums.DEVICE_CHILD_STATUS).includes(status)) {
-      throw new Error(`Invalid status '${status}'`);
+    // ตรวจสอบว่ามีคอลัมน์ที่ขาดหรือไม่
+    const missingColumns = requiredColumns.filter(
+      (column) => !headers.includes(column)
+    );
+
+    if (missingColumns.length > 0) throw new Error("รูปแบบข้อมูลไม่ถูกต้อง!");
+
+    // ค้นหาข้อมูลอุปกรณ์แม่
+    const parent = await prisma.devices.findFirst({
+      where: {
+        de_id,
+        deleted_at: null,
+      },
+      select: {
+        de_serial_number: true,
+      },
+    });
+
+    if (!parent) throw new Error("ไม่พบอุปกรณ์แม่!");
+
+    // เตรียม Asset Code ทั้งหมดจากไฟล์
+    const assetCodes = data.map(row =>
+      row["Asset Code"]?.trim()?.toUpperCase()
+    ).filter(Boolean) as string[];
+
+    // ค้นหาว่ามี Asset Code ที่ผูกกับอุปกรณ์แม่ตัวอื่นหรือไม่
+    const existing = await prisma.device_childs.findMany({
+      where: {
+        dec_asset_code: {
+          in: assetCodes
+        },
+        NOT: {
+          dec_de_id: de_id
+        },
+      },
+      select: {
+        dec_asset_code: true
+      },
+    });
+
+    if (existing.length > 0) {
+      throw new Error("ไฟล์นี้ไม่ใช่ของอุปกรณ์ตัวนี้!");
     }
 
-    // คืนค่าข้อมูลที่พร้อม insert ลงฐานข้อมูล
-    return {
-      dec_serial_number: row["Serial Number"],
-      dec_asset_code: row["Asset Code"] || null,
-      dec_has_serial_number: Boolean(serialNumber),
-      dec_status: status,
-      dec_de_id: de_id,
-    };
-  });
+    // วนลูปเพื่อ map ข้อมูลในไฟล์
+    const childs = data.map((row, index) => {
+      const assetCode = row["Asset Code"]?.trim()?.toUpperCase();
+      const serialNumber = row["Serial Number"]?.trim(); // ดึง Serial Number จากไฟล์
+      const status = row["Status"]?.trim()?.toUpperCase() as $Enums.DEVICE_CHILD_STATUS;
 
-  // บันทึกลงฐานข้อมูล
-  await prisma.device_childs.createMany({
-    data: childs,
-    skipDuplicates: true, // ข้ามข้อมูลที่ซ้ำ
-  });
+      // ตรวจสอบ asset code ว่าง
+      if (!assetCode) {
+        throw new Error(`Asset Code ว่างที่แถว ${index + 2}`);
+      }
 
-  // ลบไฟล์ออกจาก server
-  fs.unlinkSync(filePath);
+      // ถ้า status ไม่ตรงกับ ENUM
+      if (!status || !Object.values($Enums.DEVICE_CHILD_STATUS).includes(status)) {
+        throw new Error(`สถานะไม่ถูกต้องที่แถว ${index + 2}`);
+      }
 
-  return { inserted: childs.length };
+      // คืนค่าข้อมูลที่พร้อม insert ลงฐานข้อมูล
+      return {
+        dec_serial_number: serialNumber || null,
+        dec_asset_code: assetCode,
+        dec_has_serial_number: Boolean(serialNumber),
+        dec_status: status,
+        dec_de_id: de_id,
+      };
+    });
+
+    // บันทึกลงฐานข้อมูล
+    await prisma.device_childs.createMany({
+      data: childs,
+      skipDuplicates: true, // ข้ามข้อมูลที่ซ้ำ
+    });
+
+    return { message: "อัปโหลดไฟล์สำเร็จ!" }
+  } finally {
+    if (fs.existsSync(filePath)) {
+      // ลบไฟล์ออกจาก server
+      fs.unlinkSync(filePath);
+    }
+  }
 }
 
 /**
@@ -375,6 +438,9 @@ async function getAllDevices() {
     approval_flow_steps,
   ] = await Promise.all([
     prisma.users.findMany({
+       where: {
+        deleted_at: null,
+      },
       select: {
         us_id: true,
         us_firstname: true,
@@ -398,6 +464,9 @@ async function getAllDevices() {
       },
     }),
     prisma.categories.findMany({
+      where: {
+        deleted_at: null
+      },
       select: {
         ca_id: true,
         ca_name: true,
@@ -638,7 +707,7 @@ async function getAllApproves() {
         us_name: string;
       }[];
     }[]
-  >((acc, sec) => {
+  >((acc: { st_sec_id: any; st_dept_id: any; st_name: string; users: any; }[], sec: { sec_name: string; sec_id: any; sec_dept_id: any; }) => {
     const deptMatch = sec.sec_name.match(/^แผนก(.+?)\s+ฝ่ายย่อย/);
     const deptName = deptMatch?.[1]?.trim();
 
@@ -780,6 +849,9 @@ async function getAllWithDevices() {
       category: true,
       section: { include: { department: true } },
       device_childs: {
+        where: {
+          deleted_at: null
+        },
         select: {
           dec_id: true,
           dec_serial_number: true,
@@ -975,17 +1047,91 @@ async function getDefaultsdata() {
 async function getLastAssetCode(params: IdParamDto) {
   const { id } = params;
 
-  return await prisma.device_childs.findFirst({
+  // ดึง asset code ล่าสุด
+  const childs = await prisma.device_childs.findFirst({
     where: {
       dec_de_id: id
     },
     orderBy: {
-      created_at: "desc"
+      dec_asset_code: "desc"
     },
     select: {
       dec_asset_code: true
     }
-  })
+  });
+
+  return childs ? { decAssetCode: childs.dec_asset_code } : null;
+}
+
+/**
+* Description: ดึงข้อมูล status ทั้งหมดของอุปกรณ์ลูก
+* Input     : -
+* Output    : status ทั้งหมดของอุปกรณ์ลูกจาก Enum
+* Author    : Thakdanai Makmi (Ryu) 66160355
+*/
+async function getDeviceChildStatus() {
+  return Object.values($Enums.DEVICE_CHILD_STATUS)
+}
+
+/**
+* Description: อัปเดตข้อมูลอุปกรณ์ลูก
+* Input     : payload - id พร้อมค่าที่ต้องการแก้ไข
+* Output    : รายการอุปกรณ์ลูกที่ถูกอัปเดตแล้ว (id, serial number, status)
+* Author    : Thakdanai Makmi (Ryu) 66160355
+*/
+async function updateDeviceChild(payload: UpdateDeviceChildPayload) {
+  const ids = payload.map(item => item.id); // ดึง id ทั้งหมด
+  // ตรวจสอบว่ามี device child นั้นจริง
+  const existing = await prisma.device_childs.findMany({
+    where: {
+      dec_id: { in: ids }
+    },
+    select: {
+      dec_id: true
+    }
+  });
+  // ไม่พบบางรายการ
+  if (existing.length !== ids.length) {
+    throw new Error("Some device child not found");
+  }
+  // อัปเดต โดยป้องกันการ rollback หากเกิด error
+  await prisma.$transaction(async (tx) => {
+    // วนลูปข้อมจาก payload
+    for (const item of payload) {
+      await tx.device_childs.update({
+        where: {
+          dec_id: item.id
+        },
+        data: {
+          // อัปเดต serialNumber เฉพาะเมื่อมีการส่งมา
+          ...(item.serialNumber !== undefined && {
+            dec_serial_number: item.serialNumber
+          }),
+          // อัปเดต status เฉพาะเมื่อมีการส่งมา
+          ...(item.status !== undefined && {
+            dec_status: item.status
+          })
+        }
+      });
+    }
+  });
+  // ดึงข้อมูลล่าสุดหลัง update
+  const updatedRecords = await prisma.device_childs.findMany({
+    where: { dec_id: { in: ids } },
+    select: {
+      dec_id: true,
+      dec_serial_number: true,
+      dec_status: true
+    }
+  });
+  // แปลงชื่อ field
+  const result = updatedRecords.map(device => ({
+    id: device.dec_id,
+    serialNumber: device.dec_serial_number,
+    status: device.dec_status
+  }));
+
+  return result;
 }
 
 export const inventoryService = {
@@ -1003,5 +1149,7 @@ export const inventoryService = {
   getAllApproves,
   createDevice,
   getDefaultsdata,
-  getLastAssetCode
+  getLastAssetCode,
+  getDeviceChildStatus,
+  updateDeviceChild
 };

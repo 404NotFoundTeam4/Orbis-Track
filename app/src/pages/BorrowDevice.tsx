@@ -5,11 +5,13 @@ import {
   type GetAvailable,
   type GetDeviceForBorrow,
   type DeviceAvailability,
+  type BorrowUsers,
 } from "../services/BorrowService";
 import { useEffect, useState } from "react";
 import { useToast } from "../components/Toast";
 
 interface BorrowForm {
+  borrowerId: number; // ไอดีคนที่จะยืมให้
   dateRange: [Date | null, Date | null];
   quantity: number;
   reason: string;
@@ -74,15 +76,48 @@ const BorrowDevice = () => {
 
   // ดึงข้อมูลอุปกรณ์แม่เมื่อเรนเดอร์หน้าเว็บครั้งแรก
   useEffect(() => {
+    /**
+    * Description: ดึงข้อมูลอุปกรณ์สำหรับการยืมตาม deId
+    * Input : deId - รหัสอุปกรณ์
+    * Output : เก็บข้อมูลใน state
+    * Author: Nontapat Sinhum (Guitar) 66160104
+    **/
     const fetchDevice = async () => {
       if (!deId) return; // ป้องกันการเรียก API ถ้าไม่มี deId
       const res = await borrowService.getDeviceForBorrow(deId);
+      setAvailableCount(res.ready); // เก็บจำนวนอุปกรณ์ (ขณะนี้ว่าง X ชิ้น)
       // เก็บข้อมูลลงใน state
       setDevice(res);
     };
 
     fetchDevice();
   }, [deId]);
+
+  // ดึงข้อมูล user จาก sessionStorage หรือ localStorage
+  const userString = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const user = userString ? JSON.parse(userString) : null;
+
+  // role ที่สามารถยืมให้ผู้อื่นได้
+  const isCanBorrowForOthers = user?.us_role === "STAFF" || user?.us_role === "ADMIN";
+  // เก็บรายชื่อผู้ใช้
+  const [borrowUsers, setBorrowUsers] = useState<BorrowUsers[]>([]);
+
+  /**
+  * Description: ฟังก์ชันสำหรับดึงรายชื่อในการยืมให้ผู้อื่น (ดึงข้อมูลก็ต่อเมื่อ role นั้น สามารถยืมให้ผู้อื่นได้)
+  * Input : -
+  * Output : รายชื่อผู้ใช้
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
+  useEffect(() => {
+    if (!isCanBorrowForOthers) return;
+
+    const fetchBorrowUsers = async () => {
+      const res = await borrowService.getBorrowUsers();
+      setBorrowUsers(res);
+    };
+
+    fetchBorrowUsers();
+  }, [isCanBorrowForOthers]);
 
   if (!device) {
     return null;
@@ -97,7 +132,7 @@ const BorrowDevice = () => {
     
   // รายละเอียดของอุปกรณ์ ที่จะส่งไปให้ BorrowEquipmentModal
   const equipment = {
-    deviceId :deId,
+    deviceId: deId,
     serialNumber: device.de_serial_number,
     name: device.de_name,
     category: device.category?.ca_name ?? "",
@@ -182,8 +217,8 @@ const BorrowDevice = () => {
 
     setAvailableDevices(filtered);
 
-    const readyCount = filtered.filter((d) => d.dec_status === "READY").length;
-    setAvailableCount(readyCount);
+    // const readyCount = filtered.filter((d) => d.dec_status === "READY").length;
+    // setAvailableCount(readyCount);
 
     setSelectedDeviceIds([]);
   };
@@ -209,6 +244,7 @@ const BorrowDevice = () => {
       const borrowEnd = buildDateTime(returnDate, data.returnTime);
 
       const payload = {
+        borrowerId: data.borrowerId, // ไอดีคนที่จะยืมให้
         deviceChilds: selectedDeviceIds, // อุปกรณ์ที่เลือก
         borrowStart: borrowStart.toISOString(),
         borrowEnd: borrowEnd.toISOString(),
@@ -268,8 +304,9 @@ const BorrowDevice = () => {
   };
 
   return (
-    <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] px-[20px] py-[20px]">
-      <div className="space-x-[9px]">
+    <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] p-4">
+      <div className="flex-1">
+      <div className="mb-[8px] space-x-[9px]">
         <Link to="/list-devices" className="text-[#858585]">
           รายการอุปกรณ์
         </Link>
@@ -278,8 +315,8 @@ const BorrowDevice = () => {
         <span className="text-[#000000]">ยืมอุปกรณ์</span>
       </div>
 
-      <div className="flex items-center">
-        <h1 className="text-[36px] font-semibold">ยืมอุปกรณ์</h1>
+      <div className="flex items-center mb-[21px]">
+        <h1 className="text-2xl font-semibold">ยืมอุปกรณ์</h1>
       </div>
       <BorrowEquipmentModal
         mode="borrow-equipment"
@@ -291,7 +328,9 @@ const BorrowDevice = () => {
         onDateTimeChange={handleDateTimeChange} // เปลี่ยนวันเวลา
         onSubmit={handleSubmit}
         onAddToCart={handleAddToCart}
+        borrowUsers={borrowUsers}
       />
+    </div>
     </div>
   );
 };

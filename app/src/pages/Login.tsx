@@ -75,7 +75,7 @@ export function Login() {
       <div className="absolute top-[221px] left-[144px] w-[663px] h-[543px] bg-sky-300/50 rounded-full blur-[200px]"></div>
       <div className="absolute top-[402px] left-[612px] w-[532px] h-[435px] bg-[#D7ABFF]/50 rounded-full blur-[200px]"></div>
       <div className="absolute bottom-20 right-2 w-[450px] h-[450px] bg-[#5292FF]/40 rounded-full blur-[200px]"></div>
-      <div className="z-2 top-[286.88px] left-[95px] absolute w-[447px] h-[288px] rounded-2xl skew-x-6 overflow-hidden shadow-[0px_9px_16.7px_0px_#CDE0FF] rotate-[-5deg]">
+      <div className="hidden 2xl:block absolute z-2 top-[286.88px] left-[95px]  w-[447px] h-[288px] rounded-2xl skew-x-6 overflow-hidden shadow-[0px_9px_16.7px_0px_#CDE0FF] rotate-[-5deg]">
         <img
           src={female}
           alt=""
@@ -84,7 +84,7 @@ export function Login() {
         <div className="absolute top-0 left-0 w-full h-1/2 bg-[#FFFFFF]"></div>
         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-[#F6F6F6]"></div>
       </div>
-      <div className="z-3 top-[477px] left-[395px] absolute w-[447px] h-[288px] rounded-2xl -skew-x-6 overflow-hidden shadow-[0px_9px_16.7px_0px_#CDE0FF] rotate-[5deg]">
+      <div className=" hidden 2xl:block absolute z-3 top-[477px] left-[395px]  w-[447px] h-[288px] rounded-2xl -skew-x-6 overflow-hidden shadow-[0px_9px_16.7px_0px_#CDE0FF] rotate-[5deg]">
         <img
           src={male}
           alt=""

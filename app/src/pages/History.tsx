@@ -41,6 +41,8 @@ import {
   type HistoryIssueStatus,
 } from "../services/HistoryIssueService.ts";
 
+import { metaService, type DropdownOption } from "../services/MetaService";
+
 /**
  * Description: คีย์ของแท็บในหน้า History
  * Input : - (ใช้เป็น union type)
@@ -61,28 +63,10 @@ function classNames(...classNameParts: Array<string | false | undefined | null>)
 
 /**
  * Description: Type ของ option สำหรับ filter สถานะแจ้งซ่อม (DropDown)
- * Input : - (type definition)
- * Output : TypeScript type
+ * ใช้ DropdownOption จาก MetaService แทนการ hardcode
  * Author: Chanwit Muangma (Boom) 66160224
  */
-type RepairStatusOption = {
-  id: "ALL" | HistoryIssueStatus;
-  label: string;
-  value: "" | HistoryIssueStatus;
-};
-
-/**
- * Description: รายการตัวเลือกสถานะแจ้งซ่อม (DropDown) สำหรับแท็บ repair
- * Input : -
- * Output : RepairStatusOption[]
- * Author: Chanwit Muangma (Boom) 66160224
- */
-const repairStatusOptions: readonly RepairStatusOption[] = [
-  { id: "ALL", label: "ทั้งหมด", value: "" },
-  { id: "PENDING", label: "รอรับเรื่อง", value: "PENDING" },
-  { id: "IN_PROGRESS", label: "กำลังซ่อม", value: "IN_PROGRESS" },
-  { id: "COMPLETED", label: "เสร็จสิ้น", value: "COMPLETED" },
-] as const;
+type RepairStatusOption = DropdownOption;
 
 /**
  * Description: ฟิลด์ที่ใช้ sort ในแท็บ "ประวัติการแจ้งซ่อม" (ทำ sort ฝั่งหน้าให้ชัวร์)
@@ -94,15 +78,10 @@ type RepairSortField = "deviceName" | "issueTitle" | "reportedAt" | "assignee" |
 
 /**
  * Description: Type ของ option สำหรับ filter สถานะ (DropDown) ในแท็บ borrow
- * Input : - (type definition)
- * Output : TypeScript type
+ * ใช้ DropdownOption จาก MetaService แทนการ hardcode
  * Author: Chanwit Muangma (Boom) 66160224
  */
-type StatusOption = {
-  id: "ALL" | HistoryBorrowStatus;
-  label: string;
-  value: "" | HistoryBorrowStatus;
-};
+type StatusOption = DropdownOption;
 
 /**
  * Description: รายชื่อ role ที่มีสิทธิ์เห็นแท็บ "ประวัติการอนุมัติ"
@@ -168,22 +147,6 @@ export default function History() {
   };
 
   /**
-   * Description: ตัวเลือกสถานะสำหรับแท็บ borrow
-   * Input : -
-   * Output : StatusOption[]
-   * Author: Chanwit Muangma (Boom) 66160224
-   */
-  const statusOptions: readonly StatusOption[] = [
-    { id: "ALL", label: "ทั้งหมด", value: "" },
-    { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
-    { id: "APPROVED", label: "อนุมัติแล้ว", value: "APPROVED" },
-    { id: "IN_USE", label: "กำลังใช้งาน", value: "IN_USE" },
-    { id: "COMPLETED", label: "คืนแล้ว", value: "COMPLETED" },
-    { id: "OVERDUE", label: "เลยกำหนด", value: "OVERDUE" },
-    { id: "REJECTED", label: "ปฏิเสธ", value: "REJECTED" },
-  ] as const;
-
-  /**
    * Description: state คุมแท็บที่ active
    * Input : - (useState)
    * Output : activeTabKey, setActiveTabKey
@@ -212,12 +175,28 @@ export default function History() {
   const [selectedStatus, setSelectedStatus] = useState<HistoryBorrowStatus | "">("");
 
   /**
+   * Description: ตัวเลือกสถานะสำหรับแท็บ borrow — ดึงจาก API แทนการ hardcode
+   * Input : - (useState + useEffect)
+   * Output : statusOptions (StatusOption[]), repairStatusOptions (RepairStatusOption[])
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
+  const [repairStatusOptions, setRepairStatusOptions] = useState<RepairStatusOption[]>([]);
+
+  useEffect(() => {
+    metaService.getDropdownOptions().then((options) => {
+      setStatusOptions([...options.borrowStatuses]);
+      setRepairStatusOptions([...options.repairStatuses]);
+    });
+  }, []);
+
+  /**
    * Description: state คุม dropdown option ของ status (borrow)
    * Input : - (useState)
    * Output : selectedStatusOption, setSelectedStatusOption
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  const [selectedStatusOption, setSelectedStatusOption] = useState<StatusOption>(statusOptions[0]);
+  const [selectedStatusOption, setSelectedStatusOption] = useState<StatusOption | null>(null);
 
   /**
    * Description: state คุม sort field/direction (borrow)
@@ -360,6 +339,8 @@ export default function History() {
    */
   const [loadingDetailIssueId, setLoadingDetailIssueId] = useState<number | null>(null);
 
+  const [selectedBorrowHistoryViewMode, setSelectedBorrowHistoryViewMode] = useState<HistoryBorrowViewMode>("all");
+
   /**
    * Description: handler รับค่าจาก SearchFilter (repair) แล้วอัปเดต search + reset pagination + เคลียร์การ expand
    * Input : { search: string } (ค่าจาก SearchFilter)
@@ -492,11 +473,12 @@ export default function History() {
       page: currentPage,
       limit: pageSizeLimit,
       search: trimmedSearchText ? trimmedSearchText : undefined,
+      viewMode: selectedBorrowHistoryViewMode,
       status: selectedStatus || undefined,
       sortField,
       sortDirection,
     };
-  }, [currentPage, pageSizeLimit, searchText, selectedStatus, sortField, sortDirection]);
+  }, [currentPage, pageSizeLimit, searchText, selectedStatus, sortField, sortDirection , selectedBorrowHistoryViewMode]);
 
   /**
    * Description: ref เก็บ mock expandId ที่ถูก inject เข้าลิสต์ (กันโดน overwrite จาก response)
@@ -645,6 +627,7 @@ export default function History() {
               employeeCode: detail.requester.employeeCode,
               department_name: detail.requester.department_name,
               section_name: detail.requester.section_name,
+
             },
             deviceSummary: {
               deviceId: detail.device.deviceId,
@@ -1274,14 +1257,130 @@ export default function History() {
     return classNameParts.filter(Boolean).join(" ");
   }
 
+   /**
+   * Description: เปลี่ยนโหมด segment "ทั้งหมด/ของฉัน" และ reset state ที่เกี่ยวข้อง
+   * - เคลียร์ mockExpandIdRef เพื่อกัน inject ticket จาก expandId เก่าปนข้ามโหมด
+   * - reset หน้า + เคลียร์การ expand เพื่อให้ UI ตรงกับผลลัพธ์ใหม่
+   * Input : nextViewMode ("all" | "mine")
+   * Output : void
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const onChangeBorrowHistoryViewMode = (nextViewMode: HistoryBorrowViewMode): void => {
+    setSelectedBorrowHistoryViewMode(nextViewMode);
+
+    setCurrentPage(1);
+    setExpandedTicketIds(new Set());
+
+    mockExpandIdRef.current = null;
+    lastExpandedIdRef.current = null;
+  };
+
+
+  /**
+   * Description: โหมดการมองเห็นข้อมูลของหน้า List ประวัติการยืม-คืน
+   * Rule :
+   * - "all"  = ทั้งหมดตามสิทธิ์ของ role
+   * - "mine" = ของฉัน (บังคับ brt_user_id = current user)
+   * Input : string union
+   * Output : type สำหรับ state และส่งเป็น query ไป backend
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  type HistoryBorrowViewMode = "all" | "mine";
+
+  /**
+   * Description: state โหมดการมองเห็นของหน้า "ประวัติยืม-คืน" (Segment control)
+   * Input : user click segment (ทั้งหมด/ของฉัน)
+   * Output : selectedBorrowHistoryViewMode ("all" | "mine")
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+
+  /**
+   * Description: ดึง role + scope (dept/sec) จาก currentUserProfile ให้รองรับหลายโครงสร้างข้อมูล
+   * Input : currentUserProfile (any)
+   * Output : resolvedUserRole, resolvedDepartmentId, resolvedSectionId
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  function resolveUserRoleAndScopeFromProfile(currentUserProfile: any) {
+    const rawUserRole =
+      currentUserProfile?.us_role ??
+      currentUserProfile?.userRole ??
+      currentUserProfile?.usRole ??
+      currentUserProfile?.role ??
+      currentUserProfile?.user_role ??
+      null;
+
+    const resolvedUserRole =
+      typeof rawUserRole === "string" ? rawUserRole.toUpperCase() : null;
+
+    const rawDepartmentId =
+      currentUserProfile?.us_dept_id ??
+      currentUserProfile?.departmentId ??
+      currentUserProfile?.department?.dept_id ??
+      currentUserProfile?.department?.deptId ??
+      currentUserProfile?.dept_id ??
+      null;
+
+    const rawSectionId =
+      currentUserProfile?.us_sec_id ??
+      currentUserProfile?.sectionId ??
+      currentUserProfile?.section?.sec_id ??
+      currentUserProfile?.section?.secId ??
+      currentUserProfile?.sec_id ??
+      null;
+
+    const resolvedDepartmentId =
+      rawDepartmentId === null || rawDepartmentId === undefined
+        ? null
+        : Number(rawDepartmentId);
+
+    const resolvedSectionId =
+      rawSectionId === null || rawSectionId === undefined
+        ? null
+        : Number(rawSectionId);
+
+    return {
+      resolvedUserRole,
+      resolvedDepartmentId: Number.isFinite(resolvedDepartmentId)
+        ? resolvedDepartmentId
+        : null,
+      resolvedSectionId: Number.isFinite(resolvedSectionId) ? resolvedSectionId : null,
+    };
+  }
+
+  /**
+   * Description: ตัดสินใจว่า role ปัจจุบันควรเห็น segment "ของฉัน/ทั้งหมด" หรือไม่
+   * Rule :
+   * - ADMIN : แสดงเสมอ
+   * - HOD   : แสดงเมื่อมี departmentId
+   * - HOS   : แสดงเมื่อมี departmentId และ sectionId
+   * - STAFF : แสดงเมื่อมี departmentId และ sectionId
+   * - อื่นๆ : ไม่แสดง
+   * Input : currentUserProfile, isLoadingCurrentUserProfile
+   * Output : boolean (true=แสดง segment)
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const canViewBorrowHistoryViewModeSegment = useMemo(() => {
+    if (isLoadingCurrentUserProfile) return false;
+    if (!currentUserProfile) return false;
+
+    const { resolvedUserRole} =
+      resolveUserRoleAndScopeFromProfile(currentUserProfile);
+
+    if (!resolvedUserRole) return false;
+
+    if (resolvedUserRole === "ADMIN" || resolvedUserRole === "HOD" || resolvedUserRole === "HOS" || resolvedUserRole === "STAFF") return true;
+    
+
+    return false;
+  }, [currentUserProfile, isLoadingCurrentUserProfile]);
+
   // ----------------------------
   // Render
   // ----------------------------
 
   return (
     <div className="mx-auto w-full px-[20px] py-[20px]">
-      <div className="text-sm text-neutral-500">ดูประวัติ</div>
-      <div className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900">ประวัติการยืม-คืน</div>
+      <div className="text-2xl font-semibold">ประวัติการยืม-คืน</div>
 
       <div className="mt-5 flex flex-wrap gap-3">
         <TabButton active={activeTabKey === "borrow"} onClick={() => setActiveTabKey("borrow")}>
@@ -1313,9 +1412,65 @@ export default function History() {
           Author: Chanwit Muangma (Boom) 66160224
         */}
         <div className="relative flex-1">
-          {activeTabKey === "borrow" && <SearchFilter onChange={handleSearchChange} />}
-          {activeTabKey === "approve" && <SearchFilter onChange={handleApprovalSearchChange} />}
-          {activeTabKey === "repair" && <SearchFilter onChange={handleRepairSearchChange} />}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            {/* 
+              Description: Segment control สลับโหมด "ทั้งหมด/ของฉัน" เฉพาะแท็บ borrow และ role ที่อนุญาต
+              Input : activeTabKey, isLoadingCurrentUserProfile, canViewBorrowHistoryViewModeSegment
+              Output : ReactNode (Segment หรือ null)
+              Author: Chanwit Muangma (Boom) 66160224
+            */}
+            {activeTabKey === "borrow" &&
+              !isLoadingCurrentUserProfile &&
+              canViewBorrowHistoryViewModeSegment && (
+                <div className="inline-flex rounded-full bg-[#D9D9D9] p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChangeBorrowHistoryViewMode("all");
+                      setCurrentPage(1);
+                      setExpandedTicketIds(new Set());
+                    }}
+                    className={[
+                      "rounded-full px-4 py-2 text-sm font-medium transition",
+                      selectedBorrowHistoryViewMode === "all"
+                        ? "bg-white text-neutral-900 shadow-sm"
+                        : "text-neutral-600 hover:text-neutral-900",
+                    ].join(" ")}
+                  >
+                    ทั้งหมด
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChangeBorrowHistoryViewMode("mine");
+                      setCurrentPage(1);
+                      setExpandedTicketIds(new Set());
+                    }}
+                    className={[
+                      "rounded-full px-4 py-2 text-sm font-medium transition",
+                      selectedBorrowHistoryViewMode === "mine"
+                        ? "bg-white text-neutral-900 shadow-sm"
+                        : "text-neutral-600 hover:text-neutral-900",
+                    ].join(" ")}
+                  >
+                    ของฉัน
+                  </button>
+                </div>
+              )}
+
+            {/* 
+              Description: Search เปลี่ยนตามแท็บ (ให้อยู่ถัดจาก segment และกินพื้นที่ที่เหลือ)
+              Input : activeTabKey
+              Output : ReactNode
+              Author: Chanwit Muangma (Boom) 66160224
+            */}
+            <div className="flex-1">
+              {activeTabKey === "borrow" && <SearchFilter onChange={handleSearchChange} />}
+              {activeTabKey === "approve" && <SearchFilter onChange={handleApprovalSearchChange} />}
+              {activeTabKey === "repair" && <SearchFilter onChange={handleRepairSearchChange} />}
+            </div>
+          </div>
         </div>
 
         <div className="md:ml-auto">
@@ -1434,7 +1589,7 @@ export default function History() {
                 )}
 
                 {!isLoadingRepairList && repairItemsForRender.length === 0 && (
-                  <div className="px-2 py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
+                  <div className="px-[30px] py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
                 )}
 
                 {!isLoadingRepairList &&
@@ -1465,9 +1620,8 @@ export default function History() {
                   <button
                     type="button"
                     onClick={() => setRepairCurrentPage(1)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      repairCurrentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${repairCurrentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                      }`}
                   >
                     1
                   </button>
@@ -1489,11 +1643,10 @@ export default function History() {
                     <button
                       type="button"
                       onClick={() => setRepairCurrentPage(repairTotalPages)}
-                      className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                        repairCurrentPage === repairTotalPages
-                          ? "border-[#000000] text-[#000000]"
-                          : "border-[#D9D9D9]"
-                      }`}
+                      className={`h-8 min-w-8 px-2 rounded border text-sm ${repairCurrentPage === repairTotalPages
+                        ? "border-[#000000] text-[#000000]"
+                        : "border-[#D9D9D9]"
+                        }`}
                     >
                       {repairTotalPages}
                     </button>
@@ -1779,7 +1932,7 @@ export default function History() {
                 )}
 
                 {!isLoadingList && ticketItems.length === 0 && (
-                  <div className="px-2 py-8 text-sm text-neutral-600"></div>
+                  <div className="px-[30px] py-8 text-sm text-neutral-600">ไม่พบข้อมูล</div>
                 )}
 
                 {!isLoadingList &&
@@ -1810,9 +1963,8 @@ export default function History() {
                   <button
                     type="button"
                     onClick={() => setCurrentPage(1)}
-                    className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                      currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                    }`}
+                    className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === 1 ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                      }`}
                   >
                     1
                   </button>
@@ -1831,9 +1983,8 @@ export default function History() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(totalPages)}
-                      className={`h-8 min-w-8 px-2 rounded border text-sm ${
-                        currentPage === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
-                      }`}
+                      className={`h-8 min-w-8 px-2 rounded border text-sm ${currentPage === totalPages ? "border-[#000000] text-[#000000]" : "border-[#D9D9D9]"
+                        }`}
                     >
                       {totalPages}
                     </button>

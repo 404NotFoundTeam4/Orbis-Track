@@ -25,6 +25,9 @@ type TicketWithRelations = Prisma.borrow_return_ticketsGetPayload<{
               include: {
                 category: true;
                 section: { include: { department: true } };
+                _count: {
+                  select: { accessories: true };
+                };
               };
             };
           };
@@ -72,6 +75,15 @@ type HomeTicketDetailWithRelations = Prisma.borrow_return_ticketsGetPayload<{
   };
 }>;
 
+// จำนวนวันใกล้ถึงวันคืน (ใช้ใน Dashboard)
+const NEAR_RETURN_DAYS = 3;
+
+// จำนวนรายการล่าสุดที่แสดงใน Recent Tickets
+const RECENT_TICKETS_LIMIT = 5;
+
+// จำนวนสูงสุดของ approvers ที่แสดง
+const MAX_APPROVERS_SHOWN = 5;
+
 /**
  * Description: คำนวณสถิติ Dashboard 4 ช่อง (ยืมอยู่, ใกล้คืน, รออนุมัติ, แจ้งซ่อม)
  * Input     : -
@@ -80,16 +92,16 @@ type HomeTicketDetailWithRelations = Prisma.borrow_return_ticketsGetPayload<{
  */
 async function getHomeStats(userId: number) {
   const now = new Date();
-  const next3Days = addDays(now, 3);
+  const next3Days = addDays(now, NEAR_RETURN_DAYS);
 
   const myFilter = {
-      brt_user_id: userId, 
-      deleted_at: null,
-    };
+    brt_user_id: userId,
+    deleted_at: null,
+  };
 
   // นับจำนวนคำร้องในแต่ละสถานะ
   const borrowedCount = await prisma.borrow_return_tickets.count({
-    where: {...myFilter, brt_status: "IN_USE", deleted_at: null },
+    where: { ...myFilter, brt_status: "IN_USE", deleted_at: null },
   });
 
   // คำร้องที่ใกล้ถึงวันคืน (ภายใน 3 วันข้างหน้า)
@@ -104,17 +116,18 @@ async function getHomeStats(userId: number) {
 
   // คำร้องที่รอการอนุมัติ
   const waitingCount = await prisma.borrow_return_tickets.count({
-    where: {...myFilter, brt_status: "PENDING", deleted_at: null },
+    where: { ...myFilter, brt_status: "PENDING", deleted_at: null },
   });
 
   // คำร้องแจ้งซ่อมที่ยังไม่เสร็จสิ้น
   const reportCount = await prisma.ticket_issues.count({
-    where: { ti_status: { not: "COMPLETED" }, 
-    deleted_at: null,
-    ticket: {
-          brt_user_id: userId, // เช็คว่าเป็น Ticket ของเรา
-        }, 
-  },
+    where: {
+      ti_status: { not: "COMPLETED" },
+      deleted_at: null,
+      ticket: {
+        brt_user_id: userId, // เช็คว่าเป็น Ticket ของเรา
+      },
+    },
   });
 
   return {
@@ -134,11 +147,12 @@ async function getHomeStats(userId: number) {
 async function getRecentTickets(userId: number) {
   const tickets: TicketWithRelations[] =
     await prisma.borrow_return_tickets.findMany({
-      take: 5,
+      take: RECENT_TICKETS_LIMIT,
       orderBy: { created_at: "desc" },
-      where: { deleted_at: null
-        , brt_user_id: userId,
-       },
+      where: {
+        deleted_at: null,
+        brt_user_id: userId,
+      },
       include: {
         requester: true,
         ticket_devices: {
@@ -149,6 +163,9 @@ async function getRecentTickets(userId: number) {
                   include: {
                     category: true,
                     section: { include: { department: true } },
+                    _count: {
+                      select: { accessories: true },
+                    },
                   },
                 },
               },
@@ -173,6 +190,7 @@ async function getRecentTickets(userId: number) {
 
     return {
       id: ticket.brt_id,
+      request_date: ticket.created_at?.toISOString() || null,
       status: ticket.brt_status,
       dates: {
         start: ticket.brt_start_date.toISOString(),
@@ -188,18 +206,21 @@ async function getRecentTickets(userId: number) {
         name: mainDevice?.de_name || "Unknown Device",
         // ใช้ serial ของลูก (child) ถ้ามี หรือของแม่ (main)
         serial_number:
-          deviceChild?.dec_serial_number || mainDevice?.de_serial_number || "-",
+          mainDevice?.de_serial_number || deviceChild?.dec_serial_number || "-",
         total_quantity: ticket.brt_quantity,
         category: mainDevice?.category?.ca_name || "-",
         department: cleanDept || "-",
         section: cleanSection || "-",
         description: mainDevice?.de_description || null,
+        accessories: mainDevice?._count?.accessories ?? 0,
         image: mainDevice?.de_images || null,
         max_borrow_days: mainDevice?.de_max_borrow_days || 0,
       },
       requester: {
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
         empcode: ticket.requester.us_emp_code,
+        borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+        borrow_phone: ticket.requester.us_phone,
       },
     };
   });
@@ -227,7 +248,11 @@ async function getTicketDetailById(id: number) {
             include: {
               device: {
                 include: {
-                  accessories: true,
+                  accessories: {
+                    where: {
+                      deleted_at: null
+                    }
+                  },
                 },
               },
             },
@@ -253,10 +278,10 @@ async function getTicketDetailById(id: number) {
             ...(stage.brts_sec_id ? { us_sec_id: stage.brts_sec_id } : {}),
           },
           select: { us_firstname: true, us_lastname: true },
-          take: 5,
+          take: MAX_APPROVERS_SHOWN,
         });
         approvers = potentialApprovers.map(
-          (u) => `${u.us_firstname} ${u.us_lastname}`
+          (u) => `${u.us_firstname} ${u.us_lastname}`,
         );
       }
 
@@ -271,7 +296,7 @@ async function getTicketDetailById(id: number) {
         updated_at: stage.updated_at ? stage.updated_at.toISOString() : null,
         approvers: approvers, // ส่งรายชื่อกลับไปหน้าบ้าน
       };
-    })
+    }),
   );
 
   // หาอุปกรณ์ชิ้นแรกเพื่อดึงข้อมูลอุปกรณ์เสริม (ถ้ามี)
@@ -310,20 +335,16 @@ async function getTicketDetailById(id: number) {
       name: td.child.device.de_name,
       image: td.child.device.de_images,
       current_status: td.child.dec_status,
+
       has_serial_number: Boolean(
-        td.child.dec_serial_number && td.child.dec_serial_number !== "-"
+        td.child.dec_serial_number && td.child.dec_serial_number !== "-",
       ),
     })),
-    accessories:
-      firstDevice?.accessories && firstDevice.accessories.length > 0
-        ? [
-            {
-              acc_id: firstDevice.accessories[0].acc_id,
-              acc_name: firstDevice.accessories[0].acc_name,
-              acc_quantity: firstDevice.accessories[0].acc_quantity,
-            },
-          ]
-        : [],
+    accessories: firstDevice?.accessories?.map(acc => ({
+      acc_id: acc.acc_id,
+      acc_name: acc.acc_name,
+      acc_quantity: acc.acc_quantity,
+    })) ?? [],
     requester: {
       id: ticket.requester.us_id,
       fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
@@ -331,6 +352,8 @@ async function getTicketDetailById(id: number) {
       image: ticket.requester.us_images,
       department: ticket.requester.department?.dept_name || "-",
       us_phone: ticket.requester.us_phone,
+      borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+      borrow_phone: ticket.requester.us_phone,
     },
   };
 }

@@ -388,6 +388,18 @@ export const logBorrowReturnSchema = z.object({
     created_at: z.date().nullable().openapi({ description: "วันที่สร้าง" }),
 })
 
+// โครงสร้างข้อมูลดึงรายชื่อผู้ใช้สำหรับยืมให้ผู้อื่น
+export const getBorrowUsersSchema = z.array(
+    z.object({
+        us_id: z.number(),
+        us_firstname: z.string(),
+        us_lastname: z.string(),
+        us_role: z.string(),
+        us_emp_code: z.string().nullable(),
+        us_phone: z.string()
+    })
+);
+
 export type IdParamDto = z.infer<typeof idParamSchema>;
 export type DeleteCartItemPayload = z.infer<typeof deleteCartItemPayload>;
 export type CartSchema = z.infer<typeof cartSchema>;
@@ -414,4 +426,5 @@ export type GetCartDeviceDetailParamDto = z.infer<typeof getCartDeviceDetailPara
 export type UpdateCartDeviceDetailParamDto = z.infer<typeof updateCartDeviceDetailParamSchema>;
 export type UpdateCartDeviceDetailBodyDto = z.infer<typeof updateCartDeviceDetailBodySchema>;
 export type LogBorrowReturnSchema = z.infer<typeof logBorrowReturnSchema>;
+export type GetBorrowUsersSchema = z.infer<typeof getBorrowUsersSchema>;
 

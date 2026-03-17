@@ -87,10 +87,29 @@ export const GetValidToken = (): string | null => {
  * Function: ClearToken
  * Features:
  *  - ลบ token ออกจากทั้ง sessionStorage และ localStorage
- * 
+ *  - ลบ User ออกจาก localStorage ด้วย
+ *
  * Author: Panyapon Phollert (Ton) 66160086
  */
 export const ClearToken = () => {
   localStorage.removeItem(accessTokenKey);
   sessionStorage.removeItem(accessTokenKey);
+  localStorage.removeItem("User");
+};
+
+/**
+ * Function: ClearAllAuthData
+ * Features:
+ *  - ลบข้อมูลการยืนยันตัวตนทั้งหมดออกจาก storage
+ *  - รวมถึง token, user, และข้อมูลที่เกี่ยวข้องอื่นๆ
+ *
+ * Author: Pakkapon CHomchoey (Tonnam) 66160080
+ */
+export const ClearAllAuthData = () => {
+  localStorage.removeItem(accessTokenKey);
+  sessionStorage.removeItem(accessTokenKey);
+  localStorage.removeItem("User");
+  // Clear any other auth-related items
+  localStorage.removeItem("rememberMe");
+  sessionStorage.removeItem("tempData");
 };

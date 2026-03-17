@@ -8,7 +8,7 @@ export default defineConfig({
     host: true,
     port: 4040,
     proxy: {
-      '/api': {
+      '/api/v1': {
         target: 'http://server:4041',
         changeOrigin: true,
         ws: true,

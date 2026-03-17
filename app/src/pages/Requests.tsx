@@ -8,6 +8,7 @@
  * Author: Pakkapon Chomchoey (Tonnam) 66160080
  */
 import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import SearchFilter from "../components/SearchFilter";
 import Dropdown from "../components/DropDown";
 import RequestItem from "../components/RequestItem";
@@ -28,6 +29,7 @@ import { AlertDialog } from "../components/AlertDialog";
 import { useToast } from "../components/Toast";
 import { socketService } from "../services/SocketService";
 import type { DeviceReturnStatus } from "../components/DeviceReturnModals";
+import { metaService, type DropdownOption } from "../services/MetaService";
 
 const Requests = () => {
   const [searchFilter, setSearchFilter] = useState({ search: "" });
@@ -89,7 +91,7 @@ const Requests = () => {
   }>({
     title: "",
     description: "",
-    onConfirm: async () => { },
+    onConfirm: async () => {},
     tone: "success",
   });
 
@@ -98,24 +100,18 @@ const Requests = () => {
   const [rejectTicketId, setRejectTicketId] = useState<number | null>(null);
   const [rejectLoading, setRejectLoading] = useState(false);
 
-  let statusOptions;
+  // โหลด dropdown options จาก API ตาม role
+  const [statusOptions, setStatusOptions] = useState<DropdownOption[]>([]);
 
-  if (user.us_role === "STAFF") {
-    statusOptions = [
-      { id: "all", label: "ทั้งหมด", value: "" },
-      { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
-      { id: "APPROVED", label: "อนุมัติแล้ว", value: "APPROVED" },
-      { id: "IN_USE", label: "กำลังใช้งาน", value: "IN_USE" },
-      // { id: "REJECTED", label: "ปฏิเสธ", value: "REJECTED" },
-      // { id: "COMPLETED", label: "คืนแล้ว", value: "COMPLETED" },
-      { id: "OVERDUE", label: "เลยกำหนด", value: "OVERDUE" },
-    ];
-  } else {
-    statusOptions = [
-      { id: "all", label: "ทั้งหมด", value: "" },
-      { id: "PENDING", label: "รออนุมัติ", value: "PENDING" },
-    ];
-  }
+  useEffect(() => {
+    metaService.getDropdownOptions().then((options) => {
+      if (user?.us_role === "STAFF") {
+        setStatusOptions([...options.borrowStatusesStaff]);
+      } else {
+        setStatusOptions([...options.borrowStatusesApprover]);
+      }
+    });
+  }, [user?.us_role]);
 
   /**
    * Description: จัดการการคลิก sort บน header
@@ -152,48 +148,82 @@ const Requests = () => {
    * Output : void (อัปเดต tickets state)
    * Author: Pakkapon Chomchoey (Tonnam) 66160080
    */
-  const fetchTickets = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      const params: GetTicketsParams = {
-        page,
-        limit: pageSize,
-      };
+  const fetchTickets = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const params: GetTicketsParams = {
+          page,
+          limit: pageSize,
+        };
 
-      if (statusFilter?.value) {
-        params.status = statusFilter.value as TicketStatus;
+        if (statusFilter?.value) {
+          params.status = statusFilter.value as TicketStatus;
+        }
+
+        if (searchFilter.search) {
+          params.search = searchFilter.search;
+        }
+
+        if (sortField) {
+          params.sortField = sortField;
+          params.sortDirection = sortDirection;
+        }
+
+        const result = await ticketsService.getTickets(params);
+        console.log(result);
+        setTickets(result.data);
+        // ใช้ maxPage จาก backend โดยตรง
+        setTotalPages(result.maxPage || 1);
+        const pendingIds = result.data
+          .filter((ticket) => ticket.status === "PENDING")
+          .map((ticket) => ticket.id);
+        if (pendingIds.length > 0) {
+          void (async () => {
+            try {
+              const details = await Promise.all(
+                pendingIds.map(async (id) => {
+                  try {
+                    const detail = await ticketsService.getTicketById(id);
+                    return [id, detail] as const;
+                  } catch (error) {
+                    console.error(
+                      `Failed to prefetch ticket detail ${id}:`,
+                      error,
+                    );
+                    return null;
+                  }
+                }),
+              );
+              const nextDetails = Object.fromEntries(
+                details.filter(Boolean) as [number, TicketDetail][],
+              );
+              if (Object.keys(nextDetails).length > 0) {
+                setTicketDetails((prev) => ({ ...prev, ...nextDetails }));
+              }
+            } catch (error) {
+              console.error("Failed to prefetch ticket details:", error);
+            }
+          })();
+        }
+        // console.log("DEBUG Pagination:", { totalNum: result.totalNum, maxPage: result.maxPage, data: result.data.length });
+      } catch (err) {
+        console.error("Failed to fetch tickets:", err);
+        setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+      } finally {
+        if (!silent) setLoading(false);
       }
-
-      if (searchFilter.search) {
-        params.search = searchFilter.search;
-      }
-
-      if (sortField) {
-        params.sortField = sortField;
-        params.sortDirection = sortDirection;
-      }
-
-      const result = await ticketsService.getTickets(params);
-      console.log(result);
-      setTickets(result.data);
-      // ใช้ maxPage จาก backend โดยตรง
-      setTotalPages(result.maxPage || 1);
-      // console.log("DEBUG Pagination:", { totalNum: result.totalNum, maxPage: result.maxPage, data: result.data.length });
-    } catch (err) {
-      console.error("Failed to fetch tickets:", err);
-      setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [
-    statusFilter?.value,
-    searchFilter.search,
-    page,
-    pageSize,
-    sortField,
-    sortDirection,
-  ]);
+    },
+    [
+      statusFilter?.value,
+      searchFilter.search,
+      page,
+      pageSize,
+      sortField,
+      sortDirection,
+    ],
+  );
 
   /**
    * Description: ดึงรายละเอียด ticket เมื่อ expand
@@ -307,6 +337,15 @@ const Requests = () => {
       const stageLength = detail?.timeline?.length || 0;
       const isLastStage = currentStage === stageLength;
 
+      if (isLastStage && detail?.devices_available === false) {
+        push({
+          tone: "danger",
+          message: "ไม่สามารถอนุมัติได้",
+          description: "อุปกรณ์ถูกอนุมัติให้คำขออื่นแล้ว",
+        });
+        return;
+      }
+
       // เพิ่ม Validation: ถ้าเป็น Stage สุดท้าย ต้องกรอกสถานที่รับอุปกรณ์
       if (isLastStage) {
         const pLocation = pickupLocations[id] || "";
@@ -357,14 +396,23 @@ const Requests = () => {
             });
 
             // รีเฟรชรายการและรายละเอียด
-            delete ticketDetails[id];
+            setTicketDetails((prev) => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
             fetchTickets();
           } catch (err) {
             console.error("Failed to approve ticket:", err);
+            const serverMessage = axios.isAxiosError(err)
+              ? err.response?.data?.message
+              : undefined;
             push({
               tone: "danger",
               message: "อนุมัติไม่สำเร็จ",
-              description: "เกิดข้อผิดพลาดในการอนุมัติ กรุณาลองใหม่อีกครั้ง",
+              description:
+                serverMessage ||
+                "เกิดข้อผิดพลาดในการอนุมัติ กรุณาลองใหม่อีกครั้ง",
             });
           }
         },
@@ -388,7 +436,7 @@ const Requests = () => {
    */
   const handleReturn = async (
     ticketId: number,
-    devices: DeviceReturnStatus[]
+    devices: DeviceReturnStatus[],
   ) => {
     try {
       await ticketsService.returnTicket(ticketId, devices);
@@ -397,7 +445,11 @@ const Requests = () => {
         message: "รับคืนอุปกรณ์แล้ว",
       });
       // รีเฟรช
-      delete ticketDetails[ticketId];
+      setTicketDetails((prev) => {
+        const next = { ...prev };
+        delete next[ticketId];
+        return next;
+      });
       fetchTickets();
     } catch (err) {
       console.error("Failed to return ticket:", err);
@@ -476,7 +528,11 @@ const Requests = () => {
       setRejectTicketId(null);
 
       // ลบ cache และ refresh
-      delete ticketDetails[ticketId];
+      setTicketDetails((prev) => {
+        const next = { ...prev };
+        delete next[ticketId];
+        return next;
+      });
       fetchTickets();
     } catch (err) {
       console.error("Failed to reject ticket:", err);

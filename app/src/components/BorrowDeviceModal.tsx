@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "./Button";
 import Input from "./Input";
 import { Icon } from "@iconify/react";
 import TimePickerField from "./TimePickerField";
 import { AlertDialog } from "./AlertDialog";
-import type { GetAvailable } from "../services/BorrowService";
+import type { ActiveBorrow, BorrowUsers, GetAvailable } from "../services/BorrowService";
 import { useNavigate } from "react-router-dom";
 import getImageUrl from "../services/GetImage";
 import BorrowModal from "./BorrowDate/BorrowModal";
 import { borrowService } from "../services/BorrowService";
+import DropDown from "./DropDown";
 // โครงสร้างข้อมูลอุปกรณ์
 interface EquipmentDetail {
   serialNumber: string;
@@ -30,6 +31,7 @@ interface EquipmentDetail {
 
 // โครงสร้างข้อมูลฟอร์มการยืมอุปกรณ์
 interface BorrowFormData {
+  borrowerId?: number, // ไอดีคนที่จะยืมให้
   borrower: string;
   phone: string;
   reason: string;
@@ -52,11 +54,9 @@ interface BorrowEquipmentModalProps {
   selectedDeviceIds: number[]; // อุปกรณ์ที่เลือก
   onSelectDevice: (ids: number[]) => void; // เปลี่ยนอุปกรณ์ที่เลือก
   onDateTimeChange: (payload: { startISO: string; endISO: string }) => void; // เปลี่ยนวันเวลา
+  borrowUsers?: BorrowUsers[]; // รายชื่อผู้ใช้
 }
-export interface ActiveBorrow {
-  da_start: string;
-  da_end: string;
-}
+
 type Device = {
   dec_id: number;
   dec_serial_number?: string;
@@ -65,6 +65,7 @@ type Device = {
   activeBorrow?: ActiveBorrow[];
   maxBorrow: number;
 };
+
 const BorrowEquipmentModal = ({
   mode,
   defaultValue,
@@ -76,12 +77,21 @@ const BorrowEquipmentModal = ({
   selectedDeviceIds,
   onSelectDevice,
   onDateTimeChange,
+  borrowUsers
 }: BorrowEquipmentModalProps) => {
-  // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
 
+  // ดึงข้อมูล user จาก sessionStorage หรือ localStorage
+  const userString = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const user = userString ? JSON.parse(userString) : null;
+
+  // role ที่สามารถยืมให้ผู้อื่นได้
+  const isCanBorrowForOthers = user?.us_role === "STAFF" || user?.us_role === "ADMIN";
+
+  // ค่าเริ่มต้นข้อมูลฟอร์มการยืม (ใช้ defaultValue ถ้ามี)
   const initialForm: BorrowFormData = {
-    borrower: defaultValue?.borrower ?? "",
-    phone: defaultValue?.phone ?? "",
+    borrowerId: defaultValue?.borrowerId ?? user?.us_id, // ไอดีคนที่จะยืมให้
+    borrower: defaultValue?.borrower ?? `${user?.us_firstname ?? ""} ${user?.us_lastname ?? ""}`.trim(),
+    phone: defaultValue?.phone ?? user?.us_phone ?? "",
     reason: defaultValue?.reason ?? "",
     placeOfUse: defaultValue?.placeOfUse ?? "",
     quantity: defaultValue?.quantity ?? 1,
@@ -89,10 +99,57 @@ const BorrowEquipmentModal = ({
     borrowTime: defaultValue?.borrowTime ?? "",
     returnTime: defaultValue?.returnTime ?? "",
   };
-
   const [data, setData] = useState<Device[]>([]);
   // ฟอร์มยืมอุปกรณ์
   const [form, setForm] = useState<BorrowFormData>(initialForm);
+
+  /**
+  * Description: ซิงค์ข้อมูลผู้ยืมจาก defaultValue เข้า form state
+  * Input : defaultValue.borrowerId - ไอดีผู้ยืม, defaultValue.borrower - ชื่อผู้ยืม, borrowUsers - รายชื่อผู้ใช้ที่สามารถยืมได้
+  * Output : อัปเดต form state
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  **/
+  useEffect(() => {
+    if (!borrowUsers || borrowUsers.length === 0) return;
+    // ถ้ามี borrowerId ให้ใช้ id เป็นหลัก
+    if (defaultValue?.borrowerId) {
+      // ค้นหาผู้ใช้จาก id
+      const matched = borrowUsers.find(
+        (user) => user.us_id === defaultValue.borrowerId
+      );
+      // ถ้าพบผู้ใช้ อัปเดต form state
+      if (matched) {
+        setForm((prev) => ({
+          ...prev, // คงค่าฟิลด์อื่นไว้
+          borrowerId: matched.us_id, // อัปเดต id
+          borrower: `${matched.us_firstname} ${matched.us_lastname}`, // อัปเดตชื่อเต็ม
+          phone: matched.us_phone, // อัปเดตเบอร์โทรศัพท์
+        }));
+      }
+      return;
+    }
+
+    // ถ้าไม่มีชื่อให้ match
+    if (!defaultValue?.borrower) return;
+    // ตัดช่องว่างและเป็นตัวพิมพ์เล็ก
+    const normalizeName = (name: string) => name.trim().toLowerCase();
+    // แปลงชื่อจาก defaultValue ให้อยู่ในรูปแบบเดียวกัน
+    const borrowerName = normalizeName(defaultValue.borrower);
+    // ค้นหาผู้ใช้ที่ชื่อเต็มตรงกัน
+    const matched = borrowUsers.find(
+      (user) =>
+        normalizeName(`${user.us_firstname} ${user.us_lastname}`) === borrowerName
+    );
+    // ถ้าพบผู้ใช้ อัปเดต form state
+    if (matched) {
+      setForm((prev) => ({
+        ...prev,
+        borrowerId: matched.us_id,
+        borrower: `${matched.us_firstname} ${matched.us_lastname}`,
+        phone: matched.us_phone,
+      }));
+    }
+  }, [defaultValue?.borrowerId, defaultValue?.borrower, borrowUsers]);
 
   // ตัวอ้างอิงในการเปิด / ปิด ของ alert dialog
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
@@ -154,18 +211,6 @@ const BorrowEquipmentModal = ({
       newError.dateRange = "กรุณาเลือกช่วงวันที่ยืม";
     }
 
-    // วันที่เริ่มยืมและวันที่สิ้นสุด
-    const startDate = form.dateRange[0];
-    const endDate = form.dateRange[1] ?? form.dateRange[0];
-
-    if (startDate && endDate && form.borrowTime && form.returnTime) {
-      const sameDay = startDate.toISOString() === endDate.toISOString();
-      // กรณียืมวันเดียว เวลาคืนต้องมากกว่าเวลายืม
-      if (sameDay && form.borrowTime >= form.returnTime) {
-        newError.returnTime = "เวลาที่คืนต้องมากกว่าเวลาที่ยืม";
-      }
-    }
-
     // ตรวจสอบเวลาที่ยืม
     if (!form.borrowTime) {
       newError.borrowTime = "กรุณาระบุช่วงเวลาที่ยืม";
@@ -207,7 +252,6 @@ const BorrowEquipmentModal = ({
    * Output : ส่งข้อมูลไปยัง parent component เพื่อบันทึกลงตะกร้า
    * Author : Thakdanai Makmi (Ryu) 66160355
    **/
-  
   const handleAddToCart = async () => {
     try {
       // ส่งข้อมูลไปยัง parent component
@@ -288,6 +332,13 @@ const BorrowEquipmentModal = ({
   //     onDateTimeChange();
   //   }
   // }, [form.dateRange, form.borrowTime, form.returnTime]);
+
+  /**
+  * Description: รวมวันที่และเวลา ให้กลายเป็น DateTime และส่งค่า ISO string
+  * Input : form.dateRange, form.borrowTime, form.returnTime
+  * Output : เรียกใช้งาน onDateTimeChange
+  * Author: Nontapat Sinhum (Guitar) 66160104
+  **/
   useEffect(() => {
     const startDate = form.dateRange[0];
     const endDate = form.dateRange[1] ?? form.dateRange[0];
@@ -309,10 +360,16 @@ const BorrowEquipmentModal = ({
       endISO: end.toISOString(),
     });
   }, [form.dateRange, form.borrowTime, form.returnTime]);
+
+  /**
+  * Description: ดึงรายการอุปกรณ์ที่สถานะว่าง
+  * Input : equipment.deviceId - รหัสอุปกรณ์หลัก
+  * Output : เก็บรายการอุปกรณ์ลงใน state
+  * Author: Panyapon Phollert (Ton) 66160086
+  **/
   const fetchData = async () => {
     try {
       const res = await borrowService.getAvailable(equipment.deviceId);
-
       setData(res);
     } catch (error) {
       console.error("API error:", error);
@@ -321,7 +378,14 @@ const BorrowEquipmentModal = ({
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [equipment.deviceId]);
+
+  /**
+  * Description: เช็คอุปกรณ์ว่างตามช่วงเวลา
+  * Input : start, end, timeStart, timeEnd, activeBorrow - วันที่เริ่ม, วันที่สิ้นสุด, เวลาที่เริ่ม, เวลาที่สิ้นสุด, สถานะของอุปกรณ์
+  * Output : true - สามารถยืมได้, false - ไม่สามารถยืมได้
+  * Author: Panyapon Phollert (Ton) 66160086
+  **/
   const isBorrowAvailable = (
     start: Date | null,
     end: Date | null,
@@ -329,52 +393,196 @@ const BorrowEquipmentModal = ({
     timeEnd?: string,
     activeBorrow?: ActiveBorrow[] | null,
   ): boolean => {
+    // ยังไม่เลือกวันเวลา
+    if (!start || !end || !timeStart || !timeEnd) return true;
+    // อุปกรณ์นี้ไม่มีประวัติถูกยืม
     if (!activeBorrow || activeBorrow.length === 0) return true;
 
-    const now = new Date();
-
-    const parseTime = (time?: string) => {
-      if (!time) {
-        return {
-          hour: now.getHours(),
-          minute: now.getMinutes(),
-        };
-      }
-      const [hours, minutes] = time.split(":").map(Number);
-      return { hour: hours, minute: minutes };
+    /**
+    * Description: รวมวันเวลา ให้กลายเป็น Date
+    * Input : date - วันที่, time - เวลา
+    * Output : Date object ที่รวมวัน + เวลา
+    * Author: Panyapon Phollert (Ton) 66160086
+    **/
+    const combineDateTime = (date: Date, time: string) => {
+      const [hour, minute] = time.split(":").map(Number); // แยกชั่วโมงและนาที
+      const dateTime = new Date(date);
+      dateTime.setHours(hour, minute, 0, 0);
+      return dateTime;
     };
 
-    const combineDateTime = (date: Date, time?: string) => {
-      const day = new Date(date);
-      const { hour, minute } = parseTime(time);
-      day.setHours(hour, minute, 0, 0);
-      return day;
-    };
+    // เวลาที่ผู้ใช้ต้องการยืม
+    const userStart = combineDateTime(start, timeStart);
+    const userEnd = combineDateTime(end, timeEnd);
 
-    const startDate = start ?? now;
-    const endDate = end ?? now;
-
-    const userStart = combineDateTime(startDate, timeStart);
-    const userEnd = combineDateTime(endDate, timeEnd);
-
+    // ถ้าเวลาเริ่มมากกว่าเวลาสิ้นสุด
     if (userStart > userEnd) return false;
 
+    // ตรวจสอบช่วงเวลาที่ผู้ใช้เลือก ชนกับช่วงเวลาที่ถูกยืมอยู่หรือไม่
     return !activeBorrow.some((borrow) => {
-      const borrowStart = new Date(borrow.da_start);
-      const borrowEnd = new Date(borrow.da_end);
+      const borrowStart = new Date(borrow.start);
+      const borrowEnd = new Date(borrow.end);
       return userStart < borrowEnd && userEnd > borrowStart;
     });
   };
 
-  const readyDevices = (availableDevices ?? []).filter((device) =>
-    isBorrowAvailable(
-      form.dateRange[0],
-      form.dateRange[1],
-      form.borrowTime,
-      form.returnTime,
-      device.activeBorrow,
-    ),
-  );
+  /**
+  * Description: หาอุปกรณ์ที่ว่างในช่วงเวลาที่เลือก (ช่วงเวลานี้มีอุปกรณ์ที่ว่างทั้งหมด X ชิ้น)
+  * Input : form.dateRange, form.borrowTime, form.returnTime
+  * Output : รายการอุปกรณ์ที่สามารถยืมได้
+  * Author: Thakdanai Makmi (Ryu) 66160355
+  **/
+  const readyDevices =
+    form.dateRange[0] && form.dateRange[1] && form.borrowTime && form.returnTime
+      ? (availableDevices ?? [])
+        .filter((devices) => devices.dec_status === "READY")
+        .filter((device) =>
+          isBorrowAvailable(
+            form.dateRange[0],
+            form.dateRange[1],
+            form.borrowTime,
+            form.returnTime,
+            device.availabilities,
+          ),
+        )
+      : [];
+
+  /**
+  * Description: แปลงค่า role จาก enum ให้เป็นชื่อภาษาไทยสำหรับแสดงใน UI
+  * Input: role - ค่า us_role จากฐานข้อมูล (เช่น ADMIN, STAFF)
+  * Output: ชื่อบทบาทภาษาไทย
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const getRoleName = (role: string) => ({
+    EMPLOYEE: "พนักงาน",
+    ADMIN: "ผู้ดูแลระบบ",
+    STAFF: "เจ้าหน้าที่คลัง",
+    HOD: "หัวหน้าแผนก",
+    HOS: "หัวหน้าฝ่ายย่อย",
+    TECHNICAL: "ช่างเทคนิค",
+  }[role] ?? "ไม่พบตำแหน่ง");
+
+  /**
+  * Description: แปลงข้อมูลผู้ใช้ให้อยู่ในรูปแบบที่ DropDown
+  * Input: borrowUsers - รายชื่อผู้ใช้ที่สามารถเลือกยืมให้ได้
+  * Output: Array ของ object ที่มี id, label และ value สำหรับ DropDown
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const listUserOptions = ((borrowUsers ?? []).map((user) => ({
+    id: user.us_id,
+    label: `${user.us_firstname} ${user.us_lastname} (${getRoleName(user.us_role)} / ${user.us_emp_code})`,
+    value: user.us_id,
+  })));
+
+  /**
+  * Description: ค้นหาผู้ใช้ที่ถูกเลือกอยู่ในฟอร์มจาก borrowerId
+  * Input: form.borrowerId - ID ของผู้ใช้ที่เลือกไว้ในฟอร์ม
+  * Output: object ของผู้ใช้ที่ตรงกับ borrowerId
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const selectedUserItem = listUserOptions.find((item) => item.id === form.borrowerId) ?? null;
+
+  /**
+  * Description: อัปเดตข้อมูลในฟอร์มเมื่อมีการเลือกผู้ใช้
+  * Input: item - id ของผู้ใช้ที่ถูกเลือก
+  * Output: อัปเดต state ของฟอร์ม
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const handleSelectBorrower = (item: { id: number }) => {
+    // หาผู้ใช้ที่เลือก
+    const selectedUser = borrowUsers?.find(
+      (user) => user.us_id === item.id
+    );
+
+    if (!selectedUser) return;
+
+    // เปลี่ยนค่าใน state
+    setForm((prev) => ({
+      ...prev,
+      borrowerId: selectedUser.us_id,
+      borrower: `${selectedUser.us_firstname} ${selectedUser.us_lastname}`,
+      phone: selectedUser.us_phone,
+    }));
+  };
+
+  /**
+   * Description: ตรวจสอบว่าช่วงเวลาที่เลือกมีความถูกต้องหรือไม่
+   * Input: form.dateRange - ช่วงเวลาที่เลือก
+   * Output: อัปเดต state ของฟอร์ม
+   * Author : Thakdanai Makmi (Ryu) 66160355
+   */
+  useEffect(() => {
+    const startDate = form.dateRange[0]; // วันที่เริ่ม
+    const endDate = form.dateRange[1] ?? form.dateRange[0]; // วันที่สิ้นสุด
+
+    if (!startDate || !endDate) return;
+    // ถ้าไม่มีเวลาที่เลือก
+    if (!form.borrowTime || !form.returnTime) {
+      // ล้าง error
+      setErrors((prev) => ({
+        ...prev,
+        returnTime: undefined
+      }));
+      return;
+    }
+
+    /**
+    * Description: แปลงเวลาเป็นนาที
+    * Input: time - เวลาในรูปแบบ "HH:mm"
+    * Output: จำนวนนาที
+    * Author : Thakdanai Makmi (Ryu) 66160355
+    */
+    const timeToMinutes = (time: string) => {
+      const [hour, minute] = time.split(":").map(Number);
+      return hour * 60 + minute;
+    };
+
+    const startMin = timeToMinutes(form.borrowTime); // เวลาที่ยืม
+    const endMin = timeToMinutes(form.returnTime); // เวลาที่คืน
+
+    // วันที่ที่เลือก
+    const sameDay =
+      startDate.getFullYear() === endDate.getFullYear() &&
+      startDate.getMonth() === endDate.getMonth() &&
+      startDate.getDate() === endDate.getDate();
+
+    let message = ""; // ข้อความ error
+
+    // เวลาที่คืนต้องมากกว่าเวลาที่ยืม
+    if (sameDay && endMin <= startMin) {
+      message = "เวลาที่คืนต้องมากกว่าเวลาที่ยืม";
+    }
+    // การยืมวันเดียวกัน ต้องเลือกเวลาขั้นต่ำ 1 ชั่วโมง
+    else if (sameDay && endMin - startMin < 60) {
+      message = "การยืมวันเดียวกัน ต้องเลือกเวลาขั้นต่ำ 1 ชั่วโมง";
+    }
+
+    // ถ้ามี error
+    setErrors((prev) => ({
+      ...prev,
+      returnTime: message || undefined
+    }));
+
+  }, [form.borrowTime, form.returnTime, form.dateRange]);
+
+  /**
+  * Description: ตรวจสอบว่าฟอร์มยืมอุปกรณ์มีข้อมูลครบถ้วนหรือไม่
+  * Input: form - ข้อมูลฟอร์มยืมอุปกรณ์
+  * Output: boolean - ถ้ามีข้อมูลครบถ้วนคืนค่า true ถ้าไม่ครบถ้วนคืนค่า false
+  * Author : Thakdanai Makmi (Ryu) 66160355
+  */
+  const isFormValid = useMemo(() => {
+    return Boolean(
+      form.borrower.trim() &&
+      form.phone.trim() &&
+      form.reason.trim() &&
+      form.placeOfUse.trim() &&
+      form.dateRange[0] &&
+      form.borrowTime &&
+      form.returnTime &&
+      !errors.returnTime
+    );
+  }, [form, errors]);
 
   return (
     <div className="flex justify-around items-start gap-[24px] rounded-[16px] w-[1672px] h-auto">
@@ -393,13 +601,27 @@ const BorrowEquipmentModal = ({
             <label className="text-[16px] font-medium">
               ชื่อผู้ยืม <span className="text-[#F5222D]">*</span>
             </label>
-            <Input
-              fullWidth
-              placeholder="กรอกข้อมูลชื่อผู้ยืม"
-              value={form.borrower}
-              onChange={(e) => setForm({ ...form, borrower: e.target.value })}
-              error={errors.borrower}
-            />
+            {
+              !isCanBorrowForOthers ? (
+                <Input
+                  className="disabled:bg-white"
+                  fullWidth
+                  placeholder="กรอกข้อมูลชื่อผู้ยืม"
+                  value={form.borrower}
+                  onChange={(e) => setForm({ ...form, borrower: e.target.value })}
+                  error={errors.borrower}
+                  disabled={!isCanBorrowForOthers}
+                />
+              ) :
+                (
+                  <DropDown
+                    className="w-full"
+                    items={listUserOptions}
+                    value={selectedUserItem}
+                    onChange={handleSelectBorrower}
+                  />
+                )
+            }
           </div>
           {/* เบอร์โทรศัพท์ผู้ยืม */}
           <div className="flex flex-col gap-[4px]">
@@ -407,12 +629,14 @@ const BorrowEquipmentModal = ({
               เบอร์โทรศัพท์ผู้ยืม <span className="text-[#F5222D]">*</span>
             </label>
             <Input
+              className="disabled:bg-white"
               maxLength={10}
               fullWidth
               placeholder="กรอกข้อมูลเบอร์โทรศัพท์ผู้ยืม"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               error={errors.phone}
+              disabled
             />
           </div>
           {/* เหตุผลในการยืม */}
@@ -495,45 +719,45 @@ const BorrowEquipmentModal = ({
             </div>
           </div>
           {/* เวลาที่ยืม - คืน */}
-          <div className="flex gap-[10px]">
-            <div className="flex flex-col gap-[4px]">
-              <label className="text-[16px] font-medium">
-                ช่วงเวลาที่ยืม <span className="text-[#F5222D]">*</span>
-              </label>
-              <TimePickerField
-                width={239}
-                label=""
-                value={form.borrowTime}
-                onChange={(time: string) =>
-                  setForm({ ...form, borrowTime: time })
-                }
-                placeholder="เวลายืม"
-              />
-              {errors.borrowTime && (
-                <span className="text-sm mt-1 text-red-500">
-                  {errors.borrowTime}
-                </span>
-              )}
+          <div className="flex flex-col gap-[4px]">
+            <div className="flex gap-[10px]">
+              <div className="flex flex-col gap-[4px]">
+                <label className="text-[16px] font-medium">
+                  ช่วงเวลาที่ยืม <span className="text-[#F5222D]">*</span>
+                </label>
+                <TimePickerField
+                  width={239}
+                  label=""
+                  value={form.borrowTime}
+                  onChange={(time: string) =>
+                    setForm({ ...form, borrowTime: time })
+                  }
+                  placeholder="เวลายืม"
+                  date={form.dateRange[0]}
+                />
+              </div>
+              <div className="flex flex-col gap-[4px]">
+                <label className="text-[16px] font-medium">
+                  ช่วงเวลาที่คืน <span className="text-[#F5222D]">*</span>
+                </label>
+                <TimePickerField
+                  width={239}
+                  label=""
+                  value={form.returnTime}
+                  onChange={(time: string) =>
+                    setForm({ ...form, returnTime: time })
+                  }
+                  placeholder="เวลาคืน"
+                  date={form.dateRange[1] ?? form.dateRange[0]}
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-[4px]">
-              <label className="text-[16px] font-medium">
-                ช่วงเวลาที่คืน <span className="text-[#F5222D]">*</span>
-              </label>
-              <TimePickerField
-                width={239}
-                label=""
-                value={form.returnTime}
-                onChange={(time: string) =>
-                  setForm({ ...form, returnTime: time })
-                }
-                placeholder="เวลาคืน"
-              />
-              {errors.returnTime && (
-                <span className="text-sm mt-1 text-red-500">
-                  {errors.returnTime}
-                </span>
-              )}
-            </div>
+            {/* ข้อความ error */}
+            {(errors.borrowTime || errors.returnTime) && (
+              <span className="text-sm text-red-500">
+                {errors.borrowTime || errors.returnTime}
+              </span>
+            )}
           </div>
           {
             // เลือกวันที่และเวลายืม-คืน ก่อนจึงจะแสดง
@@ -551,13 +775,14 @@ const BorrowEquipmentModal = ({
           <div className="grid grid-cols-2 gap-[22px]">
             {
               // เทสแสดงรายการอุปกรณ์ที่พร้อมใช้งาน (ให้ผู้ใช้เลือกเอง)
-              readyDevices.map((device) => {
-                // ตรวจสอบว่าอุปกรณ์ที่เลือกอยู่ในรายการที่เลือกอยู่แล้วหรือไม่
-                const checked = selectedDeviceIds.includes(device.dec_id);
-                return (
-                  <label
-                    key={device.dec_id}
-                    className="flex items-center gap-[10px] border border-[#A2A2A2] rounded-[12px] px-[12px] py-[10px] cursor-pointer
+              readyDevices
+                .map((device) => {
+                  // ตรวจสอบว่าอุปกรณ์ที่เลือกอยู่ในรายการที่เลือกอยู่แล้วหรือไม่
+                  const checked = selectedDeviceIds.includes(device.dec_id);
+                  return (
+                    <label
+                      key={device.dec_id}
+                      className="flex items-center gap-[10px] border border-[#A2A2A2] rounded-[12px] px-[12px] py-[10px] cursor-pointer
                                     "
                   >
                     <input
@@ -592,40 +817,21 @@ const BorrowEquipmentModal = ({
             }
           </div>
         </div>
-
-        {/* <div className="flex flex-col gap-[20px]">
-                    
-                    <div className="flex flex-col gap-[7px]">
-                        <h1 className="text-[18px] font-medium">3. เลือกจำนวนอุปกรณ์ที่ต้องการยืม</h1>
-                        <p className="text-[#40A9FF] font-medium">รายละเอียดจำนวนอุปกรณ์</p>
-                    </div>
-                    
-                    <div>
-                        <label className="text-[16px] font-medium">จำนวนอุปกรณ์ <span className="text-[#F5222D]">*</span></label>
-                        <QuantityInput
-                            width={399}
-                            label=""
-                            value={selectedDeviceIds.length}
-                            onChange={(e: number) => setForm({ ...form, quantity: e })}
-                            min={1}
-                            max={equipment.remain} // ไม่เกินจำนวนคงเหลือ
-                        />
-                    </div>
-                </div> */}
-
         {/* ปุ่ม */}
         <div
-          className={`flex gap-[20px] ${mode === "edit-detail" ? "justify-end" : ""}`}
-        >
+          className="flex gap-[20px] justify-end">
           {
             // ถ้าเป็นยืมอุปกรณ์แสดงเพิ่มไปยังรถเข็น
             mode === "borrow-equipment" && (
               <Button
-                disabled={selectedDeviceIds.length === 0}
+                disabled={!isFormValid || selectedDeviceIds.length === 0}
                 type="button"
                 className="!border border-[#008CFF] !text-[#008CFF] !w-[285px] !h-[46px] font-semibold"
                 variant="outline"
-                onClick={handleAddToCart}
+                onClick={() => {
+                  if (!validate()) return;
+                  handleAddToCart();
+                }}
               >
                 <Icon icon="mdi-light:cart" width="36" height="36" />
                 เพิ่มไปยังรถเข็น
@@ -646,7 +852,7 @@ const BorrowEquipmentModal = ({
           )}
           {/* ปุ่มหลัก */}
           <Button
-            disabled={selectedDeviceIds.length === 0}
+            disabled={!isFormValid || selectedDeviceIds.length === 0}
             onClick={handleOpenConfirm}
             type="button"
             className="!w-[155px] !h-[46px] font-semibold"
@@ -660,11 +866,16 @@ const BorrowEquipmentModal = ({
       <div className="flex flex-col gap-[20px] bg-[#FFFFFF] border border-[#BFBFBF] rounded-[16px] w-[600px] min-h-[668px] px-[40px] py-[40px]">
         {/* รูปภาพอุปกรณ์ */}
         <div className="rounded-[16px] w-[520px] h-[118px] overflow-hidden">
-          {equipment.imageUrl && (
+          {equipment.imageUrl ? (
             <img
               className="w-full h-full object-cover"
               src={getImageUrl(equipment.imageUrl)}
             />
+          ) : (
+            <div className="text-[#BFBFBF] flex flex-col items-center gap-2">
+              <Icon icon="mdi:image-outline" width="64" height="64" />
+              <span className="text-sm">ไม่มีรูปภาพ</span>
+            </div>
           )}
         </div>
         {/* รายละเอียดอุปกรณ์ */}
@@ -724,8 +935,7 @@ const BorrowEquipmentModal = ({
             *ยืมได้สูงสุดไม่เกิน {equipment.maxBorrowDays} วัน
           </p>
           <p className="flex justify-center items-center bg-[#00AA1A]/10 rounded-[10px] text-[#00AA1A] min-w-[191px] h-[39px] px-[20px]">
-            ขณะนี้ว่าง{" "}
-            {readyDevices ? readyDevices.length : availableDevices.length} ชิ้น
+            ขณะนี้ว่าง {availableCount} ชิ้น
           </p>
         </div>
       </div>

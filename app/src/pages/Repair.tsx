@@ -7,10 +7,9 @@
  * Author: Rachata Jitjeankhan (Tang) 66160369
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import SearchFilter from "../components/SearchFilter";
 import DropDown from "../components/DropDown";
-import Pagination from "../components/Pagination";
 import { useToast } from "../components/Toast";
 import RepairManagementTable from "../components/RepairManagementTable";
 import {
@@ -40,6 +39,15 @@ const PAGE_SIZE = 10;
 export default function Repair() {
   const { push } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const repairRequestPath = useMemo(() => {
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts.length > 0) {
+      return `/${parts[0]}/repair/request`;
+    }
+    return "/repair/request";
+  }, [location.pathname]);
 
   const [allItems, setAllItems] = useState<RepairItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -152,11 +160,21 @@ export default function Repair() {
    * Author     : Rachata Jitjeankhan (Tang) 66160369
    */
   const handleOpenAction = (item: RepairItem) => {
-    navigate(`/repair/request?mode=fromIssue&issueId=${item.id}`);
+    navigate(`${repairRequestPath}?mode=fromIssue&issueId=${item.id}`, {
+      state: {
+        selectedRepairItem: {
+          issueId: item.id,
+          deviceName: item.device_name,
+          category: item.category,
+          requesterName: item.requester_name,
+          requesterEmpCode: item.requester_emp_code,
+        },
+      },
+    });
   };
 
   const handleOpenOtherDeviceForm = () => {
-    navigate("/repair/request?mode=other");
+    navigate(`${repairRequestPath}?mode=other`);
   };
 
   return (
@@ -199,11 +217,11 @@ export default function Repair() {
         onSort={handleSort}
         getSortIcon={getSortIcon}
         onOpenAction={handleOpenAction}
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
       />
-
-      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
 
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-import { Prisma, TI_RESULT, TI_STATUS } from "@prisma/client";
+import { BRT_STATUS, DEVICE_CHILD_STATUS, Prisma, TI_RESULT, TI_STATUS } from "@prisma/client";
 import { HttpStatus } from "../../../core/http-status.enum.js";
 import type { PaginatedResult } from "../../../core/paginated-result.interface.js";
 import { HttpError } from "../../../errors/errors.js";
@@ -10,6 +10,11 @@ import type {
   RepairItemDto,
   RepairPrefillDto,
 } from "./repair.schema.js";
+
+type IssueDeviceCountRow = {
+  id_ti_id: number;
+  total: bigint;
+};
 
 /**
  * Description: Service สำหรับจัดการข้อมูลงานซ่อม
@@ -28,9 +33,23 @@ type SortField =
 type SortDirection = "asc" | "desc";
 
 export class RepairService {
-  private buildWhere(query: GetRepairQuery): Prisma.ticket_issuesWhereInput {
+  private buildWhere(
+    query: GetRepairQuery,
+    currentUser?: AccessTokenPayload,
+  ): Prisma.ticket_issuesWhereInput {
+    if (!currentUser?.sub) {
+      throw new HttpError(HttpStatus.UNAUTHORIZED, "กรุณาเข้าสู่ระบบ");
+    }
+
     const where: Prisma.ticket_issuesWhereInput = {
       deleted_at: null,
+      ticket: {
+        is: {
+          deleted_at: null,
+          brt_status: BRT_STATUS.IN_USE,
+          brt_user_id: currentUser.sub,
+        },
+      },
     };
 
     if (query.status) {
@@ -49,32 +68,32 @@ export class RepairService {
     return (a: any, b: any) => {
       const aValue =
         sortField === "device_name"
-          ? a.device?.de_name ?? ""
+          ? a.device_name ?? ""
           : sortField === "quantity"
-            ? Math.max(a.issue_devices?.length ?? 0, 1)
+            ? Math.max(a.quantity ?? 0, 1)
             : sortField === "category"
-              ? a.device?.category?.ca_name ?? ""
+              ? a.category ?? ""
               : sortField === "requester"
-                ? `${a.reporter?.us_firstname ?? ""} ${a.reporter?.us_lastname ?? ""}`.trim()
+                ? a.requester_name ?? ""
                 : sortField === "request_date"
-                  ? new Date(a.created_at).getTime()
+                  ? new Date(a.request_date ?? a.created_at).getTime()
                   : sortField === "status"
-                    ? a.ti_status ?? ""
+                    ? a.status ?? a.ti_status ?? ""
                     : "";
 
       const bValue =
         sortField === "device_name"
-          ? b.device?.de_name ?? ""
+          ? b.device_name ?? ""
           : sortField === "quantity"
-            ? Math.max(b.issue_devices?.length ?? 0, 1)
+            ? Math.max(b.quantity ?? 0, 1)
             : sortField === "category"
-              ? b.device?.category?.ca_name ?? ""
+              ? b.category ?? ""
               : sortField === "requester"
-                ? `${b.reporter?.us_firstname ?? ""} ${b.reporter?.us_lastname ?? ""}`.trim()
+                ? b.requester_name ?? ""
                 : sortField === "request_date"
-                  ? new Date(b.created_at).getTime()
+                  ? new Date(b.request_date ?? b.created_at).getTime()
                   : sortField === "status"
-                    ? b.ti_status ?? ""
+                    ? b.status ?? b.ti_status ?? ""
                     : "";
 
       if (aValue === bValue) {
@@ -94,14 +113,14 @@ export class RepairService {
    */
   async getRepairs(
     query: GetRepairQuery,
-    _currentUser?: AccessTokenPayload,
+    currentUser?: AccessTokenPayload,
   ): Promise<PaginatedResult<RepairItemDto>> {
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.max(1, query.limit ?? 10);
     const sortDirection: SortDirection = query.sortDirection ?? "desc";
     const sortField: SortField = query.sortField ?? "request_date";
     const search = query.search?.trim().toLowerCase();
-    const where = this.buildWhere(query);
+    const where = this.buildWhere(query, currentUser);
     const skip = (page - 1) * limit;
 
     const issues = await prisma.ticket_issues.findMany({
@@ -118,6 +137,7 @@ export class RepairService {
       orderBy: [{ ti_id: "desc" }],
     });
 
+    const issueIds = issues.map((item) => item.ti_id);
     const deviceIds = Array.from(new Set(issues.map((item) => item.ti_de_id)));
     const userIds = Array.from(new Set(issues.map((item) => item.ti_reported_by)));
 
@@ -141,8 +161,19 @@ export class RepairService {
       }),
     ]);
 
+    const issueDeviceCounts =
+      issueIds.length > 0
+        ? await prisma.$queryRaw<IssueDeviceCountRow[]>`
+            SELECT id_ti_id, COUNT(*)::bigint AS total
+            FROM issue_devices
+            WHERE deleted_at IS NULL
+              AND id_ti_id = ANY(${issueIds}::int[])
+            GROUP BY id_ti_id
+          `
+        : [];
+
     const categoryIds = Array.from(
-      new Set(devices.map((device) => device.de_ca_id).filter(Boolean)),
+      new Set(devices.map((device) => device.de_ca_id).filter((id): id is number => Boolean(id))),
     );
     const categories = await prisma.categories.findMany({
       where: { ca_id: { in: categoryIds as number[] } },
@@ -152,10 +183,14 @@ export class RepairService {
     const deviceMap = new Map(devices.map((device) => [device.de_id, device]));
     const userMap = new Map(users.map((user) => [user.us_id, user]));
     const categoryMap = new Map(categories.map((category) => [category.ca_id, category.ca_name]));
+    const issueDeviceCountMap = new Map(
+      issueDeviceCounts.map((item) => [item.id_ti_id, Number(item.total)]),
+    );
 
     let enriched = issues.map((issue) => {
       const device = deviceMap.get(issue.ti_de_id);
       const reporter = userMap.get(issue.ti_reported_by);
+      const childDeviceCount = issueDeviceCountMap.get(issue.ti_id) ?? 0;
       const categoryName =
         (device?.de_ca_id ? categoryMap.get(device.de_ca_id) : undefined) ?? "-";
 
@@ -165,7 +200,9 @@ export class RepairService {
         category: categoryName,
         requester_name: `${reporter?.us_firstname ?? ""} ${reporter?.us_lastname ?? ""}`.trim(),
         requester_emp_code: reporter?.us_emp_code ?? null,
-        quantity: 1,
+        quantity: Math.max(childDeviceCount, 1),
+        request_date: issue.created_at,
+        status: issue.ti_status,
       };
     });
 
@@ -285,24 +322,20 @@ export class RepairService {
       throw new HttpError(HttpStatus.UNAUTHORIZED, "กรุณาเข้าสู่ระบบ");
     }
 
-    const device = await prisma.devices.findFirst({
-      where: { de_id: payload.deviceId, deleted_at: null },
-      select: { de_id: true },
-    });
-
-    if (!device) {
-      throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
-    }
+    let resolvedDeviceId = payload.deviceId;
+    let sourceIssueBorrowTicketId: number | null = null;
 
     if (payload.sourceIssueId) {
       const sourceIssue = await prisma.ticket_issues.findFirst({
         where: {
           ti_id: payload.sourceIssueId,
+          ti_reported_by: userId,
           deleted_at: null,
         },
         select: {
           ti_id: true,
           ti_de_id: true,
+          ti_brt_id: true,
         },
       });
 
@@ -313,6 +346,35 @@ export class RepairService {
       if (sourceIssue.ti_de_id !== payload.deviceId) {
         throw new HttpError(HttpStatus.BAD_REQUEST, "อุปกรณ์ไม่ตรงกับรายการอ้างอิง");
       }
+
+      resolvedDeviceId = sourceIssue.ti_de_id;
+      sourceIssueBorrowTicketId = sourceIssue.ti_brt_id ?? null;
+    }
+
+    const device = await prisma.devices.findFirst({
+      where: { de_id: resolvedDeviceId, deleted_at: null },
+      select: { de_id: true },
+    });
+
+    if (!device) {
+      throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
+    }
+
+    if (!payload.sourceIssueId) {
+      const borrowableChildCount = await prisma.device_childs.count({
+        where: {
+          dec_de_id: resolvedDeviceId,
+          dec_status: DEVICE_CHILD_STATUS.READY,
+          deleted_at: null,
+        },
+      });
+
+      if (borrowableChildCount === 0) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "อุปกรณ์นี้ไม่พร้อมให้ยืมและไม่สามารถแจ้งซ่อมจากเมนูอุปกรณ์อื่นได้",
+        );
+      }
     }
 
     const validSubDeviceIds = payload.subDeviceIds ?? [];
@@ -321,7 +383,7 @@ export class RepairService {
       const matchedSubDevices = await prisma.device_childs.findMany({
         where: {
           dec_id: { in: validSubDeviceIds },
-          dec_de_id: payload.deviceId,
+          dec_de_id: resolvedDeviceId,
           deleted_at: null,
         },
         select: { dec_id: true },
@@ -336,10 +398,45 @@ export class RepairService {
     }
 
     const createdIssue = await prisma.$transaction(async (tx) => {
+      let borrowTicketId: number | null = null;
+
+      const activeBorrowTicket = await tx.ticket_devices.findFirst({
+        where: {
+          deleted_at: null,
+          child: {
+            dec_de_id: resolvedDeviceId,
+            deleted_at: null,
+          },
+          ticket: {
+            deleted_at: null,
+            brt_status: BRT_STATUS.IN_USE,
+            brt_user_id: userId,
+          },
+        },
+        select: {
+          td_brt_id: true,
+        },
+      });
+
+      if (activeBorrowTicket) {
+        borrowTicketId = activeBorrowTicket.td_brt_id;
+      }
+
+      if (sourceIssueBorrowTicketId) {
+        borrowTicketId = sourceIssueBorrowTicketId;
+      }
+
+      if (!borrowTicketId) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "ไม่พบรายการยืมที่กำลังใช้งานสำหรับอุปกรณ์นี้",
+        );
+      }
+
       const created = await tx.ticket_issues.create({
         data: {
-          ti_de_id: payload.deviceId,
-          ti_brt_id: null,
+          ti_de_id: resolvedDeviceId,
+          ti_brt_id: borrowTicketId,
           ti_title: payload.subject,
           ti_description: payload.problemDescription,
           ti_reported_by: userId,

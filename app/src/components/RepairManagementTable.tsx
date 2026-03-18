@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import Pagination from "./Pagination";
 import type { RepairItem } from "../services/RepairService";
 
 type SortField =
@@ -17,6 +18,9 @@ type RepairManagementTableProps = {
   onSort: (field: SortField) => void;
   getSortIcon: (field: SortField) => string;
   onOpenAction: (item: RepairItem) => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 };
 
 /**
@@ -34,6 +38,9 @@ export default function RepairManagementTable({
   onSort,
   getSortIcon,
   onOpenAction,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: Readonly<RepairManagementTableProps>) {
   if (loading) {
     return (
@@ -123,6 +130,13 @@ export default function RepairManagementTable({
             </div>
           ))
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          className="mr-0 mb-0 px-6 pb-4 pt-2"
+        />
       </div>
     </div>
   );

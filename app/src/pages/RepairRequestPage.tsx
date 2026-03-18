@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import RepairRequestForm from "../components/RepairRequestForm";
 import { useToast } from "../components/Toast";
 import {
   repairService,
-  type RepairItem,
   type RepairPrefill,
-  type RepairQuery,
 } from "../services/RepairService";
 import { inventoryService, DeviceService, type DeviceChild, type GetInventory } from "../services/InventoryService";
+
+type RepairRequestNavigationState = {
+  selectedRepairItem?: {
+    issueId: number;
+    deviceName: string;
+    category: string;
+    requesterName: string;
+    requesterEmpCode: string | null;
+  };
+};
 
 export default function RepairRequestPage() {
   const navigate = useNavigate();
@@ -19,8 +27,9 @@ export default function RepairRequestPage() {
   const mode = searchParams.get("mode") === "other" ? "other" : "fromIssue";
   const issueIdParam = searchParams.get("issueId");
   const selectedIssueId = issueIdParam ? Number(issueIdParam) : null;
+  const selectedRepairItem = (location.state as RepairRequestNavigationState | null)?.selectedRepairItem;
+  const effectiveIssueId = selectedIssueId ?? selectedRepairItem?.issueId ?? null;
 
-  const [issues, setIssues] = useState<RepairItem[]>([]);
   const [prefill, setPrefill] = useState<RepairPrefill | null>(null);
   const [loading, setLoading] = useState(false);
   const [mainDevices, setMainDevices] = useState<GetInventory[]>([]);
@@ -28,17 +37,9 @@ export default function RepairRequestPage() {
   const [subDevices, setSubDevices] = useState<DeviceChild[]>([]);
   const [selectedSubDeviceIds, setSelectedSubDeviceIds] = useState<number[]>([]);
 
-  const fetchIssues = async () => {
-    const params: RepairQuery = {
-      page: 1,
-      limit: 1000,
-      sortField: "request_date",
-      sortDirection: "desc",
-    };
-    const result = await repairService.getRepairs(params);
-    setIssues(result.data);
-    return result.data;
-  };
+  const availableMainDevices = useMemo(() => {
+    return mainDevices.filter((device) => Number(device.available) > 0);
+  }, [mainDevices]);
 
   const fetchPrefill = async (issueId: number) => {
     setLoading(true);
@@ -59,22 +60,20 @@ export default function RepairRequestPage() {
         const deviceList = await inventoryService.getInventory();
         setMainDevices(deviceList);
 
-        const loadedIssues = await fetchIssues();
-
-        if (selectedIssueId && selectedIssueId > 0) {
-          await fetchPrefill(selectedIssueId);
+        if (effectiveIssueId && effectiveIssueId > 0) {
+          await fetchPrefill(effectiveIssueId);
           return;
         }
 
-        if (mode === "fromIssue" && loadedIssues.length > 0) {
-          const firstIssueId = loadedIssues[0].id;
-          await fetchPrefill(firstIssueId);
+        if (mode === "fromIssue") {
+          setPrefill(null);
+          push({ tone: "danger", message: "ไม่พบรายการอ้างอิงสำหรับแบบฟอร์มแจ้งซ่อม" });
         }
       } catch {
         push({ tone: "danger", message: "ไม่สามารถโหลดข้อมูลแบบฟอร์มแจ้งซ่อมได้" });
       }
     })();
-  }, [selectedIssueId, mode, push]);
+  }, [effectiveIssueId, mode, push]);
 
   useEffect(() => {
     if (!prefill?.device_id) return;
@@ -136,31 +135,47 @@ export default function RepairRequestPage() {
     navigate(repairListPath);
   };
 
+  const isDeviceLocked = mode === "fromIssue";
+  const lockedDeviceId = isDeviceLocked ? prefill?.device_id ?? null : null;
+
   return (
-    <div className="p-5">
-      <div className="mb-5 flex flex-col">
-        <span className="mb-[8px]">แจ้งซ่อม</span>
-        <h1 className="text-2xl font-semibold">ฟอร์มแจ้งซ่อม</h1>
+    <div className="p-4">
+      <div className="space-x-[9px]">
+        <Link
+          to={repairListPath}
+          className="text-[#858585]"
+        >
+          แจ้งซ่อม
+        </Link>
+        <span className="text-[#858585]">&gt;</span>
+        <span className="text-[#000000]">
+          แบบฟอร์มแจ้งซ่อม
+        </span>
       </div>
 
-      <RepairRequestForm
-        mode={mode}
-        issues={issues}
-        prefill={prefill}
-        loadingPrefill={loading}
-        onSelectIssue={(issueId) => {
-          void fetchPrefill(issueId);
-        }}
-        onCancel={handleCancel}
-        onSuccess={handleSuccess}
-        submitLabel="แจ้งซ่อม"
-        selectedSubDeviceIds={selectedSubDeviceIds}
-        mainDevices={mainDevices}
-        selectedMainDeviceId={selectedMainDeviceId}
-        onMainDeviceChange={setSelectedMainDeviceId}
-        subDevices={subDevices}
-        onToggleSubDevice={toggleSubDevice}
-      />
+      <div className="mb-[21px] flex items-center gap-[14px]">
+        <h1 className="text-2xl font-semibold">แจ้งซ่อม</h1>
+      </div>
+
+      <div className="w-full">
+        <RepairRequestForm
+          mode={mode}
+          prefill={prefill}
+          loadingPrefill={loading}
+          isDeviceLocked={isDeviceLocked}
+          lockedDeviceId={lockedDeviceId}
+          onCancel={handleCancel}
+          onSuccess={handleSuccess}
+          submitLabel="แจ้งซ่อม"
+          selectedSubDeviceIds={selectedSubDeviceIds}
+          mainDevices={availableMainDevices}
+          allowedMainDeviceIds={availableMainDevices.map((device) => device.de_id)}
+          selectedMainDeviceId={selectedMainDeviceId}
+          onMainDeviceChange={setSelectedMainDeviceId}
+          subDevices={subDevices}
+          onToggleSubDevice={toggleSubDevice}
+        />
+      </div>
     </div>
   );
 }

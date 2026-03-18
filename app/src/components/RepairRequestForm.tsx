@@ -46,7 +46,7 @@ type RepairRequestFormProps = {
 };
 
 type FormErrors = Partial<
-  Record<"subject" | "problemDescription", string>
+  Record<"subject" | "problemDescription" | "receiveLocation", string>
 >;
 
 const sectionTitleClass = "text-[18px] font-medium text-[#1F1F1F]";
@@ -137,6 +137,7 @@ export default function RepairRequestForm({
 
     if (!subject.trim()) nextErrors.subject = "กรุณาระบุหัวข้อ";
     if (!problemDescription.trim()) nextErrors.problemDescription = "กรุณาระบุรายละเอียดปัญหา";
+    if (!receiveLocation.trim()) nextErrors.receiveLocation = "กรุณาระบุสถานที่รับอุปกรณ์";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -344,10 +345,15 @@ export default function RepairRequestForm({
           <div className="flex flex-col gap-3">
             <label className={fieldLabelClass}>สถานที่รับ</label>
             <textarea
-              className="h-[115px] w-full rounded-[16px] border border-[#D9D9D9] px-[15px] py-[10px] text-[16px] text-[#1F1F1F]"
+              className={`h-[115px] w-full rounded-[16px] border px-[15px] py-[10px] text-[16px] text-[#1F1F1F] ${
+                errors.receiveLocation ? "border-red-500" : "border-[#D9D9D9]"
+              }`}
               value={receiveLocation}
               onChange={(e) => setReceiveLocation(e.target.value)}
             />
+            {errors.receiveLocation && (
+              <span className="text-sm text-red-500">{errors.receiveLocation}</span>
+            )}
           </div>
         </section>
 

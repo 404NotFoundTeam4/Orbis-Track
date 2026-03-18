@@ -11,6 +11,45 @@ import type {
 } from "./dashboard.schema.js";
 
 /**
+ * Description: type สำหรับ filter ตาม role ของผู้ใช้
+ */
+export type UserRoleFilter = {
+  role: string;
+  dept: number | null;
+  sec: number | null;
+};
+
+/**
+ * Description: สร้าง WHERE clause เสริมสำหรับ borrow_return_tickets ตาม role
+ * คืนค่า { clause: string, params: any[] }
+ * - ADMIN / อื่นๆ: ไม่มี filter เพิ่ม
+ * - HOD: กรองตาม dept_id ของ requester
+ * - HOS: กรองตาม sec_id ของ requester
+ */
+function buildBorrowRoleClause(filter: UserRoleFilter, paramIndex: number) {
+  if (filter.role === "HOD" && filter.dept !== null) {
+    return { clause: `AND u.us_dept_id = $${paramIndex}`, params: [filter.dept] };
+  } else if (filter.role === "HOS" && filter.sec !== null) {
+    return { clause: `AND u.us_sec_id = $${paramIndex}`, params: [filter.sec] };
+  }
+  return { clause: "", params: [] };
+}
+
+/**
+ * Description: สร้าง WHERE clause เสริมสำหรับ ticket_issues ตาม role
+ * - HOD: กรองตาม dept_id ของ reporter
+ * - HOS: กรองตาม sec_id ของ reporter
+ */
+function buildIssueRoleClause(filter: UserRoleFilter, paramIndex: number) {
+  if (filter.role === "HOD" && filter.dept !== null) {
+    return { clause: `AND u.us_dept_id = $${paramIndex}`, params: [filter.dept] };
+  } else if (filter.role === "HOS" && filter.sec !== null) {
+    return { clause: `AND u.us_sec_id = $${paramIndex}`, params: [filter.sec] };
+  }
+  return { clause: "", params: [] };
+}
+
+/**
  * Description: คำนวณช่วงวันเริ่มต้นและสิ้นสุดของไตรมาสที่เลือก
  * Input : year (number), quarter (number: 1-4)
  * Output: { start: Date, end: Date }
@@ -59,6 +98,7 @@ const ThaiMonths = [
  */
 async function getIssueStatsByQuarter(
   query: GetIssueStatsQueryDto,
+  filter: UserRoleFilter,
 ): Promise<GetIssueStatsResponseDto> {
   const year = query.year;
   const quarter = query.quarter ?? 0;
@@ -70,25 +110,21 @@ async function getIssueStatsByQuarter(
 
   type MonthRow = { month: number; count: number };
 
-  /**
-   * นับคำร้องแจ้งซ่อมจาก ticket_issues.created_at
-   * - ตัด soft delete ออก
-   * - quarter = 0 หมายถึงทั้งปี
-   */
-  const rows = (await prisma.$queryRaw`
-    SELECT
+  const { clause: roleClause, params: roleParams } = buildIssueRoleClause(filter, 3);
+
+  // base params: year(1), quarter(2)
+  const sql = `SELECT
       EXTRACT(MONTH FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int AS month,
       COUNT(*)::int AS count
     FROM ticket_issues ti
+    JOIN users u ON ti.ti_reported_by = u.us_id
     WHERE ti.deleted_at IS NULL
-      AND EXTRACT(YEAR FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = ${year}
-      AND (
-        ${quarter} = 0 OR
-        EXTRACT(QUARTER FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = ${quarter}
-      )
+      AND EXTRACT(YEAR FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = $1
+      AND ($2 = 0 OR EXTRACT(QUARTER FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = $2)
+      ${roleClause}
     GROUP BY 1
-    ORDER BY 1;
-  `) as MonthRow[];
+    ORDER BY 1`;
+  const rows = (await prisma.$queryRawUnsafe(sql, year, quarter, ...roleParams)) as MonthRow[];
 
   const countMap = new Map<number, number>();
   for (const row of rows) {
@@ -172,24 +208,23 @@ export async function updateOverdueTickets() {
 // New Dashboard Statistics Functions
 // ==========================================
 
-export async function getBorrowStats(query: DashboardQueryDto): Promise<GetBorrowStatsResponseDto> {
+export async function getBorrowStats(query: DashboardQueryDto, filter: UserRoleFilter): Promise<GetBorrowStatsResponseDto> {
   const { year, quarter = 0 } = query;
+  const { clause: roleClause, params: roleParams } = buildBorrowRoleClause(filter, 3);
 
   type MonthRow = { month: number; count: number };
-  const rows = (await prisma.$queryRaw`
-    SELECT
+  const sql = `SELECT
       EXTRACT(MONTH FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int AS month,
       COUNT(*)::int AS count
     FROM borrow_return_tickets brt
+    JOIN users u ON brt.brt_user_id = u.us_id
     WHERE brt.deleted_at IS NULL
-      AND EXTRACT(YEAR FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${year}
-      AND (
-        ${quarter} = 0 OR
-        EXTRACT(QUARTER FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${quarter}
-      )
+      AND EXTRACT(YEAR FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = $1
+      AND ($2 = 0 OR EXTRACT(QUARTER FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = $2)
+      ${roleClause}
     GROUP BY 1
-    ORDER BY 1;
-  `) as MonthRow[];
+    ORDER BY 1`;
+  const rows = (await prisma.$queryRawUnsafe(sql, year, quarter, ...roleParams)) as MonthRow[];
 
   const countMap = new Map<number, number>();
   for (const row of rows) {
@@ -209,29 +244,28 @@ export async function getBorrowStats(query: DashboardQueryDto): Promise<GetBorro
   return { year, points };
 }
 
-export async function getMostBorrowedEquipmentStats(query: DashboardQueryDto): Promise<GetMostBorrowedStatsResponseDto> {
+export async function getMostBorrowedEquipmentStats(query: DashboardQueryDto, filter: UserRoleFilter): Promise<GetMostBorrowedStatsResponseDto> {
   const { year, quarter = 0 } = query;
+  const { clause: roleClause, params: roleParams } = buildBorrowRoleClause(filter, 3);
 
   type MostBorrowedRow = { device_name: string; count: number };
   
-  const rows = (await prisma.$queryRaw`
-    SELECT
+  const sql = `SELECT
       d.de_name AS device_name,
       COUNT(td.td_id)::int AS count
     FROM borrow_return_tickets brt
+    JOIN users u ON brt.brt_user_id = u.us_id
     JOIN ticket_devices td ON brt.brt_id = td.td_brt_id
     JOIN device_childs dc ON td.td_dec_id = dc.dec_id
     JOIN devices d ON dc.dec_de_id = d.de_id
     WHERE brt.deleted_at IS NULL
-      AND EXTRACT(YEAR FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${year}
-      AND (
-        ${quarter} = 0 OR
-        EXTRACT(QUARTER FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = ${quarter}
-      )
+      AND EXTRACT(YEAR FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = $1
+      AND ($2 = 0 OR EXTRACT(QUARTER FROM (brt.brt_start_date AT TIME ZONE 'Asia/Bangkok'))::int = $2)
+      ${roleClause}
     GROUP BY 1
     ORDER BY count DESC
-    LIMIT 5;
-  `) as MostBorrowedRow[];
+    LIMIT 5`;
+  const rows = (await prisma.$queryRawUnsafe(sql, year, quarter, ...roleParams)) as MostBorrowedRow[];
 
   const points = rows.map((row) => {
     return {
@@ -243,26 +277,25 @@ export async function getMostBorrowedEquipmentStats(query: DashboardQueryDto): P
   return { year, points };
 }
 
-export async function getRepairStatusStats(query: DashboardQueryDto): Promise<GetRepairStatusStatsResponseDto> {
+export async function getRepairStatusStats(query: DashboardQueryDto, filter: UserRoleFilter): Promise<GetRepairStatusStatsResponseDto> {
   const { year, quarter = 0 } = query;
+  const { clause: roleClause, params: roleParams } = buildIssueRoleClause(filter, 3);
 
-  type StatusRow = { month: number; status: TI_STATUS; count: number };
+  type StatusRow = { month: number; status: string; count: number };
 
-  const rows = (await prisma.$queryRaw`
-    SELECT
+  const sql = `SELECT
       EXTRACT(MONTH FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int AS month,
       ti.ti_status AS status,
       COUNT(*)::int AS count
     FROM ticket_issues ti
+    JOIN users u ON ti.ti_reported_by = u.us_id
     WHERE ti.deleted_at IS NULL
-      AND EXTRACT(YEAR FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = ${year}
-      AND (
-        ${quarter} = 0 OR
-        EXTRACT(QUARTER FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = ${quarter}
-      )
+      AND EXTRACT(YEAR FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = $1
+      AND ($2 = 0 OR EXTRACT(QUARTER FROM (ti.created_at AT TIME ZONE 'Asia/Bangkok'))::int = $2)
+      ${roleClause}
     GROUP BY 1, 2
-    ORDER BY 1;
-  `) as StatusRow[];
+    ORDER BY 1`;
+  const rows = (await prisma.$queryRawUnsafe(sql, year, quarter, ...roleParams)) as StatusRow[];
 
   const monthIndices =
     quarter === 0
@@ -291,11 +324,31 @@ export async function getRepairStatusStats(query: DashboardQueryDto): Promise<Ge
   return { year, points };
 }
 
-export async function getOverdueTicketsTable(): Promise<GetOverdueTableResponseDto> {
+type OverdueTableFilter = {
+  role: string;
+  dept: number | null;
+  sec: number | null;
+};
+
+export async function getOverdueTicketsTable(filter: OverdueTableFilter): Promise<GetOverdueTableResponseDto> {
+  const { role, dept, sec } = filter;
+
+  // สร้าง where clause สำหรับ filter requester ตาม role
+  const requesterWhere: Record<string, any> = {};
+  if (role === "HOD" && dept !== null) {
+    // HOD เห็นเฉพาะในแผนกของตนเอง
+    requesterWhere.us_dept_id = dept;
+  } else if (role === "HOS" && sec !== null) {
+    // HOS เห็นเฉพาะในฝ่ายย่อยของตนเอง
+    requesterWhere.us_sec_id = sec;
+  }
+  // ADMIN และ role อื่นๆ ไม่มี filter (เห็นทั้งหมด)
+
   const overdueTickets = await prisma.borrow_return_tickets.findMany({
     where: {
       brt_status: BRT_STATUS.OVERDUE,
       deleted_at: null,
+      requester: Object.keys(requesterWhere).length > 0 ? requesterWhere : undefined,
     },
     include: {
       requester: {

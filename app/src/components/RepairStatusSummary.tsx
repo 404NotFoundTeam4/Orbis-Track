@@ -88,7 +88,7 @@ const RepairStatusSummary = ({
             }}
         >
             {/* Header */}
-            <h2 className="text-center text-[18px] font-semibold mb-4">
+            <h2 className="text-left text-[20px] font-bold mb-4">
                 {title}
             </h2>
             {/* Graph */}

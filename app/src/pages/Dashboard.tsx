@@ -106,21 +106,7 @@ export default function Dashboard() {
   );
   const [overdueTableData, setOverdueTableData] = useState<OverdueTicket[]>([]);
 
-  /**
-   * Description: state สำหรับเก็บจำนวนอุปกรณ์ย่อยสะสม
-   * Input : -
-   * Output: deviceTotal, setDeviceTotal
-   * Author: Nontapat Sinthum (Guitar) 66160104
-   */
-  const [deviceTotal, setDeviceTotal] = useState<number>(0);
 
-  /**
-   * Description: state สำหรับบอกสถานะการโหลดข้อมูลของหน้า Dashboard
-   * Input : -
-   * Output: loading, setLoading
-   * Author: Nontapat Sinthum (Guitar) 66160104
-   */
-  const [loading, setLoading] = useState(false);
 
   /**
    * Description: ดึงข้อมูล Dashboard ใหม่ทุกครั้งเมื่อปีหรือไตรมาสเปลี่ยน
@@ -133,13 +119,10 @@ export default function Dashboard() {
     const quarter = quarterItem?.value ?? 0;
 
     let cancelled = false;
-
     const load = async () => {
       try {
-        setLoading(true);
-
         const [
-          deviceRes,
+          _deviceRes,
           issueRes,
           borrowMonthRes,
           mostBorrowedRes,
@@ -155,11 +138,8 @@ export default function Dashboard() {
         ]);
 
         if (!cancelled) {
-          // old format stats (removed lineData mapping since we're replacing it)
-          setDeviceTotal(deviceRes.total);
+          // stats
           setIssueLineData(issueRes.points);
-
-          // new format stats
           setBorrowMonthData(borrowMonthRes.points);
           setMostBorrowedData(mostBorrowedRes.points);
           setRepairStatusData(repairStatusRes.points);
@@ -169,14 +149,11 @@ export default function Dashboard() {
         console.error("load dashboard stats error:", exception);
         if (!cancelled) {
           setIssueLineData([]);
-          setDeviceTotal(0);
           setBorrowMonthData([]);
           setMostBorrowedData([]);
           setRepairStatusData([]);
           setOverdueTableData([]);
         }
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     };
 
@@ -210,21 +187,19 @@ export default function Dashboard() {
     ];
   }, [repairStatusData]);
 
-  /**
-   * Description: ค่าปีที่ใช้จริงในการ query หากยังไม่ได้เลือกจะใช้ปีปัจจุบัน
-   * Input : yearItem
-   * Output: year
-   * Author: Nontapat Sinthum (Guitar) 66160104
-   */
-  const year = yearItem?.value ?? new Date().getFullYear();
 
   /**
-   * Description: ค่าไตรมาสที่ใช้จริงในการ query หากยังไม่ได้เลือกจะใช้ทั้งปี
-   * Input : quarterItem
-   * Output: quarter
+   * Description: คำนวณยอดรวมของข้อมูลในกราฟเพื่อแสดงบน badge
    * Author: Nontapat Sinthum (Guitar) 66160104
    */
-  const quarter = quarterItem?.value ?? 0;
+  const totalBorrow = useMemo(
+    () => borrowMonthData.reduce((acc, curr) => acc + curr.value, 0),
+    [borrowMonthData],
+  );
+  const totalIssue = useMemo(
+    () => issueLineData.reduce((acc, curr) => acc + curr.value, 0),
+    [issueLineData],
+  );
 
   /**
    * Description: ข้อความช่วงเวลาที่ใช้แสดงบนการ์ดสถิติ
@@ -232,16 +207,6 @@ export default function Dashboard() {
    * Output: string
    * Author: Nontapat Sinthum (Guitar) 66160104
    */
-  const periodText = `ปี ${year} / ${quarter === 0 ? "ทั้งปี" : `ไตรมาส ${quarter}`}${loading ? " (กำลังโหลด...)" : ""}`;
-
-  /**
-   * Description: ข้อความจำนวนอุปกรณ์ที่ใช้แสดงบน badge ของการ์ด
-   * Input : deviceTotal
-   * Output: string
-   * Author: Nontapat Sinthum (Guitar) 66160104
-   */
-  const deviceText = `จำนวนอุปกรณ์ ${deviceTotal.toLocaleString()} ชิ้น`;
-
   return (
     <div className="w-full px-[20px] py-[20px] ">
       <div className="text-sm text-[#000000]">แดชบอร์ด</div>
@@ -290,7 +255,7 @@ export default function Dashboard() {
           <div className="">
             <BorrowStatsLineCard
               title="สถิติการยืม (รายเดือนปีเต็ม)"
-              badgeText="รายปี"
+              badgeText={`จำนวนอุปกรณ์ ${totalBorrow.toLocaleString()} ชิ้น`}
               badgeBgColor="#E6F7FF"
               data={borrowMonthData}
               width={982}
@@ -313,7 +278,7 @@ export default function Dashboard() {
           <div>
             <BorrowStatsLineCard
               title="สถิติการแจ้งปัญหา"
-              badgeText="จำนวนอุปกรณ์ ชิ้น"
+              badgeText={`จำนวนอุปกรณ์ ${totalIssue.toLocaleString()} ชิ้น`}
               badgeBgColor="#E6F7FF"
               data={issueLineData}
               width={982}

@@ -60,7 +60,7 @@ const maxDomain = getSmartMax(maxValue);
       className="bg-white border border-[#E5E7EB] rounded-[20px] px-10 py-8"
       style={{ width: `${width}px`, height: `${height}px` }}
     >
-      <h2 className="text-[22px] font-bold text-[#1F2937] mb-8">{title}</h2>
+      <h2 className="text-[20px] font-bold text-[#1F2937] mb-8">{title}</h2>
 
       {total === 0 ? (
         <div className="flex justify-center items-center h-[80%] text-gray-400">

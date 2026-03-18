@@ -5,6 +5,7 @@ import {
   getIssueStatsQuerySchema,
   dashboardQuerySchema,
 } from "./dashboard.schema.js";
+import { AuthRequest } from "../auth/auth.schema.js";
 
 /**
  * Description: Controller สำหรับ Dashboard Issue APIs
@@ -20,12 +21,14 @@ export class dashboardIssueController extends BaseController {
    * Author: Nontapat Sinhum (Guitar) 66160104
    */
   async getIssueStats(
-    req: Request,
+    req: AuthRequest,
     _res: Response,
     _next: NextFunction
   ) {
+    if (!req.user) throw new Error("Unauthorized");
     const query = getIssueStatsQuerySchema.parse(req.query);
-    const data = await dashboardIssueService.getIssueStatsByQuarter(query);
+    const { role, dept, sec } = req.user;
+    const data = await dashboardIssueService.getIssueStatsByQuarter(query, { role, dept, sec });
     return { data };
   }
 
@@ -40,41 +43,51 @@ export class dashboardIssueController extends BaseController {
   }
 
   async getBorrowStats(
-    req: Request,
+    req: AuthRequest,
     _res: Response,
     _next: NextFunction
   ) {
+    if (!req.user) throw new Error("Unauthorized");
     const query = dashboardQuerySchema.parse(req.query);
-    const data = await dashboardDataService.getBorrowStats(query);
+    const { role, dept, sec } = req.user;
+    const data = await dashboardDataService.getBorrowStats(query, { role, dept, sec });
     return { data };
   }
 
   async getMostBorrowedEqStats(
-    req: Request,
+    req: AuthRequest,
     _res: Response,
     _next: NextFunction
   ) {
+    if (!req.user) throw new Error("Unauthorized");
     const query = dashboardQuerySchema.parse(req.query);
-    const data = await dashboardDataService.getMostBorrowedEquipmentStats(query);
+    const { role, dept, sec } = req.user;
+    const data = await dashboardDataService.getMostBorrowedEquipmentStats(query, { role, dept, sec });
     return { data };
   }
 
   async getRepairStatusStats(
-    req: Request,
+    req: AuthRequest,
     _res: Response,
     _next: NextFunction
   ) {
+    if (!req.user) throw new Error("Unauthorized");
     const query = dashboardQuerySchema.parse(req.query);
-    const data = await dashboardDataService.getRepairStatusStats(query);
+    const { role, dept, sec } = req.user;
+    const data = await dashboardDataService.getRepairStatusStats(query, { role, dept, sec });
     return { data };
   }
 
   async getOverdueTable(
-    _req: Request,
+    req: AuthRequest,
     _res: Response,
     _next: NextFunction
   ) {
-    const data = await dashboardDataService.getOverdueTicketsTable();
+    if (!req.user) {
+      throw new Error("Unauthorized");
+    }
+    const { role, dept, sec } = req.user;
+    const data = await dashboardDataService.getOverdueTicketsTable({ role, dept, sec });
     return { data };
   }
 }

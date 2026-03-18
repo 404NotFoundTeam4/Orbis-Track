@@ -58,7 +58,7 @@ export default function BorrowDetailModal({ data, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-8 pb-8 pt-2 flex justify-center">
+        <div className="px-8 pb-8 pt-2 flex justify-center border-t border-gray-100">
           <button
             onClick={onClose}
             className="w-full max-w-[180px] bg-[#40A9FF] hover:bg-[#1890FF] text-white py-3.5 rounded-2xl text-[18px] font-bold transition-all shadow-md active:scale-95"

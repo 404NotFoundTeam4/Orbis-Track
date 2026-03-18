@@ -515,7 +515,7 @@ const Navbar = () => {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 bg-[#FAFAFA] ml-[213px] mt-[100px]">
+        <main className="flex-1 bg-[#FAFAFA] ml-[213px] mt-[100px]  w-[1707px]">
           <Outlet />
         </main>
       </div>

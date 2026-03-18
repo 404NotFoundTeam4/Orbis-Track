@@ -384,10 +384,10 @@ export async function getOverdueTicketsTable(filter: OverdueTableFilter): Promis
     const diffTime = Math.abs(now.getTime() - returnDate.getTime());
     const delayedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const equipments = ticket.ticket_devices.map((td: any) => td.child.device.de_name);
+    const equipments = ticket.ticket_devices.map((td: any) => td.child.device.de_name) as string[];
     const uniqueEquipments = Array.from(new Set(equipments));
     
-    const categories = ticket.ticket_devices.map((td: any) => td.child.device.category?.ca_name);
+    const categories = ticket.ticket_devices.map((td: any) => td.child.device.category?.ca_name) as string[];
     const uniqueCategories = Array.from(new Set(categories)).filter(Boolean);
 
     const assetCodes = ticket.ticket_devices.map((td: any) => td.child.dec_asset_code);

@@ -361,20 +361,9 @@ export class RepairService {
     }
 
     if (!payload.sourceIssueId) {
-      const borrowableChildCount = await prisma.device_childs.count({
-        where: {
-          dec_de_id: resolvedDeviceId,
-          dec_status: DEVICE_CHILD_STATUS.READY,
-          deleted_at: null,
-        },
-      });
-
-      if (borrowableChildCount === 0) {
-        throw new HttpError(
-          HttpStatus.BAD_REQUEST,
-          "อุปกรณ์นี้ไม่พร้อมให้ยืมและไม่สามารถแจ้งซ่อมจากเมนูอุปกรณ์อื่นได้",
-        );
-      }
+      // Note: We don't strictly block reporting if borrowableChildCount is 0, 
+      // because the user might be reporting a damaged item that is currently BORROWED or already DAMAGED.
+      // But we keep a check to ensure the device exists (already done above).
     }
 
     const validSubDeviceIds = payload.subDeviceIds ?? [];
@@ -426,12 +415,8 @@ export class RepairService {
         borrowTicketId = sourceIssueBorrowTicketId;
       }
 
-      if (!borrowTicketId) {
-        throw new HttpError(
-          HttpStatus.BAD_REQUEST,
-          "ไม่พบรายการยืมที่กำลังใช้งานสำหรับอุปกรณ์นี้",
-        );
-      }
+      // Note: borrowTicketId can be null if the item is not currently borrowed by the user 
+      // (e.g. reporting a broken item found in storage)
 
       const created = await tx.ticket_issues.create({
         data: {

@@ -188,10 +188,11 @@ export default function RepairRequestForm({
         images,
       });
       onSuccess();
-    } catch {
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "ไม่สามารถแจ้งซ่อมได้ กรุณาลองใหม่อีกครั้ง";
       push({
         tone: "danger",
-        message: "ไม่สามารถแจ้งซ่อมได้ กรุณาลองใหม่อีกครั้ง",
+        message: errorMessage,
       });
     } finally {
       setSubmitting(false);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Button from "./Button";
 import DropDown from "./DropDown";
+import { useToast } from "./Toast";
 import {
   repairService,
   type RepairPrefill,
@@ -74,6 +75,7 @@ export default function RepairRequestForm({
   subDevices = [],
   onToggleSubDevice,
 }: Readonly<RepairRequestFormProps>) {
+  const { push } = useToast();
   const [category, setCategory] = useState("");
   const [requesterName, setRequesterName] = useState(defaultRequesterName ?? "");
   const [requesterEmpCode, setRequesterEmpCode] = useState(defaultRequesterEmpCode ?? "");
@@ -186,6 +188,11 @@ export default function RepairRequestForm({
         images,
       });
       onSuccess();
+    } catch {
+      push({
+        tone: "danger",
+        message: "ไม่สามารถแจ้งซ่อมได้ กรุณาลองใหม่อีกครั้ง",
+      });
     } finally {
       setSubmitting(false);
     }

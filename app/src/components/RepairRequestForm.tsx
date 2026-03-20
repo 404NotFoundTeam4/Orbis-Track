@@ -46,7 +46,7 @@ type RepairRequestFormProps = {
 };
 
 type FormErrors = Partial<
-  Record<"subject" | "problemDescription", string>
+  Record<"subject" | "problemDescription" | "subDeviceIds", string>
 >;
 
 const sectionTitleClass = "text-[18px] font-medium text-[#1F1F1F]";
@@ -137,6 +137,9 @@ export default function RepairRequestForm({
 
     if (!subject.trim()) nextErrors.subject = "กรุณาระบุหัวข้อ";
     if (!problemDescription.trim()) nextErrors.problemDescription = "กรุณาระบุรายละเอียดปัญหา";
+    if (subDevices.length > 0 && selectedSubDeviceIds.length === 0) {
+      nextErrors.subDeviceIds = "กรุณาเลือกอุปกรณ์ย่อยอย่างน้อย 1 รายการ";
+    }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -260,6 +263,7 @@ export default function RepairRequestForm({
             <div className="inline-flex rounded-[10px] bg-[rgba(0,170,26,0.1)] px-5 py-2 text-[14px] font-medium text-[#00AA1A]">
               {selectedSubDeviceText}
             </div>
+            {errors.subDeviceIds && <span className="text-sm text-red-500">{errors.subDeviceIds}</span>}
           </div>
 
         </section>

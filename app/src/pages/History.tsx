@@ -189,7 +189,12 @@ export default function History() {
    * Output : activeTabKey, setActiveTabKey
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  const [activeTabKey, setActiveTabKey] = useState<TabKey>("borrow");
+  const [activeTabKey, setActiveTabKey] = useState<TabKey>(() => {
+    const requestedTab = new URLSearchParams(location.search).get("tab");
+    if (requestedTab === "repair") return "repair";
+    if (requestedTab === "approve") return "approve";
+    return "borrow";
+  });
 
   // --------------------
   // Borrow states

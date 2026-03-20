@@ -126,13 +126,20 @@ export default function RepairRequestPage() {
     return "/repair";
   }, []);
 
+  const historyRepairPath = useMemo(() => {
+    const path = location.pathname;
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length > 0) return `/${parts[0]}/history?tab=repair`;
+    return "/history?tab=repair";
+  }, [location.pathname]);
+
   const handleCancel = () => {
     navigate(repairListPath);
   };
 
   const handleSuccess = () => {
     push({ tone: "success", message: "แจ้งซ่อมเรียบร้อยแล้ว" });
-    navigate(repairListPath);
+    navigate(historyRepairPath);
   };
 
   const isDeviceLocked = mode === "fromIssue";

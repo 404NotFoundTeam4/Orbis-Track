@@ -16,7 +16,7 @@ import {
   type RepairItem,
   type RepairQuery,
 } from "../services/RepairService";
-import { ticketsService } from "../services/TicketsService";
+import { historyBorrowService } from "../services/HistoryBorrowService";
 import { historyIssueService } from "../services/HistoryIssueService";
 
 type SortField = NonNullable<RepairQuery["sortField"]>;
@@ -123,13 +123,11 @@ export default function Repair() {
         parsedUser?.us_id ?? parsedUser?.state?.user?.us_id ?? null;
 
       const [borrowedTickets, pendingIssues, inProgressIssues] = await Promise.all([
-        ticketsService.getTickets({
-          page: params.page,
+        historyBorrowService.getHistoryBorrowTickets({
+          page: 1,
           limit: 100,
           status: "IN_USE",
           search: params.search,
-          sortField: params.sortField,
-          sortDirection: params.sortDirection,
         }),
         historyIssueService.getHistoryIssueList({ status: "PENDING" }),
         historyIssueService.getHistoryIssueList({ status: "IN_PROGRESS" }),
@@ -146,22 +144,24 @@ export default function Repair() {
         openCountByDevice.set(deviceId, (openCountByDevice.get(deviceId) ?? 0) + amount);
       }
 
-      const borrowedItems: RepairItem[] = borrowedTickets.data.map((ticket) => {
-        const deviceId = ticket.device_summary.deviceId;
-        const borrowedCount = Math.max(ticket.device_summary.total_quantity ?? 1, 1);
+      const borrowedItems: RepairItem[] = borrowedTickets.items
+        .filter((ticket) => (currentUserId ? ticket.requester.userId === currentUserId : true))
+        .map((ticket) => {
+        const deviceId = ticket.deviceSummary.deviceId;
+        const borrowedCount = Math.max(ticket.deviceChildCount ?? 1, 1);
         const openedCount = openCountByDevice.get(deviceId) ?? 0;
 
         return {
-          id: ticket.id,
+          id: ticket.ticketId,
           device_id: deviceId,
-          title: `BORROW-${ticket.id}`,
+          title: `BORROW-${ticket.ticketId}`,
           description: null,
-          device_name: ticket.device_summary.name,
+          device_name: ticket.deviceSummary.deviceName,
           quantity: borrowedCount,
-          category: ticket.device_summary.category ?? "-",
-          requester_name: ticket.requester.fullname,
-          requester_emp_code: ticket.requester.empcode ?? null,
-          request_date: ticket.request_date ?? ticket.created_at ?? new Date().toISOString(),
+          category: ticket.deviceSummary.categoryName ?? "-",
+          requester_name: ticket.requester.fullName,
+          requester_emp_code: ticket.requester.employeeCode ?? null,
+          request_date: ticket.requestDateTime ?? new Date().toISOString(),
           status: "IN_PROGRESS",
           can_repair: openedCount < borrowedCount,
         };

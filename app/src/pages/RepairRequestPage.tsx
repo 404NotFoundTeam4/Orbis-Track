@@ -7,15 +7,23 @@ import {
   type RepairPrefill,
 } from "../services/RepairService";
 import { inventoryService, DeviceService, type DeviceChild, type GetInventory } from "../services/InventoryService";
+import { ticketsService } from "../services/TicketsService";
 
 type RepairRequestNavigationState = {
   selectedRepairItem?: {
-    issueId: number;
+    issueId?: number;
+    deviceId?: number;
     deviceName: string;
     category: string;
     requesterName: string;
     requesterEmpCode: string | null;
   };
+};
+
+type BorrowedMainDevice = {
+  de_id: number;
+  de_name: string;
+  de_serial_number: string;
 };
 
 export default function RepairRequestPage() {
@@ -26,13 +34,17 @@ export default function RepairRequestPage() {
 
   const mode = searchParams.get("mode") === "other" ? "other" : "fromIssue";
   const issueIdParam = searchParams.get("issueId");
+  const deviceIdParam = searchParams.get("deviceId");
   const selectedIssueId = issueIdParam ? Number(issueIdParam) : null;
+  const selectedDeviceId = deviceIdParam ? Number(deviceIdParam) : null;
   const selectedRepairItem = (location.state as RepairRequestNavigationState | null)?.selectedRepairItem;
   const effectiveIssueId = selectedIssueId ?? selectedRepairItem?.issueId ?? null;
+  const effectiveDeviceId = selectedDeviceId ?? selectedRepairItem?.deviceId ?? null;
 
   const [prefill, setPrefill] = useState<RepairPrefill | null>(null);
   const [loading, setLoading] = useState(false);
   const [mainDevices, setMainDevices] = useState<GetInventory[]>([]);
+  const [borrowedMainDevices, setBorrowedMainDevices] = useState<BorrowedMainDevice[]>([]);
   const [selectedMainDeviceId, setSelectedMainDeviceId] = useState<number | "">("");
   const [subDevices, setSubDevices] = useState<DeviceChild[]>([]);
   const [selectedSubDeviceIds, setSelectedSubDeviceIds] = useState<number[]>([]);
@@ -40,6 +52,24 @@ export default function RepairRequestPage() {
   const availableMainDevices = useMemo(() => {
     return mainDevices.filter((device) => Number(device.available) > 0);
   }, [mainDevices]);
+
+  const otherModeMainDevices = useMemo(() => {
+    return mainDevices.filter(
+      (device) => Number(device.total) > 0 && Number(device.available) === Number(device.total),
+    );
+  }, [mainDevices]);
+
+  const formMainDevices = useMemo(() => {
+    if (mode === "other") {
+      return otherModeMainDevices;
+    }
+
+    if (effectiveIssueId && effectiveIssueId > 0) {
+      return availableMainDevices;
+    }
+
+    return borrowedMainDevices;
+  }, [mode, effectiveDeviceId, availableMainDevices, otherModeMainDevices, effectiveIssueId, borrowedMainDevices]);
 
   const fetchPrefill = async (issueId: number) => {
     setLoading(true);
@@ -62,13 +92,35 @@ export default function RepairRequestPage() {
 
         if (effectiveIssueId && effectiveIssueId > 0) {
           await fetchPrefill(effectiveIssueId);
+          setBorrowedMainDevices([]);
           return;
         }
 
-        if (mode === "fromIssue") {
-          setPrefill(null);
-          push({ tone: "danger", message: "ไม่พบรายการอ้างอิงสำหรับแบบฟอร์มแจ้งซ่อม" });
+        if (mode === "other") {
+          setBorrowedMainDevices([]);
+          return;
         }
+
+        const borrowedTicketList = await ticketsService.getTickets({
+          page: 1,
+          limit: 100,
+          status: "IN_USE",
+        });
+
+        const mappedBorrowed = borrowedTicketList.data.reduce<BorrowedMainDevice[]>((acc, ticket) => {
+          const deviceId = ticket.device_summary.deviceId;
+          if (acc.some((item) => item.de_id === deviceId)) return acc;
+
+          acc.push({
+            de_id: deviceId,
+            de_name: ticket.device_summary.name,
+            de_serial_number: ticket.device_summary.serial_number ?? "",
+          });
+          return acc;
+        }, []);
+
+        setPrefill(null);
+        setBorrowedMainDevices(mappedBorrowed);
       } catch {
         push({ tone: "danger", message: "ไม่สามารถโหลดข้อมูลแบบฟอร์มแจ้งซ่อมได้" });
       }
@@ -79,6 +131,12 @@ export default function RepairRequestPage() {
     if (!prefill?.device_id) return;
     setSelectedMainDeviceId(prefill.device_id);
   }, [prefill?.device_id]);
+
+  useEffect(() => {
+    if (mode !== "other") return;
+    if (!effectiveDeviceId || effectiveDeviceId <= 0) return;
+    setSelectedMainDeviceId(effectiveDeviceId);
+  }, [mode, effectiveDeviceId]);
 
   useEffect(() => {
     if (!selectedMainDeviceId) {
@@ -135,8 +193,17 @@ export default function RepairRequestPage() {
     navigate(repairListPath);
   };
 
-  const isDeviceLocked = mode === "fromIssue";
-  const lockedDeviceId = isDeviceLocked ? prefill?.device_id ?? null : null;
+  const isDeviceLocked =
+    (mode === "fromIssue" && Boolean(effectiveIssueId)) ||
+    (mode === "other" && Boolean(effectiveDeviceId));
+  const lockedDeviceId =
+    mode === "fromIssue"
+      ? effectiveIssueId
+        ? prefill?.device_id ?? null
+        : null
+      : mode === "other"
+        ? effectiveDeviceId ?? null
+        : null;
 
   return (
     <div className="p-4">
@@ -168,8 +235,8 @@ export default function RepairRequestPage() {
           onSuccess={handleSuccess}
           submitLabel="แจ้งซ่อม"
           selectedSubDeviceIds={selectedSubDeviceIds}
-          mainDevices={availableMainDevices}
-          allowedMainDeviceIds={availableMainDevices.map((device) => device.de_id)}
+          mainDevices={formMainDevices}
+          allowedMainDeviceIds={formMainDevices.map((device) => device.de_id)}
           selectedMainDeviceId={selectedMainDeviceId}
           onMainDeviceChange={setSelectedMainDeviceId}
           subDevices={subDevices}

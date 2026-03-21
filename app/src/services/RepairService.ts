@@ -4,6 +4,7 @@ export type RepairStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
 
 export type RepairItem = {
   id: number;
+  device_id?: number;
   title: string;
   description: string | null;
   device_name: string;
@@ -13,6 +14,7 @@ export type RepairItem = {
   requester_emp_code: string | null;
   request_date: string;
   status: RepairStatus;
+  can_repair?: boolean;
 };
 
 export type RepairPrefill = {

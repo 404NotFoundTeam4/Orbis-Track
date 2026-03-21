@@ -360,12 +360,6 @@ export class RepairService {
       throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
     }
 
-    if (!payload.sourceIssueId) {
-      // Note: We don't strictly block reporting if borrowableChildCount is 0, 
-      // because the user might be reporting a damaged item that is currently BORROWED or already DAMAGED.
-      // But we keep a check to ensure the device exists (already done above).
-    }
-
     const validSubDeviceIds = payload.subDeviceIds ?? [];
 
     if (validSubDeviceIds.length > 0) {
@@ -406,6 +400,93 @@ export class RepairService {
           td_brt_id: true,
         },
       });
+
+      const activeBorrowedChildsByUser = await tx.ticket_devices.findMany({
+        where: {
+          deleted_at: null,
+          child: {
+            dec_de_id: resolvedDeviceId,
+            deleted_at: null,
+          },
+          ticket: {
+            deleted_at: null,
+            brt_status: BRT_STATUS.IN_USE,
+            brt_user_id: userId,
+          },
+        },
+        select: {
+          td_dec_id: true,
+        },
+      });
+
+      const activeBorrowByAnyone = await tx.ticket_devices.findFirst({
+        where: {
+          deleted_at: null,
+          child: {
+            dec_de_id: resolvedDeviceId,
+            deleted_at: null,
+          },
+          ticket: {
+            deleted_at: null,
+            brt_status: BRT_STATUS.IN_USE,
+          },
+        },
+        select: { td_id: true },
+      });
+
+      const isBorrowedByRequester = activeBorrowedChildsByUser.length > 0;
+
+      if (!isBorrowedByRequester && activeBorrowByAnyone) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "อุปกรณ์นี้กำลังถูกยืมอยู่ ไม่สามารถแจ้งผ่านเมนูแจ้งซ่อมอุปกรณ์อื่นได้",
+        );
+      }
+
+      const totalChildCount = await tx.device_childs.count({
+        where: {
+          dec_de_id: resolvedDeviceId,
+          deleted_at: null,
+        },
+      });
+
+      if (totalChildCount > 0 && validSubDeviceIds.length === 0) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "กรุณาเลือกอุปกรณ์ย่อยที่ต้องการแจ้งซ่อมอย่างน้อย 1 รายการ",
+        );
+      }
+
+      if (isBorrowedByRequester && validSubDeviceIds.length > 0) {
+        const borrowedChildSet = new Set(activeBorrowedChildsByUser.map((item) => item.td_dec_id));
+        const hasNonBorrowedSelection = validSubDeviceIds.some((id) => !borrowedChildSet.has(id));
+
+        if (hasNonBorrowedSelection) {
+          throw new HttpError(
+            HttpStatus.BAD_REQUEST,
+            "มีอุปกรณ์ย่อยบางรายการไม่ได้อยู่ในชุดที่ผู้ใช้กำลังยืม",
+          );
+        }
+      }
+
+      if (validSubDeviceIds.length > 0) {
+        const duplicatedOpenIssues = await tx.$queryRaw<{ id_dec_id: number }[]>`
+          SELECT DISTINCT id.id_dec_id
+          FROM issue_devices id
+          INNER JOIN ticket_issues ti ON ti.ti_id = id.id_ti_id
+          WHERE id.deleted_at IS NULL
+            AND ti.deleted_at IS NULL
+            AND ti.ti_status IN (${TI_STATUS.PENDING}::"TI_STATUS", ${TI_STATUS.IN_PROGRESS}::"TI_STATUS")
+            AND id.id_dec_id = ANY(${validSubDeviceIds}::int[])
+        `;
+
+        if (duplicatedOpenIssues.length > 0) {
+          throw new HttpError(
+            HttpStatus.BAD_REQUEST,
+            "มีอุปกรณ์ย่อยบางรายการอยู่ระหว่างการแจ้งซ่อมแล้ว",
+          );
+        }
+      }
 
       if (activeBorrowTicket) {
         borrowTicketId = activeBorrowTicket.td_brt_id;

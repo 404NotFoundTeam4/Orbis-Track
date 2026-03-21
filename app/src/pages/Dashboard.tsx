@@ -15,6 +15,9 @@ import BorrowGridTable from "../components/Dashboard/BorrowGridTable";
 import RepairStatusSummary from "../components/RepairStatusSummary";
 import BorrowStatusSummary from "../components/BorrowStatusSummary";
 
+import ExportDashboardModal from "../components/ExportDashboardModal";
+import { exportDashboardToExcel } from "../utils/exportDashboardToExcel";
+
 /**
  * Description: หน้า Dashboard สำหรับแสดงสถิติการยืมและสถิติการแจ้งปัญหา
  * Input : -
@@ -106,7 +109,7 @@ export default function Dashboard() {
   );
   const [overdueTableData, setOverdueTableData] = useState<OverdueTicket[]>([]);
 
-
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   /**
    * Description: ดึงข้อมูล Dashboard ใหม่ทุกครั้งเมื่อปีหรือไตรมาสเปลี่ยน
@@ -202,6 +205,27 @@ export default function Dashboard() {
   );
 
   /**
+   * Description: ส่งออกข้อมูล Dashboard เป็นไฟล์ Excel ตามชื่อไฟล์ที่ผู้ใช้กรอก
+   * Input : fileName, borrowMonthData, issueLineData, mostBorrowedData, repairChartData, overdueTableData, yearItem?.value, quarterItem?.label
+   * Output: สร้างไฟล์ .xlsx และปิด Export Modal
+   * Author: Chanwit Muangma (Boom) 66160224
+   */
+  const handleExportExcel = (fileName: string) => {
+    exportDashboardToExcel({
+      fileName,
+      borrowMonthData,
+      issueLineData,
+      mostBorrowedData,
+      repairChartData,
+      overdueTableData,
+      year: yearItem?.value ?? new Date().getFullYear(),
+      quarterLabel: quarterItem?.label ?? "ทั้งปี",
+    });
+
+    setIsExportModalOpen(false);
+  };
+
+  /**
    * Description: ข้อความช่วงเวลาที่ใช้แสดงบนการ์ดสถิติ
    * Input : year, quarter, loading
    * Output: string
@@ -235,7 +259,7 @@ export default function Dashboard() {
           <Button
             variant="primary"
             type="button"
-            onClick={() => console.log("export clicked")}
+            onClick={() => setIsExportModalOpen(true)}
             className="!w-[108px] !h-[46px] !rounded-full !bg-[#58B3FF] hover:!bg-[#40A9FF] active:!bg-[#1890FF] !text-[16px] !font-bold"
           >
             <span className="inline-flex items-center gap-1">
@@ -299,6 +323,13 @@ export default function Dashboard() {
           <BorrowGridTable data={overdueTableData} />
         </div>
       </div>
+      <ExportDashboardModal
+        open={isExportModalOpen}
+        defaultFileName="dashboard-report"
+        onClose={() => setIsExportModalOpen(false)}
+        onConfirm={handleExportExcel}
+      />
     </div>
+    
   );
 }

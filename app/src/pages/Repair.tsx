@@ -32,6 +32,7 @@ type RepairRequestNavigationState = {
   selectedRepairItem?: {
     issueId?: number;
     deviceId?: number;
+    borrowTicketId?: number;
     deviceName: string;
     category: string;
     requesterName: string;
@@ -264,6 +265,7 @@ export default function Repair() {
         selectedRepairItem: {
           issueId: 0,
           deviceId: item.device_id,
+          borrowTicketId: item.id,
           deviceName: item.device_name,
           category: item.category,
           requesterName: item.requester_name,

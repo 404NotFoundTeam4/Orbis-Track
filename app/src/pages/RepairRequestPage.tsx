@@ -8,11 +8,14 @@ import {
 } from "../services/RepairService";
 import { inventoryService, DeviceService, type DeviceChild, type GetInventory } from "../services/InventoryService";
 import { ticketsService } from "../services/TicketsService";
+import { historyIssueService } from "../services/HistoryIssueService";
+import { historyBorrowService } from "../services/HistoryBorrowService";
 
 type RepairRequestNavigationState = {
   selectedRepairItem?: {
     issueId?: number;
     deviceId?: number;
+    borrowTicketId?: number;
     deviceName: string;
     category: string;
     requesterName: string;
@@ -40,6 +43,12 @@ export default function RepairRequestPage() {
   const selectedRepairItem = (location.state as RepairRequestNavigationState | null)?.selectedRepairItem;
   const effectiveIssueId = selectedIssueId ?? selectedRepairItem?.issueId ?? null;
   const effectiveDeviceId = selectedDeviceId ?? selectedRepairItem?.deviceId ?? null;
+  const effectiveBorrowTicketId = selectedRepairItem?.borrowTicketId ?? null;
+  const currentUserId = useMemo(() => {
+    const userRaw = sessionStorage.getItem("User") || localStorage.getItem("User");
+    const parsed = userRaw ? JSON.parse(userRaw) : null;
+    return (parsed?.us_id ?? parsed?.state?.user?.us_id ?? null) as number | null;
+  }, []);
 
   const [prefill, setPrefill] = useState<RepairPrefill | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,9 +63,7 @@ export default function RepairRequestPage() {
   }, [mainDevices]);
 
   const otherModeMainDevices = useMemo(() => {
-    return mainDevices.filter(
-      (device) => Number(device.total) > 0 && Number(device.available) === Number(device.total),
-    );
+    return mainDevices.filter((device) => Number(device.total) > 0 && Number(device.available) > 0);
   }, [mainDevices]);
 
   const formMainDevices = useMemo(() => {
@@ -148,7 +155,51 @@ export default function RepairRequestPage() {
     void (async () => {
       try {
         const deviceWithChilds = await DeviceService.getDeviceWithChilds(Number(selectedMainDeviceId));
-        setSubDevices(deviceWithChilds.device_childs ?? []);
+        let remainingSubDevices = deviceWithChilds.device_childs ?? [];
+
+        if (mode === "other" && effectiveBorrowTicketId) {
+          const borrowedDetail = await historyBorrowService.getHistoryBorrowTicketDetail(
+            Number(effectiveBorrowTicketId),
+          );
+          const borrowedChildIdSet = new Set(
+            (borrowedDetail.deviceChildren ?? []).map((child) => child.deviceChildId),
+          );
+          remainingSubDevices = remainingSubDevices.filter((sub) => borrowedChildIdSet.has(sub.dec_id));
+        } else if (mode === "other") {
+          remainingSubDevices = remainingSubDevices.filter((sub) => sub.dec_status === "READY");
+        }
+
+        // สำหรับ flow ที่ lock มาจากรายการยืม: แสดงเฉพาะอุปกรณ์ย่อยที่ยังไม่ถูกแจ้งซ่อม (open issue)
+        if (effectiveDeviceId && currentUserId) {
+          const [pendingIssues, inProgressIssues] = await Promise.all([
+            historyIssueService.getHistoryIssueList({ status: "PENDING" }),
+            historyIssueService.getHistoryIssueList({ status: "IN_PROGRESS" }),
+          ]);
+
+          const sameDeviceIssueIds = [...pendingIssues, ...inProgressIssues]
+            .filter(
+              (issue) =>
+                issue.parentDevice.id === Number(selectedMainDeviceId) &&
+                issue.reporterUser.id === currentUserId,
+            )
+            .map((issue) => issue.issueId);
+
+          if (sameDeviceIssueIds.length > 0) {
+            const issueDetails = await Promise.all(
+              sameDeviceIssueIds.map((issueId) => historyIssueService.getHistoryIssueDetail(issueId)),
+            );
+
+            const blockedSubDeviceIds = new Set<number>(
+              issueDetails.flatMap((detail) => detail.deviceChildList.map((child) => child.deviceChildId)),
+            );
+
+            remainingSubDevices = remainingSubDevices.filter(
+              (sub) => !blockedSubDeviceIds.has(sub.dec_id),
+            );
+          }
+        }
+
+        setSubDevices(remainingSubDevices);
         setSelectedSubDeviceIds([]);
 
         if (mode === "other") {
@@ -169,7 +220,7 @@ export default function RepairRequestPage() {
         push({ tone: "danger", message: "ไม่สามารถโหลดอุปกรณ์ย่อยของอุปกรณ์แม่ที่เลือกได้" });
       }
     })();
-  }, [selectedMainDeviceId, mode, push]);
+  }, [selectedMainDeviceId, mode, push, effectiveDeviceId, currentUserId, effectiveBorrowTicketId]);
 
   const toggleSubDevice = (decId: number) => {
     setSelectedSubDeviceIds((prev) =>

@@ -419,27 +419,56 @@ export class RepairService {
         },
       });
 
-      const activeBorrowByAnyone = await tx.ticket_devices.findFirst({
-        where: {
-          deleted_at: null,
-          child: {
-            dec_de_id: resolvedDeviceId,
-            deleted_at: null,
-          },
-          ticket: {
-            deleted_at: null,
-            brt_status: BRT_STATUS.IN_USE,
-          },
-        },
-        select: { td_id: true },
-      });
+      const selectedBorrowedByAnyone =
+        validSubDeviceIds.length > 0
+          ? await tx.ticket_devices.findFirst({
+              where: {
+                deleted_at: null,
+                td_dec_id: {
+                  in: validSubDeviceIds,
+                },
+                child: {
+                  dec_de_id: resolvedDeviceId,
+                  deleted_at: null,
+                },
+                ticket: {
+                  deleted_at: null,
+                  brt_status: BRT_STATUS.IN_USE,
+                  brt_user_id: {
+                    not: userId,
+                  },
+                },
+              },
+              select: { td_id: true },
+            })
+          : null;
 
-      const isBorrowedByRequester = activeBorrowedChildsByUser.length > 0;
+      const selectedSubDevices =
+        validSubDeviceIds.length > 0
+          ? await tx.device_childs.findMany({
+              where: {
+                dec_id: { in: validSubDeviceIds },
+                dec_de_id: resolvedDeviceId,
+                deleted_at: null,
+              },
+              select: {
+                dec_id: true,
+                dec_status: true,
+              },
+            })
+          : [];
 
-      if (!isBorrowedByRequester && activeBorrowByAnyone) {
+      const borrowedChildSet = new Set(activeBorrowedChildsByUser.map((item) => item.td_dec_id));
+      const hasNonBorrowedSelection = validSubDeviceIds.some((id) => !borrowedChildSet.has(id));
+      const allSelectedAreBorrowedByRequester =
+        validSubDeviceIds.length > 0 && validSubDeviceIds.every((id) => borrowedChildSet.has(id));
+      const isBorrowedRepairFlow = Boolean(payload.sourceIssueId);
+      const isGeneralRepairFlow = !isBorrowedRepairFlow;
+
+      if (selectedBorrowedByAnyone) {
         throw new HttpError(
           HttpStatus.BAD_REQUEST,
-          "อุปกรณ์นี้กำลังถูกยืมอยู่ ไม่สามารถแจ้งผ่านเมนูแจ้งซ่อมอุปกรณ์อื่นได้",
+          "มีอุปกรณ์ย่อยบางรายการที่เลือกกำลังถูกยืมอยู่",
         );
       }
 
@@ -457,14 +486,23 @@ export class RepairService {
         );
       }
 
-      if (isBorrowedByRequester && validSubDeviceIds.length > 0) {
-        const borrowedChildSet = new Set(activeBorrowedChildsByUser.map((item) => item.td_dec_id));
-        const hasNonBorrowedSelection = validSubDeviceIds.some((id) => !borrowedChildSet.has(id));
+      if (isBorrowedRepairFlow && hasNonBorrowedSelection) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "สามารถเลือกเฉพาะอุปกรณ์ย่อยที่อยู่ในรายการยืมของคุณเท่านั้น",
+        );
+      }
 
-        if (hasNonBorrowedSelection) {
+      if (isGeneralRepairFlow && validSubDeviceIds.length > 0) {
+        const hasInvalidGeneralSelection = selectedSubDevices.some(
+          (sub) =>
+            !borrowedChildSet.has(sub.dec_id) && sub.dec_status !== DEVICE_CHILD_STATUS.READY,
+        );
+
+        if (hasInvalidGeneralSelection) {
           throw new HttpError(
             HttpStatus.BAD_REQUEST,
-            "มีอุปกรณ์ย่อยบางรายการไม่ได้อยู่ในชุดที่ผู้ใช้กำลังยืม",
+            "โหมดแจ้งซ่อมอิสระสามารถเลือกได้เฉพาะอุปกรณ์ย่อยที่พร้อมใช้งาน (READY) หรืออุปกรณ์ที่คุณกำลังยืมอยู่",
           );
         }
       }
@@ -488,7 +526,7 @@ export class RepairService {
         }
       }
 
-      if (activeBorrowTicket) {
+      if (isBorrowedRepairFlow && activeBorrowTicket && allSelectedAreBorrowedByRequester) {
         borrowTicketId = activeBorrowTicket.td_brt_id;
       }
 
@@ -522,6 +560,18 @@ export class RepairService {
           FROM device_childs
           WHERE dec_id = ANY(${validSubDeviceIds}::int[])
         `;
+
+        await tx.device_childs.updateMany({
+          where: {
+            dec_id: { in: validSubDeviceIds },
+            dec_status: DEVICE_CHILD_STATUS.READY,
+            deleted_at: null,
+          },
+          data: {
+            dec_status: DEVICE_CHILD_STATUS.REPAIRING,
+            updated_at: new Date(),
+          },
+        });
       }
 
       if (imagePaths.length > 0) {

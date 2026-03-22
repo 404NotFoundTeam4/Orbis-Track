@@ -58,7 +58,13 @@ export const repairPrefillSchema = z.object({
 export const createRepairRequestBody = z.object({
   sourceIssueId: z.coerce.number().int().positive().optional().nullable(),
   deviceId: z.coerce.number().int().positive(),
-  subDeviceIds: z.array(z.coerce.number().int().positive()).optional().default([]),
+  subDeviceIds: z.preprocess(
+    (value) => {
+      if (value == null) return [];
+      return Array.isArray(value) ? value : [value];
+    },
+    z.array(z.coerce.number().int().positive()).default([]),
+  ),
   subject: z.string().trim().min(1).max(200),
   problemDescription: z.string().trim().min(1),
   quantity: z.coerce.number().int().positive().optional().default(1),

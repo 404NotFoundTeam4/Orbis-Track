@@ -13,10 +13,11 @@ import DropDown from "../components/DropDown";
 import { useToast } from "../components/Toast";
 import RepairManagementTable from "../components/RepairManagementTable";
 import {
-  repairService,
   type RepairItem,
   type RepairQuery,
 } from "../services/RepairService";
+import { historyBorrowService } from "../services/HistoryBorrowService";
+import { historyIssueService } from "../services/HistoryIssueService";
 
 type SortField = NonNullable<RepairQuery["sortField"]>;
 type SortDirection = NonNullable<RepairQuery["sortDirection"]>;
@@ -25,6 +26,18 @@ type OptionItem = {
   id: string | number;
   label: string;
   value: string | number;
+};
+
+type RepairRequestNavigationState = {
+  selectedRepairItem?: {
+    issueId?: number;
+    deviceId?: number;
+    borrowTicketId?: number;
+    deviceName: string;
+    category: string;
+    requesterName: string;
+    requesterEmpCode: string | null;
+  };
 };
 
 const PAGE_SIZE = 10;
@@ -105,8 +118,74 @@ export default function Repair() {
         sortDirection,
       };
 
-      const result = await repairService.getRepairs(params);
-      setAllItems(result.data);
+      const userRaw = sessionStorage.getItem("User") || localStorage.getItem("User");
+      const parsedUser = userRaw ? JSON.parse(userRaw) : null;
+      const currentUserId: number | null =
+        parsedUser?.us_id ?? parsedUser?.state?.user?.us_id ?? null;
+
+      const [borrowedTickets, pendingIssues, inProgressIssues] = await Promise.all([
+        historyBorrowService.getHistoryBorrowTickets({
+          page: 1,
+          limit: 100,
+          status: "IN_USE",
+          search: params.search,
+        }),
+        historyIssueService.getHistoryIssueList({ status: "PENDING" }),
+        historyIssueService.getHistoryIssueList({ status: "IN_PROGRESS" }),
+      ]);
+
+      const openIssueItems = [...pendingIssues, ...inProgressIssues].filter((issue) =>
+        currentUserId ? issue.reporterUser.id === currentUserId : true,
+      );
+
+      const openCountByDevice = new Map<number, number>();
+      for (const issue of openIssueItems) {
+        const deviceId = issue.parentDevice.id;
+        const amount = Math.max(issue.deviceChildCount ?? 1, 1);
+        openCountByDevice.set(deviceId, (openCountByDevice.get(deviceId) ?? 0) + amount);
+      }
+
+      const borrowedItems: RepairItem[] = borrowedTickets.items
+        .filter((ticket) => (currentUserId ? ticket.requester.userId === currentUserId : true))
+        .map((ticket) => {
+        const deviceId = ticket.deviceSummary.deviceId;
+        const borrowedCount = Math.max(ticket.deviceChildCount ?? 1, 1);
+        const openedCount = openCountByDevice.get(deviceId) ?? 0;
+
+        return {
+          id: ticket.ticketId,
+          device_id: deviceId,
+          title: `BORROW-${ticket.ticketId}`,
+          description: null,
+          device_name: ticket.deviceSummary.deviceName,
+          quantity: borrowedCount,
+          category: ticket.deviceSummary.categoryName ?? "-",
+          requester_name: ticket.requester.fullName,
+          requester_emp_code: ticket.requester.employeeCode ?? null,
+          request_date: ticket.requestDateTime ?? new Date().toISOString(),
+          status: "IN_PROGRESS",
+          can_repair: openedCount < borrowedCount,
+        };
+      });
+
+      // แสดงรายการแจ้งซ่อมจาก flow อื่นแบบแยกราย ticket เสมอ
+      // เพื่อไม่ให้ถูกรวมทับกับรายการที่มาจาก ticket ยืม แม้เป็นอุปกรณ์แม่ชื่อเดียวกัน
+      const otherItems: RepairItem[] = openIssueItems.map((issue) => ({
+        id: issue.issueId,
+        device_id: issue.parentDevice.id,
+        title: issue.issueTitle,
+        description: issue.issueDescription,
+        device_name: issue.parentDevice.name,
+        quantity: Math.max(issue.deviceChildCount ?? 1, 1),
+        category: issue.parentDevice.categoryName ?? "-",
+        requester_name: issue.reporterUser.fullName,
+        requester_emp_code: issue.reporterUser.empCode ?? null,
+        request_date: issue.reportedAt,
+        status: issue.issueStatus,
+        can_repair: false,
+      }));
+
+      setAllItems([...borrowedItems, ...otherItems]);
     } catch {
       push({ tone: "danger", message: "ไม่สามารถโหลดรายการแจ้งซ่อมได้" });
     } finally {
@@ -160,16 +239,27 @@ export default function Repair() {
    * Author     : Rachata Jitjeankhan (Tang) 66160369
    */
   const handleOpenAction = (item: RepairItem) => {
-    navigate(`${repairRequestPath}?mode=fromIssue&issueId=${item.id}`, {
+    if (!item.can_repair) {
+      return;
+    }
+
+    if (!item.device_id) {
+      push({ tone: "danger", message: "ไม่พบข้อมูลอุปกรณ์ที่กำลังยืมอยู่" });
+      return;
+    }
+
+    navigate(`${repairRequestPath}?mode=other&deviceId=${item.device_id}`, {
       state: {
         selectedRepairItem: {
-          issueId: item.id,
+          issueId: 0,
+          deviceId: item.device_id,
+          borrowTicketId: item.id,
           deviceName: item.device_name,
           category: item.category,
           requesterName: item.requester_name,
           requesterEmpCode: item.requester_emp_code,
         },
-      },
+      } as RepairRequestNavigationState,
     });
   };
 

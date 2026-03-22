@@ -9,7 +9,7 @@
  * Author: Chanwit Muangma (Boom) 66160224
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "@iconify/react";
@@ -165,6 +165,14 @@ export default function HistoryIssueTicketCard({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   /**
+   * Description: เก็บ index ของรูปภาพที่ต้องการเปิดแบบเต็มจอใน modal gallery
+   * Input : -
+   * Output : previewImageIndex (number)
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
+  const [previewImageIndex, setPreviewImageIndex] = useState(0);
+
+  /**
    * Description: สถานะสำหรับแสดง pill (ใช้ detail ก่อน item)
    * Input : detail, item
    * Output : issueStatusPill
@@ -222,6 +230,17 @@ export default function HistoryIssueTicketCard({
    */
   const parentDeviceImageUrl =
     detail?.parentDevice.imageUrl ?? item.parentDevice.imageUrl ?? null;
+
+  /**
+   * Description: แปลง attachment เป็นรายการ path รูปภาพสำหรับแสดงผลในกรอบหลักและ modal gallery
+   * Input : detail?.attachments
+   * Output : attachmentImageUrls (string[])
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
+  const attachmentImageUrls = (detail?.attachments ?? [])
+    .map((attachment) => attachment.pathUrl)
+    .filter((pathUrl): pathUrl is string => Boolean(pathUrl));
+  const mainFrameImageUrl = attachmentImageUrls[0] ?? parentDeviceImageUrl;
 
   /**
    * Description: แสดง empCode ของผู้รับผิดชอบ
@@ -335,9 +354,9 @@ export default function HistoryIssueTicketCard({
               {/* ---------- กล่องรูป + ปุ่มดูรูป ---------- */}
               <div className="w-[300px] flex flex-col gap-2">
                 <div className="w-full h-[180px] bg-white rounded-lg flex items-center justify-center overflow-hidden border border-[#D9D9D9] p-4">
-                  {parentDeviceImageUrl ? (
+                  {mainFrameImageUrl ? (
                     <img
-                      src={getImageUrl(parentDeviceImageUrl)}
+                      src={getImageUrl(mainFrameImageUrl)}
                       alt={detail?.parentDevice.name ?? item.parentDevice.name}
                       className="max-w-full max-h-full object-contain"
                     />
@@ -352,20 +371,40 @@ export default function HistoryIssueTicketCard({
                 {/* ปุ่มดูรูป (เปิดรูปขนาดใหญ่) */}
                 <button
                   type="button"
-                  disabled={!parentDeviceImageUrl}
+                  disabled={attachmentImageUrls.length === 0}
                   onClick={(event) => {
                     event.stopPropagation();
+                    setPreviewImageIndex(0);
                     setIsImageModalOpen(true);
                   }}
                   className={[
                     "h-[48px] rounded-[14px] border text-[18px] font-semibold",
-                    parentDeviceImageUrl
+                    attachmentImageUrls.length > 0
                       ? "border-[#D9D9D9] bg-[#F3F3F3] text-[#000000] hover:bg-neutral-200"
                       : "border-[#E5E5E5] bg-[#FAFAFA] text-[#BFBFBF] cursor-not-allowed",
                   ].join(" ")}
                 >
-                  ดูรูปภาพ
+                  ดูรูปภาพ{attachmentImageUrls.length > 0 ? ` (${attachmentImageUrls.length})` : ""}
                 </button>
+
+                {attachmentImageUrls.length > 1 && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {attachmentImageUrls.slice(0, 4).map((imageUrl, index) => (
+                      <button
+                        key={`${imageUrl}-${index}`}
+                        type="button"
+                        className="h-[52px] overflow-hidden rounded-md border border-[#D9D9D9]"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setPreviewImageIndex(index);
+                          setIsImageModalOpen(true);
+                        }}
+                      >
+                        <img src={getImageUrl(imageUrl)} alt="attachment" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* ---------- ข้อมูลฝั่งขวา ---------- */}
@@ -442,7 +481,12 @@ export default function HistoryIssueTicketCard({
                 <div className="flex flex-col gap-2 flex-1">
                   <FieldRow
                     label="สถานที่รับอุปกรณ์"
-                    value={detail?.receiveLocationName ?? item.receiveLocationName ?? "-"}
+                    value={
+                      detail?.receiveLocationName ??
+                      detail?.resolvedNote ??
+                      item.receiveLocationName ??
+                      "-"
+                    }
                   />
 
                   <FieldRow label="หัวข้อปัญหา" value={detail?.issueTitle ?? item.issueTitle} />
@@ -471,8 +515,9 @@ export default function HistoryIssueTicketCard({
       {/* Modal รูปขนาดใหญ่ */}
       <ImagePreviewModal
         isOpen={isImageModalOpen}
-        imageUrl={parentDeviceImageUrl}
-        title={detail?.parentDevice.name ?? item.parentDevice.name}
+        imageUrls={attachmentImageUrls}
+        initialIndex={previewImageIndex}
+        title={detail?.issueTitle ?? item.issueTitle}
         onClose={() => setIsImageModalOpen(false)}
       />
     </div>
@@ -504,13 +549,53 @@ function FieldRow(props: { label: string; value: string }) {
  */
 function ImagePreviewModal(props: {
   isOpen: boolean;
-  imageUrl: string | null;
+  imageUrls: string[];
+  initialIndex?: number;
   title?: string;
   onClose: () => void;
 }) {
-  const { isOpen, imageUrl, title, onClose } = props;
+  const { isOpen, imageUrls, initialIndex = 0, title, onClose } = props;
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  /**
+   * Description: ตั้งค่ารูปเริ่มต้นใน modal gallery เมื่อเปิด modal
+   * Input : isOpen, initialIndex, imageUrls.length
+   * Output : อัปเดต currentIndex
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
+  useEffect(() => {
+    if (!isOpen) return;
+    const lastIndex = Math.max(imageUrls.length - 1, 0);
+    const safeIndex = Math.min(Math.max(initialIndex, 0), lastIndex);
+    setCurrentIndex(safeIndex);
+  }, [isOpen, initialIndex, imageUrls.length]);
 
   if (!isOpen) return null;
+
+  const hasImages = imageUrls.length > 0;
+  const activeImageUrl = hasImages ? imageUrls[currentIndex] : null;
+
+  /**
+   * Description: เลื่อนดูรูปก่อนหน้าใน modal gallery
+   * Input : currentIndex, imageUrls.length
+   * Output : อัปเดต currentIndex
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
+  const goPrevious = () => {
+    if (!hasImages) return;
+    setCurrentIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
+  };
+
+  /**
+   * Description: เลื่อนดูรูปถัดไปใน modal gallery
+   * Input : currentIndex, imageUrls.length
+   * Output : อัปเดต currentIndex
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
+  const goNext = () => {
+    if (!hasImages) return;
+    setCurrentIndex((prev) => (prev + 1) % imageUrls.length);
+  };
 
   return (
     <div className="fixed inset-0 z-[999]">
@@ -524,7 +609,7 @@ function ImagePreviewModal(props: {
       <div className="relative mx-auto mt-12 w-[min(980px,92vw)] rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
           <div className="font-semibold text-neutral-900 truncate pr-4">
-            {title ?? "รูปภาพอุปกรณ์"}
+            {title ?? "รูปภาพอุปกรณ์"} {hasImages ? `(${currentIndex + 1}/${imageUrls.length})` : ""}
           </div>
 
           <button
@@ -538,12 +623,32 @@ function ImagePreviewModal(props: {
         </div>
 
         <div className="p-5">
-          {imageUrl ? (
-            <img
-              src={getImageUrl(imageUrl)}
-              alt={title ?? "device"}
-              className="w-full max-h-[72vh] object-contain rounded-xl border border-neutral-200 bg-white"
-            />
+          {activeImageUrl ? (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={goPrevious}
+                className="h-10 w-10 shrink-0 rounded-full border border-neutral-200 grid place-items-center hover:bg-neutral-50"
+                aria-label="Previous image"
+              >
+                <Icon icon="mdi:chevron-left" className="text-2xl" />
+              </button>
+
+              <img
+                src={getImageUrl(activeImageUrl)}
+                alt={title ?? "device"}
+                className="w-full max-h-[72vh] object-contain rounded-xl border border-neutral-200 bg-white"
+              />
+
+              <button
+                type="button"
+                onClick={goNext}
+                className="h-10 w-10 shrink-0 rounded-full border border-neutral-200 grid place-items-center hover:bg-neutral-50"
+                aria-label="Next image"
+              >
+                <Icon icon="mdi:chevron-right" className="text-2xl" />
+              </button>
+            </div>
           ) : (
             <div className="h-[320px] grid place-items-center rounded-xl border border-neutral-200 text-neutral-400">
               ไม่มีรูปภาพ

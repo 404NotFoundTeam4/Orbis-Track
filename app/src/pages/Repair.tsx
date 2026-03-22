@@ -168,21 +168,9 @@ export default function Repair() {
         };
       });
 
-      const borrowedDeviceIds = new Set(borrowedItems.map((item) => item.device_id).filter(Boolean));
-
-      const otherOpenIssues = openIssueItems.filter(
-        (issue) => !borrowedDeviceIds.has(issue.parentDevice.id),
-      );
-
-      const latestOtherByDevice = new Map<number, (typeof otherOpenIssues)[number]>();
-      for (const issue of otherOpenIssues) {
-        const existing = latestOtherByDevice.get(issue.parentDevice.id);
-        if (!existing || new Date(issue.reportedAt).getTime() > new Date(existing.reportedAt).getTime()) {
-          latestOtherByDevice.set(issue.parentDevice.id, issue);
-        }
-      }
-
-      const otherItems: RepairItem[] = Array.from(latestOtherByDevice.values()).map((issue) => ({
+      // แสดงรายการแจ้งซ่อมจาก flow อื่นแบบแยกราย ticket เสมอ
+      // เพื่อไม่ให้ถูกรวมทับกับรายการที่มาจาก ticket ยืม แม้เป็นอุปกรณ์แม่ชื่อเดียวกัน
+      const otherItems: RepairItem[] = openIssueItems.map((issue) => ({
         id: issue.issueId,
         device_id: issue.parentDevice.id,
         title: issue.issueTitle,

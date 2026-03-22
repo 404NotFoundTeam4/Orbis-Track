@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
 import Button from "./Button";
 import DropDown from "./DropDown";
 import { useToast } from "./Toast";
@@ -143,6 +143,35 @@ export default function RepairRequestForm({
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSelectImages = (event: ChangeEvent<HTMLInputElement>) => {
+    const fileList = Array.from(event.target.files ?? []);
+    setImages((prev) => [...prev, ...fileList]);
+    event.target.value = "";
+  };
+
+  const handleDragOverUploadBox = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+  };
+
+  const handleDropImages = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    const fileList = Array.from(event.dataTransfer.files ?? []).filter((file) =>
+      ["image/png", "image/jpg", "image/jpeg"].includes(file.type)
+    );
+
+    if (fileList.length > 0) {
+      setImages((prev) => [...prev, ...fileList]);
+    }
+  };
+
+  const handleRemoveImage = (targetIndex: number) => {
+    setImages((prev) => prev.filter((_, index) => index !== targetIndex));
+  };
+
+  const handleClearImages = () => {
+    setImages([]);
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -310,36 +339,79 @@ export default function RepairRequestForm({
 
             <div className="flex flex-col gap-3">
               <label className={fieldLabelClass}>รูปภาพ</label>
-              <label className="flex min-h-[254px] w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-[16px] border border-[#D9D9D9] px-6 text-center text-[#40A9FF]">
-                <svg
-                  width="48"
-                  height="40"
-                  viewBox="0 0 48 40"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-[#A2A2A2]"
+              <div
+                className="flex min-h-[254px] w-full flex-col rounded-[16px] border border-[#D9D9D9]"
+                onDragOver={handleDragOverUploadBox}
+                onDrop={handleDropImages}
+              >
+                <label
+                  className="flex w-full cursor-pointer flex-col items-center justify-center gap-4 px-6 py-8 text-center text-[#40A9FF]"
+                  onDragOver={handleDragOverUploadBox}
+                  onDrop={handleDropImages}
                 >
-                  <path
-                    d="M40 36H8C5.79086 36 4 34.2091 4 32V8C4 5.79086 5.79086 4 8 4H20L24 10H40C42.2091 10 44 11.7909 44 14V32C44 34.2091 42.2091 36 40 36Z"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  <svg
+                    width="48"
+                    height="40"
+                    viewBox="0 0 48 40"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-[#A2A2A2]"
+                  >
+                    <path
+                      d="M40 36H8C5.79086 36 4 34.2091 4 32V8C4 5.79086 5.79086 4 8 4H20L24 10H40C42.2091 10 44 11.7909 44 14V32C44 34.2091 42.2091 36 40 36Z"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span className="text-[14px] font-medium leading-[22px] text-[#40A9FF]">
+                    อัปโหลดไฟล์ หรือวางไฟล์ที่นี่
+                    <br />
+                    <span className="text-[#8C8C8C]">ประเภทไฟล์ PNG, JPG</span>
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpg,image/jpeg"
+                    multiple
+                    className="hidden"
+                    onChange={handleSelectImages}
                   />
-                </svg>
-                <span className="text-[14px] font-medium leading-[22px] text-[#40A9FF]">
-                  อัปโหลดไฟล์ หรือวางไฟล์ที่นี่
-                  <br />
-                  <span className="text-[#8C8C8C]">ประเภทไฟล์ PNG, JPG</span>
-                </span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpg,image/jpeg"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => setImages(Array.from(e.target.files ?? []))}
-                />
-              </label>
+                </label>
+
+                {images.length > 0 && (
+                  <div className="w-full border-t border-[#F0F0F0] px-4 py-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[13px] font-medium text-[#595959]">ไฟล์ที่เลือก</span>
+                      <button
+                        type="button"
+                        className="text-[13px] font-medium text-[#F44336] hover:underline"
+                        onClick={handleClearImages}
+                      >
+                        ลบทั้งหมด
+                      </button>
+                    </div>
+
+                    <ul className="flex flex-col gap-2">
+                      {images.map((file, index) => (
+                        <li
+                          key={`${file.name}-${index}`}
+                          className="flex items-start justify-between gap-2 rounded-[10px] bg-[#FAFAFA] px-3 py-2"
+                        >
+                          <span className="break-all text-[13px] leading-5 text-[#1F1F1F]">{file.name}</span>
+                          <button
+                            type="button"
+                            className="shrink-0 text-[13px] font-medium text-[#F44336] hover:underline"
+                            onClick={() => handleRemoveImage(index)}
+                          >
+                            ลบ
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>

@@ -175,7 +175,7 @@ export default function RepairRequestPage() {
          * Output : remainingSubDevices ที่ผ่านเงื่อนไขการกรอง
          * Author: Rachata Jitjeankhan (Tang) 66160369
          */
-        if (mode !== "other" && effectiveDeviceId && currentUserId) {
+        if ((mode !== "other" || Boolean(effectiveBorrowTicketId)) && currentUserId) {
           const [pendingIssues, inProgressIssues] = await Promise.all([
             historyIssueService.getHistoryIssueList({ status: "PENDING" }),
             historyIssueService.getHistoryIssueList({ status: "IN_PROGRESS" }),

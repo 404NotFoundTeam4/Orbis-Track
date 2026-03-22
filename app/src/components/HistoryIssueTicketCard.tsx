@@ -481,7 +481,12 @@ export default function HistoryIssueTicketCard({
                 <div className="flex flex-col gap-2 flex-1">
                   <FieldRow
                     label="สถานที่รับอุปกรณ์"
-                    value={detail?.receiveLocationName ?? item.receiveLocationName ?? "-"}
+                    value={
+                      detail?.receiveLocationName ??
+                      detail?.resolvedNote ??
+                      item.receiveLocationName ??
+                      "-"
+                    }
                   />
 
                   <FieldRow label="หัวข้อปัญหา" value={detail?.issueTitle ?? item.issueTitle} />

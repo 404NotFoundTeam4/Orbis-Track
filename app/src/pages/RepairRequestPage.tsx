@@ -169,8 +169,13 @@ export default function RepairRequestPage() {
           remainingSubDevices = remainingSubDevices.filter((sub) => sub.dec_status === "READY");
         }
 
-        // สำหรับ flow ที่ lock มาจากรายการยืม: แสดงเฉพาะอุปกรณ์ย่อยที่ยังไม่ถูกแจ้งซ่อม (open issue)
-        if (effectiveDeviceId && currentUserId) {
+        /**
+         * Description: กรองอุปกรณ์ย่อยที่ถูกแจ้งซ่อมค้างอยู่เฉพาะ flow ที่ไม่ใช่ mode=other
+         * Input : mode, effectiveDeviceId, currentUserId, issue list/detail
+         * Output : remainingSubDevices ที่ผ่านเงื่อนไขการกรอง
+         * Author: Rachata Jitjeankhan (Tang) 66160369
+         */
+        if (mode !== "other" && effectiveDeviceId && currentUserId) {
           const [pendingIssues, inProgressIssues] = await Promise.all([
             historyIssueService.getHistoryIssueList({ status: "PENDING" }),
             historyIssueService.getHistoryIssueList({ status: "IN_PROGRESS" }),

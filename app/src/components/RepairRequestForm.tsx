@@ -145,16 +145,34 @@ export default function RepairRequestForm({
     return Object.keys(nextErrors).length === 0;
   };
 
+  /**
+   * Description: จัดการการเลือกไฟล์รูปภาพจาก input file และรองรับการเพิ่มหลายครั้งแบบ append
+   * Input : event (ChangeEvent<HTMLInputElement>)
+   * Output : อัปเดต state images
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const handleSelectImages = (event: ChangeEvent<HTMLInputElement>) => {
     const fileList = Array.from(event.target.files ?? []);
     setImages((prev) => [...prev, ...fileList]);
     event.target.value = "";
   };
 
+  /**
+   * Description: อนุญาตให้ drop ไฟล์ลงในกรอบอัปโหลด
+   * Input : event (DragEvent<HTMLElement>)
+   * Output : ป้องกัน default browser behavior
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const handleDragOverUploadBox = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
   };
 
+  /**
+   * Description: รับไฟล์จากการ drag/drop, กรองเฉพาะ PNG/JPG/JPEG และเพิ่มเข้า state images
+   * Input : event (DragEvent<HTMLElement>)
+   * Output : อัปเดต state images
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const handleDropImages = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     const fileList = Array.from(event.dataTransfer.files ?? []).filter((file) =>
@@ -166,10 +184,22 @@ export default function RepairRequestForm({
     }
   };
 
+  /**
+   * Description: ลบรูปภาพทีละรายการจากกรอบอัปโหลด
+   * Input : targetIndex (number)
+   * Output : อัปเดต state images
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const handleRemoveImage = (targetIndex: number) => {
     setImages((prev) => prev.filter((_, index) => index !== targetIndex));
   };
 
+  /**
+   * Description: ลบรูปภาพทั้งหมดในกรอบอัปโหลด
+   * Input : -
+   * Output : อัปเดต state images เป็น []
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const handleClearImages = () => {
     setImages([]);
   };

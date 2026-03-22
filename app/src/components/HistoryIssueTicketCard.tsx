@@ -163,6 +163,13 @@ export default function HistoryIssueTicketCard({
    * Author: Chanwit Muangma (Boom) 66160224
    */
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  /**
+   * Description: เก็บ index ของรูปภาพที่ต้องการเปิดแบบเต็มจอใน modal gallery
+   * Input : -
+   * Output : previewImageIndex (number)
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const [previewImageIndex, setPreviewImageIndex] = useState(0);
 
   /**
@@ -223,6 +230,13 @@ export default function HistoryIssueTicketCard({
    */
   const parentDeviceImageUrl =
     detail?.parentDevice.imageUrl ?? item.parentDevice.imageUrl ?? null;
+
+  /**
+   * Description: แปลง attachment เป็นรายการ path รูปภาพสำหรับแสดงผลในกรอบหลักและ modal gallery
+   * Input : detail?.attachments
+   * Output : attachmentImageUrls (string[])
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const attachmentImageUrls = (detail?.attachments ?? [])
     .map((attachment) => attachment.pathUrl)
     .filter((pathUrl): pathUrl is string => Boolean(pathUrl));
@@ -538,6 +552,12 @@ function ImagePreviewModal(props: {
   const { isOpen, imageUrls, initialIndex = 0, title, onClose } = props;
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  /**
+   * Description: ตั้งค่ารูปเริ่มต้นใน modal gallery เมื่อเปิด modal
+   * Input : isOpen, initialIndex, imageUrls.length
+   * Output : อัปเดต currentIndex
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   useEffect(() => {
     if (!isOpen) return;
     const lastIndex = Math.max(imageUrls.length - 1, 0);
@@ -550,11 +570,23 @@ function ImagePreviewModal(props: {
   const hasImages = imageUrls.length > 0;
   const activeImageUrl = hasImages ? imageUrls[currentIndex] : null;
 
+  /**
+   * Description: เลื่อนดูรูปก่อนหน้าใน modal gallery
+   * Input : currentIndex, imageUrls.length
+   * Output : อัปเดต currentIndex
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const goPrevious = () => {
     if (!hasImages) return;
     setCurrentIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
   };
 
+  /**
+   * Description: เลื่อนดูรูปถัดไปใน modal gallery
+   * Input : currentIndex, imageUrls.length
+   * Output : อัปเดต currentIndex
+   * Author: Rachata Jitjeankhan (Tang) 66160369
+   */
   const goNext = () => {
     if (!hasImages) return;
     setCurrentIndex((prev) => (prev + 1) % imageUrls.length);

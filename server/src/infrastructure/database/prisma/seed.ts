@@ -745,7 +745,6 @@ async function main() {
     where: { ti_id: 1 },
     update: {},
     create: {
-      ti_id: 1,
       ti_de_id: deviceLaptop.de_id,
       ti_title: "จอฟ้า เปิดไม่ติด",
       ti_description: "เปิดเครื่องแล้วขึ้น Blue Screen code 0x0000",

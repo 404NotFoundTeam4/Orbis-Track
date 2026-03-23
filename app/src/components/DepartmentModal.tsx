@@ -393,6 +393,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                     setDepartment(e?.target?.value ?? e);
                     setDeptError("");
                   }}
+                  
                   autoFocus
                   required
                   error={deptError}
@@ -411,7 +412,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   placeholder="ประเภทแผนก"
                   searchPlaceholder="ค้นหาแผนก"
                   searchable={true}
-                  className="w-[333px]"
+                  width={333}
                   triggerClassName="h-[46px] pl-[15px] pr-[8px] py-3 border-[#A2A2A2] text-[#000] rounded-[16px] h-[46px] pl-[15px] pr-[8px] py-3 border-[#A2A2A2] text-[#000] rounded-[16px] text-[16px] [&>span]:text-[16px]"
                 />
               </div>

@@ -122,15 +122,7 @@ function getIssueStatusPill(params: {
     return { label: "กำลังซ่อม", className: "border-[#40A9FF] text-[#40A9FF]" };
   }
 
-  if (issueStatus === "COMPLETED" && issueResult === "SUCCESS") {
-    return { label: "ซ่อมแล้ว", className: "border-[#73D13D] text-[#73D13D]" };
-  }
-
-  if (issueStatus === "COMPLETED" && issueResult === "FAILED") {
-    return { label: "ซ่อมไม่สำเร็จ", className: "border-[#FF4D4F] text-[#FF4D4F]" };
-  }
-
-  return { label: "ไม่ทราบสถานะ", className: "border-[#BFBFBF] text-[#8C8C8C]" };
+  return { label: "เสร็จสิ้น", className: "border-[#73D13D] text-[#73D13D]" };
 }
 
 type Props = {

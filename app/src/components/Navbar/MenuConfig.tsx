@@ -90,6 +90,13 @@ export const MenuConfig: menuItem[] = [
     ],
   },
   {
+    key: "technical_repair_requests",
+    label: "จัดการคำร้องซ่อม",
+    path: "/request-issues",
+    icon: faServer,
+    roles: [UserRole.TECHNICAL],
+  },
+  {
     key: "management_requests",
     label: "จัดการคำร้อง",
     path: "/request-borrow-ticket",
@@ -103,13 +110,20 @@ export const MenuConfig: menuItem[] = [
     iconRight: faChevronUp,
     roles: [
       UserRole.ADMIN,
+
     ],
     children: [
       {
         key: "requests",
-        label: "คำร้อง",
+        label: "คำร้องยืม",
         path: "/request-borrow-ticket",
         roles: [UserRole.ADMIN, UserRole.STAFF],
+      },
+      {
+        key: "repair_requests",
+        label: "คำร้องซ่อม",
+        path: "/request-issues",
+        roles: [UserRole.ADMIN, UserRole.TECHNICAL],
       },
       {
         key: "users",

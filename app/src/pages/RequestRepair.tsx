@@ -294,7 +294,7 @@ const RequestsRepair = () => {
         {/* Page Title */}
         <div className="flex items-center gap-[14px] mb-[21px]">
           <h1 className="text-2xl font-semibold text-gray-900">
-            จัดการคำร้องแจ้งซ่อม
+            จัดการคำร้องซ่อม  
           </h1>
         </div>
 

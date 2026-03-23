@@ -1,35 +1,41 @@
 import { Icon } from "@iconify/react";
 import { useEffect, useState } from "react";
 
+export type ExportFileType = "excel" | "pdf";
+
 type ExportDashboardModalProps = {
   open: boolean;
   defaultFileName?: string;
   onClose: () => void;
-  onConfirm: (fileName: string) => void;
+  onConfirm: (fileName: string, fileType: ExportFileType) => void;
 };
 
 /**
- * Description: แสดง Modal สำหรับส่งออกข้อมูล Dashboard โดยให้ผู้ใช้กรอกชื่อไฟล์และยืนยันการ Export เป็น Excel
+ * Description: แสดง Modal สำหรับส่งออกข้อมูล Dashboard โดยให้ผู้ใช้กรอกชื่อไฟล์ เลือกประเภทไฟล์ และยืนยันการ Export
  * Input : open, defaultFileName, onClose, onConfirm
  * Output: แสดงหน้าต่าง Modal สำหรับกรอกชื่อไฟล์และเรียก callback เมื่อผู้ใช้กด Export
  * Author: Chanwit Muangma (Boom) 66160224
  */
 export default function ExportDashboardModal({
   open,
-  defaultFileName = "dashboard-device-report",
+  defaultFileName = "dashboard-report",
   onClose,
   onConfirm,
 }: ExportDashboardModalProps) {
   const [fileName, setFileName] = useState(defaultFileName);
+  const [fileType, setFileType] = useState<ExportFileType>("excel");
 
   /**
-   * Description: รีเซ็ตชื่อไฟล์เริ่มต้นทุกครั้งเมื่อ Modal ถูกเปิด
+   * Description: รีเซ็ตชื่อไฟล์และประเภทไฟล์เริ่มต้นทุกครั้งเมื่อ Modal ถูกเปิด
    * Input : open, defaultFileName
-   * Output: อัปเดตค่า fileName ให้กลับเป็นค่าเริ่มต้น
+   * Output: อัปเดตค่า fileName และ fileType ให้กลับเป็นค่าเริ่มต้น
    * Author: Chanwit Muangma (Boom) 66160224
    */
   useEffect(() => {
-    if (open) setFileName(defaultFileName);
+    if (open) {
+      setFileName(defaultFileName);
+      setFileType("excel");
+    }
   }, [open, defaultFileName]);
 
   if (!open) return null;
@@ -79,16 +85,46 @@ export default function ExportDashboardModal({
             ประเภทไฟล์
           </label>
 
-          <div className="flex h-[76px] w-[200px] items-center gap-3 rounded-[16px] border border-[#40A9FF] bg-[#E6F4FF] px-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white">
-              <Icon
-                icon="vscode-icons:file-type-excel"
-                className="text-[28px]"
-              />
-            </div>
-            <span className="text-[18px] font-medium text-black">
-              Excel File
-            </span>
+          <div className="flex flex-wrap gap-4">
+            <button
+              type="button"
+              onClick={() => setFileType("excel")}
+              className={`flex h-[76px] w-[200px] items-center gap-3 rounded-[16px] border px-4 transition ${
+                fileType === "excel"
+                  ? "border-[#40A9FF] bg-[#E6F4FF]"
+                  : "border-[#D9D9D9] bg-white"
+              }`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white">
+                <Icon
+                  icon="vscode-icons:file-type-excel"
+                  className="text-[28px]"
+                />
+              </div>
+              <span className="text-[18px] font-medium text-black">
+                Excel File
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFileType("pdf")}
+              className={`flex h-[76px] w-[200px] items-center gap-3 rounded-[16px] border px-4 transition ${
+                fileType === "pdf"
+                  ? "border-[#40A9FF] bg-[#E6F4FF]"
+                  : "border-[#D9D9D9] bg-white"
+              }`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white">
+                <Icon
+                  icon="vscode-icons:file-type-pdf2"
+                  className="text-[28px]"
+                />
+              </div>
+              <span className="text-[18px] font-medium text-black">
+                PDF File
+              </span>
+            </button>
           </div>
         </div>
 
@@ -104,7 +140,7 @@ export default function ExportDashboardModal({
           <button
             type="button"
             disabled={!fileName.trim()}
-            onClick={() => onConfirm(fileName.trim())}
+            onClick={() => onConfirm(fileName.trim(), fileType)}
             className="h-[48px] min-w-[110px] rounded-full bg-[#40A9FF] px-6 text-[18px] font-semibold text-white disabled:opacity-60"
           >
             Export

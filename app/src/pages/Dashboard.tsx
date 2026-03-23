@@ -15,8 +15,11 @@ import BorrowGridTable from "../components/Dashboard/BorrowGridTable";
 import RepairStatusSummary from "../components/RepairStatusSummary";
 import BorrowStatusSummary from "../components/BorrowStatusSummary";
 
-import ExportDashboardModal from "../components/ExportDashboardModal";
 import { exportDashboardToExcel } from "../utils/exportDashboardToExcel";
+import { exportDashboardToPdf } from "../utils/exportDashboardToPdf";
+import ExportDashboardModal, {
+  type ExportFileType,
+} from "../components/ExportDashboardModal";
 
 /**
  * Description: หน้า Dashboard สำหรับแสดงสถิติการยืมและสถิติการแจ้งปัญหา
@@ -205,13 +208,16 @@ export default function Dashboard() {
   );
 
   /**
-   * Description: ส่งออกข้อมูล Dashboard เป็นไฟล์ Excel ตามชื่อไฟล์ที่ผู้ใช้กรอก
-   * Input : fileName, borrowMonthData, issueLineData, mostBorrowedData, repairChartData, overdueTableData, yearItem?.value, quarterItem?.label
-   * Output: สร้างไฟล์ .xlsx และปิด Export Modal
+   * Description: จัดการส่งออกข้อมูล Dashboard ตามประเภทไฟล์ที่ผู้ใช้เลือก
+   * Input : fileName, fileType
+   * Output: สร้างไฟล์ Excel หรือ PDF และปิด Export Modal
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  const handleExportExcel = (fileName: string) => {
-    exportDashboardToExcel({
+  const handleExportFile = async (
+    fileName: string,
+    fileType: ExportFileType,
+  ) => {
+    const payload = {
       fileName,
       borrowMonthData,
       issueLineData,
@@ -220,7 +226,13 @@ export default function Dashboard() {
       overdueTableData,
       year: yearItem?.value ?? new Date().getFullYear(),
       quarterLabel: quarterItem?.label ?? "ทั้งปี",
-    });
+    };
+
+    if (fileType === "excel") {
+      exportDashboardToExcel(payload);
+    } else {
+      await exportDashboardToPdf(payload);
+    }
 
     setIsExportModalOpen(false);
   };
@@ -327,7 +339,7 @@ export default function Dashboard() {
         open={isExportModalOpen}
         defaultFileName="dashboard-report"
         onClose={() => setIsExportModalOpen(false)}
-        onConfirm={handleExportExcel}
+        onConfirm={handleExportFile}
       />
     </div>
     

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { OverdueTicket } from "../../services/dashboard";
 import BorrowDetailModal from "./BorrowDetailModal";
 import Pagination from "../Pagination";
-
+import getImageUrl from "../../services/GetImage.js";
 interface Props {
   data: OverdueTicket[];
 }
@@ -222,7 +222,7 @@ grid-cols-[120px_minmax(250px,2fr)_150px_1fr_1fr_1.2fr_1fr_150px]
               <div className="text-left font-medium flex items-center gap-3">
                 <div className="w-[40px] h-[40px] rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {item.userImage ? (
-                    <img src={item.userImage} alt={item.userName} className="w-full h-full object-cover" />
+                    <img src={getImageUrl(item.userImage)} alt={item.userName} className="w-full h-full object-cover" />
                   ) : (
                     <Icon icon="octicon:person-24" className="text-gray-400 text-2xl" />
                   )}
@@ -249,7 +249,7 @@ grid-cols-[120px_minmax(250px,2fr)_150px_1fr_1fr_1.2fr_1fr_150px]
               <div className="text-left font-medium" title={item.equipments.join(", ")}>
                 <div className="truncate">{item.equipments.join(", ")}</div>
               </div>
-              <div className="text-center font-medium text-red-500">{item.delayedDays}</div>
+              <div className="text-center font-medium text-black">{item.delayedDays}</div>
             </div>
           ))
         )}

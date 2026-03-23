@@ -1184,6 +1184,7 @@ const MainDeviceModal = ({
             <div className="flex gap-3 items-end">
               <DropDown
                 value={selectedApprovers}
+                width="663px"
                 className="w-[663px]"
                 label="ลำดับการอนุมัติ"
                 items={approveItems}

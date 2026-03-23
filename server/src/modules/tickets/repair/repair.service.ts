@@ -360,23 +360,6 @@ export class RepairService {
       throw new HttpError(HttpStatus.NOT_FOUND, "ไม่พบอุปกรณ์ที่เลือก");
     }
 
-    if (!payload.sourceIssueId) {
-      const borrowableChildCount = await prisma.device_childs.count({
-        where: {
-          dec_de_id: resolvedDeviceId,
-          dec_status: DEVICE_CHILD_STATUS.READY,
-          deleted_at: null,
-        },
-      });
-
-      if (borrowableChildCount === 0) {
-        throw new HttpError(
-          HttpStatus.BAD_REQUEST,
-          "อุปกรณ์นี้ไม่พร้อมให้ยืมและไม่สามารถแจ้งซ่อมจากเมนูอุปกรณ์อื่นได้",
-        );
-      }
-    }
-
     const validSubDeviceIds = payload.subDeviceIds ?? [];
 
     if (validSubDeviceIds.length > 0) {
@@ -418,7 +401,132 @@ export class RepairService {
         },
       });
 
-      if (activeBorrowTicket) {
+      const activeBorrowedChildsByUser = await tx.ticket_devices.findMany({
+        where: {
+          deleted_at: null,
+          child: {
+            dec_de_id: resolvedDeviceId,
+            deleted_at: null,
+          },
+          ticket: {
+            deleted_at: null,
+            brt_status: BRT_STATUS.IN_USE,
+            brt_user_id: userId,
+          },
+        },
+        select: {
+          td_dec_id: true,
+        },
+      });
+
+      const selectedBorrowedByAnyone =
+        validSubDeviceIds.length > 0
+          ? await tx.ticket_devices.findFirst({
+              where: {
+                deleted_at: null,
+                td_dec_id: {
+                  in: validSubDeviceIds,
+                },
+                child: {
+                  dec_de_id: resolvedDeviceId,
+                  deleted_at: null,
+                },
+                ticket: {
+                  deleted_at: null,
+                  brt_status: BRT_STATUS.IN_USE,
+                  brt_user_id: {
+                    not: userId,
+                  },
+                },
+              },
+              select: { td_id: true },
+            })
+          : null;
+
+      const selectedSubDevices =
+        validSubDeviceIds.length > 0
+          ? await tx.device_childs.findMany({
+              where: {
+                dec_id: { in: validSubDeviceIds },
+                dec_de_id: resolvedDeviceId,
+                deleted_at: null,
+              },
+              select: {
+                dec_id: true,
+                dec_status: true,
+              },
+            })
+          : [];
+
+      const borrowedChildSet = new Set(activeBorrowedChildsByUser.map((item) => item.td_dec_id));
+      const hasNonBorrowedSelection = validSubDeviceIds.some((id) => !borrowedChildSet.has(id));
+      const allSelectedAreBorrowedByRequester =
+        validSubDeviceIds.length > 0 && validSubDeviceIds.every((id) => borrowedChildSet.has(id));
+      const isBorrowedRepairFlow = Boolean(payload.sourceIssueId);
+      const isGeneralRepairFlow = !isBorrowedRepairFlow;
+
+      if (selectedBorrowedByAnyone) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "มีอุปกรณ์ย่อยบางรายการที่เลือกกำลังถูกยืมอยู่",
+        );
+      }
+
+      const totalChildCount = await tx.device_childs.count({
+        where: {
+          dec_de_id: resolvedDeviceId,
+          deleted_at: null,
+        },
+      });
+
+      if (totalChildCount > 0 && validSubDeviceIds.length === 0) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "กรุณาเลือกอุปกรณ์ย่อยที่ต้องการแจ้งซ่อมอย่างน้อย 1 รายการ",
+        );
+      }
+
+      if (isBorrowedRepairFlow && hasNonBorrowedSelection) {
+        throw new HttpError(
+          HttpStatus.BAD_REQUEST,
+          "สามารถเลือกเฉพาะอุปกรณ์ย่อยที่อยู่ในรายการยืมของคุณเท่านั้น",
+        );
+      }
+
+      if (isGeneralRepairFlow && validSubDeviceIds.length > 0) {
+        const hasInvalidGeneralSelection = selectedSubDevices.some(
+          (sub) =>
+            !borrowedChildSet.has(sub.dec_id) && sub.dec_status !== DEVICE_CHILD_STATUS.READY,
+        );
+
+        if (hasInvalidGeneralSelection) {
+          throw new HttpError(
+            HttpStatus.BAD_REQUEST,
+            "โหมดแจ้งซ่อมอิสระสามารถเลือกได้เฉพาะอุปกรณ์ย่อยที่พร้อมใช้งาน (READY) หรืออุปกรณ์ที่คุณกำลังยืมอยู่",
+          );
+        }
+      }
+
+      if (validSubDeviceIds.length > 0) {
+        const duplicatedOpenIssues = await tx.$queryRaw<{ id_dec_id: number }[]>`
+          SELECT DISTINCT id.id_dec_id
+          FROM issue_devices id
+          INNER JOIN ticket_issues ti ON ti.ti_id = id.id_ti_id
+          WHERE id.deleted_at IS NULL
+            AND ti.deleted_at IS NULL
+            AND ti.ti_status IN (${TI_STATUS.PENDING}::"TI_STATUS", ${TI_STATUS.IN_PROGRESS}::"TI_STATUS")
+            AND id.id_dec_id = ANY(${validSubDeviceIds}::int[])
+        `;
+
+        if (duplicatedOpenIssues.length > 0) {
+          throw new HttpError(
+            HttpStatus.BAD_REQUEST,
+            "มีอุปกรณ์ย่อยบางรายการอยู่ระหว่างการแจ้งซ่อมแล้ว",
+          );
+        }
+      }
+
+      if (isBorrowedRepairFlow && activeBorrowTicket && allSelectedAreBorrowedByRequester) {
         borrowTicketId = activeBorrowTicket.td_brt_id;
       }
 
@@ -426,12 +534,8 @@ export class RepairService {
         borrowTicketId = sourceIssueBorrowTicketId;
       }
 
-      if (!borrowTicketId) {
-        throw new HttpError(
-          HttpStatus.BAD_REQUEST,
-          "ไม่พบรายการยืมที่กำลังใช้งานสำหรับอุปกรณ์นี้",
-        );
-      }
+      // Note: borrowTicketId can be null if the item is not currently borrowed by the user 
+      // (e.g. reporting a broken item found in storage)
 
       const created = await tx.ticket_issues.create({
         data: {
@@ -456,6 +560,18 @@ export class RepairService {
           FROM device_childs
           WHERE dec_id = ANY(${validSubDeviceIds}::int[])
         `;
+
+        await tx.device_childs.updateMany({
+          where: {
+            dec_id: { in: validSubDeviceIds },
+            dec_status: DEVICE_CHILD_STATUS.READY,
+            deleted_at: null,
+          },
+          data: {
+            dec_status: DEVICE_CHILD_STATUS.REPAIRING,
+            updated_at: new Date(),
+          },
+        });
       }
 
       if (imagePaths.length > 0) {

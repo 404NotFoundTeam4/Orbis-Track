@@ -121,8 +121,13 @@ export default function RepairManagementTable({
               <div className="flex justify-end">
                 <button
                   type="button"
+                  disabled={item.can_repair === false}
                   onClick={() => onOpenAction(item)}
-                  className="rounded-full bg-[#F44336] px-6 py-2 text-sm font-semibold text-white hover:bg-red-600 transition-colors shadow-sm"
+                  className={`rounded-full px-6 py-2 text-sm font-semibold text-white transition-colors shadow-sm ${
+                    item.can_repair === false
+                      ? "cursor-not-allowed bg-[#BFBFBF]"
+                      : "bg-[#F44336] hover:bg-red-600"
+                  }`}
 >
                   แจ้งซ่อม
                 </button>

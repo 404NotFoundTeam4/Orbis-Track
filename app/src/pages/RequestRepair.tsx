@@ -15,6 +15,7 @@ import type {
 } from "../services/RequestRepairService";
 import { useUserStore } from "../stores/userStore";
 import type { RepairDeviceUpdate } from "../components/DeviceManageModalRepair";
+import { UserRole } from "../utils/RoleEnum";
 
 type SortField =
   | "device_name"
@@ -49,6 +50,8 @@ const RequestsRepair = () => {
   const dataUser =
     localStorage.getItem("User") || sessionStorage.getItem("User");
   const user = dataUser ? JSON.parse(dataUser) : null;
+  const isAdmin = user?.us_role === UserRole.ADMIN;
+  const isTechnical = user?.us_role === UserRole.TECHNICAL;
   const fetchUserFromServer = useUserStore(
     (state) => state.fetchUserFromServer,
   );
@@ -287,9 +290,21 @@ const RequestsRepair = () => {
   return (
     <div className="w-full h-full flex flex-col p-4 bg-[#F9FAFB]">
       <div className="flex-1">
-        <div className="mb-[8px] space-x-[9px]">
-          <span className="text-[#000000]">คำร้อง</span>
-        </div>
+        {isAdmin ? (
+          <div className="mb-[8px] space-x-[9px]">
+            <span className="text-[#858585]">การจัดการ</span>
+            <span className="text-[#858585]">&gt;</span>
+            <span className="text-[#000000]">คำร้องซ่อม</span>
+          </div>
+        ) : isTechnical ? (
+          <div className="mb-[8px] space-x-[9px]">
+            <span className="text-[#000000]">จัดการคำร้องซ่อม</span>
+          </div>
+        ) : (
+          <div className="mb-[8px] space-x-[9px]">
+            <span className="text-[#000000]">จัดการคำร้องซ่อม</span>
+          </div>
+        )}
 
         {/* Page Title */}
         <div className="flex items-center gap-[14px] mb-[21px]">

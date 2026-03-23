@@ -465,12 +465,22 @@ export class RepairService {
       const isBorrowedRepairFlow = Boolean(payload.sourceIssueId);
       const isGeneralRepairFlow = !isBorrowedRepairFlow;
 
-      if (selectedBorrowedByAnyone) {
-        throw new HttpError(
-          HttpStatus.BAD_REQUEST,
-          "มีอุปกรณ์ย่อยบางรายการที่เลือกกำลังถูกยืมอยู่",
-        );
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[repair.createRepairRequest][selection-check]", {
+          userId,
+          resolvedDeviceId,
+          validSubDeviceIds,
+          borrowedByRequester: Array.from(borrowedChildSet),
+          selectedBorrowedByAnyone: Boolean(selectedBorrowedByAnyone),
+          hasNonBorrowedSelection,
+          allSelectedAreBorrowedByRequester,
+          isBorrowedRepairFlow,
+          isGeneralRepairFlow,
+        });
       }
+
+      // อนุญาตให้อุปกรณ์ที่กำลังถูกยืมสามารถแจ้งซ่อมได้
+      void selectedBorrowedByAnyone;
 
       const totalChildCount = await tx.device_childs.count({
         where: {
@@ -496,7 +506,9 @@ export class RepairService {
       if (isGeneralRepairFlow && validSubDeviceIds.length > 0) {
         const hasInvalidGeneralSelection = selectedSubDevices.some(
           (sub) =>
-            !borrowedChildSet.has(sub.dec_id) && sub.dec_status !== DEVICE_CHILD_STATUS.READY,
+            !borrowedChildSet.has(sub.dec_id) &&
+            sub.dec_status !== DEVICE_CHILD_STATUS.READY &&
+            sub.dec_status !== DEVICE_CHILD_STATUS.BORROWED,
         );
 
         if (hasInvalidGeneralSelection) {
@@ -518,6 +530,15 @@ export class RepairService {
             AND id.id_dec_id = ANY(${validSubDeviceIds}::int[])
         `;
 
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[repair.createRepairRequest][duplicated-open-issues]", {
+            userId,
+            resolvedDeviceId,
+            validSubDeviceIds,
+            duplicatedOpenIssueDeviceIds: duplicatedOpenIssues.map((item) => item.id_dec_id),
+          });
+        }
+
         if (duplicatedOpenIssues.length > 0) {
           throw new HttpError(
             HttpStatus.BAD_REQUEST,
@@ -526,7 +547,7 @@ export class RepairService {
         }
       }
 
-      if (isBorrowedRepairFlow && activeBorrowTicket && allSelectedAreBorrowedByRequester) {
+      if (activeBorrowTicket && allSelectedAreBorrowedByRequester) {
         borrowTicketId = activeBorrowTicket.td_brt_id;
       }
 

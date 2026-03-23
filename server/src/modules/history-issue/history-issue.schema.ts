@@ -54,6 +54,7 @@ export const historyIssueAttachmentSchema = z.object({
  */
 export const historyIssueItemSchema = z.object({
   issueId: z.number(),
+  issueBorrowTicketId: z.number().nullable(),
 
   parentDevice: z.object({
     id: z.number(),

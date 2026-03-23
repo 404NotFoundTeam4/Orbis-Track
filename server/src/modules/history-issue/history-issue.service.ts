@@ -107,6 +107,7 @@ export class HistoryIssueService {
      */
     return ticketIssueList.map((ticketIssue) => ({
       issueId: ticketIssue.ti_id,
+      issueBorrowTicketId: ticketIssue.ti_brt_id,
 
       parentDevice: {
         id: ticketIssue.device.de_id,
@@ -186,6 +187,7 @@ export class HistoryIssueService {
 
     return {
       issueId: ticketIssue.ti_id,
+      issueBorrowTicketId: ticketIssue.ti_brt_id,
 
       parentDevice: {
         id: ticketIssue.device.de_id,

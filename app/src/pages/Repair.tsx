@@ -138,8 +138,16 @@ export default function Repair() {
         currentUserId ? issue.reporterUser.id === currentUserId : true,
       );
 
+      const openBorrowIssueItems = openIssueItems.filter(
+        (issue) => issue.issueBorrowTicketId != null,
+      );
+
+      const otherFlowIssueItems = openIssueItems.filter(
+        (issue) => issue.issueBorrowTicketId == null,
+      );
+
       const openCountByDevice = new Map<number, number>();
-      for (const issue of openIssueItems) {
+      for (const issue of openBorrowIssueItems) {
         const deviceId = issue.parentDevice.id;
         const amount = Math.max(issue.deviceChildCount ?? 1, 1);
         openCountByDevice.set(deviceId, (openCountByDevice.get(deviceId) ?? 0) + amount);
@@ -151,6 +159,7 @@ export default function Repair() {
         const deviceId = ticket.deviceSummary.deviceId;
         const borrowedCount = Math.max(ticket.deviceChildCount ?? 1, 1);
         const openedCount = openCountByDevice.get(deviceId) ?? 0;
+        const remainingCount = Math.max(borrowedCount - openedCount, 0);
 
         return {
           id: ticket.ticketId,
@@ -158,19 +167,19 @@ export default function Repair() {
           title: `BORROW-${ticket.ticketId}`,
           description: null,
           device_name: ticket.deviceSummary.deviceName,
-          quantity: borrowedCount,
+          quantity: remainingCount,
           category: ticket.deviceSummary.categoryName ?? "-",
           requester_name: ticket.requester.fullName,
           requester_emp_code: ticket.requester.employeeCode ?? null,
           request_date: ticket.requestDateTime ?? new Date().toISOString(),
           status: "IN_PROGRESS",
-          can_repair: openedCount < borrowedCount,
+          can_repair: remainingCount > 0,
         };
       });
 
       // แสดงรายการแจ้งซ่อมจาก flow อื่นแบบแยกราย ticket เสมอ
       // เพื่อไม่ให้ถูกรวมทับกับรายการที่มาจาก ticket ยืม แม้เป็นอุปกรณ์แม่ชื่อเดียวกัน
-      const otherItems: RepairItem[] = openIssueItems.map((issue) => ({
+      const otherItems: RepairItem[] = otherFlowIssueItems.map((issue) => ({
         id: issue.issueId,
         device_id: issue.parentDevice.id,
         title: issue.issueTitle,

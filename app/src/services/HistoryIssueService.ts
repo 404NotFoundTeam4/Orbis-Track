@@ -68,6 +68,7 @@ export type HistoryIssueAttachment = {
  */
 export type HistoryIssueItem = {
   issueId: number;
+  issueBorrowTicketId: number | null;
 
   parentDevice: {
     id: number;

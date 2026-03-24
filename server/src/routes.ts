@@ -131,6 +131,8 @@ export function routes(app: Express) {
 
   api.use("/repairs", authMiddleware, repairRouter);
 
+  api.use("/history-issue", authMiddleware, historyIssueRouter);
+
   api.use("/repair-tickets", authMiddleware, repairTicketsRouter);
   api.use(
     "/dashboard",

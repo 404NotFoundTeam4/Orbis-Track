@@ -30,6 +30,7 @@ import { useToast } from "../components/Toast";
 import { socketService } from "../services/SocketService";
 import type { DeviceReturnStatus } from "../components/DeviceReturnModals";
 import { metaService, type DropdownOption } from "../services/MetaService";
+import Breadcrumb from "../components/Breadcrumb";
 
 const Requests = () => {
   const [searchFilter, setSearchFilter] = useState({ search: "" });
@@ -551,9 +552,12 @@ const Requests = () => {
       <div className="flex-1">
         {/* Breadcrumb */}
         <div className="mb-[8px] space-x-[9px]">
-          <span className="text-[#858585]">การจัดการ</span>
-          <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000]">คำร้อง</span>
+          <Breadcrumb
+            items={[
+              { label: "การจัดการ" },
+              { label: "คำร้อง" }
+            ]}
+          />
         </div>
 
         {/* Page Title */}

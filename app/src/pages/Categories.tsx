@@ -6,6 +6,7 @@ import { useToast } from "../components/Toast";
 import { categoryService, type Category } from "../services/CategoryService";
 import { AlertDialog } from "../components/AlertDialog";
 import { CategoryModal } from "../components/CategoryModal";
+import Breadcrumb from "../components/Breadcrumb";
 
 export const Categories = () => {
   const toast = useToast();
@@ -145,9 +146,12 @@ export const Categories = () => {
     <div className="w-full h-screen overflow-hidden flex flex-col p-4">
       <div className="flex-1 overflow-hidden ">
         <div className="mb-[8px] space-x-[9px]">
-          <span className="text-[#858585]">การจัดการ</span>
-          <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000]">หมวดหมู่อุปกรณ์</span>
+          <Breadcrumb
+            items={[
+              { label: "การจัดการ" },
+              { label: "หมวดหมู่อุปกรณ์" }
+            ]}
+          />
         </div>
 
         {/* Title จัดการหมวดหมู่*/}

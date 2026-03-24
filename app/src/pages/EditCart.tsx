@@ -23,6 +23,7 @@ import {
 } from "../services/BorrowService";
 import { useToast } from "../components/Toast";
 import { AlertDialog } from "../components/AlertDialog";
+import Breadcrumb from "../components/Breadcrumb";
 
 export interface ActiveBorrow {
   start: string;
@@ -491,21 +492,13 @@ const EditCart = () => {
       <div className="flex-1">
         {/* Breadcrumb */}
         <div className="mb-[8px] space-x-[9px] text-sm">
-          <span
-            className="text-[#858585] cursor-pointer hover:underline"
-            onClick={() => navigate("/list-devices")}
-          >
-            รายการอุปกรณ์
-          </span>
-          <span className="text-[#858585]">&gt;</span>
-          <span
-            className="text-[#858585] cursor-pointer hover:underline"
-            onClick={() => navigate("/list-devices/cart")}
-          >
-            รถเข็น
-          </span>
-          <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000] font-medium">แก้ไขรายละเอียด</span>
+          <Breadcrumb
+            items={[
+              { label: "รายการอุปกรณ์", href: "/list-devices" },
+              { label: "รถเข็น", href: "/list-devices/cart" },
+              { label: "แก้ไขรายละเอียด" }
+            ]}
+          />
         </div>
         <h1 className="text-2xl font-semibold mb-[21px]">แก้ไขรายละเอียด</h1>
         

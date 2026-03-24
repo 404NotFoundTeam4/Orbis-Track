@@ -12,6 +12,7 @@ import {
   sectionService,
 } from "../services/DepartmentsService";
 import { AlertDialog } from "../components/AlertDialog";
+import Breadcrumb from "../components/Breadcrumb";
 
 type ModalType =
   | "add-department"
@@ -356,9 +357,12 @@ const Departments = () => {
         <div>
           {/* แถบนำทาง */}
           <div className="mb-[8px] space-x-[9px]">
-            <span className="text-[#858585]">การจัดการ</span>
-            <span className="text-[#858585]">&gt;</span>
-            <span className="text-[#000000]">แผนกและฝ่ายย่อย</span>
+            <Breadcrumb
+              items={[
+                { label: "การจัดการ" },
+                { label: "แผนกและฝ่ายย่อย" }
+              ]}
+            />
           </div>
 
           {/* ชื่อหน้า */}

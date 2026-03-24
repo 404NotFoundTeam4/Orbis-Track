@@ -9,6 +9,7 @@ import UserModal from "../components/UserModal";
 import { useToast } from "../components/Toast";
 import getImageUrl from "../services/GetImage.js";
 import { getAccount } from "../hooks/useAccount.js";
+import Breadcrumb from "../components/Breadcrumb.js";
 type User = {
   us_id: number;
   us_emp_code: string;
@@ -583,9 +584,12 @@ export const Users = () => {
       <div className="flex-1">
         {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">
-          <span className="text-[#858585]">การจัดการ</span>
-          <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000]">บัญชีผู้ใช้</span>
+          <Breadcrumb
+            items={[
+              { label: "การจัดการ" },
+              { label: "บัญชีผู้ใช้" }
+            ]}
+          />
         </div>
 
         {/* ชื่อหน้า */}

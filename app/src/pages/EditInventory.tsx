@@ -11,6 +11,7 @@ import {
 import { useParams } from "react-router-dom";
 import { useInventorys } from "../hooks/useInventory";
 import type { CreateApprovalFlowPayload, UpdateDevices } from "../services/InventoryService";
+import Breadcrumb from "../components/Breadcrumb";
 
 const EditInventory = () => {
   const { id } = useParams();
@@ -268,11 +269,13 @@ const EditInventory = () => {
       <div className="flex-1">
         {/* แถบนำทาง */}
         <div className="mb-[8px] space-x-[9px]">
-          <span className="text-[#858585]">การจัดการ</span>
-          <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#858585]">คลังอุปกรณ์</span>
-          <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000]">แก้ไขอุปกรณ์</span>
+          <Breadcrumb
+            items={[
+              { label: "การจัดการ" },
+              { label: "คลังอุปกรณ์", href: "/inventory" },
+              { label: "แก้ไขอุปกรณ์" }
+            ]}
+          />
         </div>
         {/* ชื่อหน้า */}
         <div className="flex items-center gap-[14px] mb-[21px]">

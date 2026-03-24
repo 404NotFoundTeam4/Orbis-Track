@@ -545,6 +545,7 @@ const Requests = () => {
       setRejectLoading(false);
     }
   };
+  
 
   return (
     <div className="w-full h-full flex flex-col p-4">
@@ -553,7 +554,7 @@ const Requests = () => {
         <div className="mb-[8px] space-x-[9px]">
           <span className="text-[#858585]">การจัดการ</span>
           <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000]">คำร้อง</span>
+          <span className="text-[#000000]">คำร้องยืม</span>
         </div>
 
         {/* Page Title */}

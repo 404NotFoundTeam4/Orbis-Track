@@ -211,6 +211,18 @@ const Navbar = () => {
       setActiveSubMenu("คำร้อง");
       setOpenMenu("จัดการ");
       setDropdownOpen(true);
+    } else if (path.includes("/request-issues")) {
+      if (role === UserRole.ADMIN) {
+        setActiveMenu("management_admin");
+        setActiveSubMenu("คำร้องซ่อม");
+        setOpenMenu("จัดการ");
+        setDropdownOpen(true);
+      } else {
+        setActiveMenu("technical_repair_requests");
+        setActiveSubMenu(null);
+        setOpenMenu(null);
+        setDropdownOpen(false);
+      }
     } else if (path.includes("/account-management")) {
       setActiveMenu("management_admin");
       setActiveSubMenu("บัญชีผู้ใช้");

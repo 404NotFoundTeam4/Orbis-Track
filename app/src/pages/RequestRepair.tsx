@@ -39,6 +39,11 @@ const statusOptions = [
   { id: "pending", label: "รออนุมัติ", value: "PENDING" },
   { id: "in_progress", label: "กำลังซ่อม", value: "IN_PROGRESS" },
 ];
+const mineTabOptions = [
+  { id: "all", label: "ทั้งหมด", value: "ALL" },
+  { id: "in_progress", label: "กำลังซ่อม", value: "IN_PROGRESS" },
+  { id: "completed", label: "เสร็จสิ้น", value: "COMPLETED" },
+];
 /**
  * Description: หน้าจัดการคำร้องแจ้งซ่อม รองรับการค้นหา กรองสถานะ แบ่งหน้า และอนุมัติรับงาน
  * Input : -
@@ -155,8 +160,8 @@ const RequestsRepair = () => {
       };
 
       if (activeTabKey === "mine" && user?.us_id) {
-        if (user?.us_id) queryParams.assignID = user.us_id;
-        queryParams.status = "IN_PROGRESS";
+        queryParams.assignID = user.us_id;
+
       }
 
       if (searchFilter.search) {
@@ -164,14 +169,13 @@ const RequestsRepair = () => {
       }
 
       if (statusFilter && statusFilter.value !== "ALL") {
-  queryParams.status = statusFilter.value as RepairTicketStatus;
-}
-
+        queryParams.status = statusFilter.value as RepairTicketStatus;
+      }
       const response = await repairTicketsService.getRepairTickets(queryParams);
-
-      // response.data จาก Axios มักจะมีรูปแบบซ้อนกัน ขึ้นอยู่กับ Interface ของ API Service
-      setTickets(response.data.data || response.data);
-      setTotalPages(response.data.pagination?.totalPages || 1);
+      
+      setTickets(response.data || []);
+      setTotalPages(response.pagination?.totalPages || 1);
+      
     } catch (err: unknown) {
       const errorResponse = err as {
         response?: { data?: { message?: string } };
@@ -183,7 +187,7 @@ const RequestsRepair = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, searchFilter.search, statusFilter?.value, activeTabKey]);
+  }, [page, searchFilter.search, statusFilter?.value, activeTabKey, user?.us_id]);
 
   useEffect(() => {
     setPage(1);
@@ -192,6 +196,12 @@ const RequestsRepair = () => {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTabKey(tab);
+    setStatusFilter(tab === "all" ? statusOptions[0] : mineTabOptions[0]);
+    setPage(1);
+  };
 
   /**
    * Description: ฟังก์ชันสำหรับจัดการการเรียงลำดับคอลัมน์ (Sorting)
@@ -231,27 +241,7 @@ const RequestsRepair = () => {
     setExpandedId(isExpanded ? ticketId : null);
   };
 
-  // กำหนดจำนวนแถวที่ต้องการแสดงในตาราง (รวมแถวว่าง)
-  const displayRow = 8;
-
-  /**
-   * Description: ฟังก์ชันสำหรับเติมแถวว่างในกรณีที่จำนวนคำร้องน้อยกว่า displayRow เพื่อให้ตารางมีความสวยงามและคงรูปแบบเดิม
-   * Input : - tickets (อาร์เรย์ของคำร้องแจ้งซ่อมที่ดึงมาจาก API)
-   * Output : อาร์เรย์ของ TicketRow ที่มีทั้งคำร้องจริงและแถวว่าง (ถ้าจำนวนคำร้องน้อยกว่า displayRow)
-   * Author : Worrawat Namwat (Wave) 66160372
-   */
-  const filledTickets: TicketRow[] =
-    tickets.length < displayRow
-      ? [
-          ...tickets,
-          ...Array.from({ length: displayRow - tickets.length }, (_, i) => ({
-            id: `empty-${i}`,
-            isEmpty: true as const,
-          })),
-        ]
-      : tickets;
-
-    const sortedTickets = [...tickets].sort((a, b) => {
+  const sortedTickets = [...tickets].sort((a, b) => {
     let valA: string | number = "";
     let valB: string | number = "";
 
@@ -287,6 +277,26 @@ const RequestsRepair = () => {
     return 0;
   });
 
+  // กำหนดจำนวนแถวที่ต้องการแสดงในตาราง (รวมแถวว่าง)
+  const displayRow = 10;
+
+  /**
+   * Description: ฟังก์ชันสำหรับเติมแถวว่างในกรณีที่จำนวนคำร้องน้อยกว่า displayRow เพื่อให้ตารางมีความสวยงามและคงรูปแบบเดิม
+   * Input : - tickets (อาร์เรย์ของคำร้องแจ้งซ่อมที่ดึงมาจาก API)
+   * Output : อาร์เรย์ของ TicketRow ที่มีทั้งคำร้องจริงและแถวว่าง (ถ้าจำนวนคำร้องน้อยกว่า displayRow)
+   * Author : Worrawat Namwat (Wave) 66160372
+   */
+  const filledTickets: TicketRow[] =
+    sortedTickets.length < displayRow
+      ? [
+          ...sortedTickets,
+          ...Array.from({ length: displayRow - sortedTickets.length }, (_, i) => ({
+            id: `empty-${i}`,
+            isEmpty: true as const,
+          })),
+        ]
+      : sortedTickets;
+
   return (
     <div className="w-full h-full flex flex-col p-4 bg-[#F9FAFB]">
       <div className="flex-1">
@@ -316,14 +326,14 @@ const RequestsRepair = () => {
         <div className="mb-4 flex flex-wrap gap-3">
           <TabButton
             isActive={activeTabKey === "all"}
-            onClick={() => setActiveTabKey("all")}
+            onClick={() => handleTabChange("all")}
           >
             ทั้งหมด
           </TabButton>
 
           <TabButton
             isActive={activeTabKey === "mine"}
-            onClick={() => setActiveTabKey("mine")}
+            onClick={() => handleTabChange("mine")}
           >
             ของฉัน
           </TabButton>
@@ -334,14 +344,14 @@ const RequestsRepair = () => {
           <div className="flex justify-between items-center gap-4">
             <SearchFilter onChange={setSearchFilter} />
             <div>
-              {activeTabKey === "all" && (
+              
                 <Dropdown
-                  items={statusOptions}
+                  items={activeTabKey === "all" ? statusOptions : mineTabOptions}
                   value={statusFilter}
                   onChange={setStatusFilter}
                   placeholder="สถานะ"
                 />
-              )}
+
             </div>
           </div>
         </div>
@@ -445,9 +455,18 @@ const RequestsRepair = () => {
             <div className="w-full rounded-2xl p-8 text-center text-gray-500"></div>
           )}
 
-          {!loading && !error && sortedTickets.length > 0 && (
+          {!loading && !error && tickets.length > 0 && (
             <div className="flex flex-col ">
-              {sortedTickets.map((ticket) => (
+              {/* เปลี่ยนมาลูป filledTickets แทน */}
+              {filledTickets.map((ticket) =>
+                "isEmpty" in ticket ? (
+                  // ถ้าเป็นแถวว่าง ให้แสดงกล่องเปล่าๆ ที่มีความสูงเท่ากับคำร้องจริง
+                  <div
+                    key={ticket.id}
+                    className="w-full bg-transparent rounded-[16px] mb-[16px] h-[61px]"
+                  />
+                ) : (
+                  // ถ้าเป็นข้อมูลจริง ให้แสดงคอมโพเนนต์คำร้อง
                   <RequestItemRepair
                     key={ticket.id}
                     ticket={ticket as RepairTicketItem}
@@ -459,7 +478,8 @@ const RequestsRepair = () => {
                     onSave={handleSaveAction}
                     activeTabKey={activeTabKey}
                   />
-              ))}
+                )
+              )}
             </div>
           )}
 

@@ -51,7 +51,7 @@ const statusConfig: Record<
   },
   COMPLETED: {
     label: "เสร็จสิ้น",
-    className: "bg-green-100 text-green-800 border border-green-200",
+    className: "bg-white text-[#73D13D] border border-[#73D13D]",
   },
 };
 
@@ -269,23 +269,30 @@ export default function RequestItemRepair({
           onClick={preventAccordionToggle}
         >
           {activeTabKey === "mine" ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setIsManageModalOpen(true);
-              }}
-              className="bg-[#40A9FF] border border-[#40A9FF] text-white w-[105px] h-[44px] rounded-full flex items-center justify-center hover:bg-[#1890FF] transition-colors -ml-3.5"
-            >
-              บันทึก
-            </button>
+            
+            localStatus === "COMPLETED" ? (
+              <span className="text-[#73D13D] font-medium text-[15px] flex items-center justify-center h-[44px] whitespace-nowrap -ml-4">
+                บันทึกข้อมูลแล้ว
+              </span>
+            ) : (
+              // ถ้ายังไม่เสร็จ ก็โชว์ปุ่มบันทึกตามปกติ
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setIsManageModalOpen(true);
+                }}
+                className="bg-[#40A9FF] border border-[#40A9FF] text-white w-[105px] h-[44px] rounded-full flex items-center justify-center hover:bg-[#1890FF] transition-colors -ml-3.5"
+              >
+                บันทึก
+              </button>
+            )
           ) : localApprover ? (
             <div className="flex items-center  -ml-3">
-              <span className="text-[#73D13D] mr-1">ผู้รับคำร้อง :</span>
-
+              <span className="text-[#73D13D] mr-1 text-[14px] whitespace-nowrap">ผู้รับ :</span>
               <span
-                className="text-[#73D13D] truncate max-w-[120px]"
+                className="text-[#73D13D] truncate max-w-[100px]"
                 title={localApprover}
               >
                 {localApprover}
@@ -299,7 +306,7 @@ export default function RequestItemRepair({
               รับคำร้อง
             </button>
           ) : (
-            <span className="bg-white border border-[#73D13D] text-[#73D13D] w-[105px] h-[44px] rounded-full flex items-center justify-center">
+            <span className="bg-white border border-[#73D13D] text-[#73D13D] w-[105px] h-[44px] rounded-full flex items-center justify-center -ml-4">
               -
             </span>
           )}

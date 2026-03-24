@@ -14,8 +14,8 @@ async function loadFontAsBase64(fontUrl: string) {
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000;
 
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize);
     binary += String.fromCharCode(...chunk);
   }
 

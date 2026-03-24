@@ -81,10 +81,11 @@ const RepairStatusSummary = ({
 
     return (
         <div
-            className="bg-[#FFFFFF] border border-[#D9D9D9] rounded-[16px] px-[46px] py-[25px]"
+            className="bg-[#FFFFFF] shadow-[0_8px_18px_rgba(0,0,0,0.03)] rounded-[18px] px-[46px] py-[25px]"
             style={{
                 width: `${width}px`,
-                height: `${height}px`
+                height: `${height}px`,
+                border: "1.5px solid #D9D9D9"
             }}
         >
             {/* Header */}

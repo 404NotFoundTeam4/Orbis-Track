@@ -23,8 +23,8 @@ interface BorrowRateProps {
   data: BorrowRateItem[];
 }
 
-/* 🔥 ไล่เฉดสีแต่ละแท่ง */
-const GRADIENT_COLORS = [
+
+const gradientColors = [
   ["#40A9FF", "#40A9FF"],
   ["#69C0FF", "#69C0FF"],
   ["#91D5FF", "#91D5FF"],
@@ -41,10 +41,10 @@ const BorrowStatusSummary = ({
 }: BorrowRateProps) => {
   const filteredData = [...data]
     .filter((item) => item.value > 0)
-    .sort((a, b) => b.value - a.value);
+    .sort((value1, value2) => value2.value - value1.value);
 
   const total = filteredData.reduce((sum, item) => sum + item.value, 0);
-  const maxValue = Math.max(...filteredData.map((d) => d.value));
+  const maxValue = Math.max(...filteredData.map((maxData) => maxData.value));
    
  const getSmartMax = (value: number) => {
   if (value <= 100) return 100;
@@ -57,8 +57,8 @@ const BorrowStatusSummary = ({
 const maxDomain = getSmartMax(maxValue);
   return (
     <div
-      className="bg-white border border-[#E5E7EB] rounded-[20px] px-10 py-8"
-      style={{ width: `${width}px`, height: `${height}px` }}
+      className="bg-white shadow-[0_8px_18px_rgba(0,0,0,0.03)] rounded-[18px] px-10 py-8"
+      style={{ width: `${width}px`, height: `${height}px`, border: "1.5px solid #D9D9D9" }}
     >
       <h2 className="text-[20px] font-bold text-[#1F2937] mb-8">{title}</h2>
 
@@ -86,13 +86,13 @@ const maxDomain = getSmartMax(maxValue);
                   <stop
                     offset="0%"
                     stopColor={
-                      GRADIENT_COLORS[index % GRADIENT_COLORS.length][0]
+                      gradientColors[index % gradientColors.length][0]
                     }
                   />
                   <stop
                     offset="100%"
                     stopColor={
-                      GRADIENT_COLORS[index % GRADIENT_COLORS.length][1]
+                      gradientColors[index % gradientColors.length][1]
                     }
                   />
                 </linearGradient>

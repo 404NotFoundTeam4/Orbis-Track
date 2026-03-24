@@ -43,7 +43,6 @@ export default function BorrowDetailModal({ data, onClose }: Props) {
           </div>
 
           <div className="flex flex-col gap-4">
-            <DetailRow label="วันที่ - เวลา" value={formatDate(data.returnDate)} />
             <DetailRow label="ผู้ส่งคำขอ" value={data.userName} />
             <DetailRow label="เบอร์โทรศัพท์" value={data.phone} />
             <DetailRow label="อุปกรณ์" value={data.equipments.join(", ")} />
@@ -54,6 +53,7 @@ export default function BorrowDetailModal({ data, onClose }: Props) {
             <DetailRow label="สถานที่ใช้งาน" value={data.location} />
             <DetailRow label="ผู้ดำเนินการ" value={data.staffName || "-"} />
             <DetailRow label="วันที่ยืม" value={formatDate(data.startDate)} />
+            <DetailRow label="วันที่คืน" value={formatDate(data.returnDate)} />
           </div>
         </div>
 

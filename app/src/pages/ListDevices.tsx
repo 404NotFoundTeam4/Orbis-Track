@@ -6,6 +6,7 @@ import {
 import SearchFilter from "../components/SearchFilter";
 import DropDown from "../components/DropDown";
 import DevicesCard from "../components/DevicesCard";
+import Breadcrumb from "../components/Breadcrumb";
 
 const ListDevices = () => {
   // เก็บข้อมูลอุปกรณ์
@@ -111,7 +112,6 @@ const ListDevices = () => {
     <div className="flex-1 flex flex-col gap-[20px] w-full h-[calc(100vh-140px)] overflow-hidden p-4 ">
       {/* Header */}
       <div className="flex flex-col">
-        <span className="mb-[8px]">รายการอุปกรณ์</span>
         <div className="flex items-center gap-[14px]">
           <h1 className="text-2xl font-semibold">รายการอุปกรณ์</h1>
           <div className="bg-[#D9D9D9] text-sm text-[#000000] rounded-full px-4 py-1 flex items-center justify-center w-[160px] h-[34px]">

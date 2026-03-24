@@ -29,6 +29,13 @@ const Breadcrumb = ({ items }: BreadcrumbProps) => {
                                         {item.label}
                                     </Link >
                                 )
+                            // ไม่ใช่ตัวสุดท้ายแต่ไม่มี href กดไม่ได้
+                            : index !== items.length - 1
+                                ? (
+                                    <span className="text-[#858585]">
+                                        {item.label}
+                                    </span>
+                                )
                             // ตัวสุดท้ายให้เป็นข้อความ
                                 : (
                                     <span className="text-[#000000]">

@@ -30,11 +30,6 @@ export const Settings = () => {
     return (
         <div className="w-full h-screen overflow-hidden flex flex-col p-[18px]">
         <div className="flex-1 overflow-hidden">
-            {/* Breadcrumb */}
-            <div className="mb-[8px] space-x-[9px]">
-            <span className="text-[#858585]">การตั้งค่า</span>
-            </div>
-
             {/* Title */}
             <div className="mb-[18px]">
             <h1 className="text-[24px] font-semibold text-black">การตั้งค่า</h1>

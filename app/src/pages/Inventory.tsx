@@ -18,6 +18,7 @@ import { useToast } from "../components/Toast.js";
 import { AlertDialog } from "../components/AlertDialog.js";
 import api from "../api/axios.js";
 import getImageUrl from "../services/GetImage";
+import Breadcrumb from "../components/Breadcrumb.js";
 
 // type อุปกรณ์ย่อย
 type DeviceChild = {
@@ -336,9 +337,12 @@ export const Inventory = () => {
       <div className="flex-1">
         {/* Breadcrumbs */}
         <div className="mb-[8px] space-x-[9px]">
-          <span className="text-[#858585]">การจัดการ</span>
-          <span className="text-[#858585]">&gt;</span>
-          <span className="text-[#000000]">คลังอุปกรณ์</span>
+          <Breadcrumb
+            items={[
+              { label: "การจัดการ" },
+              { label: "คลังอุปกรณ์" }
+            ]}
+          />
         </div>
 
         {/* Title */}

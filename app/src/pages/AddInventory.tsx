@@ -1,6 +1,7 @@
 import MainDeviceModal from "../components/DeviceModal";
 import { useInventorys } from "../hooks/useInventory";
 import { useToast } from "../components/Toast";
+import Breadcrumb from "../components/Breadcrumb";
 
 export default function AddInventory() {
   const { push } = useToast();
@@ -73,11 +74,13 @@ export default function AddInventory() {
   return (
     <div className="p-4">
       <div className="mb-[8px] space-x-[9px]">
-        <span className="text-[#858585]">การจัดการ</span>
-        <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#858585]">คลังอุปกรณ์</span>
-        <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#000000]">เพิ่มอุปกรณ์ใหม่</span>
+        <Breadcrumb
+          items={[
+            { label: "การจัดการ" },
+            { label: "คลังอุปกรณ์", href: "/inventory" },
+            { label: "เพิ่มอุปกรณ์ใหม่" }
+          ]}
+        />
       </div>
 
       {/* ชื่อหน้า */}

@@ -245,8 +245,7 @@ export default function Dashboard() {
    */
   return (
     <div className="w-full px-[20px] py-[20px] ">
-      <div className="text-sm text-[#000000]">แดชบอร์ด</div>
-      <div className="mt-1 text-3xl font-extrabold tracking-tight text-neutral-900">
+      <div className="mt-1 text-2xl font-extrabold tracking-tight text-neutral-900">
         แดชบอร์ด
       </div>
 

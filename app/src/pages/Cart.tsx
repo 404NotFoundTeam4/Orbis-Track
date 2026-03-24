@@ -7,6 +7,7 @@ import CartService from "../services/CartService";
 import axios from "axios";
 import getImageUrl from "../services/GetImage.js";
 import { setSeenCartSnapshot } from "../utils/cartSeenStorage";
+import Breadcrumb from "../components/Breadcrumb.js";
 
 /**
  * Description : หน้า Cart สำหรับจัดการรายการอุปกรณ์ที่ผู้ใช้เลือกยืม
@@ -410,11 +411,12 @@ export const Cart = () => {
           <div className="shrink-0">
             {/* แถบนำทาง */}
             <div className="mb-[8px] space-x-[9px]">
-              <Link to="/list-devices" className="text-[#858585]">
-                รายการอุปกรณ์
-              </Link>
-              <span className="text-[#858585]">&gt;</span>
-              <span className="text-[#000000]">รถเข็น</span>
+              <Breadcrumb
+                items={[
+                  { label: "รายการอุปกรณ์", href: "/list-devices" },
+                  { label: "รถเข็น" }
+                ]}
+              />
             </div>
 
             {/* Page Title */}

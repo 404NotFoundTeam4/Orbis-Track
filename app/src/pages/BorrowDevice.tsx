@@ -9,6 +9,7 @@ import {
 } from "../services/BorrowService";
 import { useEffect, useState } from "react";
 import { useToast } from "../components/Toast";
+import Breadcrumb from "../components/Breadcrumb";
 
 interface BorrowForm {
   borrowerId: number; // ไอดีคนที่จะยืมให้
@@ -307,12 +308,12 @@ const BorrowDevice = () => {
     <div className="flex flex-col gap-[20px] w-[1707px] min-h-[945px] p-4">
       <div className="flex-1">
       <div className="mb-[8px] space-x-[9px]">
-        <Link to="/list-devices" className="text-[#858585]">
-          รายการอุปกรณ์
-        </Link>
-        {/* <span className="text-[#858585]">รายการอุปกรณ์</span> */}
-        <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#000000]">ยืมอุปกรณ์</span>
+        <Breadcrumb
+          items={[
+            { label: "รายการอุปกรณ์", href: "/list-devices" },
+            { label: "ยืมอุปกรณ์" }
+          ]}
+        />
       </div>
 
       <div className="flex items-center mb-[21px]">

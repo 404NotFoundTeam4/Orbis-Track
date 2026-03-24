@@ -104,7 +104,9 @@ export default function RepairManagementTable({
             >
               <div className="text-[15px] text-black">
                 <div className="font-medium text-gray-800">{item.device_name}</div>
-                <div className="text-[13px] text-gray-400">{item.title || "รหัส : PJ"}</div>
+                <div className="text-[13px] text-gray-400">
+                  รหัส : {item.device_code?.trim() ? item.device_code : "-"}
+                </div>
               </div>
               <div className="text-[15px] text-gray-700 font-medium">{item.quantity}</div>
               <div className="text-[15px] text-gray-600">{item.category}</div>
@@ -146,3 +148,4 @@ export default function RepairManagementTable({
     </div>
   );
 }
+

@@ -45,7 +45,11 @@ export const repairTicketsService = {
 
     const whereCondition: Prisma.ticket_issuesWhereInput = {
       deleted_at: null,
-      ...(status ? { ti_status: status } : { ti_status: { not: TI_STATUS.COMPLETED } }),
+      ...(status
+        ? { ti_status: status }
+        : assignID
+        ? {} // ถ้ามี assignID (แท็บของฉัน) ดึงมาทุกสถานะรวมถึงสำเร็จด้วย
+        : { ti_status: { not: TI_STATUS.COMPLETED } }), // ถ้าเป็นแท็บทั้งหมด ให้ดักซ่อนงานที่สำเร็จแล้ว
       ...(assignID && { ti_assigned_to: assignID }),
       ...(start_date &&
         end_date && {
@@ -140,7 +144,7 @@ export const repairTicketsService = {
           asset_code: assetCode !== "-" ? assetCode : null,
           category: t.device?.category?.ca_name || "ไม่ระบุหมวดหมู่",
           quantity: quantity,
-          location: t.device?.de_location || "-",
+          location: t.ti_resolved_note || "-",
           image: issuePrimaryImage,
           reported_devices: reportedDevices,
         },

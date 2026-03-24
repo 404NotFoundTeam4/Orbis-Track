@@ -76,10 +76,8 @@ export interface RepairTicketsPagination {
 
 export interface GetRepairTicketsResponse {
   success: boolean;
-  data: {
-    data: RepairTicketItem[];
-    pagination: RepairTicketsPagination;
-  };
+  data: RepairTicketItem[];            
+  pagination: RepairTicketsPagination; 
 }
 
 export interface GetRepairTicketsQuery {

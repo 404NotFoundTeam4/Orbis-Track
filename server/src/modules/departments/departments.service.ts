@@ -88,8 +88,8 @@ async function editDepartment(
   const { id } = params;
   const { department } = payload;
 
-  if (!isTextOnly(department))
-    throw new Error("Departments should be text only");
+  if (!isValidNamePattern(department))
+    throw new Error("Departments should not contain special characters");
 
   // clean text: ตัดคำว่า "แผนก" ออกจากชื่อที่ผู้ใช้กรอก
   const cleanedName = department
@@ -170,8 +170,8 @@ async function editSection(
   const { deptId, secId } = params;
   const { section } = payload;
 
-  if (!isTextOnly(section))
-    throw new Error("Departments should be text only");
+  if (!isValidNamePattern(section))
+    throw new Error("Sections should not contain special characters");
 
   // ดึงชื่อแผนกจาก database
   const dept = await prisma.departments.findUnique({
@@ -398,14 +398,14 @@ async function deleteDepartment(params: IdParamDto) {
 }
 
 /**
- * Description: ตรวจสอบว่าข้อความเป็นเฉพาะตัวอักษรหรือไม่
+ * Description: ตรวจสอบว่าข้อความเป็นเฉพาะอักษรและตัวเลขเท่านั้นหรือไม่
  * Input     : text (string) - ข้อความที่ต้องการตรวจสอบ
- * Output    : boolean - true ถ้าเป็นเฉพาะตัวอักษร, false ถ้าไม่ใช่
- * Note      : ใช้ regex เพื่อตรวจสอบว่ามีเฉพาะตัวอักษร a-z, A-Z, ก-ฮ, ะ-์ และช่องว่างเท่านั้น
+ * Output    : boolean - true ถ้าเป็นเฉพาะตัวอักษรและตัวเลข, false ถ้าไม่ใช่
+ * Note      : ใช้ regex เพื่อตรวจสอบว่ามีเฉพาะตัวอักษร a-z, A-Z, ก-ฮ, ะ-์, ตัวเลข 0-9 และช่องว่างเท่านั้น
  * Author    : Sutaphat Thahin (Yeen) 66160378
  */
-function isTextOnly(text: string): boolean {
-  return /^[a-zA-Zก-ฮะ-์\s]+$/.test(text);
+function isValidNamePattern(text: string): boolean {
+  return /^[a-zA-Zก-ฮะ-์0-9\s]+$/.test(text);
 }
 
 /**
@@ -423,8 +423,8 @@ async function addDepartments(payload: AddDepartmentsPayload) {
   const { dept_name } = payload;
 
   //ตรวจสอบว่าชื่อแผนกไม่เป็นตัวเลขหรือตัวอักษรพิเศษ
-  if (!isTextOnly(dept_name))
-    throw new Error("Departments should be text only");
+  if (!isValidNamePattern(dept_name))
+    throw new Error("Departments should not contain special characters");
 
   // จัดรูปแบบชื่อแผนกให้มีคำว่า "แผนก" นำหน้า
   const newDept = dept_name.includes("แผนก") //ตรวจสอบว่าชื่อแผนกมีคำว่า "แผนก"

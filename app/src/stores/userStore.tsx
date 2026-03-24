@@ -3,13 +3,7 @@ import { persist } from "zustand/middleware";
 import { UserData } from "../services/AccountService.js";
 import { socketService } from "../services/SocketService.js";
 
-export type Role =
-  | "ADMIN"
-  | "HOD"
-  | "HOS"
-  | "TECHNICAL"
-  | "STAFF"
-  | "EMPLOYEE"
+export type Role = "ADMIN" | "HOD" | "HOS" | "TECHNICAL" | "STAFF" | "EMPLOYEE";
 
 interface User {
   us_id?: number;
@@ -74,18 +68,20 @@ export const useUserStore = create<UserStore>()(
       },
 
       /**
-       * logout
+       * logout - เคลียร์ข้อมูลการ login ทั้งหมด
+       * Note: การเรียก API logout ต้องทำก่อนเรียก function นี้
        */
       logout: () => {
         localStorage.removeItem("token");
         localStorage.removeItem("rememberUser");
+        localStorage.removeItem("User"); // เพิ่ม: ลบ User ด้วย
         sessionStorage.removeItem("token");
-        socketService.disconnect()
-        set({ user: null });
+        socketService.disconnect();
+        set({ user: null, isLoggedIn: false });
       },
     }),
     {
       name: "User",
-    }
-  )
+    },
+  ),
 );

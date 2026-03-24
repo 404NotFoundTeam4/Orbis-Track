@@ -245,9 +245,8 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     const trimmedDept = department.trim();
     const trimmedSection = section.trim();
 
-    // ตัวอักษรไทย/อังกฤษ ห้ามเว้นวรรค ห้ามเลข ห้ามพิเศษ
-    // const onlyLetters = /^[A-Za-zก-ฮ]+$/;
-    const onlyLetters = /^[\u0E00-\u0E7FA-Za-z\s]+$/;
+    // ตัวอักษรไทย/อังกฤษ ห้ามเว้นวรรค ห้ามพิเศษ ตัวเลขจะมีก็ได้แล้วแต่
+    const validPattern = /^[\u0E00-\u0E7FA-Za-z0-9\s]+$/;
 
     //Validate แผนก
     if (type === "add-department" || type === "edit-department") {
@@ -256,8 +255,8 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         return false;
       }
 
-      if (!onlyLetters.test(trimmedDept)) {
-        setDeptError("กรุณากรอกเฉพาะตัวอักษรเท่านั้น");
+      if (!validPattern.test(trimmedDept)) {
+        setDeptError("กรุณากรอกเฉพาะตัวอักษรและตัวเลขเท่านั้น");
         return false;
       }
 
@@ -279,8 +278,8 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         return false;
       }
 
-      if (!onlyLetters.test(trimmedSection)) {
-        setDeptError("กรุณากรอกเฉพาะตัวอักษรเท่านั้น");
+      if (!validPattern.test(trimmedSection)) {
+        setDeptError("กรุณากรอกเฉพาะตัวอักษรและตัวเลขเท่านั้น");
         return false;
       }
 
@@ -302,8 +301,8 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         return false;
       }
 
-      if (!onlyLetters.test(pureValue)) {
-        setDeptError("กรุณากรอกเฉพาะตัวอักษรเท่านั้น");
+      if (!validPattern.test(pureValue)) {
+        setDeptError("กรุณากรอกเฉพาะตัวอักษรและตัวเลขเท่านั้น");
         return false;
       }
 
@@ -394,6 +393,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                     setDepartment(e?.target?.value ?? e);
                     setDeptError("");
                   }}
+                  
                   autoFocus
                   required
                   error={deptError}
@@ -412,7 +412,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   placeholder="ประเภทแผนก"
                   searchPlaceholder="ค้นหาแผนก"
                   searchable={true}
-                  className="w-[333px]"
+                  width={333}
                   triggerClassName="h-[46px] pl-[15px] pr-[8px] py-3 border-[#A2A2A2] text-[#000] rounded-[16px] h-[46px] pl-[15px] pr-[8px] py-3 border-[#A2A2A2] text-[#000] rounded-[16px] text-[16px] [&>span]:text-[16px]"
                 />
               </div>

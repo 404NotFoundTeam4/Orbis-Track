@@ -76,7 +76,7 @@ export const Cart = () => {
         category: cti.de_ca_name ?? "ไม่ระบุ",
         department: cti.de_dept_name ?? "ไม่ระบุ",
         qty: cti.cti_quantity ?? 1,
-        image: cti.device?.de_images ?? "/images/default.png",
+        image: cti.device?.de_images ?? null,
         section: cti.de_sec_name
           ? cti.de_sec_name.trim().split(" ").pop()
           : "-",
@@ -113,13 +113,13 @@ export const Cart = () => {
    * Output : - (เปลี่ยนค่า CSS overflow ของ document.body และคืนค่าเดิมผ่าน cleanup)
    * Author : Nontapat Sinhum (Guitar) 66160104
    **/
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  // useEffect(() => {
+  //   const prev = document.body.style.overflow;
+  //   document.body.style.overflow = "hidden";
+  //   return () => {
+  //     document.body.style.overflow = prev;
+  //   };
+  // }, []);
 
   /**
    * Description: mark cart snapshot ว่า "เห็นแล้ว" หลังโหลด cart สำเร็จ (ลดการยิงซ้ำจาก Navbar)
@@ -402,7 +402,8 @@ export const Cart = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-126px)] overflow-hidden">
+    // <div className="h-[calc(100vh-126px)] overflow-hidden">
+    <div className="h-auto">
       <div className="w-full h-full min-h-0 flex flex-row p-4 gap-6 overflow-hidden">
         {/* LEFT SIDE: Cart Items */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
@@ -490,11 +491,20 @@ export const Cart = () => {
                         />
                       </span>
                     </label>
-                    <img
-                      src={getImageUrl(item.image)}
-                      alt={item.name}
-                      className="w-[143px] h-[153px] rounded-lg object-cover border border-gray-100"
-                    />
+                    <div className="w-[143px] h-[153px] rounded-lg object-cover border border-gray-100 flex items-center justify-center">
+                      {item.image ? (
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.name}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      ) : (
+                        <div className="text-[#BFBFBF] flex flex-col items-center gap-2">
+                          <Icon icon="mdi:image-outline" width="48" height="48" />
+                          <span className="text-sm">ไม่มีรูปภาพ</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span
@@ -539,7 +549,7 @@ export const Cart = () => {
                       <div className="w-full text-left text-sm space-y-[2px]">
                         ช่วงเวลายืม - คืน
                       </div>
-                      <div className="text-right text-sm text-[#B3B1B1] space-y-[2px]">
+                      <div className="text-left text-sm text-[#B3B1B1] space-y-[2px]">
                         <div>วันที่ยืม : {item.borrowDate}</div>
                         <div>วันที่คืน : {item.returnDate}</div>
                       </div>

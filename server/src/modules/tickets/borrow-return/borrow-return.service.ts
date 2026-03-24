@@ -81,6 +81,8 @@ export class BorrowReturnService {
           empcode: item.requester.us_emp_code,
           image: item.requester.us_images,
           department: item.requester.department?.dept_name || "-",
+          borrow_user: `${item.requester.us_firstname} ${item.requester.us_lastname}`,
+          borrow_phone: item.requester.us_phone,
         },
 
         device_summary: {
@@ -93,7 +95,10 @@ export class BorrowReturnService {
           image: mainDevice ? mainDevice.de_images : null,
           category: mainDevice ? mainDevice.category.ca_name : "-",
           section:
-            mainDevice?.section?.sec_name.replace(dept, "").trim() ?? "-",
+            mainDevice?.section?.sec_name
+              .replace(dept, "")
+              .replace("ฝ่ายย่อย", "")
+              .trim() ?? "-",
           department: dept.replace(/แผนก/g, "").trim() ?? "-",
           total_quantity: deviceCount,
         },
@@ -124,12 +129,24 @@ export class BorrowReturnService {
     const ticket = await this.repository.getById(id);
 
     if (!ticket) {
-      throw new Error("Ticket not found");
+      throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
     }
+
+    const deviceChildIds = ticket.ticket_devices.map(
+      (td: any) => td.child.dec_id,
+    );
+    const conflict = await this.repository.findFinalApprovalConflict({
+      ticketId: id,
+      deviceChildIds,
+      startDate: ticket.brt_start_date,
+      endDate: ticket.brt_end_date,
+    });
+    const devicesAvailable = !conflict;
 
     return {
       id: ticket.brt_id,
       status: ticket.brt_status,
+      devices_available: devicesAvailable,
       details: {
         purpose: ticket.brt_borrow_purpose,
         location_use: ticket.brt_usage_location,
@@ -152,6 +169,8 @@ export class BorrowReturnService {
       requester: {
         ...ticket.requester,
         fullname: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+        borrow_user: `${ticket.requester.us_firstname} ${ticket.requester.us_lastname}`,
+        borrow_phone: ticket.requester.us_phone,
       },
 
       devices: ticket.ticket_devices.map((td: any) => ({
@@ -163,20 +182,13 @@ export class BorrowReturnService {
       })),
 
       accessories:
-        ticket.ticket_devices[0]?.child.device?.accessories?.length > 0
-          ? [
-              {
-                acc_id:
-                  ticket.ticket_devices[0].child.device.accessories[0].acc_id,
-                acc_name:
-                  ticket.ticket_devices[0].child.device.accessories[0].acc_name,
-                acc_quantity:
-                  ticket.ticket_devices[0].child.device.accessories[0]
-                    .acc_quantity,
-              },
-            ]
-          : [],
-
+        ticket.ticket_devices[0]?.child.device?.accessories?.map(
+          (acc: any) => ({
+            acc_id: acc.acc_id,
+            acc_name: acc.acc_name,
+            acc_quantity: acc.acc_quantity,
+          }),
+        ) ?? [],
       timeline: ticket.stages.map((stage: any) => ({
         role_name: stage.brts_name,
         step: stage.brts_step_approve,
@@ -241,14 +253,27 @@ export class BorrowReturnService {
       );
 
     // ดำเนินการอนุมัติผ่าน Transaction ใน Repository
-    await this.repository.approveStageTransaction({
-      approverId: approvalUser.sub,
-      stageId: currentStageData.brts_id,
-      ticketId: ticketId,
-      currentStage: indexCurrentStage + 1,
-      isLastStage,
-      pickupLocation: payload?.pickupLocation || undefined,
-    });
+    try {
+      await this.repository.approveStageTransaction({
+        approverId: approvalUser.sub,
+        stageId: currentStageData.brts_id,
+        ticketId: ticketId,
+        currentStage: indexCurrentStage + 1,
+        isLastStage,
+        pickupLocation: payload?.pickupLocation || undefined,
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "DEVICE_UNAVAILABLE_FOR_FINAL_APPROVAL"
+      ) {
+        throw new HttpError(
+          HttpStatus.CONFLICT,
+          "อุปกรณ์ถูกอนุมัติให้คำขออื่นแล้ว",
+        );
+      }
+      throw error;
+    }
 
     // เตรียมแจ้งเตือน
     const totalStages = ticketStage.length;
@@ -308,7 +333,7 @@ export class BorrowReturnService {
 
       // ปิดการแจ้งเตือนสำหรับผู้อนุมัติคนอื่นๆ ในขั้นตอนปัจจุบัน (ถ้ามีหลายคน)
       try {
-        notificationsService.dismissNotificationsByTicket({
+        await notificationsService.dismissNotificationsByTicket({
           approvalUser: approvalUser.sub,
           brtId: ticketId,
           event: "APPROVAL_REQUESTED",
@@ -545,7 +570,7 @@ export class BorrowReturnService {
     // Query หา requester ของ ticket
     const ticket = await this.repository.getById(ticketId);
     if (!ticket) {
-      throw new Error("Ticket not found");
+      throw new HttpError(HttpStatus.NOT_FOUND, "Ticket not found");
     }
     const requesterId = ticket?.requester?.us_id;
 

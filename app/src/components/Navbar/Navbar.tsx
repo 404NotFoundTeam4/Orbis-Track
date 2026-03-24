@@ -387,7 +387,10 @@ const Navbar = () => {
           <div className="px-7.5">
             <img src={Images["LOGO"]} alt="" className=" w-[264px] h-[67px]" />
           </div>
-          <div className="flex border gap-[15px] px-5 text-[#40A9FF] items-center rounded-[12px]">
+          <div
+            onClick={() => window.location.assign("/chat")}
+            className="flex border cursor-pointer gap-[15px] px-5 text-[#40A9FF] items-center rounded-[12px]"
+          >
             <img
               src={Images["LOGO_GIGA"]}
               alt=""
@@ -483,11 +486,17 @@ const Navbar = () => {
               to="profile"
               className="p-2.5 border border-[#40A9FF] flex gap-5 rounded-xl"
             >
-              <img
-                src={getImageUrl(user.us_images)}
-                alt=""
-                className="w-9 h-9 rounded-full"
-              />
+              {user.us_images ? (
+                <img
+                  src={getImageUrl(user.us_images)}
+                  alt=""
+                  className="w-9 h-9 rounded-full"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
+                  <Icon icon="ph:user" width="20" height="20" className="text-gray-500" />
+                </div>
+              )}
               <div className=" text-left text-black pr-8">
                 <div className="text-[16px] font-semibold">
                   {user.us_firstname}
@@ -505,7 +514,7 @@ const Navbar = () => {
           <div className="flex flex-col justify-between h-[calc(100vh-100px)] px-2 py-4 text-lg whitespace-nowrap">
             <nav className="text-left">{menus.map(renderMenu)}</nav>
 
-            <div className="text-left">
+            <div className="text-left mb-[31px]">
               <button
                 onClick={handleLogout}
                 className="px-7.5  py-[11px]  flex  items-center gap-3   hover:text-black hover:bg-[#F7F7F7] rounded-md  w-full"
@@ -518,7 +527,7 @@ const Navbar = () => {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 bg-[#FAFAFA] ml-[213px] mt-[100px]">
+        <main className="flex-1 bg-[#FAFAFA] ml-[213px] mt-[100px]  w-[1707px]">
           <Outlet />
         </main>
       </div>

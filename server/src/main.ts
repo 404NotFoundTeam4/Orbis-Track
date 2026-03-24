@@ -9,9 +9,9 @@ import { initSocket } from "./infrastructure/websocket/socket.server.js";
 import { mainWorker } from "./infrastructure/queue/job.processor.js";
 import { jobDispatcher } from "./infrastructure/queue/job.dispatcher.js";
 import { initCronJobs } from "./utils/cron.js";
-
+import {startOverdueJob} from "./modules/dashboard/dashboard.cron.js"
 initCronJobs();
-
+startOverdueJob();
 /**
  * Description: จุดเริ่มต้นของแอป สตาร์ต Express และจัดการปิดระบบอย่างปลอดภัย (graceful shutdown)
  * Input : -

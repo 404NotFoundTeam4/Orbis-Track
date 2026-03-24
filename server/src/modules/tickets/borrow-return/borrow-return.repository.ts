@@ -16,6 +16,33 @@ import {
 } from "./borrow-return.schema.js";
 
 export class BorrowReturnRepository {
+  async findFinalApprovalConflict(params: {
+    ticketId: number;
+    deviceChildIds: number[];
+    startDate: Date;
+    endDate: Date;
+    tx?: Prisma.TransactionClient;
+  }) {
+    const { ticketId, deviceChildIds, startDate, endDate, tx } = params;
+    if (deviceChildIds.length === 0) return null;
+    const db = tx ?? prisma;
+    return await db.device_availabilities.findFirst({
+      where: {
+        da_dec_id: { in: deviceChildIds },
+        da_brt_id: { not: ticketId },
+        da_status: DA_STATUS.ACTIVE,
+        da_start: { lt: endDate },
+        da_end: { gt: startDate },
+        ticket: {
+          deleted_at: null,
+          brt_status: {
+            in: [BRT_STATUS.APPROVED, BRT_STATUS.IN_USE, BRT_STATUS.OVERDUE],
+          },
+        },
+      },
+      select: { da_dec_id: true, da_brt_id: true },
+    });
+  }
   /**
    * Description: ดึงรายการ Borrow-Return Tickets พร้อม Pagination, Filtering และ Sorting
    * Input     : params { user_id, role, dept_id, sec_id, page, limit, status, search, sortField, sortDirection }
@@ -64,6 +91,13 @@ export class BorrowReturnRepository {
         case "quantity":
           orderBy = { brt_quantity: direction };
           break;
+        case "category":
+          orderBy = {
+            ticket_devices: {
+              _count: direction,
+            },
+          };
+          break;
         case "requester":
           orderBy = { requester: { us_firstname: direction } };
           break;
@@ -81,8 +115,8 @@ export class BorrowReturnRepository {
       brt_status: status
         ? status
         : {
-            in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
-          },
+          in: [BRT_STATUS.PENDING, BRT_STATUS.IN_USE, BRT_STATUS.APPROVED],
+        },
     };
 
     if (search) {
@@ -252,6 +286,9 @@ export class BorrowReturnRepository {
                 device: {
                   select: {
                     accessories: {
+                      where: {
+                        deleted_at: null
+                      },
                       select: {
                         acc_id: true,
                         acc_name: true,
@@ -351,6 +388,21 @@ export class BorrowReturnRepository {
         include: { ticket_devices: { include: { child: true } } },
       });
       if (!ticket) throw new Error("TICKET_NOT_FOUND");
+
+      if (isLastStage) {
+        const deviceChildIds = ticket.ticket_devices.map((td) => td.td_dec_id);
+        const conflict = await this.findFinalApprovalConflict({
+          ticketId,
+          deviceChildIds,
+          startDate: ticket.brt_start_date,
+          endDate: ticket.brt_end_date,
+          tx,
+        });
+
+        if (conflict) {
+          throw new Error("DEVICE_UNAVAILABLE_FOR_FINAL_APPROVAL");
+        }
+      }
 
       // 2. อัปเดตสถานะขั้นตอน (Stage) เป็น APPROVED
       const result = await tx.borrow_return_ticket_stages.updateMany({
@@ -950,9 +1002,9 @@ export class BorrowReturnRepository {
         ...(role === US_ROLE.HOD
           ? { us_dept_id: deptId }
           : {
-              us_dept_id: deptId,
-              us_sec_id: secId,
-            }),
+            us_dept_id: deptId,
+            us_sec_id: secId,
+          }),
       },
       select: { us_firstname: true, us_lastname: true },
     });

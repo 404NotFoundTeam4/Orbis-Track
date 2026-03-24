@@ -24,6 +24,24 @@ const daysFromNow = (days: number): Date => {
   return date;
 };
 
+// ปีสำหรับ mock dashboard
+const DASHBOARD_MOCK_YEAR = 2026;
+
+// สร้างวันที่แบบ fix timezone Bangkok
+const makeBkkDate = (
+  year: number,
+  month: number,
+  day: number,
+  hour = 9,
+  minute = 0,
+): Date => {
+  const mm = String(month).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  const hh = String(hour).padStart(2, "0");
+  const mi = String(minute).padStart(2, "0");
+  return new Date(`${year}-${mm}-${dd}T${hh}:${mi}:00+07:00`);
+};
+
 async function main() {
   console.log("🌱 Seeding start");
 
@@ -293,7 +311,7 @@ async function main() {
     },
   });
 
-  // Flow 3: Media Full Flow (HOS → HOD → STAFF) - สำหรับทดสอบ approval ที่จบที่ STAFF
+  // Flow 3: Media Full Flow (HOS → HOD → STAFF)
   const flowMediaFull = await prisma.approval_flows.upsert({
     where: { af_id: 3 },
     update: { af_name: "Media Full Flow: HOS → HOD → STAFF" },
@@ -369,7 +387,6 @@ async function main() {
     },
   });
 
-  // ---- DEVICE: PROJECTOR ----
   const deviceProjector = await prisma.devices.upsert({
     where: { de_serial_number: "PROJ-EPSON-001" },
     update: {},
@@ -385,9 +402,8 @@ async function main() {
     },
   });
 
-  // ---- ACCESSORIES (now with acc_de_id) ----
+  // ---- ACCESSORIES ----
   console.log("📦 Creating accessories...");
-  // Camera accessories
   await prisma.accessories.upsert({
     where: { acc_id: 1 },
     update: { acc_name: "แบตเตอรี่", acc_quantity: 2, device: { connect: { de_id: deviceCamera.de_id } } },
@@ -403,7 +419,6 @@ async function main() {
     update: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
     create: { acc_name: "ขาตั้งกล้อง", acc_quantity: 1, device: { connect: { de_id: deviceCamera.de_id } } },
   });
-  // Laptop accessories
   await prisma.accessories.upsert({
     where: { acc_id: 4 },
     update: { acc_name: "อแด็ปเตอร์", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
@@ -414,7 +429,6 @@ async function main() {
     update: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
     create: { acc_name: "กระเป๋าใส่โน้ตบุ๊ค", acc_quantity: 1, device: { connect: { de_id: deviceLaptop.de_id } } },
   });
-  // Projector accessories
   await prisma.accessories.upsert({
     where: { acc_id: 6 },
     update: { acc_name: "สาย HDMI", acc_quantity: 2, device: { connect: { de_id: deviceProjector.de_id } } },
@@ -431,10 +445,8 @@ async function main() {
     create: { acc_name: "รีโมท", acc_quantity: 1, device: { connect: { de_id: deviceProjector.de_id } } },
   });
 
-
   // ---- DEVICE CHILDS ----
   console.log("🔢 Creating device childs...");
-  // Sony Camera (3 units)
   const childCam1 = await prisma.device_childs.upsert({
     where: { dec_asset_code: "ASSET-CAM-SONY-001" },
     update: {},
@@ -453,7 +465,7 @@ async function main() {
       dec_serial_number: "SN-SONY-A7III-002",
       dec_asset_code: "ASSET-CAM-SONY-002",
       dec_has_serial_number: true,
-      dec_status: "BORROWED", // ตัวนี้จะถูกยืมในตัวอย่าง
+      dec_status: "BORROWED",
       dec_de_id: deviceCamera.de_id,
     },
   });
@@ -468,8 +480,6 @@ async function main() {
       dec_de_id: deviceCamera.de_id,
     },
   });
-
-  // เพิ่มกล้องอีก 3 ตัวเพื่อทดสอบ ellipsis
   const childCam4 = await prisma.device_childs.upsert({
     where: { dec_asset_code: "ASSET-CAM-SONY-004" },
     update: {},
@@ -504,7 +514,6 @@ async function main() {
     },
   });
 
-  // Dell Laptop (2 units)
   const childLaptop1 = await prisma.device_childs.upsert({
     where: { dec_asset_code: "ASSET-LAP-DELL-001" },
     update: {},
@@ -528,7 +537,6 @@ async function main() {
     },
   });
 
-  // Projector (1 unit)
   const childProjector1 = await prisma.device_childs.upsert({
     where: { dec_asset_code: "ASSET-PROJ-EPSON-001" },
     update: {},
@@ -541,12 +549,9 @@ async function main() {
     },
   });
 
-
-
   // ---- BORROW TICKETS (BRT) ----
   console.log("🎫 Creating tickets & stages...");
 
-  // ฟังก์ชันช่วยสร้าง Ticket และ Stages เพื่อความรวดเร็ว
   let ticketIdCounter = 1;
   let stageIdCounter = 1;
 
@@ -623,7 +628,7 @@ async function main() {
     return ticket;
   }
 
-  // 1. IN_USE - กล้อง (โดย Employee Media)
+  // 1. IN_USE - กล้อง
   await createTicketWithStages({
     status: "IN_USE",
     purpose: "ถ่ายวีดีโอโปรโมทคณะ",
@@ -639,7 +644,7 @@ async function main() {
     ],
   });
 
-  // 2. PENDING - โน้ตบุ๊ค (โดย Employee IT) รอ HOD IT
+  // 2. PENDING - โน้ตบุ๊ค
   await createTicketWithStages({
     status: "PENDING",
     purpose: "พัฒนาโปรเจกต์ใหม่",
@@ -654,7 +659,7 @@ async function main() {
     ],
   });
 
-  // 3. APPROVED - โปรเจคเตอร์ (โดย Employee Media) รอ STAFF จ่ายของ
+  // 3. APPROVED - โปรเจคเตอร์
   await createTicketWithStages({
     status: "APPROVED",
     purpose: "ประชุมสรุปงานรายเดือน",
@@ -671,7 +676,7 @@ async function main() {
     ],
   });
 
-  // 4. REJECTED - กล้อง (โดย Employee Media)
+  // 4. REJECTED
   await createTicketWithStages({
     status: "REJECTED",
     purpose: "ยืมไปถ่ายรูปงานวันเกิดเพื่อน",
@@ -687,7 +692,7 @@ async function main() {
     ],
   });
 
-  // 5. COMPLETED - กล้อง (โดย Employee Media)
+  // 5. COMPLETED
   await createTicketWithStages({
     status: "COMPLETED",
     purpose: "ถ่ายงาน Event คณะ",
@@ -703,15 +708,15 @@ async function main() {
     ],
   });
 
-  // 6. OVERDUE - โน้ตบุ๊ค (โดย Employee Media)
+  // 6. OVERDUE-like sample
   await createTicketWithStages({
     status: "IN_USE",
     purpose: "ยืมไปทำกราฟิก",
     userId: empMedia.us_id,
     flowId: flowMediaFull.af_id,
-    deviceId: childLaptop1.dec_id, // ตัวที่ส่งซ่อม แต่จำลองว่ายืมอยู่
+    deviceId: childLaptop1.dec_id,
     startDate: daysAgo(14),
-    endDate: daysAgo(1), // เลยกำหนดคืนแล้ว
+    endDate: daysAgo(1),
     currentStage: 3,
     stages: [
       { name: "HOS Approval", role: "HOS", deptId: media.dept_id, secId: sections.media[0].sec_id, status: "APPROVED", usId: hosMedia.us_id },
@@ -720,7 +725,7 @@ async function main() {
     ],
   });
 
-  // 7. Bulk generation for pagination testing (30 more tickets)
+  // Bulk generation for pagination testing
   console.log("📑 Generating bulk tickets for pagination testing...");
   for (let i = 0; i < 30; i++) {
     await createTicketWithStages({
@@ -739,7 +744,7 @@ async function main() {
     });
   }
 
-  // ---- TICKET ISSUES (แจ้งซ่อม) ----
+  // ---- TICKET ISSUES ----
   console.log("🛠 Creating issues...");
   const issue = await prisma.ticket_issues.upsert({
     where: { ti_id: 1 },
@@ -752,9 +757,111 @@ async function main() {
       ti_assigned_to: techIT.us_id,
       ti_status: "IN_PROGRESS",
       ti_result: "IN_PROGRESS",
-      created_at: daysAgo(3),
+      created_at: makeBkkDate(DASHBOARD_MOCK_YEAR - 1, 12, 20, 10, 0),
     },
   });
+
+  // ---- DASHBOARD MOCK DATA ----
+  console.log("📈 Creating dashboard mock data for charts...");
+
+  // รูปทรงกราฟใกล้เคียงภาพตัวอย่าง
+  const borrowMonthlyTargets = [65, 100, 73, 25, 69, 72, 42, 98, 30, 99, 89, 58];
+  const issueMonthlyTargets = [64, 100, 72, 25, 68, 70, 42, 99, 31, 100, 88, 57];
+
+  const borrowStatusPool = ["PENDING", "APPROVED", "IN_USE", "COMPLETED"] as const;
+  const borrowDevicePool = [
+    childCam1.dec_id,
+    childCam3.dec_id,
+    childCam5.dec_id,
+    childCam6.dec_id,
+    childLaptop1.dec_id,
+    childLaptop2.dec_id,
+    childProjector1.dec_id,
+  ];
+
+  // Mock borrow tickets รายเดือน
+  for (let month = 1; month <= 12; month++) {
+    const total = borrowMonthlyTargets[month - 1];
+
+    for (let i = 0; i < total; i++) {
+      const status = borrowStatusPool[i % borrowStatusPool.length];
+      const isPending = status === "PENDING";
+
+      await createTicketWithStages({
+        status,
+        purpose: `Dashboard Mock Borrow ${month}/${i + 1}`,
+        userId: i % 2 === 0 ? empMedia.us_id : empIT.us_id,
+        flowId: flowIT.af_id,
+        deviceId: borrowDevicePool[i % borrowDevicePool.length],
+        startDate: makeBkkDate(DASHBOARD_MOCK_YEAR, month, (i % 25) + 1, 9, 0),
+        endDate: makeBkkDate(DASHBOARD_MOCK_YEAR, month, (i % 25) + 2, 17, 0),
+        currentStage: 1,
+        stages: [
+          {
+            name: "HOD IT Approval",
+            role: "HOD",
+            deptId: it.dept_id,
+            status: isPending ? "PENDING" : "APPROVED",
+            usId: isPending ? null : hodIT.us_id,
+          },
+        ],
+      });
+    }
+  }
+
+  // Mock issues รายเดือน
+  let issueMockIdCounter = 1000;
+  const issueDevicePool = [deviceLaptop.de_id, deviceCamera.de_id, deviceProjector.de_id];
+  const issueTitlePool = [
+    "เปิดเครื่องไม่ติด",
+    "จอฟ้า",
+    "ภาพไม่ออก",
+    "แบตเสื่อม",
+    "พอร์ตเชื่อมต่อเสีย",
+    "เครื่องร้อนผิดปกติ",
+  ];
+
+  for (let month = 1; month <= 12; month++) {
+    const total = issueMonthlyTargets[month - 1];
+
+    for (let i = 0; i < total; i++) {
+      const statusCycle = i % 3;
+      const tiStatus =
+        statusCycle === 0 ? "PENDING" : statusCycle === 1 ? "IN_PROGRESS" : "COMPLETED";
+      const tiResult = tiStatus === "COMPLETED" ? "SUCCESS" : "IN_PROGRESS";
+
+      const createdAt = makeBkkDate(DASHBOARD_MOCK_YEAR, month, (i % 25) + 1, 10, 0);
+      const receiveAt =
+        tiStatus === "PENDING"
+          ? null
+          : makeBkkDate(DASHBOARD_MOCK_YEAR, month, (i % 25) + 1, 11, 0);
+      const successAt =
+        tiStatus === "COMPLETED"
+          ? makeBkkDate(DASHBOARD_MOCK_YEAR, month, (i % 25) + 2, 15, 0)
+          : null;
+
+      await prisma.ticket_issues.upsert({
+        where: { ti_id: issueMockIdCounter },
+        update: {},
+        create: {
+          ti_id: issueMockIdCounter,
+          ti_de_id: issueDevicePool[i % issueDevicePool.length],
+          ti_brt_id: null,
+          ti_title: `${issueTitlePool[i % issueTitlePool.length]} #${month}-${i + 1}`,
+          ti_description: `Mock issue สำหรับทดสอบ dashboard เดือน ${month}`,
+          ti_reported_by: i % 2 === 0 ? empIT.us_id : empMedia.us_id,
+          ti_assigned_to: tiStatus === "PENDING" ? null : techIT.us_id,
+          ti_status: tiStatus,
+          ti_result: tiResult,
+          receive_at: receiveAt,
+          success_at: successAt,
+          created_at: createdAt,
+        },
+      });
+
+      issueMockIdCounter++;
+    }
+  }
 
   // ---- NOTIFICATIONS ----
   console.log("🔔 Creating notifications...");
@@ -763,7 +870,7 @@ async function main() {
       n_title: "มีคำร้องขออนุมัติใหม่",
       n_message: "คุณมีรายการยืม Laptop รออนุมัติ",
       n_base_event: "TICKET_CREATED",
-      n_brt_id: 2, // Ticket Pending
+      n_brt_id: 2,
     },
   });
 
@@ -800,7 +907,6 @@ async function main() {
 
   // ---- DEVICE AVAILABILITIES ----
   console.log("📅 Creating device availabilities...");
-  // สำหรับ ticket IN_USE (brt_id: 1)
   await prisma.device_availabilities.upsert({
     where: { da_id: 1 },
     update: {},
@@ -813,7 +919,6 @@ async function main() {
       da_status: "ACTIVE",
     },
   });
-  // สำหรับ ticket COMPLETED (brt_id: 5)
   await prisma.device_availabilities.upsert({
     where: { da_id: 2 },
     update: {},
@@ -826,7 +931,6 @@ async function main() {
       da_status: "COMPLETED",
     },
   });
-  // สำหรับ ticket OVERDUE (brt_id: 6)
   await prisma.device_availabilities.upsert({
     where: { da_id: 3 },
     update: {},
@@ -875,77 +979,86 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // ---- CART DEVICE CHILDS ----
-  // console.log("🛒 Creating cart device childs...");
-  // // const cartItem = await prisma.cart_items.findFirst({ where: { cti_ct_id: cart.ct_id } });
-  // // if (cartItem) {
-  // //   await prisma.cart_device_childs.upsert({
-  // //     where: { cdc_id: 1 },
-  // //     update: {},
-  // //     create: {
-  // //       cdc_id: 1,
-  // //       cdc_cti_id: cartItem.cti_id,
-  // //       cdc_dec_id: childCam1.dec_id,
-  // //       reserved_at: new Date(),
-  // //     },
-  // //   });
-  // // }
-
-  // ---- ADDITIONAL USERS (ครบทุก dept) ----
+  // ---- ADDITIONAL USERS ----
   console.log("👥 Creating additional users for other departments...");
-  // HOD Marketing
   await prisma.users.upsert({
     where: { us_username: "hod.marketing" },
     update: {},
     create: {
-      us_emp_code: "HOD-0003", us_firstname: "ปรีชา", us_lastname: "รุ่งเรือง",
-      us_username: "hod.marketing", us_password: defaultPassword,
-      us_email: "hod.marketing@company.com", us_phone: "0891234509",
-      us_role: "HOD", us_dept_id: marketing.dept_id, us_sec_id: sections.marketing[0].sec_id,
+      us_emp_code: "HOD-0003",
+      us_firstname: "ปรีชา",
+      us_lastname: "รุ่งเรือง",
+      us_username: "hod.marketing",
+      us_password: defaultPassword,
+      us_email: "hod.marketing@company.com",
+      us_phone: "0891234509",
+      us_role: "HOD",
+      us_dept_id: marketing.dept_id,
+      us_sec_id: sections.marketing[0].sec_id,
     },
   });
-  // HOS Marketing
   await prisma.users.upsert({
     where: { us_username: "hos.marketing.a" },
     update: {},
     create: {
-      us_emp_code: "HOS-0002", us_firstname: "มณี", us_lastname: "แสงทอง",
-      us_username: "hos.marketing.a", us_password: defaultPassword,
-      us_email: "hos.marketing.a@company.com", us_phone: "0891234510",
-      us_role: "HOS", us_dept_id: marketing.dept_id, us_sec_id: sections.marketing[0].sec_id,
+      us_emp_code: "HOS-0002",
+      us_firstname: "มณี",
+      us_lastname: "แสงทอง",
+      us_username: "hos.marketing.a",
+      us_password: defaultPassword,
+      us_email: "hos.marketing.a@company.com",
+      us_phone: "0891234510",
+      us_role: "HOS",
+      us_dept_id: marketing.dept_id,
+      us_sec_id: sections.marketing[0].sec_id,
     },
   });
-  // STAFF IT
   await prisma.users.upsert({
     where: { us_username: "staff.it" },
     update: {},
     create: {
-      us_emp_code: "STF-0002", us_firstname: "สุรชัย", us_lastname: "ยิ้มแย้ม",
-      us_username: "staff.it", us_password: defaultPassword,
-      us_email: "staff.it@company.com", us_phone: "0891234511",
-      us_role: "STAFF", us_dept_id: it.dept_id, us_sec_id: sections.it[0].sec_id,
+      us_emp_code: "STF-0002",
+      us_firstname: "สุรชัย",
+      us_lastname: "ยิ้มแย้ม",
+      us_username: "staff.it",
+      us_password: defaultPassword,
+      us_email: "staff.it@company.com",
+      us_phone: "0891234511",
+      us_role: "STAFF",
+      us_dept_id: it.dept_id,
+      us_sec_id: sections.it[0].sec_id,
     },
   });
-  // HOD Finance
   await prisma.users.upsert({
     where: { us_username: "hod.finance" },
     update: {},
     create: {
-      us_emp_code: "HOD-0004", us_firstname: "ศิริพร", us_lastname: "บุญมา",
-      us_username: "hod.finance", us_password: defaultPassword,
-      us_email: "hod.finance@company.com", us_phone: "0891234512",
-      us_role: "HOD", us_dept_id: finance.dept_id, us_sec_id: sections.finance[0].sec_id,
+      us_emp_code: "HOD-0004",
+      us_firstname: "ศิริพร",
+      us_lastname: "บุญมา",
+      us_username: "hod.finance",
+      us_password: defaultPassword,
+      us_email: "hod.finance@company.com",
+      us_phone: "0891234512",
+      us_role: "HOD",
+      us_dept_id: finance.dept_id,
+      us_sec_id: sections.finance[0].sec_id,
     },
   });
-  // Employee Marketing
   await prisma.users.upsert({
     where: { us_username: "emp.marketing" },
     update: {},
     create: {
-      us_emp_code: "EMP-0003", us_firstname: "วรรณา", us_lastname: "พึ่งบุญ",
-      us_username: "emp.marketing", us_password: defaultPassword,
-      us_email: "emp.marketing@company.com", us_phone: "0891234513",
-      us_role: "EMPLOYEE", us_dept_id: marketing.dept_id, us_sec_id: sections.marketing[0].sec_id,
+      us_emp_code: "EMP-0003",
+      us_firstname: "วรรณา",
+      us_lastname: "พึ่งบุญ",
+      us_username: "emp.marketing",
+      us_password: defaultPassword,
+      us_email: "emp.marketing@company.com",
+      us_phone: "0891234513",
+      us_role: "EMPLOYEE",
+      us_dept_id: marketing.dept_id,
+      us_sec_id: sections.marketing[0].sec_id,
     },
   });
 
@@ -955,25 +1068,24 @@ async function main() {
     "  Username: admin, hod.media, hod.it, hos.media.a, tech.it, staff.media, emp.media, emp.it",
   );
   console.log("  Password: password123");
+  console.log(`\n📊 Dashboard mock year: ${DASHBOARD_MOCK_YEAR}`);
 
-  //ป้องกัน id ซ้ำกันหลังจาก seed
+  // ป้องกัน id ซ้ำกันหลังจาก seed
   const resetSeq = async (table: string, col: string) => {
     await prisma.$executeRawUnsafe(`
-    SELECT setval(
-      pg_get_serial_sequence('${table}', '${col}'),
-      (SELECT COALESCE(MAX(${col}), 0) FROM ${table})
-    );
-  `);
+      SELECT setval(
+        pg_get_serial_sequence('${table}', '${col}'),
+        (SELECT COALESCE(MAX(${col}), 0) FROM ${table})
+      );
+    `);
   };
 
   await resetSeq("public.borrow_return_tickets", "brt_id");
   await resetSeq("public.borrow_return_ticket_stages", "brts_id");
   await resetSeq("public.approval_flow_steps", "afs_id");
   await resetSeq("public.device_availabilities", "da_id");
-  // เพิ่มตารางอื่น ๆ ต่อเอง
-
+  await resetSeq("public.ticket_issues", "ti_id");
 }
-
 
 main()
   .catch((e) => {
@@ -983,4 +1095,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

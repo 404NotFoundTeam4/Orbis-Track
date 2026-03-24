@@ -12,6 +12,18 @@ export const Login = async (username, passwords, isRemember) => {
   const res = await api.post("/login", { username, passwords, isRemember });
   return res.data;
 };
+
+/**
+ * Function: LoginWithCookie
+ * Features:
+ *  - เข้าสู่ระบบแบบตั้ง HttpOnly cookie เพื่อรองรับ SSO กับ Chatbot
+ *
+ * Author: GitHub Copilot
+ */
+export const LoginWithCookie = async (username, passwords, isRemember) => {
+  const res = await api.post("/login/cookie", { username, passwords, isRemember });
+  return res.data;
+};
 /**
  * Function: UserData
  * Features:
@@ -25,7 +37,7 @@ export const UserData = async (token) => {
       Authorization: `Bearer ${token}`,
     },
   });
-  return res.data.data
+  return res.data.data;
 };
 /**
  * Function: UserData
@@ -35,9 +47,13 @@ export const UserData = async (token) => {
  * Author: Panyapon Phollert (Ton) 66160086
  */
 export const ResetPassword = async (token, newPassword, confirmNewPassword) => {
-  const data = await api.post("/reset-password", { token, newPassword, confirmNewPassword });
+  const data = await api.post("/reset-password", {
+    token,
+    newPassword,
+    confirmNewPassword,
+  });
   return data;
-} 
+};
 /**
  * Function: UserData
  * Features:
@@ -45,7 +61,36 @@ export const ResetPassword = async (token, newPassword, confirmNewPassword) => {
  *
  * Author: Panyapon Phollert (Ton) 66160086
  */
-export const ForgotPassword = async (email, newPassword, confirmNewPassword) => {
-  const data = await api.post("/forgot-password", { email, newPassword, confirmNewPassword });
+export const ForgotPassword = async (
+  email,
+  newPassword,
+  confirmNewPassword,
+) => {
+  const data = await api.post("/forgot-password", {
+    email,
+    newPassword,
+    confirmNewPassword,
+  });
   return data;
-} 
+};
+
+/**
+ * Function: Logout
+ * Features:
+ *  - ส่งคำขอ logout ไปยัง backend เพื่อ blacklist token
+ *  - ต้องส่ง token ใน Authorization header
+ *
+ * Author: Pakkapon Chomchoey (Tonnam) 66160080
+ */
+export const Logout = async (token) => {
+  const res = await api.post(
+    "/logout",
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  return res.data;
+};

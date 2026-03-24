@@ -63,6 +63,7 @@ export interface GetAvailable {
 }
 
 export interface CreateBorrowTicketPayload {
+    borrowerId: number;
     reason: string;
     placeOfUse: string;
     borrowStart: string;
@@ -93,6 +94,15 @@ export interface AddToCartPayload {
 export interface AddToCart {
     cartId: number;
     cartItemId: number;
+}
+
+export interface BorrowUsers {
+    us_id: number;
+    us_firstname: string;
+    us_lastname: string;
+    us_role: string;
+    us_emp_code: string | null;
+    us_phone: string;
 }
 
 export const borrowService = {
@@ -155,4 +165,16 @@ export const borrowService = {
         const { data } = await api.get(`/borrow/device-availabilities`);
         return data.data;
     },
+
+    /**
+    * Description: ดึงข้อมูลรายชื่อผู้ใช้สำหรับยืมให้ผู้อื่น
+    * Input     : -
+    * Output    : Promise<BorrowUsers[]> - รายการชื่อผู้ใช้
+    * Endpoint  : GET /api/borrow/users
+    * Author    : Thakdanai Makmi (Ryu) 66160355
+    */
+    getBorrowUsers: async (): Promise<BorrowUsers[]> => {
+        const { data } = await api.get(`/borrow/users`);
+        return data.data;
+    }
 }

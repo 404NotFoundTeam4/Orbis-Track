@@ -65,12 +65,17 @@ export default function AddInventory() {
     sessionStorage.getItem("existingDeviceNames") ?? "[]"
   );
 
+  // ดึงรหัสอุปกรณ์จาก sessionStorage
+  const existingDeviceCodes = JSON.parse(
+    sessionStorage.getItem("existingDeviceCodes") ?? "[]"
+  );
+
   return (
     <div className="p-4">
       <div className="mb-[8px] space-x-[9px]">
         <span className="text-[#858585]">การจัดการ</span>
         <span className="text-[#858585]">&gt;</span>
-        <span className="text-[#000000]">คลังอุปกรณ์</span>
+        <span className="text-[#858585]">คลังอุปกรณ์</span>
         <span className="text-[#858585]">&gt;</span>
         <span className="text-[#000000]">เพิ่มอุปกรณ์ใหม่</span>
       </div>
@@ -87,6 +92,7 @@ export default function AddInventory() {
           handleSubmit(data);
         }}
         existingDeviceNames={existingDeviceNames}
+        existingDeviceCodes={existingDeviceCodes}
       />
 
       {/* ===== Alert ยืนยัน ===== */}

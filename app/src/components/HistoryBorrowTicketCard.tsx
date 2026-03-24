@@ -8,7 +8,7 @@
  * Author: Chanwit Muangma (Boom) 66160224
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "@iconify/react";
@@ -228,7 +228,7 @@ function shouldShowMainStepTime(params: {
 
   return false;
 }
-
+ 
 /**
  * Description: แปลงชื่อแผนกให้เป็นรูปแบบสำหรับแสดงผลใน UI
  * - ถ้าค่า departmentName เป็น null/undefined/ว่าง ให้คืนค่า "-" แทน
@@ -385,7 +385,7 @@ export default function HistoryBorrowTicket({
    * Author: Chanwit Muangma (Boom) 66160224
    */
   const [isDeviceListModalOpen, setDeviceListModalOpen] = useState(false);
-
+ 
   /**
    * Description: แปลง deviceChildren ของ history-borrow ให้เป็นรูปแบบ TicketDevice[] เพื่อส่งให้ DeviceListModal
    * - DeviceListModal ถูกออกแบบให้ใช้ TicketDevice จาก TicketsService
@@ -411,7 +411,7 @@ export default function HistoryBorrowTicket({
 
     return ticketDeviceList as unknown as TicketDevice[];
   }, [detail?.deviceChildren]);
-
+  
   /**
    * Description: สถานะของ Ticket ที่ใช้แสดงใน UI
    * - status: เอาไว้ render pill ใน summary (ใช้ item.status เป็นหลัก)
@@ -421,7 +421,29 @@ export default function HistoryBorrowTicket({
    * Output : statusConfig ที่ใช้ render label/class และ string สถานะล่าสุด
    * Author: Chanwit Muangma (Boom) 66160224
    */
-  const status = statusConfig[String(item.status)] || statusConfig.PENDING;
+  const [now, setNow] = useState(new Date());
+
+  
+
+  const toMinute = (d: Date) =>
+    new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+      d.getHours(),
+      d.getMinutes(),
+    );
+
+  const endDateRaw = detail?.borrowDateRange?.endDateTime;
+
+  const isOverdate =
+    endDateRaw &&
+    toMinute(new Date(endDateRaw)).getTime() <= toMinute(now).getTime();
+
+  const statusKey = isOverdate ? "OVERDUE" : String(item.status);
+
+  const status = statusConfig[statusKey] || statusConfig.PENDING;
+
   const effectiveTicketStatus = String(detail?.status ?? item.status)
     .toUpperCase()
     .trim();
@@ -467,6 +489,8 @@ export default function HistoryBorrowTicket({
     detail?.inUseDateTime,
     detail?.fulfillmentDateTimes?.returnDateTime,
   ]);
+  console.log(item)
+
   /**
    * Description: ข้อมูลอุปกรณ์ที่ใช้ render ในส่วน Expanded (รูป + แผนก/ฝ่ายย่อย)
    * Input : detail.device
@@ -476,7 +500,7 @@ export default function HistoryBorrowTicket({
   const deviceImageUrl = detail?.device?.imageUrl ?? null;
   const sectionName = detail?.device?.sectionName ?? "-";
   const departmentName = detail?.device?.departmentName ?? "-";
-
+  
   /**
    * Description: หา step ใน timeline ที่ถูกปฏิเสธ (ไว้แสดง banner ปฏิเสธ)
    * Input : detail.timeline
@@ -576,8 +600,27 @@ export default function HistoryBorrowTicket({
           ? "text-[#4CAF50]"
           : "text-[#9E9E9E]";
 
+
+          /**
+ * Description: แปลงเวลาเป็นรูปแบบ HH:MM:YYYY
+ * Input : dateStr - date string หรือ null
+ * Output : string (รูปแบบเวลา) 20 ม.ค. 2568
+ * Author: Panyapon Phollert (Ton) 66160086
+ */
+const formatTimeThai = (dateStr: string | null): string => {
+  if (!dateStr) return "-";
+
+  const date = new Date(dateStr);
+
+  const day = date.getDate();
+  const month = date.toLocaleString("th-TH", { month: "short" });
+  const year = date.getFullYear() + 543;
+
+  return `${day} / ${month} / ${year}`;
+};
+
   return (
-    <div className="bg-white mb-2 overflow-hidden transition-all duration-300 rounded-[16px]">
+    <div className="bg-white mb-2 overflow-hidden transition-all duration-300 rounded-[16px] ">
       <div
         className="grid [grid-template-columns:1.3fr_0.6fr_0.8fr_1fr_0.7fr_0.7fr_70px] items-center p-4 pl-6 cursor-pointer"
         onClick={onToggle}
@@ -597,18 +640,17 @@ export default function HistoryBorrowTicket({
 
         <div className="flex flex-col">
           <span className="text-[#000000]">
-            {detail?.requester?.fullName || "-"}
-          </span>
-          {/**
+            {item?.requester?.borrowName || "-"}
+          </span> 
           <span className="text-[#8C8C8C]">
             {item.requester.employeeCode || "-"}
           </span>
-          */}
+         
         </div>
 
         <div className="flex flex-col">
           <span className="text-[#000000]">
-            {formatDate(item.requestDateTime)}
+            {formatTimeThai (item.requestDateTime)}
           </span>
           <span className="text-[#7BACFF]">
             เวลา : {formatTime(item.requestDateTime)}
@@ -732,11 +774,7 @@ export default function HistoryBorrowTicket({
                     <span
                       className={`cursor-pointer text-sm font-medium ${step2TextClass}`}
                     >
-                      อนุมัติ{" "}
-                      <Icon
-                        icon="mdi:chevron-down"
-                        className="inline-block align-middle"
-                      />
+                      อนุมัติ
                       {shouldShowMainStepTime({
                         stepKey: "APPROVAL",
                         effectiveTicketStatus,
@@ -751,129 +789,134 @@ export default function HistoryBorrowTicket({
 
                   {detail?.timeline && detail.timeline.length > 0 && (
                     <div className="absolute left-14 top-5 -translate-y-1/2 hidden group-hover:block z-50">
-                      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[360px] max-h-[320px] overflow-y-auto">
+                      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[330px] max-h-[300px] overflow-y-auto">
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-sm font-semibold text-neutral-800">
                             ลำดับการอนุมัติ
                           </div>
                         </div>
 
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col">
                           {detail.timeline.map((stage, index) => {
-                            const timeline = detail.timeline;
+                            const isLast =
+                              index === detail.timeline.length - 1;
 
-                            const isAnyRejected = timeline.some(
-                              (timelineStage) =>
-                                String(timelineStage.status).toUpperCase() ===
-                                "REJECTED",
-                            );
+                            const prevStage =
+                              index > 0
+                                ? detail.timeline[index - 1]
+                                : null;
 
-                            const currentIndex = timeline.findIndex(
-                              (timelineStage) => {
-                                const st = String(
-                                  timelineStage.status,
-                                ).toUpperCase();
-                                return st !== "APPROVED" && st !== "REJECTED";
-                              },
-                            );
-
-                            const isCurrentQueue =
-                              !isAnyRejected && currentIndex === index;
-
-                            const tone = getTimelineTone({
-                              stepStatus: String(stage.status).toUpperCase(),
-                              isAnyRejected,
-                              isCurrentQueue,
-                            });
-
-                            const classNames = toneClass(tone);
-
-                            const icon =
-                              tone === "rejected"
-                                ? "mdi:close"
-                                : tone === "done"
-                                  ? "mdi:check"
-                                  : "mdi:check";
-
-                            /**
-                             * Description: สร้าง node สำหรับแสดงสรุปรายชื่อผู้มีสิทธิ์อนุมัติ
-                             * - แสดง 2 ชื่อแรก + ถ้ามีมากกว่า 2 คน จะมี badge "+N"
-                             *
-                             * Input : stage.approverCandidates
-                             * Output : ReactNode สำหรับ render ใน tooltip
-                             * Author: Chanwit Muangma (Boom) 66160224
-                             */
-                            const candidateSummaryNode =
-                              renderApproverCandidateSummary(
-                                stage.approverCandidates,
-                              );
+                            const isNextApprover =
+                              prevStage?.status === "APPROVED" &&
+                              stage.status === "PENDING";
 
                             return (
-                              <div
-                                key={`${stage.stepNumber}-${index}`}
-                                className="flex gap-3"
-                              >
+                              <div key={index} className="flex gap-3">
+                                {/* Icon & Line */}
                                 <div className="flex flex-col items-center">
                                   <div
-                                    className={[
-                                      "grid h-9 w-9 place-items-center rounded-full border bg-white",
-                                      classNames.ring,
-                                    ].join(" ")}
+                                    className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 z-10 bg-white ${stage.status === "APPROVED"
+                                      ? "border-[#4CAF50] text-[#4CAF50]"
+                                      : stage.status === "REJECTED"
+                                        ? "border-[#FF4D4F] text-[#FF4D4F]"
+                                        : isNextApprover
+                                          ? "border-[#000000] text-[#000000]"
+                                          : "border-[#9E9E9E] text-[#9E9E9E]"
+                                      }`}
                                   >
-                                    <Icon icon={icon} className="text-lg" />
+                                    {stage.status === "REJECTED" ? (
+                                      <Icon icon="mdi:close" width="14" height="14" />
+                                    ) : (
+                                      <Icon icon="ic:sharp-check" width="14" height="14" />
+                                    )}
                                   </div>
 
-                                  {index !== timeline.length - 1 && (
+                                  {!isLast && (
                                     <div
-                                      className={[
-                                        "mt-1 h-8 w-px",
-                                        classNames.line,
-                                      ].join(" ")}
+                                      className={`w-0.5 h-12 -my-1 ${stage.status === "APPROVED"
+                                        ? "bg-[#4CAF50]"
+                                        : "bg-[#9E9E9E]"
+                                        }`}
                                     />
                                   )}
                                 </div>
 
-                                <div className="min-w-0 pt-0.5">
-                                  <div
-                                    className={[
-                                      "text-sm font-medium",
-                                      classNames.text,
-                                    ].join(" ")}
+                                {/* Text */}
+                                <div
+                                  className={`${stage.status === "APPROVED" ||
+                                    stage.status === "REJECTED"
+                                    ? ""
+                                    : "pt-1"
+                                    } ${!isLast ? "pb-3" : ""}`}
+                                >
+                                  <span
+                                    className={`text-sm ${stage.status === "APPROVED"
+                                      ? "text-[#4CAF50]"
+                                      : stage.status === "REJECTED"
+                                        ? "text-[#FF4D4F]"
+                                        : isNextApprover
+                                          ? "text-[#000000]"
+                                          : "text-[#9E9E9E]"
+                                      }`}
                                   >
-                                    <span className="text-neutral-500 font-normal">
-                                      {getApproverScopeLabel(stage)}
-                                    </span>
-                                  </div>
+                                    {`${stage.requiredRole ?? stage.approver?.role ?? ""} ${getApproverScopeLabel(stage)}`}
+                                  </span>
 
-                                  {!stage.approver ? (
-                                    <div className="text-xs text-neutral-700 mt-0.5">
-                                      ผู้มีสิทธิ์อนุมัติ :{" "}
-                                      <span className="font-medium">
-                                        {candidateSummaryNode}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <div className="text-xs text-neutral-700 mt-0.5">
-                                        {String(stage.status).toUpperCase() ===
-                                        "REJECTED"
-                                          ? "ผู้ปฏิเสธ"
-                                          : "ผู้อนุมัติ"}
-                                        {" : "}
-                                        <span className="font-medium">
-                                          {stage.approver.fullName}
-                                        </span>
+                                  {/* Pending Approvers */}
+                                  {stage.status === "PENDING" &&
+                                    stage.approverCandidates &&
+                                    stage.approverCandidates.length > 0 && (
+                                      <div className="text-xs text-[#9E9E9E] mt-1 whitespace-nowrap">
+                                        ผู้ใช้งานในตำแหน่งนี้ :{" "}
+                                        {(() => {
+                                          const maxShow = 2;
+                                          const count = stage.approverCandidates.length;
+
+                                          const displayNames = stage.approverCandidates
+                                            .slice(0, maxShow)
+                                            .map((user) => {
+                                              const name = user.fullName
+
+                                              return name.length > 20
+                                                ? name.substring(0, 17) + "..."
+                                                : name
+                                            });
+
+                                          if (count > maxShow) {
+                                            return (
+                                              <span>
+                                                {displayNames.join(", ")}
+                                                <span className="bg-gray-100 text-[#9E9E9E] border border-[#9E9E9E] ml-1 px-1 rounded-sm text-[10px]">
+                                                  +{count - maxShow}
+                                                </span>
+                                              </span>
+                                            );
+                                          }
+
+                                          return displayNames.join(", ");
+                                        })()}
                                       </div>
+                                    )}
 
-                                      {shouldShowTimelineTime(stage) && (
-                                        <div className="text-xs text-neutral-500 mt-0.5">
+                                  {/* Approved / Rejected */}
+                                  {(stage.status === "APPROVED" ||
+                                    stage.status === "REJECTED") && (
+                                      <>
+                                        <div className="text-xs text-[#9E9E9E]">
+                                          {stage.status === "APPROVED"
+                                            ? "ผู้อนุมัติ"
+                                            : "ผู้ดำเนินการ"}{" "}
+                                          : {stage.approver?.fullName}
+                                        </div>
+
+                                        <div className="text-xs text-[#9E9E9E]">
+                                          เวลา :{" "}
                                           {formatUpdateByDateTime(
-                                            stage.updatedAt,
+                                            stage.updatedAt || "-"
                                           )}
                                         </div>
-                                      )}
-                                    </>
-                                  )}
+                                      </>
+                                    )}
                                 </div>
                               </div>
                             );
@@ -972,7 +1015,7 @@ export default function HistoryBorrowTicket({
                   <div className="font-bold text-[#000000] text-sm">
                     รายละเอียด —{" "}
                     <span className="text-sm text-[#636363]">
-                      {detail?.device?.description || "-"}
+                      {detail?.device?.description || "ไม่มีรายละเอียด"}
                     </span>
                   </div>
                 </div>
@@ -987,7 +1030,7 @@ export default function HistoryBorrowTicket({
                 <div className="flex flex-col gap-2 flex-1">
                   <FieldRow
                     label="ชื่อผู้ร้องขอ"
-                    value={detail?.requester?.fullName || "-"}
+                    value={item?.requester?.borrowName || "-"}
                   />
                   <FieldRow
                     label="ชื่ออุปกรณ์"
@@ -1027,32 +1070,31 @@ export default function HistoryBorrowTicket({
                           </span>
                         ))}
 
-                      {detail?.deviceChildren &&
-                        detail.deviceChildren.length > 8 && (
-                          /**
-                           * Description: ปุ่ม "..." สำหรับเปิด Modal แสดงรายการอุปกรณ์ลูกทั้งหมด
-                           * - ใช้ e.stopPropagation() เพื่อไม่ให้ไป trigger การพับ/ขยาย card (onToggle)
-                           *
-                           * Input : click event
-                           * Output : เปิด DeviceListModal (setDeviceListModalOpen(true))
-                           * Author: Chanwit Muangma (Boom) 66160224
-                           */
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeviceListModalOpen(true);
-                            }}
-                            className="bg-[#FFFFFF] border border-[#BFBFBF] rounded-full flex justify-center items-center w-10 h-[22px] text-[#595959] hover:bg-neutral-50"
-                            title="ดูรายการอุปกรณ์ทั้งหมด"
-                          >
-                            <Icon
-                              icon="ph:dots-three-bold"
-                              width="18"
-                              height="18"
-                            />
-                          </button>
-                        )}
+                      {detail?.deviceChildren && (
+                        /**
+                         * Description: ปุ่ม "..." สำหรับเปิด Modal แสดงรายการอุปกรณ์ลูกทั้งหมด
+                         * - ใช้ e.stopPropagation() เพื่อไม่ให้ไป trigger การพับ/ขยาย card (onToggle)
+                         *
+                         * Input : click event
+                         * Output : เปิด DeviceListModal (setDeviceListModalOpen(true))
+                         * Author: Chanwit Muangma (Boom) 66160224
+                         */
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeviceListModalOpen(true);
+                          }}
+                          className="bg-[#FFFFFF] border border-[#BFBFBF] rounded-full flex justify-center items-center w-10 h-[22px] text-[#595959] hover:bg-neutral-50"
+                          title="ดูรายการอุปกรณ์ทั้งหมด"
+                        >
+                          <Icon
+                            icon="ph:dots-three-bold"
+                            width="18"
+                            height="18"
+                          />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1085,7 +1127,14 @@ export default function HistoryBorrowTicket({
                   />
                   <FieldRow
                     label="เบอร์โทรศัพท์ผู้ยืม"
-                    value={detail?.requester?.phoneNumber || "-"}
+                    value={
+                      item?.requester?.borrowPhone
+                        ? item?.requester?.borrowPhone.replace(
+                            /(\d{3})(\d{3})(\d{4})/,
+                            "$1-$2-$3",
+                          )
+                        : "000-000-0000"
+                    }
                   />
 
                   <div className="grid grid-cols-[150px_1fr] items-baseline">

@@ -1,10 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
-import { sendOtpPayload, loginPayload, TokenDto, verifyOtpPayload, forgotPasswordPayload, AuthRequest, accessTokenPayload, MeDto, resetPasswordPayload } from "./auth.schema.js";
+import { sendOtpPayload, loginPayload, TokenDto, verifyOtpPayload, forgotPasswordPayload, AuthRequest, accessTokenPayload, MeDto, resetPasswordPayload, sessionResponse, SessionResponse } from "./auth.schema.js";
 import { authService } from "./auth.service.js";
 import { BaseController } from "../../core/base.controller.js";
 import { BaseResponse } from "../../core/base.response.js";
 import { HttpStatus } from "../../core/http-status.enum.js";
 import { HttpError } from "../../errors/errors.js";
+import { setJwtCookie, clearJwtCookie } from "../../utils/jwt.js";
 
 /**
  * Description: คอนโทรลเลอร์ Auth ดูแล login/logout ให้ตอบแบบ BaseResponse ตามมาตรฐานโปรเจกต์
@@ -23,10 +24,14 @@ export class AuthController extends BaseController {
      * Output : { message: "Login successful", data: { accessToken } }
      * Author : Pakkapon Chomchoey (Tonnam) 66160080
      */
-    async login(req: Request, _res: Response, _next: NextFunction): Promise<BaseResponse<TokenDto>> {
+    async login(req: Request, res: Response, _next: NextFunction): Promise<BaseResponse<TokenDto>> {
         // validate body ด้วย zod ให้แน่ใจว่ารูปแบบ body ที่ client ถูก
         const payload = loginPayload.parse(req.body);
         const result = await authService.checkLogin(payload);
+
+        // ตั้ง HttpOnly cookie สำหรับ SSO กับ Chatbot ด้วย
+        setJwtCookie(res, result);
+
         return { message: "Login successful", data: { accessToken: result } };
     }
 
@@ -112,5 +117,70 @@ export class AuthController extends BaseController {
         const payload = resetPasswordPayload.parse(req.body);
         const { message } = await authService.resetPassword(payload);
         return { message };
+    }
+
+    /**
+     * Description: Session endpoint สำหรับ Chatbot SSO - คืนข้อมูล user, roles, exp
+     * Input     : req.user จาก auth middleware (ผ่าน cookie หรือ Bearer token)
+     * Output    : { user: { sub, role, dept, sec }, roles: string[], exp: number }
+     * Note      : ใช้โดย Chatbot เพื่อตรวจสอบสถานะการเข้าสู่ระบบ
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
+    async getSession(req: AuthRequest, _res: Response, _next: NextFunction): Promise<BaseResponse<SessionResponse>> {
+        const user = req.user;
+        if (!user) {
+            throw new HttpError(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+
+        return {
+            message: "Session valid",
+            data: {
+                user: {
+                    sub: user.sub,
+                    role: user.role,
+                    dept: user.dept,
+                    sec: user.sec,
+                },
+                roles: [user.role],
+                exp: user.exp ?? 0,
+            }
+        };
+    }
+
+    /**
+     * Description: Login with cookie-based authentication (for SSO with Chatbot)
+     * Input     : req.body (username, passwords, isRemember)
+     * Output    : { message: "Login successful" } + Set-Cookie header
+     * Note      : คล้าย login ปกติแต่ตั้งค่า HttpOnly cookie แทนการส่ง token กลับ
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
+    async loginWithCookie(req: Request, res: Response, _next: NextFunction): Promise<BaseResponse<void>> {
+        const payload = loginPayload.parse(req.body);
+        const { token, maxAge } = await authService.checkLoginWithCookie(payload);
+
+        // Set HttpOnly cookie for SSO
+        setJwtCookie(res, token, maxAge);
+
+        return { message: "Login successful" };
+    }
+
+    /**
+     * Description: Logout with cookie clearing (for SSO with Chatbot)
+     * Input     : req.token (จาก auth middleware)
+     * Output    : { message: "Logout successful" } + Clear-Cookie header
+     * Note      : ลบทั้ง token จาก blacklist และ clear cookie
+     * Author    : Pakkapon Chomchoey (Tonnam) 66160080
+     */
+    async logoutWithCookie(req: AuthRequest, res: Response, _next: NextFunction): Promise<BaseResponse<void>> {
+        const token = req.token;
+
+        if (token) {
+            await authService.logout(token);
+        }
+
+        // Clear the cookie
+        clearJwtCookie(res);
+
+        return { message: "Logout successful" };
     }
 }

@@ -314,7 +314,6 @@ model cart_items {
   device             devices              @relation(fields: [cti_de_id], references: [de_id])
   cart_device_childs cart_device_childs[]
 
-  @@unique([cti_ct_id, cti_de_id], map: "uq_ct_item_device")
   @@index([cti_ct_id], map: "idx_ct_item_cart")
   @@index([cti_de_id], map: "idx_ct_item_device")
 }

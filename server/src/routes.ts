@@ -1,7 +1,8 @@
 import { Router, type Express } from "express";
 
 import { authRouter, fetchMeRouter } from "./modules/auth/index.js";
-import { authMiddleware } from "./middlewares/auth.middleware.js";
+import { authMiddleware, optionalAuthMiddleware } from "./middlewares/auth.middleware.js";
+import { prisma } from "./infrastructure/database/client.js";
 import { accountsRouter } from "./modules/accounts/index.js";
 import { departmentRouter } from "./modules/departments/index.js";
 import { roleRouter } from "./modules/roles/index.js";
@@ -20,6 +21,8 @@ import { historyApprovalRouter } from "./modules/history-approval/index.js";
 import { repairTicketsRouter } from "./modules/repair/index.js";
 import { historyIssueRouter } from "./modules/history-issue/index.js";
 import { repairRouter } from "./modules/tickets/repair/index.js";
+// import { dashboardIssueRouter } from "./modules/dashboard-issue/index.js";
+import { dashboardBorrowRouter } from "./modules/dashboard/index.js";
 
 /**
  * Description: ลงทะเบียนเส้นทาง (routes) หลักของระบบบน prefix /api/v1
@@ -45,7 +48,37 @@ export function routes(app: Express) {
     departmentRouter,
   );
 
+  // Legacy health check (keep for backward compatibility)
   api.get("/health", (_req, res) => res.json({ ok: true }));
+
+  // Kubernetes/Docker health endpoints
+  // Liveness probe - check if app is running
+  api.get("/healthz", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Readiness probe - check if app is ready to serve (DB connection OK)
+  api.get("/readyz", async (_req, res) => {
+    try {
+      // Check database connection
+      await prisma.$queryRaw`SELECT 1`;
+      res.status(200).json({
+        status: "ready",
+        checks: {
+          database: "ok",
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(503).json({
+        status: "not_ready",
+        checks: {
+          database: "error",
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
 
   api.use(
     "/accounts",
@@ -70,7 +103,12 @@ export function routes(app: Express) {
     borrowReturnRouter,
   );
 
-  api.use("/inventory", authMiddleware, inventoryRouter);
+  api.use(
+    "/inventory",
+    authMiddleware,
+    requireRole([UserRole.ADMIN, UserRole.STAFF]),
+    inventoryRouter,
+  );
 
   api.use(
     "/category",
@@ -89,13 +127,17 @@ export function routes(app: Express) {
 
   api.use("/history-approval", authMiddleware, historyApprovalRouter);
 
-  api.use("/history-issue", authMiddleware, historyIssueRouter);
-
   api.use("/history-borrow", authMiddleware, historyBorrowRouter);
 
   api.use("/repairs", authMiddleware, repairRouter);
 
   api.use("/repair-tickets", authMiddleware, repairTicketsRouter);
+  api.use(
+    "/dashboard",
+    authMiddleware,
+    dashboardBorrowRouter,
+    // dashboardIssueRouter,
+  );
 
   // ผูก router ทั้งหมดไว้ใต้ /api/v1
   app.use("/api/v1", api);

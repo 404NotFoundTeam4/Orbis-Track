@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || "/api/v1", // backend port
+  baseURL:
+    import.meta.env.VITE_API_BASE ||
+    (import.meta.env.DEV ? "http://localhost:4041/api/v1" : "/api/v1"),
   withCredentials: true, // ถ้าใช้ cookie auth
 });
 

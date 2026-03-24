@@ -18,6 +18,9 @@ import { homeRouter } from "./modules/home/index.js";
 import { borrowRouter } from "./modules/borrows/index.js";
 import { usersRouter } from "./modules/users/index.js";
 import { historyApprovalRouter } from "./modules/history-approval/index.js";
+import { repairTicketsRouter } from "./modules/repair/index.js";
+import { historyIssueRouter } from "./modules/history-issue/index.js";
+import { repairRouter } from "./modules/tickets/repair/index.js";
 // import { dashboardIssueRouter } from "./modules/dashboard-issue/index.js";
 import { dashboardBorrowRouter } from "./modules/dashboard/index.js";
 
@@ -126,6 +129,11 @@ export function routes(app: Express) {
 
   api.use("/history-borrow", authMiddleware, historyBorrowRouter);
 
+  api.use("/repairs", authMiddleware, repairRouter);
+
+  api.use("/history-issue", authMiddleware, historyIssueRouter);
+
+  api.use("/repair-tickets", authMiddleware, repairTicketsRouter);
   api.use(
     "/dashboard",
     authMiddleware,

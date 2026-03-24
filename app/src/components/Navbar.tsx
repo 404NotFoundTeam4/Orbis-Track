@@ -227,7 +227,7 @@ export const Navbar = () => {
                       onClick={() => handleSubMenuClick("requests")}
                       className={`px-15 rounded-[9px] py-[11px] flex items-center w-full whitespace-nowrap ${activeSubMenu === "requests" ? "bg-[#EBF3FE] text-[#40A9FF]" : "hover:bg-[#F0F0F0]"}`}
                     >
-                      คำร้อง
+                      คำร้องยืม
                     </Link>
                   </li>
 

@@ -9,6 +9,7 @@ import type {
   GetRepairStatusStatsResponseDto,
   GetOverdueTableResponseDto,
 } from "./dashboard.schema.js";
+import { logger } from "../../infrastructure/logger.js";
 
 /**
  * Description: type สำหรับ filter ตาม role ของผู้ใช้
@@ -401,7 +402,7 @@ export async function getOverdueTicketsTable(filter: OverdueTableFilter): Promis
       userRole: ticket.requester.us_role,
       department: ticket.requester.department?.dept_name ?? null,
       section: ticket.requester.section?.sec_name ?? null,
-      phone: ticket.brt_phone || ticket.requester.us_phone,
+      phone: ticket.requester.us_phone || ticket.brt_phone,
       equipments: uniqueEquipments,
       categories: uniqueCategories,
       assetCodes: assetCodes,
@@ -415,6 +416,8 @@ export async function getOverdueTicketsTable(filter: OverdueTableFilter): Promis
     };
   });
 
+  logger.debug(data);
+  
   return { data };
 }
 

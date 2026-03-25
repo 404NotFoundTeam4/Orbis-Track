@@ -18,6 +18,7 @@ import {
 } from "../services/RepairService";
 import { historyBorrowService } from "../services/HistoryBorrowService";
 import { historyIssueService } from "../services/HistoryIssueService";
+import { UserRole } from "../utils/RoleEnum";
 
 type SortField = NonNullable<RepairQuery["sortField"]>;
 type SortDirection = NonNullable<RepairQuery["sortDirection"]>;
@@ -53,6 +54,12 @@ export default function Repair() {
   const { push } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const userRaw = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const parsedUser = userRaw ? JSON.parse(userRaw) : null;
+  const currentUserRole = parsedUser?.us_role as UserRole | undefined;
+  const canReportOtherDevice =
+    currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.STAFF;
 
   const repairRequestPath = useMemo(() => {
     const parts = location.pathname.split("/").filter(Boolean);
@@ -302,13 +309,15 @@ export default function Repair() {
             searchable
             className="w-[210px]"
           />
-          <button
-            type="button"
-            className="h-[46px] rounded-full bg-[#F44336] px-6 text-base font-medium text-white"
-            onClick={handleOpenOtherDeviceForm}
-          >
-            แจ้งซ่อมอุปกรณ์อื่น
-          </button>
+          {canReportOtherDevice && (
+            <button
+              type="button"
+              className="h-[46px] rounded-full bg-[#F44336] px-6 text-base font-medium text-white"
+              onClick={handleOpenOtherDeviceForm}
+            >
+              แจ้งซ่อมอุปกรณ์อื่น
+            </button>
+          )}
         </div>
       </div>
 

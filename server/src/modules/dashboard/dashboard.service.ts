@@ -416,7 +416,7 @@ export async function getOverdueTicketsTable(filter: OverdueTableFilter): Promis
     };
   });
 
-  logger.info(data);
+  // logger.info(data);
   
   return { data };
 }

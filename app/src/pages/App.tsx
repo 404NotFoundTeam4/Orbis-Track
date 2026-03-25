@@ -58,6 +58,8 @@ function App() {
       <Route path="list-devices/cart" element={<Cart />} />
       <Route path="list-devices/cart/edit" element={<EditCart />} />
       <Route path="list-devices/cart/edit/:id?" element={<EditCart />} />
+      <Route path="repair" element={<Repair />} />
+      <Route path="repair/request" element={<RepairRequestPage />} />
       <Route path="setting" element={<Settings />} />
       <Route path="history" element={<History />} />
       <Route path="history/:id?" element={<History />} />
@@ -73,8 +75,6 @@ function App() {
       <Route path="account-management" element={<Users />} />
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-      <Route path="repair" element={<Repair />} />
-      <Route path="repair/request" element={<RepairRequestPage />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -92,8 +92,6 @@ function App() {
     <>
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-      <Route path="repair" element={<Repair />} />
-      <Route path="repair/request" element={<RepairRequestPage />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />

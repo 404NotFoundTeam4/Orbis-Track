@@ -6,7 +6,7 @@
  *
  * Author: Rachata Jitjeankhan (Tang) 66160369
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SearchFilter from "../components/SearchFilter";
 import DropDown from "../components/DropDown";
@@ -18,6 +18,7 @@ import {
 } from "../services/RepairService";
 import { historyBorrowService } from "../services/HistoryBorrowService";
 import { historyIssueService } from "../services/HistoryIssueService";
+import { UserRole } from "../utils/RoleEnum";
 
 type SortField = NonNullable<RepairQuery["sortField"]>;
 type SortDirection = NonNullable<RepairQuery["sortDirection"]>;
@@ -53,6 +54,12 @@ export default function Repair() {
   const { push } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const userRaw = sessionStorage.getItem("User") || localStorage.getItem("User");
+  const parsedUser = userRaw ? JSON.parse(userRaw) : null;
+  const currentUserRole: string | null =
+    parsedUser?.us_role ?? parsedUser?.state?.user?.us_role ?? null;
+  const canOpenOtherDeviceRepair =
+    currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.STAFF;
 
   const repairRequestPath = useMemo(() => {
     const parts = location.pathname.split("/").filter(Boolean);
@@ -69,6 +76,8 @@ export default function Repair() {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedCategory, setSelectedCategory] = useState<OptionItem | null>(null);
+  const didInitializeRepairSearchRef = useRef(false);
+  const lastRepairSearchTextRef = useRef<string>("");
 
   // Derive categories from repair items (same technique as ListDevices)
   const categoryOptions = useMemo(() => {
@@ -86,19 +95,68 @@ export default function Repair() {
 
   // Filter items by category on client side
   const filteredItems = useMemo(() => {
-    if (!selectedCategory?.value) return allItems;
-    return allItems.filter((item) => item.category === selectedCategory.value);
-  }, [allItems, selectedCategory?.value]);
+    const normalizedSearchText = search.trim().toLowerCase();
+
+    return allItems.filter((item) => {
+      const matchedCategory = !selectedCategory?.value || item.category === selectedCategory.value;
+
+      const matchedSearch =
+        !normalizedSearchText ||
+        [
+          item.device_name,
+          item.device_code,
+          item.category,
+          item.requester_name,
+          item.requester_emp_code,
+          item.title,
+        ].some((value) =>
+          String(value ?? "")
+            .toLowerCase()
+            .includes(normalizedSearchText),
+        );
+
+      return matchedCategory && matchedSearch;
+    });
+  }, [allItems, selectedCategory?.value, search]);
+
+  const sortedItems = useMemo(() => {
+    if (!sortField) return filteredItems;
+
+    const factor = sortDirection === "asc" ? 1 : -1;
+
+    const getSortValue = (item: RepairItem): string | number => {
+      if (sortField === "device_name") return item.device_name ?? "";
+      if (sortField === "quantity") return Number(item.quantity ?? 0);
+      if (sortField === "category") return item.category ?? "";
+      if (sortField === "requester") return item.requester_name ?? "";
+      if (sortField === "request_date") {
+        const time = new Date(item.request_date).getTime();
+        return Number.isNaN(time) ? 0 : time;
+      }
+      return item.status ?? "";
+    };
+
+    return [...filteredItems].sort((leftItem, rightItem) => {
+      const leftValue = getSortValue(leftItem);
+      const rightValue = getSortValue(rightItem);
+
+      if (typeof leftValue === "number" && typeof rightValue === "number") {
+        return (leftValue - rightValue) * factor;
+      }
+
+      return String(leftValue).localeCompare(String(rightValue), "th") * factor;
+    });
+  }, [filteredItems, sortField, sortDirection]);
 
   // Calculate pagination
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
-  }, [filteredItems.length]);
+    return Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
+  }, [sortedItems.length]);
 
   const paginatedItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
-    return filteredItems.slice(start, start + PAGE_SIZE);
-  }, [filteredItems, page]);
+    return sortedItems.slice(start, start + PAGE_SIZE);
+  }, [sortedItems, page]);
 
   /**
    * fetchRepairs
@@ -110,14 +168,6 @@ export default function Repair() {
   const fetchRepairs = useCallback(async () => {
     setLoading(true);
     try {
-      const params: RepairQuery = {
-        page: 1,
-        limit: 1000, // Fetch all items for client-side filtering
-        search: search || undefined,
-        sortField: sortField || undefined,
-        sortDirection,
-      };
-
       const userRaw = sessionStorage.getItem("User") || localStorage.getItem("User");
       const parsedUser = userRaw ? JSON.parse(userRaw) : null;
       const currentUserId: number | null =
@@ -128,7 +178,6 @@ export default function Repair() {
           page: 1,
           limit: 100,
           status: "IN_USE",
-          search: params.search,
         }),
         historyIssueService.getHistoryIssueList({ status: "PENDING" }),
         historyIssueService.getHistoryIssueList({ status: "IN_PROGRESS" }),
@@ -146,20 +195,58 @@ export default function Repair() {
         (issue) => issue.issueBorrowTicketId == null,
       );
 
-      const openCountByDevice = new Map<number, number>();
-      for (const issue of openBorrowIssueItems) {
-        const deviceId = issue.parentDevice.id;
-        const amount = Math.max(issue.deviceChildCount ?? 1, 1);
-        openCountByDevice.set(deviceId, (openCountByDevice.get(deviceId) ?? 0) + amount);
-      }
+      const openBorrowIssueDetails = await Promise.all(
+        openBorrowIssueItems.map((issue) =>
+          historyIssueService
+            .getHistoryIssueDetail(issue.issueId)
+            .catch(() => null),
+        ),
+      );
 
-      const borrowedItems: RepairItem[] = borrowedTickets.items
-        .filter((ticket) => (currentUserId ? ticket.requester.userId === currentUserId : true))
-        .map((ticket) => {
+      const blockedChildIdsByBorrowTicket = new Map<number, Set<number>>();
+      openBorrowIssueItems.forEach((issue, index) => {
+        const borrowTicketId = issue.issueBorrowTicketId;
+        if (!borrowTicketId) return;
+
+        const detail = openBorrowIssueDetails[index];
+        const blockedSet =
+          blockedChildIdsByBorrowTicket.get(borrowTicketId) ?? new Set<number>();
+
+        (detail?.deviceChildList ?? []).forEach((child) => {
+          blockedSet.add(child.deviceChildId);
+        });
+
+        blockedChildIdsByBorrowTicket.set(borrowTicketId, blockedSet);
+      });
+
+      const filteredBorrowedTickets = borrowedTickets.items.filter((ticket) =>
+        currentUserId ? ticket.requester.userId === currentUserId : true,
+      );
+
+      const borrowedTicketDetails = await Promise.all(
+        filteredBorrowedTickets.map((ticket) =>
+          historyBorrowService
+            .getHistoryBorrowTicketDetail(ticket.ticketId)
+            .catch(() => null),
+        ),
+      );
+
+      const borrowedItems: RepairItem[] = filteredBorrowedTickets.map((ticket, index) => {
         const deviceId = ticket.deviceSummary.deviceId;
+
+        const ticketDetail = borrowedTicketDetails[index];
+        const repairableChildren = (ticketDetail?.deviceChildren ?? []).filter(
+          (child) => child.status !== "DAMAGED" && child.status !== "LOST",
+        );
+        const blockedChildIds = blockedChildIdsByBorrowTicket.get(ticket.ticketId) ?? new Set<number>();
+        const availableChildCount = repairableChildren.filter(
+          (child) => !blockedChildIds.has(child.deviceChildId),
+        ).length;
+
         const borrowedCount = Math.max(ticket.deviceChildCount ?? 1, 1);
-        const openedCount = openCountByDevice.get(deviceId) ?? 0;
-        const remainingCount = Math.max(borrowedCount - openedCount, 0);
+        const remainingCount = ticketDetail
+          ? Math.max(availableChildCount, 0)
+          : borrowedCount;
 
         return {
           id: ticket.ticketId,
@@ -202,7 +289,7 @@ export default function Repair() {
     } finally {
       setLoading(false);
     }
-  }, [search, sortDirection, sortField, push]);
+  }, [push]);
 
   useEffect(() => {
     fetchRepairs();
@@ -211,6 +298,21 @@ export default function Repair() {
   useEffect(() => {
     setPage(1);
   }, [search, selectedCategory]);
+
+  const handleRepairSearchChange = ({ search }: { search: string }) => {
+    if (!didInitializeRepairSearchRef.current) {
+      didInitializeRepairSearchRef.current = true;
+      lastRepairSearchTextRef.current = search ?? "";
+      return;
+    }
+
+    const normalizedSearchText = (search ?? "").trim();
+    if (normalizedSearchText === lastRepairSearchTextRef.current) return;
+
+    lastRepairSearchTextRef.current = normalizedSearchText;
+    setSearch(normalizedSearchText);
+    setPage(1);
+  };
 
     /**
    * handleSort
@@ -275,6 +377,9 @@ export default function Repair() {
   };
 
   const handleOpenOtherDeviceForm = () => {
+    if (!canOpenOtherDeviceRepair) {
+      return;
+    }
     navigate(`${repairRequestPath}?mode=other`);
   };
 
@@ -291,7 +396,7 @@ export default function Repair() {
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <SearchFilter onChange={({ search: value }) => setSearch(value)} />
+        <SearchFilter onChange={handleRepairSearchChange} />
 
         <div className="flex flex-wrap items-center gap-2">
           <DropDown
@@ -302,13 +407,15 @@ export default function Repair() {
             searchable
             className="w-[210px]"
           />
-          <button
-            type="button"
-            className="h-[46px] rounded-full bg-[#F44336] px-6 text-base font-medium text-white"
-            onClick={handleOpenOtherDeviceForm}
-          >
-            แจ้งซ่อมอุปกรณ์อื่น
-          </button>
+          {canOpenOtherDeviceRepair && (
+            <button
+              type="button"
+              className="h-[46px] rounded-full bg-[#F44336] px-6 text-base font-medium text-white"
+              onClick={handleOpenOtherDeviceForm}
+            >
+              แจ้งซ่อมอุปกรณ์อื่น
+            </button>
+          )}
         </div>
       </div>
 

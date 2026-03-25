@@ -162,7 +162,9 @@ export default function RepairRequestPage() {
             Number(effectiveBorrowTicketId),
           );
           const borrowedChildIdSet = new Set(
-            (borrowedDetail.deviceChildren ?? []).map((child) => child.deviceChildId),
+            (borrowedDetail.deviceChildren ?? [])
+              .filter((child) => child.status !== "DAMAGED" && child.status !== "LOST")
+              .map((child) => child.deviceChildId),
           );
           remainingSubDevices = remainingSubDevices.filter((sub) => borrowedChildIdSet.has(sub.dec_id));
         } else if (mode === "other") {

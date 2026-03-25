@@ -66,6 +66,8 @@ function App() {
       <Route path="list-devices" element={<ListDevices />} />
       <Route path="list-devices/borrow" element={<BorrowDevice />} />
       <Route path="list-devices/borrow/:id?" element={<BorrowDevice />} />
+      <Route path="repair" element={<Repair />} />
+      <Route path="repair/request" element={<RepairRequestPage />} />
     </>
   );
 

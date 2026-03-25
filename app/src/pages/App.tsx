@@ -64,6 +64,8 @@ function App() {
       <Route path="list-devices" element={<ListDevices />} />
       <Route path="list-devices/borrow" element={<BorrowDevice />} />
       <Route path="list-devices/borrow/:id?" element={<BorrowDevice />} />
+      <Route path="repair" element={<Repair />} />
+      <Route path="repair/request" element={<RepairRequestPage />} />
     </>
   );
 
@@ -73,8 +75,6 @@ function App() {
       <Route path="account-management" element={<Users />} />
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-      <Route path="repair" element={<Repair />} />
-      <Route path="repair/request" element={<RepairRequestPage />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />
@@ -92,8 +92,6 @@ function App() {
     <>
       <Route path="departments-management" element={<Departments />} />
       <Route path="category" element={<Categories />} />
-      <Route path="repair" element={<Repair />} />
-      <Route path="repair/request" element={<RepairRequestPage />} />
       <Route path="inventory" element={<Inventory />} />
       <Route path="inventory/add" element={<AddInventory />} />
       <Route path="inventory/edit/:id" element={<EditInventory />} />

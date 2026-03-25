@@ -5,6 +5,7 @@ export type RepairStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
 export type RepairItem = {
   id: number;
   device_id?: number;
+  device_code?: string | null;
   title: string;
   description: string | null;
   device_name: string;
@@ -69,6 +70,7 @@ type RepairTicketApiItem = {
   };
   device_info: {
     name: string;
+    asset_code?: string | null;
     quantity: number;
     category: string | null;
   };
@@ -134,6 +136,7 @@ export const repairService = {
 
     const mapped: RepairItem[] = rawList.map((item) => ({
       id: item.id,
+      device_code: item.device_info?.asset_code ?? null,
       title: item.problem?.title ?? "-",
       description: item.problem?.description ?? null,
       device_name: item.device_info?.name ?? "-",

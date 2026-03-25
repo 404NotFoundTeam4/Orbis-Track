@@ -164,6 +164,7 @@ export default function Repair() {
         return {
           id: ticket.ticketId,
           device_id: deviceId,
+          device_code: ticket.deviceSummary.deviceSerialNumber ?? null,
           title: `BORROW-${ticket.ticketId}`,
           description: null,
           device_name: ticket.deviceSummary.deviceName,
@@ -182,6 +183,7 @@ export default function Repair() {
       const otherItems: RepairItem[] = otherFlowIssueItems.map((issue) => ({
         id: issue.issueId,
         device_id: issue.parentDevice.id,
+        device_code: issue.parentDevice.serialNumber ?? null,
         title: issue.issueTitle,
         description: issue.issueDescription,
         device_name: issue.parentDevice.name,

@@ -6,7 +6,7 @@
  *
  * Author: Rachata Jitjeankhan (Tang) 66160369
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SearchFilter from "../components/SearchFilter";
 import DropDown from "../components/DropDown";
@@ -76,6 +76,8 @@ export default function Repair() {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedCategory, setSelectedCategory] = useState<OptionItem | null>(null);
+  const didInitializeRepairSearchRef = useRef(false);
+  const lastRepairSearchTextRef = useRef<string>("");
 
   // Derive categories from repair items (same technique as ListDevices)
   const categoryOptions = useMemo(() => {
@@ -93,9 +95,29 @@ export default function Repair() {
 
   // Filter items by category on client side
   const filteredItems = useMemo(() => {
-    if (!selectedCategory?.value) return allItems;
-    return allItems.filter((item) => item.category === selectedCategory.value);
-  }, [allItems, selectedCategory?.value]);
+    const normalizedSearchText = search.trim().toLowerCase();
+
+    return allItems.filter((item) => {
+      const matchedCategory = !selectedCategory?.value || item.category === selectedCategory.value;
+
+      const matchedSearch =
+        !normalizedSearchText ||
+        [
+          item.device_name,
+          item.device_code,
+          item.category,
+          item.requester_name,
+          item.requester_emp_code,
+          item.title,
+        ].some((value) =>
+          String(value ?? "")
+            .toLowerCase()
+            .includes(normalizedSearchText),
+        );
+
+      return matchedCategory && matchedSearch;
+    });
+  }, [allItems, selectedCategory?.value, search]);
 
   // Calculate pagination
   const totalPages = useMemo(() => {
@@ -120,7 +142,6 @@ export default function Repair() {
       const params: RepairQuery = {
         page: 1,
         limit: 1000, // Fetch all items for client-side filtering
-        search: search || undefined,
         sortField: sortField || undefined,
         sortDirection,
       };
@@ -135,7 +156,6 @@ export default function Repair() {
           page: 1,
           limit: 100,
           status: "IN_USE",
-          search: params.search,
         }),
         historyIssueService.getHistoryIssueList({ status: "PENDING" }),
         historyIssueService.getHistoryIssueList({ status: "IN_PROGRESS" }),
@@ -209,7 +229,7 @@ export default function Repair() {
     } finally {
       setLoading(false);
     }
-  }, [search, sortDirection, sortField, push]);
+  }, [sortDirection, sortField, push]);
 
   useEffect(() => {
     fetchRepairs();
@@ -218,6 +238,21 @@ export default function Repair() {
   useEffect(() => {
     setPage(1);
   }, [search, selectedCategory]);
+
+  const handleRepairSearchChange = ({ search }: { search: string }) => {
+    if (!didInitializeRepairSearchRef.current) {
+      didInitializeRepairSearchRef.current = true;
+      lastRepairSearchTextRef.current = search ?? "";
+      return;
+    }
+
+    const normalizedSearchText = (search ?? "").trim();
+    if (normalizedSearchText === lastRepairSearchTextRef.current) return;
+
+    lastRepairSearchTextRef.current = normalizedSearchText;
+    setSearch(normalizedSearchText);
+    setPage(1);
+  };
 
     /**
    * handleSort
@@ -301,7 +336,7 @@ export default function Repair() {
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <SearchFilter onChange={({ search: value }) => setSearch(value)} />
+        <SearchFilter onChange={handleRepairSearchChange} />
 
         <div className="flex flex-wrap items-center gap-2">
           <DropDown

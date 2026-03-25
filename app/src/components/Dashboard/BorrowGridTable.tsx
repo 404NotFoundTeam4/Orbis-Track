@@ -20,6 +20,19 @@ interface HeaderProps {
   sortOrder?: "asc" | "desc";
 }
 
+const getSortIcon = (isSorted: boolean, direction: "asc" | "desc") => {
+  // ถ้ายังไม่ใช่คอลัมน์ที่กำลัง sort -> ใช้ default icon
+  if (!isSorted) {
+    return "bx:sort-down";
+  }
+
+  // ถ้าเป็น asc
+  if (direction === "asc") return "bx:sort-up";
+
+  // ถ้าเป็น desc
+  return "bx:sort-down";
+};
+
 function HeaderCell({
   label,
   sortKey,
@@ -43,12 +56,10 @@ function HeaderCell({
     >
       <span>{label}</span>
       <Icon
-        icon="bx:sort-down"
+        icon={getSortIcon(isSorted, sortOrder)}
         width="24"
         height="24"
-        className={`text-black shrink-0 transition-transform duration-200 ${
-          isSorted && sortOrder === "desc" ? "rotate-180" : ""
-        }`}
+        className="text-black shrink-0"
       />
     </div>
   );
@@ -59,8 +70,6 @@ export default function BorrowGridTable({ data }: Props) {
 
   const [sortKey, setSortKey] = useState<SortKey>("ticketId");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  // ควบคุมทิศทางเลขลำดับ อิสระจาก sortOrder จริง
-  const [rowCountAsc, setRowCountAsc] = useState(true);
 
   const pageSize = 5;
 
@@ -75,9 +84,19 @@ export default function BorrowGridTable({ data }: Props) {
 
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => {
-      
-      const aVal = a[sortKey] ?? "";
-      const bVal = b[sortKey] ?? "";
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+
+      if (aVal === null || aVal === undefined)
+        return sortOrder === "asc" ? -1 : 1;
+      if (bVal === null || bVal === undefined)
+        return sortOrder === "asc" ? 1 : -1;
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortOrder === "asc"
+          ? aVal.localeCompare(bVal, "th")
+          : bVal.localeCompare(aVal, "th");
+      }
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
       if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
@@ -94,20 +113,10 @@ export default function BorrowGridTable({ data }: Props) {
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) {
-      // กดซ้ำที่คอลัมน์เดิม -> สลับ order
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-      if (key === "ticketId") {
-        // สลับทิศทางเลขลำดับเมื่อกดซ้ำที่คอลัมน์ "ลำดับ"
-        setRowCountAsc((prev) => !prev);
-      }
     } else {
-      // เปลี่ยนไปคอลัมน์ใหม่ -> reset order เป็น asc
       setSortKey(key);
       setSortOrder("asc");
-      if (key === "ticketId") {
-        // เปลี่ยนมาที่คอลัมน์ "ลำดับ" ครั้งแรก -> reset เลขลำดับเป็น 1..N
-        setRowCountAsc(true);
-      }
     }
     setPage(1);
   };
@@ -214,23 +223,33 @@ grid-cols-[120px_minmax(250px,2fr)_150px_1fr_1fr_1.2fr_1fr_150px]
             >
               <div className="text-left font-medium px-2">
                 <div>
-                  {rowCountAsc
-                    ? (page - 1) * pageSize + index + 1
-                    : data.length - ((page - 1) * pageSize + index)}
+                  {sortKey === "ticketId" && sortOrder === "desc"
+                    ? data.length - ((page - 1) * pageSize + index)
+                    : (page - 1) * pageSize + index + 1}
                 </div>
               </div>
               <div className="text-left font-medium flex items-center gap-3">
                 <div className="w-[40px] h-[40px] rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {item.userImage ? (
-                    <img src={getImageUrl(item.userImage)} alt={item.userName} className="w-full h-full object-cover" />
+                    <img
+                      src={getImageUrl(item.userImage)}
+                      alt={item.userName}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <Icon icon="octicon:person-24" className="text-gray-400 text-2xl" />
+                    <Icon
+                      icon="octicon:person-24"
+                      className="text-gray-400 text-2xl"
+                    />
                   )}
                 </div>
                 <div className="flex flex-col">
-                  <div className="text-[14px] font-bold text-gray-900">{item.userName}</div>
+                  <div className="text-[14px] font-bold text-gray-900">
+                    {item.userName}
+                  </div>
                   <div className="text-[12px] text-gray-500">
-                    <span className="text-[#8AB4F8]">{item.userEmail}</span> : {item.userEmpCode || "-"}
+                    <span className="text-[#8AB4F8]">{item.userEmail}</span> :{" "}
+                    {item.userEmpCode || "-"}
                   </div>
                 </div>
               </div>
@@ -246,10 +265,15 @@ grid-cols-[120px_minmax(250px,2fr)_150px_1fr_1fr_1.2fr_1fr_150px]
               <div className="text-left font-medium">
                 <div>{item.phone}</div>
               </div>
-              <div className="text-left font-medium" title={item.equipments.join(", ")}>
+              <div
+                className="text-left font-medium"
+                title={item.equipments.join(", ")}
+              >
                 <div className="truncate">{item.equipments.join(", ")}</div>
               </div>
-              <div className="text-center font-medium text-black">{item.delayedDays}</div>
+              <div className="text-center font-medium text-black">
+                {item.delayedDays}
+              </div>
             </div>
           ))
         )}

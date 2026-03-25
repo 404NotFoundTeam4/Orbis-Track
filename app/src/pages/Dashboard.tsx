@@ -193,7 +193,6 @@ export default function Dashboard() {
     ];
   }, [repairStatusData]);
 
-
   /**
    * Description: คำนวณยอดรวมของข้อมูลในกราฟเพื่อแสดงบน badge
    * Author: Nontapat Sinthum (Guitar) 66160104
@@ -342,6 +341,5 @@ export default function Dashboard() {
         onConfirm={handleExportFile}
       />
     </div>
-    
   );
 }

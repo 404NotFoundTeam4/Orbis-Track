@@ -119,15 +119,44 @@ export default function Repair() {
     });
   }, [allItems, selectedCategory?.value, search]);
 
+  const sortedItems = useMemo(() => {
+    if (!sortField) return filteredItems;
+
+    const factor = sortDirection === "asc" ? 1 : -1;
+
+    const getSortValue = (item: RepairItem): string | number => {
+      if (sortField === "device_name") return item.device_name ?? "";
+      if (sortField === "quantity") return Number(item.quantity ?? 0);
+      if (sortField === "category") return item.category ?? "";
+      if (sortField === "requester") return item.requester_name ?? "";
+      if (sortField === "request_date") {
+        const time = new Date(item.request_date).getTime();
+        return Number.isNaN(time) ? 0 : time;
+      }
+      return item.status ?? "";
+    };
+
+    return [...filteredItems].sort((leftItem, rightItem) => {
+      const leftValue = getSortValue(leftItem);
+      const rightValue = getSortValue(rightItem);
+
+      if (typeof leftValue === "number" && typeof rightValue === "number") {
+        return (leftValue - rightValue) * factor;
+      }
+
+      return String(leftValue).localeCompare(String(rightValue), "th") * factor;
+    });
+  }, [filteredItems, sortField, sortDirection]);
+
   // Calculate pagination
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
-  }, [filteredItems.length]);
+    return Math.max(1, Math.ceil(sortedItems.length / PAGE_SIZE));
+  }, [sortedItems.length]);
 
   const paginatedItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
-    return filteredItems.slice(start, start + PAGE_SIZE);
-  }, [filteredItems, page]);
+    return sortedItems.slice(start, start + PAGE_SIZE);
+  }, [sortedItems, page]);
 
   /**
    * fetchRepairs
@@ -139,13 +168,6 @@ export default function Repair() {
   const fetchRepairs = useCallback(async () => {
     setLoading(true);
     try {
-      const params: RepairQuery = {
-        page: 1,
-        limit: 1000, // Fetch all items for client-side filtering
-        sortField: sortField || undefined,
-        sortDirection,
-      };
-
       const userRaw = sessionStorage.getItem("User") || localStorage.getItem("User");
       const parsedUser = userRaw ? JSON.parse(userRaw) : null;
       const currentUserId: number | null =
@@ -229,7 +251,7 @@ export default function Repair() {
     } finally {
       setLoading(false);
     }
-  }, [sortDirection, sortField, push]);
+  }, [push]);
 
   useEffect(() => {
     fetchRepairs();

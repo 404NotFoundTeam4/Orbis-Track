@@ -195,20 +195,58 @@ export default function Repair() {
         (issue) => issue.issueBorrowTicketId == null,
       );
 
-      const openCountByDevice = new Map<number, number>();
-      for (const issue of openBorrowIssueItems) {
-        const deviceId = issue.parentDevice.id;
-        const amount = Math.max(issue.deviceChildCount ?? 1, 1);
-        openCountByDevice.set(deviceId, (openCountByDevice.get(deviceId) ?? 0) + amount);
-      }
+      const openBorrowIssueDetails = await Promise.all(
+        openBorrowIssueItems.map((issue) =>
+          historyIssueService
+            .getHistoryIssueDetail(issue.issueId)
+            .catch(() => null),
+        ),
+      );
 
-      const borrowedItems: RepairItem[] = borrowedTickets.items
-        .filter((ticket) => (currentUserId ? ticket.requester.userId === currentUserId : true))
-        .map((ticket) => {
+      const blockedChildIdsByBorrowTicket = new Map<number, Set<number>>();
+      openBorrowIssueItems.forEach((issue, index) => {
+        const borrowTicketId = issue.issueBorrowTicketId;
+        if (!borrowTicketId) return;
+
+        const detail = openBorrowIssueDetails[index];
+        const blockedSet =
+          blockedChildIdsByBorrowTicket.get(borrowTicketId) ?? new Set<number>();
+
+        (detail?.deviceChildList ?? []).forEach((child) => {
+          blockedSet.add(child.deviceChildId);
+        });
+
+        blockedChildIdsByBorrowTicket.set(borrowTicketId, blockedSet);
+      });
+
+      const filteredBorrowedTickets = borrowedTickets.items.filter((ticket) =>
+        currentUserId ? ticket.requester.userId === currentUserId : true,
+      );
+
+      const borrowedTicketDetails = await Promise.all(
+        filteredBorrowedTickets.map((ticket) =>
+          historyBorrowService
+            .getHistoryBorrowTicketDetail(ticket.ticketId)
+            .catch(() => null),
+        ),
+      );
+
+      const borrowedItems: RepairItem[] = filteredBorrowedTickets.map((ticket, index) => {
         const deviceId = ticket.deviceSummary.deviceId;
+
+        const ticketDetail = borrowedTicketDetails[index];
+        const repairableChildren = (ticketDetail?.deviceChildren ?? []).filter(
+          (child) => child.status !== "DAMAGED" && child.status !== "LOST",
+        );
+        const blockedChildIds = blockedChildIdsByBorrowTicket.get(ticket.ticketId) ?? new Set<number>();
+        const availableChildCount = repairableChildren.filter(
+          (child) => !blockedChildIds.has(child.deviceChildId),
+        ).length;
+
         const borrowedCount = Math.max(ticket.deviceChildCount ?? 1, 1);
-        const openedCount = openCountByDevice.get(deviceId) ?? 0;
-        const remainingCount = Math.max(borrowedCount - openedCount, 0);
+        const remainingCount = ticketDetail
+          ? Math.max(availableChildCount, 0)
+          : borrowedCount;
 
         return {
           id: ticket.ticketId,

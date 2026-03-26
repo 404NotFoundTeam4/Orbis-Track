@@ -106,7 +106,6 @@ export function routes(app: Express) {
   api.use(
     "/inventory",
     authMiddleware,
-    requireRole([UserRole.ADMIN, UserRole.STAFF]),
     inventoryRouter,
   );
 

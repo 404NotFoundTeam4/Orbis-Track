@@ -57,6 +57,7 @@ const statusItems = [
     textColor: "#73D13D",
   },
   { id: "DAMAGED", label: "ชำรุด", value: "DAMAGED", textColor: "#FF4D4F" },
+  { id: "REPAIRING", label: "กำลังซ่อม", value: "DAMAGED", textColor: "#C2410C" },
   { id: "LOST", label: "สูญหาย", value: "LOST", textColor: "#FF7A45" },
 ];
 

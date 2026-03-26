@@ -28,9 +28,10 @@ interface DeviceReturnModalProps {
 
 // Status options for return dropdown
 const returnStatusItems = [
-    { id: "READY", label: "พร้อมใช้งาน", value: "READY", textColor: "#73D13D" },
-    { id: "DAMAGED", label: "ชำรุด", value: "DAMAGED", textColor: "#FF4D4F" },
-    { id: "LOST", label: "สูญหาย", value: "LOST", textColor: "#FF7A45" },
+  { id: "READY", label: "พร้อมใช้งาน", value: "READY", textColor: "#73D13D" },
+  { id: "REPAIRING", label: "กำลังซ่อม", value: "REPAIRING", textColor: "#C2410C" },
+  { id: "DAMAGED", label: "ชำรุด", value: "DAMAGED", textColor: "#FF4D4F" },
+  { id: "LOST", label: "สูญหาย", value: "LOST", textColor: "#FF7A45" },
 ];
 
 const DeviceReturnModal = ({
@@ -202,6 +203,7 @@ const DeviceReturnModal = ({
                                                 onChange={(item) =>
                                                     handleStatusChange(device.child_id, item.value)
                                                 }
+                                                disabled={device.current_status === 'REPAIRING'}
                                                 placeholder="สถานะ"
                                                 searchable={false}
                                             />

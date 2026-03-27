@@ -7,7 +7,11 @@
  * Author: Chanwit Muangma (Boom) 66160224
  */
 import { prisma } from "../../infrastructure/database/client.js";
-import { Prisma } from "@prisma/client";
+import {
+  Prisma,
+  DEVICE_CHILD_STATUS,
+  TI_STATUS,
+} from "@prisma/client";
 import type {
   GetHistoryIssueQuery,
   HistoryIssueDetail,
@@ -74,6 +78,22 @@ const ticketIssueInclude = Prisma.validator<Prisma.ticket_issuesInclude>()({
 type TicketIssueWithRelations = Prisma.ticket_issuesGetPayload<{
   include: typeof ticketIssueInclude;
 }>;
+
+const mapIssueDeviceStatus = (
+  issueStatus: TI_STATUS,
+  deviceChildStatus: DEVICE_CHILD_STATUS,
+): DEVICE_CHILD_STATUS => {
+  if (
+    (issueStatus === TI_STATUS.PENDING ||
+      issueStatus === TI_STATUS.IN_PROGRESS) &&
+    (deviceChildStatus === DEVICE_CHILD_STATUS.READY ||
+      deviceChildStatus === DEVICE_CHILD_STATUS.BORROWED)
+  ) {
+    return DEVICE_CHILD_STATUS.REPAIRING;
+  }
+
+  return deviceChildStatus;
+};
 
 export class HistoryIssueService {
   /**
@@ -247,7 +267,10 @@ export class HistoryIssueService {
         deviceChildId: issueDevice.device_child.dec_id,
         deviceChildAssetCode: issueDevice.device_child.dec_asset_code,
         deviceChildSerialNumber: issueDevice.device_child.dec_serial_number,
-        deviceChildStatus: issueDevice.device_child.dec_status,
+        deviceChildStatus: mapIssueDeviceStatus(
+          ticketIssue.ti_status,
+          issueDevice.device_child.dec_status,
+        ),
       })),
 
       /**

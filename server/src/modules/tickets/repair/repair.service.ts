@@ -585,7 +585,12 @@ export class RepairService {
         await tx.device_childs.updateMany({
           where: {
             dec_id: { in: validSubDeviceIds },
-            dec_status: DEVICE_CHILD_STATUS.READY,
+            dec_status: {
+              in: [
+                DEVICE_CHILD_STATUS.READY,
+                DEVICE_CHILD_STATUS.BORROWED,
+              ],
+            },
             deleted_at: null,
           },
           data: {

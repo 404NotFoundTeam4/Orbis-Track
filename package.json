@@ -54,33 +54,122 @@
     "@types/multer": "^2.0.0",
     "@types/node-cron": "^3.0.11",
     "argon2": "^0.44.0",
-    "axios": "^1.13.5",
+    "axios": "^1.15.0",
     "ioredis": "^5.7.0",
     "multer": "^2.1.1"
   },
   "overrides": {
     "app": {
+      "@prisma/config": {
+        "effect": "3.21.0"
+      },
+      "anymatch": {
+        "picomatch": "2.3.2"
+      },
+      "brace-expansion@^1.1.0": "1.1.13",
+      "brace-expansion@^2.0.0": "2.0.3",
+      "c12": {
+        "defu": "6.1.7"
+      },
+      "dompurify": "3.4.0",
       "flatted": "3.4.2",
+      "follow-redirects": "1.16.0",
       "minimatch@^3.1.2": "3.1.4",
       "minimatch@^9.0.0": "9.0.7",
+      "minimatch@3.1.5": {
+        "brace-expansion": "1.1.13"
+      },
+      "minimatch@9.0.9": {
+        "brace-expansion": "2.0.3"
+      },
+      "picomatch@^2.3.0": "2.3.2",
+      "picomatch@^4.0.0": "4.0.4",
+      "readdirp": {
+        "picomatch": "2.3.2"
+      },
       "rollup": "4.59.0",
+      "router": {
+        "path-to-regexp": "8.4.2"
+      },
       "socket.io-parser": "4.2.6",
-      "svgo": "4.0.1"
+      "svgo": "4.0.1",
+      "vite": {
+        "picomatch": "4.0.4",
+        "yaml": "2.8.3"
+      },
+      "yaml": "2.8.3"
     },
-    "effect": "3.20.0",
+    "@prisma/config": {
+      "effect": "3.21.0"
+    },
+    "anymatch": {
+      "picomatch": "2.3.2"
+    },
+    "brace-expansion@^1.1.0": "1.1.13",
+    "brace-expansion@^2.0.0": "2.0.3",
+    "c12": {
+      "defu": "6.1.7"
+    },
+    "defu": "6.1.7",
+    "dompurify": "3.4.0",
+    "effect": "3.21.0",
     "fast-xml-parser": "5.5.7",
     "flatted": "3.4.2",
+    "follow-redirects": "1.16.0",
     "minimatch@^3.1.2": "3.1.4",
     "minimatch@^9.0.0": "9.0.7",
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.13"
+    },
+    "minimatch@9.0.9": {
+      "brace-expansion": "2.0.3"
+    },
+    "path-to-regexp": "8.4.2",
+    "picomatch@^2.3.0": "2.3.2",
+    "picomatch@^4.0.0": "4.0.4",
     "qs": "6.15.0",
+    "readdirp": {
+      "picomatch": "2.3.2"
+    },
     "rollup": "4.59.0",
+    "router": {
+      "path-to-regexp": "8.4.2"
+    },
     "server": {
-      "effect": "3.20.0",
+      "@prisma/config": {
+        "effect": "3.21.0"
+      },
+      "anymatch": {
+        "picomatch": "2.3.2"
+      },
+      "brace-expansion@^1.1.0": "1.1.13",
+      "brace-expansion@^2.0.0": "2.0.3",
+      "c12": {
+        "defu": "6.1.7"
+      },
+      "defu": "6.1.7",
+      "effect": "3.21.0",
       "minimatch@^3.1.2": "3.1.4",
+      "minimatch@3.1.5": {
+        "brace-expansion": "1.1.13"
+      },
+      "path-to-regexp": "8.4.2",
+      "picomatch@^2.3.0": "2.3.2",
+      "readdirp": {
+        "picomatch": "2.3.2"
+      },
+      "router": {
+        "path-to-regexp": "8.4.2"
+      },
       "socket.io-parser": "4.2.6"
     },
     "socket.io-parser": "4.2.6",
     "svgo": "4.0.1",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "vite": {
+      "picomatch": "4.0.4",
+      "yaml": "2.8.3"
+    },
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "yaml": "2.8.3"
   }
 }
